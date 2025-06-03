@@ -238,7 +238,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
         ),
       ),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12.0),
+        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: Colors.grey[900],
           borderRadius: BorderRadius.circular(16),
