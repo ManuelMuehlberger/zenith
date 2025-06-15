@@ -106,7 +106,7 @@ class WorkoutChart extends StatelessWidget {
                         if (value.toInt() >= 0 && value.toInt() < data.length) {
                           final month = data[value.toInt()].month;
                           return SideTitleWidget(
-                            axisSide: meta.axisSide,
+                            meta: meta,
                             child: Text(
                               '${month.month}/${month.year.toString().substring(2)}',
                               style: TextStyle(
@@ -133,7 +133,7 @@ class WorkoutChart extends StatelessWidget {
                           label = value.toInt().toString();
                         }
                         return SideTitleWidget(
-                          axisSide: meta.axisSide,
+                          meta: meta,
                           space: 8.0,
                           child: Text(
                             label,

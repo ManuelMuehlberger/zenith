@@ -36,7 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   
   # For parsing TOML files
-  toml: ^0.15.0
+  toml: ^0.16.0
   
   # For local storage
   shared_preferences: ^2.2.2
@@ -50,13 +50,13 @@ dependencies:
   confetti: ^0.8.0
   
   # For file picking (backup import)
-  file_picker: ^8.3.7
+  file_picker: ^10.2.0
   
   # For cryptographic hashing
   crypto: ^3.0.3
   
   # For sharing files
-  share_plus: ^7.2.2
+  share_plus: ^11.0.0
 
   # For SQLite database
   sqflite: ^2.3.3

@@ -41,9 +41,6 @@ class LiveWorkoutNotificationService {
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
-      onDidReceiveLocalNotification: (int id, String? title, String? body, String? payload) async {
-        // Handle notification tapped logic here if needed for older iOS versions
-      },
     );
 
     final InitializationSettings initializationSettings = InitializationSettings(

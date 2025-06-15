@@ -56,7 +56,7 @@ class WorkoutTrackerApp extends StatelessWidget {
           unselectedItemColor: Colors.grey,
           type: BottomNavigationBarType.fixed,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: Colors.grey[900],
           elevation: 2,
         ),
