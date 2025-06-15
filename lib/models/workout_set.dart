@@ -1,59 +1,78 @@
+import 'package:uuid/uuid.dart';
+
+// Represents a set within a WorkoutExercise template
 class WorkoutSet {
   final String id;
-  int reps;
-  double weight;
-  bool isCompleted;
-  // Rep range fields - when these are set, reps field is ignored
-  int? repRangeMin;
-  int? repRangeMax;
-  bool get isRepRange => repRangeMin != null && repRangeMax != null;
+  final String workoutExerciseId; // Foreign key to WorkoutExercises table
+  int setNumber;
+  String? type; // e.g., 'normal', 'warmup', 'drop', 'failure'
+  int? targetReps;
+  double? targetWeight;
+  String? targetWeightUnit; // e.g., 'kg', 'lbs', 'bodyweight'
+  int? targetRestSeconds;
+  int? orderIndex; // Order of this set for the exercise
 
   WorkoutSet({
-    required this.id,
-    required this.reps,
-    required this.weight,
-    this.isCompleted = false,
-    this.repRangeMin,
-    this.repRangeMax,
-  });
+    String? id,
+    required this.workoutExerciseId,
+    required this.setNumber,
+    this.type,
+    this.targetReps,
+    this.targetWeight,
+    this.targetWeightUnit,
+    this.targetRestSeconds,
+    this.orderIndex,
+  }) : id = id ?? const Uuid().v4();
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'reps': reps,
-      'weight': weight,
-      'isCompleted': isCompleted,
-      'repRangeMin': repRangeMin,
-      'repRangeMax': repRangeMax,
+      'workoutExerciseId': workoutExerciseId,
+      'setNumber': setNumber,
+      'type': type,
+      'targetReps': targetReps,
+      'targetWeight': targetWeight,
+      'targetWeightUnit': targetWeightUnit,
+      'targetRestSeconds': targetRestSeconds,
+      'orderIndex': orderIndex,
     };
   }
 
   factory WorkoutSet.fromMap(Map<String, dynamic> map) {
     return WorkoutSet(
-      id: map['id'] ?? '',
-      reps: map['reps'] ?? 0,
-      weight: (map['weight'] ?? 0.0).toDouble(),
-      isCompleted: map['isCompleted'] ?? false,
-      repRangeMin: map['repRangeMin'],
-      repRangeMax: map['repRangeMax'],
+      id: map['id'] as String,
+      workoutExerciseId: map['workoutExerciseId'] as String,
+      setNumber: map['setNumber'] as int,
+      type: map['type'] as String?,
+      targetReps: map['targetReps'] as int?,
+      targetWeight: (map['targetWeight'] as num?)?.toDouble(),
+      targetWeightUnit: map['targetWeightUnit'] as String?,
+      targetRestSeconds: map['targetRestSeconds'] as int?,
+      orderIndex: map['orderIndex'] as int?,
     );
   }
 
   WorkoutSet copyWith({
     String? id,
-    int? reps,
-    double? weight,
-    bool? isCompleted,
-    int? repRangeMin,
-    int? repRangeMax,
+    String? workoutExerciseId,
+    int? setNumber,
+    String? type,
+    int? targetReps,
+    double? targetWeight,
+    String? targetWeightUnit,
+    int? targetRestSeconds,
+    int? orderIndex,
   }) {
     return WorkoutSet(
       id: id ?? this.id,
-      reps: reps ?? this.reps,
-      weight: weight ?? this.weight,
-      isCompleted: isCompleted ?? this.isCompleted,
-      repRangeMin: repRangeMin ?? this.repRangeMin,
-      repRangeMax: repRangeMax ?? this.repRangeMax,
+      workoutExerciseId: workoutExerciseId ?? this.workoutExerciseId,
+      setNumber: setNumber ?? this.setNumber,
+      type: type ?? this.type,
+      targetReps: targetReps ?? this.targetReps,
+      targetWeight: targetWeight ?? this.targetWeight,
+      targetWeightUnit: targetWeightUnit ?? this.targetWeightUnit,
+      targetRestSeconds: targetRestSeconds ?? this.targetRestSeconds,
+      orderIndex: orderIndex ?? this.orderIndex,
     );
   }
 }

@@ -15,9 +15,9 @@ class EditExerciseCard extends StatelessWidget {
   final Function(int) onRemoveExercise;
   final Function(int) onAddSet;
   final Function(int, int) onRemoveSet;
-  final Function(int, int, {int? reps, double? weight, int? repRangeMin, int? repRangeMax}) onUpdateSet;
+  final Function(int, int, {int? targetReps, double? targetWeight, String? type, int? targetRestSeconds}) onUpdateSet;
   final Function(int, String) onUpdateNotes;
-  final Function(int, int) onToggleRepRange;
+  final Function(int, int) onToggleRepRange; // This will likely need to be removed or changed
   final String weightUnit;
 
   const EditExerciseCard({
@@ -35,10 +35,11 @@ class EditExerciseCard extends StatelessWidget {
     required this.weightUnit,
   });
 
-  void _showExerciseInfo(BuildContext context, Exercise exercise) {
+  void _showExerciseInfo(BuildContext context, Exercise? exerciseDetail) { // Changed to Exercise?
+    if (exerciseDetail == null) return; // Guard against null exerciseDetail
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ExerciseInfoScreen(exercise: exercise),
+        builder: (context) => ExerciseInfoScreen(exercise: exerciseDetail),
       ),
     );
   }
@@ -66,7 +67,7 @@ class EditExerciseCard extends StatelessWidget {
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
         title: const Text('Remove Exercise'),
-        content: Text('Are you sure you want to remove "${exercise.exercise.name}" from this workout?'),
+        content: Text('Are you sure you want to remove "${exercise.exerciseDetail?.name ?? exercise.exerciseSlug}" from this workout?'),
         actions: <CupertinoDialogAction>[
           CupertinoDialogAction(
             child: const Text('Cancel'),
@@ -138,7 +139,7 @@ class EditExerciseCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  exercise.exercise.name,
+                  exercise.exerciseDetail?.name ?? exercise.exerciseSlug, // Use exerciseDetail or fallback to slug
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -147,7 +148,7 @@ class EditExerciseCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  exercise.exercise.primaryMuscleGroup,
+                  exercise.exerciseDetail?.primaryMuscleGroup ?? 'N/A', // Use exerciseDetail
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.grey[400],
@@ -192,7 +193,7 @@ class EditExerciseCard extends StatelessWidget {
               // Info button
               CupertinoButton(
                 padding: EdgeInsets.zero,
-                onPressed: () => _showExerciseInfo(context, exercise.exercise),
+                onPressed: () => _showExerciseInfo(context, exercise.exerciseDetail), // Pass exerciseDetail
                 child: Container(
                   width: 38,
                   height: 38,
@@ -347,16 +348,17 @@ class EditExerciseCard extends StatelessWidget {
         // Reps field(s)
         Expanded(
           flex: 3,
-          child: set.isRepRange 
-              ? _buildRepRangeFields(setIndex, set)
-              : _buildSingleRepField(setIndex, set),
+          // child: set.isRepRange  // isRepRange removed from WorkoutSet
+          //     ? _buildRepRangeFields(setIndex, set)
+          //     : _buildSingleRepField(setIndex, set),
+          child: _buildTargetRepsField(setIndex, set), // Simplified to single target reps field
         ),
         const SizedBox(width: 8),
         
         // Weight field
         Expanded(
           flex: 3,
-          child: _buildWeightField(setIndex, set),
+          child: _buildTargetWeightField(setIndex, set), // Changed to targetWeight
         ),
         const SizedBox(width: 8),
         
@@ -378,52 +380,19 @@ class EditExerciseCard extends StatelessWidget {
     );
   }
 
-  Widget _buildRepRangeFields(int setIndex, WorkoutSet set) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildTextField(
-            initialValue: set.repRangeMin.toString(),
-            onChanged: (value) {
-              final repMin = int.tryParse(value);
-              if (repMin != null && repMin > 0) {
-                onUpdateSet(exerciseIndex, setIndex, repRangeMin: repMin);
-              }
-            },
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          '-',
-          style: TextStyle(color: Colors.grey[400], fontSize: 14),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: _buildTextField(
-            initialValue: set.repRangeMax.toString(),
-            onChanged: (value) {
-              final repMax = int.tryParse(value);
-              if (repMax != null && repMax > 0) {
-                onUpdateSet(exerciseIndex, setIndex, repRangeMax: repMax);
-              }
-            },
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          ),
-        ),
-      ],
-    );
-  }
+  // Widget _buildRepRangeFields(int setIndex, WorkoutSet set) {
+  //   // This logic is removed as repRangeMin/Max are not on WorkoutSet anymore
+  //   return Container(); 
+  // }
 
-  Widget _buildSingleRepField(int setIndex, WorkoutSet set) {
+  Widget _buildTargetRepsField(int setIndex, WorkoutSet set) { // Renamed from _buildSingleRepField
     return _buildTextField(
-      initialValue: set.reps.toString(),
+      initialValue: set.targetReps?.toString() ?? '', // Use targetReps
       onChanged: (value) {
         final reps = int.tryParse(value);
-        if (reps != null && reps > 0) {
-          onUpdateSet(exerciseIndex, setIndex, reps: reps);
+        // Allow reps to be null or positive
+        if (value.isEmpty || (reps != null && reps >= 0)) {
+          onUpdateSet(exerciseIndex, setIndex, targetReps: value.isEmpty ? null : reps);
         }
       },
       keyboardType: TextInputType.number,
@@ -431,13 +400,13 @@ class EditExerciseCard extends StatelessWidget {
     );
   }
 
-  Widget _buildWeightField(int setIndex, WorkoutSet set) {
+  Widget _buildTargetWeightField(int setIndex, WorkoutSet set) { // Renamed from _buildWeightField
     return _buildTextField(
-      initialValue: set.weight.toString(),
+      initialValue: set.targetWeight?.toString() ?? '', // Use targetWeight
       onChanged: (value) {
         final weight = double.tryParse(value);
-        if (weight != null && weight >= 0) {
-          onUpdateSet(exerciseIndex, setIndex, weight: weight);
+        if (value.isEmpty || (weight != null && weight >= 0)) {
+          onUpdateSet(exerciseIndex, setIndex, targetWeight: value.isEmpty ? null : weight);
         }
       },
       keyboardType: const TextInputType.numberWithOptions(decimal: true),

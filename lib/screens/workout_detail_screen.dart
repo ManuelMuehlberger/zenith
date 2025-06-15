@@ -92,7 +92,8 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     ];
 
     // Ensure mood index is within valid range (0-4), default to 2 (neutral) if invalid
-    final moodIndex = (widget.workout.mood >= 0 && widget.workout.mood <= 4) ? widget.workout.mood : 2;
+    final moodValue = widget.workout.mood ?? 2;
+    final moodIndex = (moodValue >= 0 && moodValue <= 4) ? moodValue : 2;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -222,7 +223,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                       child: Row(
                         children: [
                           Text(
-                            '${set.reps} reps',
+                            '${set.repsPerformed} reps',
                             style: TextStyle(
                               color: set.completed ? Colors.white : Colors.grey[400],
                               fontSize: 14,
@@ -231,7 +232,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                           ),
                           const SizedBox(width: 16),
                           Text(
-                            _formatWeight(set.weight),
+                            _formatWeight(set.weightLogged ?? 0.0),
                             style: TextStyle(
                               color: set.completed ? Colors.white : Colors.grey[400],
                               fontSize: 14,
@@ -421,7 +422,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _buildSummaryItem(
-                    _formatDuration(widget.workout.duration),
+                    _formatDuration(widget.workout.duration ?? Duration.zero),
                     'Duration',
                     Icons.timer_outlined,
                   ),
@@ -456,7 +457,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
             const SizedBox(height: 20),
 
             // Notes section
-            if (widget.workout.notes.isNotEmpty) ...[
+            if ((widget.workout.notes ?? '').isNotEmpty) ...[
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -477,7 +478,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      widget.workout.notes,
+                      widget.workout.notes ?? '',
                       style: TextStyle(
                         color: Colors.grey[300],
                         fontSize: 14,

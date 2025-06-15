@@ -13,9 +13,9 @@ class ExerciseCard extends StatelessWidget {
   final Function(int) onRemoveExercise;
   final Function(int) onAddSet;
   final Function(int, int) onRemoveSet;
-  final Function(int, int, {int? reps, double? weight, int? repRangeMin, int? repRangeMax}) onUpdateSet;
+  final Function(int, int, {int? targetReps, double? targetWeight, String? type, int? targetRestSeconds}) onUpdateSet;
   final Function(int, String) onUpdateNotes;
-  final Function(int, int) onToggleRepRange;
+  final Function(int, int) onToggleRepRange; // Keep for now, SetEditOptionsSheet might still expect it
 
   const ExerciseCard({
     super.key,
@@ -31,10 +31,11 @@ class ExerciseCard extends StatelessWidget {
     required this.onToggleRepRange,
   });
 
-  void _showExerciseInfo(BuildContext context, Exercise exercise) {
+  void _showExerciseInfo(BuildContext context, Exercise? exerciseDetail) { // Changed to Exercise?
+    if (exerciseDetail == null) return;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ExerciseInfoScreen(exercise: exercise),
+        builder: (context) => ExerciseInfoScreen(exercise: exerciseDetail),
       ),
     );
   }
@@ -92,7 +93,7 @@ class ExerciseCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              exercise.exercise.name,
+                              exercise.exerciseDetail?.name ?? exercise.exerciseSlug, // Use exerciseDetail or fallback
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -100,7 +101,7 @@ class ExerciseCard extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              exercise.exercise.primaryMuscleGroup,
+                              exercise.exerciseDetail?.primaryMuscleGroup ?? 'N/A', // Use exerciseDetail
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[400],
@@ -130,7 +131,7 @@ class ExerciseCard extends StatelessWidget {
                       ),
                       // Info button
                       IconButton(
-                        onPressed: () => _showExerciseInfo(context, exercise.exercise),
+                        onPressed: () => _showExerciseInfo(context, exercise.exerciseDetail), // Pass exerciseDetail
                         icon: const Icon(
                           Icons.info_outline,
                           color: Colors.blue,
@@ -255,123 +256,41 @@ class ExerciseCard extends StatelessWidget {
                     // Reps field(s)
                     Expanded(
                       flex: 3,
-                      child: set.isRepRange 
-                        ? Row(
-                            children: [
-                              Expanded(
-                                child: SizedBox(
-                                  height: 32,
-                                  child: TextFormField(
-                                    initialValue: set.repRangeMin.toString(),
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                                    textAlign: TextAlign.center,
-                                    decoration: InputDecoration(
-                                      isDense: true,
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                                      filled: true,
-                                      fillColor: Colors.grey[700],
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(6),
-                                        borderSide: BorderSide(color: Colors.grey[600]!, width: 1),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(6),
-                                        borderSide: BorderSide(color: Colors.grey[600]!, width: 1),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(6),
-                                        borderSide: const BorderSide(color: Colors.blue, width: 1),
-                                      ),
-                                    ),
-                                    onChanged: (value) {
-                                      if (value.isEmpty) return;
-                                      final repMin = int.tryParse(value);
-                                      if (repMin != null && repMin > 0) {
-                                        onUpdateSet(exerciseIndex, setIndex, repRangeMin: repMin);
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              const Text('-', style: TextStyle(color: Colors.white, fontSize: 13)),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: SizedBox(
-                                  height: 32,
-                                  child: TextFormField(
-                                    initialValue: set.repRangeMax.toString(),
-                                    keyboardType: TextInputType.number,
-                                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                                    textAlign: TextAlign.center,
-                                    decoration: InputDecoration(
-                                      isDense: true,
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                                      filled: true,
-                                      fillColor: Colors.grey[700],
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(6),
-                                        borderSide: BorderSide(color: Colors.grey[600]!, width: 1),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(6),
-                                        borderSide: BorderSide(color: Colors.grey[600]!, width: 1),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(6),
-                                        borderSide: const BorderSide(color: Colors.blue, width: 1),
-                                      ),
-                                    ),
-                                    onChanged: (value) {
-                                      if (value.isEmpty) return;
-                                      final repMax = int.tryParse(value);
-                                      if (repMax != null && repMax > 0) {
-                                        onUpdateSet(exerciseIndex, setIndex, repRangeMax: repMax);
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                        : SizedBox(
-                            height: 32,
-                            child: TextFormField(
-                              initialValue: set.reps.toString(),
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                              style: const TextStyle(color: Colors.white, fontSize: 13),
-                              textAlign: TextAlign.center,
-                              decoration: InputDecoration(
-                                isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                                filled: true,
-                                fillColor: Colors.grey[700],
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                  borderSide: BorderSide(color: Colors.grey[600]!, width: 1),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                  borderSide: BorderSide(color: Colors.grey[600]!, width: 1),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                  borderSide: const BorderSide(color: Colors.blue, width: 1),
-                                ),
-                              ),
-                              onChanged: (value) {
-                                if (value.isEmpty) return;
-                                final reps = int.tryParse(value);
-                                if (reps != null && reps > 0) {
-                                  onUpdateSet(exerciseIndex, setIndex, reps: reps);
-                                }
-                              },
+                      // Rep range logic removed, using targetReps
+                      child: SizedBox(
+                        height: 32,
+                        child: TextFormField(
+                          initialValue: set.targetReps?.toString() ?? '',
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          textAlign: TextAlign.center,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                            filled: true,
+                            fillColor: Colors.grey[700],
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(6),
+                              borderSide: BorderSide(color: Colors.grey[600]!, width: 1),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(6),
+                              borderSide: BorderSide(color: Colors.grey[600]!, width: 1),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(6),
+                              borderSide: const BorderSide(color: Colors.blue, width: 1),
                             ),
                           ),
+                          onChanged: (value) {
+                            final reps = int.tryParse(value);
+                            if (value.isEmpty || (reps != null && reps >= 0)) {
+                              onUpdateSet(exerciseIndex, setIndex, targetReps: value.isEmpty ? null : reps);
+                            }
+                          },
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     // Weight field
@@ -380,7 +299,7 @@ class ExerciseCard extends StatelessWidget {
                       child: SizedBox(
                         height: 32,
                         child: TextFormField(
-                          initialValue: set.weight.toString(),
+                          initialValue: set.targetWeight?.toString() ?? '',
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
                           style: const TextStyle(color: Colors.white, fontSize: 13),
@@ -390,7 +309,7 @@ class ExerciseCard extends StatelessWidget {
                             contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                             filled: true,
                             fillColor: Colors.grey[700],
-                            suffixText: 'kg',
+                            suffixText: 'kg', // Assuming kg, or use from settings/exercise
                             suffixStyle: TextStyle(
                               color: Colors.grey[400],
                               fontSize: 12,
@@ -409,10 +328,9 @@ class ExerciseCard extends StatelessWidget {
                             ),
                           ),
                           onChanged: (value) {
-                            if (value.isEmpty) return;
                             final weight = double.tryParse(value);
-                            if (weight != null && weight >= 0) {
-                              onUpdateSet(exerciseIndex, setIndex, weight: weight);
+                             if (value.isEmpty || (weight != null && weight >= 0)) {
+                              onUpdateSet(exerciseIndex, setIndex, targetWeight: value.isEmpty ? null : weight);
                             }
                           },
                         ),

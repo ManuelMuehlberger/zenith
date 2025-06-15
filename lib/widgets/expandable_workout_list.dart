@@ -173,7 +173,7 @@ class _ExpandableWorkoutListState extends State<ExpandableWorkoutList> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    _formatDuration(workoutHistory.duration),
+                                    _formatDuration(workoutHistory.duration ?? Duration.zero),
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.grey[400],

@@ -154,8 +154,10 @@ class DatabaseService {
     try {
       final allHistory = await getWorkoutHistory(); // Already sorted by most recent first
       for (final historyEntry in allHistory) {
-        for (final exerciseInHistory in historyEntry.exercises) {
-          if (exerciseInHistory.exerciseId == exerciseSlug) {
+        // Ensure exercises are loaded for historyEntry if they are fetched lazily in the future.
+        // For now, assuming historyEntry.exercises is populated by WorkoutHistory.fromMap
+        for (final exerciseInHistory in historyEntry.exercises) { 
+          if (exerciseInHistory.exerciseSlug == exerciseSlug) { // Changed from exerciseId
             return historyEntry; // Return the first (most recent) history containing this exercise
           }
         }
@@ -252,13 +254,12 @@ class DatabaseService {
               workoutName: history.workoutName,
               startTime: history.startTime,
               endTime: history.endTime,
-              exercises: history.exercises,
+              exercises: history.exercises, // This list itself might need deep copy if modified
               notes: history.notes,
               mood: history.mood,
-              totalSets: history.totalSets,
-              totalWeight: history.totalWeight,
-              iconCodePoint: matchingWorkout.iconCodePoint,
-              colorValue: matchingWorkout.colorValue,
+              // totalSets and totalWeight are now getters in WorkoutHistory, not constructor params
+              iconCodePoint: matchingWorkout.iconCodePoint ?? 0xe1a3, // Default if null
+              colorValue: matchingWorkout.colorValue ?? 0xFF2196F3,    // Default if null
             );
             
             updatedHistoryJson.add(jsonEncode(updatedHistory.toMap()));

@@ -158,7 +158,7 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                widget.exercise.workoutExercise.exercise.name,
+                                widget.exercise.workoutExercise.exerciseDetail?.name ?? widget.exercise.workoutExercise.exerciseSlug,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
@@ -167,7 +167,7 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                widget.exercise.workoutExercise.exercise.primaryMuscleGroup,
+                                widget.exercise.workoutExercise.exerciseDetail?.primaryMuscleGroup ?? "N/A",
                                 style: TextStyle(
                                   color: Colors.blue[300],
                                   fontSize: 14,

@@ -1,74 +1,91 @@
 import 'package:flutter/material.dart';
-import 'workout_exercise.dart';
+import 'package:uuid/uuid.dart';
+import 'workout_exercise.dart'; // This will still be used for the model's in-memory representation
 
 class Workout {
   final String id;
-  final String name;
-  final List<WorkoutExercise> exercises;
-  final String? folderId;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final int iconCodePoint;
-  final int colorValue;
+  String name;
+  String? description;
+  int? iconCodePoint;
+  int? colorValue;
+  String? folderId;
+  String? notes;
+  String? lastUsed; // ISO8601 string
+  int? orderIndex;
+
+  // Exercises are not part of the 'Workouts' table directly.
+  // They will be loaded separately and associated with this model in memory.
+  List<WorkoutExercise> exercises;
 
   Workout({
-    required this.id,
+    String? id,
     required this.name,
-    required this.exercises,
+    this.description,
+    this.iconCodePoint,
+    this.colorValue,
     this.folderId,
-    required this.createdAt,
-    required this.updatedAt,
-    this.iconCodePoint = 0xe1a3, // Icons.fitness_center.codePoint, better for storing
-    this.colorValue = 0xFF2196F3, // Colors.blue.value
-  });
+    this.notes,
+    this.lastUsed,
+    this.orderIndex,
+    this.exercises = const [], // Default to empty list, to be populated after fetching from DB
+  }) : id = id ?? const Uuid().v4();
 
   factory Workout.fromMap(Map<String, dynamic> map) {
+    // Note: 'exercises' are not in the map from the 'Workouts' table.
+    // They need to be fetched separately.
     return Workout(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      exercises: (map['exercises'] as List<dynamic>?)
-          ?.map((e) => WorkoutExercise.fromMap(e as Map<String, dynamic>))
-          .toList() ?? [],
-      folderId: map['folderId'],
-      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(map['updatedAt'] ?? DateTime.now().toIso8601String()),
-      iconCodePoint: map['iconCodePoint'] ?? 0xe1a3,
-      colorValue: map['colorValue'] ?? 0xFF2196F3,
+      id: map['id'] as String,
+      name: map['name'] as String,
+      description: map['description'] as String?,
+      iconCodePoint: map['iconCodePoint'] as int?,
+      colorValue: map['colorValue'] as int?,
+      folderId: map['folderId'] as String?,
+      notes: map['notes'] as String?,
+      lastUsed: map['lastUsed'] as String?,
+      orderIndex: map['orderIndex'] as int?,
+      exercises: [], // Initialize as empty, to be loaded by service layer
     );
   }
 
   Map<String, dynamic> toMap() {
+    // Note: 'exercises' are not part of the 'Workouts' table.
+    // They are stored in the 'WorkoutExercises' table.
     return {
       'id': id,
       'name': name,
-      'exercises': exercises.map((e) => e.toMap()).toList(),
-      'folderId': folderId,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'description': description,
       'iconCodePoint': iconCodePoint,
       'colorValue': colorValue,
+      'folderId': folderId,
+      'notes': notes,
+      'lastUsed': lastUsed,
+      'orderIndex': orderIndex,
     };
   }
 
   Workout copyWith({
     String? id,
     String? name,
-    List<WorkoutExercise>? exercises,
-    Object? folderId = _undefined,
-    DateTime? createdAt,
-    DateTime? updatedAt,
+    String? description,
     int? iconCodePoint,
     int? colorValue,
+    Object? folderId = _undefined, // Keep sentinel for nullable fields
+    String? notes,
+    Object? lastUsed = _undefined, // Keep sentinel for nullable fields
+    int? orderIndex,
+    List<WorkoutExercise>? exercises,
   }) {
     return Workout(
       id: id ?? this.id,
       name: name ?? this.name,
-      exercises: exercises ?? this.exercises,
-      folderId: folderId == _undefined ? this.folderId : folderId as String?,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      description: description ?? this.description,
       iconCodePoint: iconCodePoint ?? this.iconCodePoint,
       colorValue: colorValue ?? this.colorValue,
+      folderId: folderId == _undefined ? this.folderId : folderId as String?,
+      notes: notes ?? this.notes,
+      lastUsed: lastUsed == _undefined ? this.lastUsed : lastUsed as String?,
+      orderIndex: orderIndex ?? this.orderIndex,
+      exercises: exercises ?? this.exercises,
     );
   }
 
@@ -76,16 +93,20 @@ class Workout {
     return exercises.fold(0, (sum, exercise) => sum + exercise.totalSets);
   }
 
-  double get totalWeight {
-    return exercises.fold(0.0, (sum, exercise) => sum + exercise.totalWeight);
-  }
+  // totalWeight for a template is less meaningful as targetWeights can vary.
+  // This will be calculated for WorkoutHistory.
+  // double get totalWeight {
+  //   return exercises.fold(0.0, (sum, exercise) => sum + exercise.totalWeight);
+  // }
 
   IconData get icon {
-    return IconData(iconCodePoint, fontFamily: 'MaterialIcons');
+    // Provide a default icon if iconCodePoint is null
+    return IconData(iconCodePoint ?? 0xe1a3, fontFamily: 'MaterialIcons'); // Default: Icons.fitness_center
   }
 
   Color get color {
-    return Color(colorValue);
+    // Provide a default color if colorValue is null
+    return Color(colorValue ?? 0xFF2196F3); // Default: Colors.blue.value
   }
 }
 

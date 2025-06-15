@@ -55,29 +55,30 @@ class SetEditOptionsSheet extends StatelessWidget {
             const SizedBox(height: 16),
             
             // Actions
-            ListTile(
-              leading: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.blue.withAlpha((255 * 0.2).round()),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  set.isRepRange ? Icons.looks_one : Icons.swap_horiz,
-                  color: Colors.blue,
-                  size: 20,
-                ),
-              ),
-              title: Text(
-                set.isRepRange ? 'Switch to Single Reps' : 'Switch to Rep Range',
-                style: const TextStyle(color: Colors.white),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                onToggleRepRange();
-              },
-            ),
+            // Rep Range functionality has been removed from WorkoutSet model for templates.
+            // ListTile(
+            //   leading: Container(
+            //     width: 32,
+            //     height: 32,
+            //     decoration: BoxDecoration(
+            //       color: Colors.blue.withAlpha((255 * 0.2).round()),
+            //       borderRadius: BorderRadius.circular(8),
+            //     ),
+            //     child: Icon(
+            //       Icons.swap_horiz, // Placeholder icon
+            //       color: Colors.blue,
+            //       size: 20,
+            //     ),
+            //   ),
+            //   title: Text(
+            //     'Toggle Rep Range (Not Supported)', // Placeholder text
+            //     style: const TextStyle(color: Colors.white),
+            //   ),
+            //   onTap: () {
+            //     Navigator.pop(context);
+            //     // onToggleRepRange(); // onToggleRepRange logic is removed
+            //   },
+            // ),
             
             if (canRemoveSet && onRemoveSet != null)
               ListTile(

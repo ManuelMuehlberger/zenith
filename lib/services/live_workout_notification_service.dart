@@ -219,7 +219,8 @@ class LiveWorkoutNotificationService {
 
     if (totalWorkoutExercises > 0 && currentExerciseIndex < totalWorkoutExercises) {
       final WorkoutExercise currentWorkoutExercise = session.workout.exercises[currentExerciseIndex];
-      currentExerciseName = currentWorkoutExercise.exercise.name;
+      // Use exerciseDetail, ensure it's loaded or provide fallback
+      currentExerciseName = currentWorkoutExercise.exerciseDetail?.name ?? currentWorkoutExercise.exerciseSlug;
 
       if (currentWorkoutExercise.sets.isNotEmpty && currentSetIndex < currentWorkoutExercise.sets.length) {
         final WorkoutSet currentWorkoutSet = currentWorkoutExercise.sets[currentSetIndex];
@@ -228,12 +229,13 @@ class LiveWorkoutNotificationService {
         
         setProgress = "Set $currentSetNum of $totalSetsForExercise";
         
-        String repsStr = currentWorkoutSet.isRepRange 
-            ? "${currentWorkoutSet.repRangeMin}-${currentWorkoutSet.repRangeMax} reps" 
-            : "${currentWorkoutSet.reps} reps";
+        // repRange fields removed from WorkoutSet, using targetReps
+        String repsStr = currentWorkoutSet.targetReps != null 
+            ? "${currentWorkoutSet.targetReps} reps" 
+            : "Reps not set";
         progressDetails = repsStr;
-        if (currentWorkoutSet.weight > 0) {
-          progressDetails += " at ${currentWorkoutSet.weight} kg";
+        if (currentWorkoutSet.targetWeight != null && currentWorkoutSet.targetWeight! > 0) {
+          progressDetails += " at ${currentWorkoutSet.targetWeight} kg"; // Assuming kg for now
         }
       } else if (currentWorkoutExercise.sets.isEmpty) {
         progressDetails = "No sets configured";
@@ -244,7 +246,9 @@ class LiveWorkoutNotificationService {
       }
 
       if (currentExerciseIndex + 1 < totalWorkoutExercises) {
-        nextExerciseName = "Next: ${session.workout.exercises[currentExerciseIndex + 1].exercise.name}";
+        final nextWorkoutExercise = session.workout.exercises[currentExerciseIndex + 1];
+        // Use exerciseDetail, ensure it's loaded or provide fallback
+        nextExerciseName = "Next: ${nextWorkoutExercise.exerciseDetail?.name ?? nextWorkoutExercise.exerciseSlug}";
       } else {
         nextExerciseName = "Final exercise!";
       }

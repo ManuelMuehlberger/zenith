@@ -182,10 +182,12 @@ class SessionSet {
 
   factory SessionSet.fromWorkoutSet(WorkoutSet workoutSet) {
     // lastReps and lastWeight will be populated later when fetching workout history
+    // Initialize reps/weight of SessionSet from the WorkoutSet's targetReps/targetWeight
     return SessionSet(
-      id: workoutSet.id,
-      reps: workoutSet.reps,
-      weight: workoutSet.weight,
+      id: workoutSet.id, // This ID is from the template set. A new ID might be needed if SessionSets are independent.
+                         // For now, keeping it, assuming SessionSet might be a direct copy for active workout.
+      reps: workoutSet.targetReps ?? 0, // Default to 0 if targetReps is null
+      weight: workoutSet.targetWeight ?? 0.0, // Default to 0.0 if targetWeight is null
       lastReps: null, 
       lastWeight: null,
     );

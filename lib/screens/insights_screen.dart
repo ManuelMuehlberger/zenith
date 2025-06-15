@@ -89,7 +89,11 @@ class _InsightsScreenState extends State<InsightsScreen> {
     for (var history in histories) {
       Workout? details;
       try {
-        details = WorkoutService.instance.getWorkoutById(history.workoutId);
+        if (history.workoutId != null) {
+          details = WorkoutService.instance.getWorkoutById(history.workoutId!);
+        } else {
+          details = null;
+        }
       } catch (e) {
       }
       displayItems.add(WorkoutHistoryDisplayItem(history: history, workoutDetails: details));

@@ -434,7 +434,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
-                                        exercise.exercise.name,
+                                        exercise.exerciseDetail?.name ?? exercise.exerciseSlug,
                                         style: TextStyle(
                                           color: Colors.grey[400],
                                           fontSize: 14,

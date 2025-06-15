@@ -128,7 +128,7 @@ class WorkoutHistoryCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          _formatDuration(workout.duration),
+                          _formatDuration(workout.duration!),
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[400],
@@ -164,10 +164,10 @@ class WorkoutHistoryCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    if (workout.notes.isNotEmpty) ...[
+                    if (workout.notes!.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Text(
-                        workout.notes,
+                        workout.notes!,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[300],

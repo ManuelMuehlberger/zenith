@@ -80,7 +80,7 @@ class WorkoutSessionService {
     // Populate lastReps and lastWeight from history
     for (int i = 0; i < sessionExercises.length; i++) {
       final sessionExercise = sessionExercises[i];
-      final exerciseSlug = sessionExercise.workoutExercise.exercise.slug;
+      final exerciseSlug = sessionExercise.workoutExercise.exerciseSlug; // Changed from .exercise.slug
       
       // Fetch the last workout history for this specific exercise
       final WorkoutHistory? lastHistory = await DatabaseService.instance.getLastWorkoutHistoryForExercise(exerciseSlug);
@@ -92,8 +92,8 @@ class WorkoutSessionService {
           
           // Try to find corresponding exercise history
           WorkoutExerciseHistory? exerciseHistory;
-          for (final eh in lastHistory.exercises) {
-            if (eh.exerciseId == exerciseSlug) {
+          for (final eh in lastHistory.exercises) { // eh is WorkoutExerciseHistory
+            if (eh.exerciseSlug == exerciseSlug) { // Use exerciseSlug
               exerciseHistory = eh;
               break;
             }
@@ -103,20 +103,20 @@ class WorkoutSessionService {
             // Use the set at the same index if available, otherwise fallback or leave null
             // This is a simple matching strategy; could be more sophisticated
             if (j < exerciseHistory.sets.length) {
-              final historicalSet = exerciseHistory.sets[j];
+              final historicalSet = exerciseHistory.sets[j]; // historicalSet is SetHistory
               currentSet = currentSet.copyWith(
-                reps: historicalSet.reps,
-                weight: historicalSet.weight,
-                lastReps: historicalSet.reps,
-                lastWeight: historicalSet.weight,
+                reps: historicalSet.repsPerformed, // Use repsPerformed
+                weight: historicalSet.weightLogged, // Use weightLogged
+                lastReps: historicalSet.repsPerformed, // Use repsPerformed
+                lastWeight: historicalSet.weightLogged, // Use weightLogged
               );
             } else {
-              final fallbackHistoricalSet = exerciseHistory.sets.last;
+              final fallbackHistoricalSet = exerciseHistory.sets.last; // fallbackHistoricalSet is SetHistory
               currentSet = currentSet.copyWith(
-                reps: fallbackHistoricalSet.reps,
-                weight: fallbackHistoricalSet.weight,
-                lastReps: fallbackHistoricalSet.reps,
-                lastWeight: fallbackHistoricalSet.weight,
+                reps: fallbackHistoricalSet.repsPerformed, // Use repsPerformed
+                weight: fallbackHistoricalSet.weightLogged, // Use weightLogged
+                lastReps: fallbackHistoricalSet.repsPerformed, // Use repsPerformed
+                lastWeight: fallbackHistoricalSet.weightLogged, // Use weightLogged
               );
             }
           }
@@ -301,33 +301,49 @@ class WorkoutSessionService {
       mood: mood,
     );
 
-    final exerciseHistories = completedSession.exercises.map((sessionExercise) {
+    final String newWorkoutHistoryId = DateTime.now().millisecondsSinceEpoch.toString();
+
+    final exerciseHistories = completedSession.exercises.asMap().entries.map((entry) {
+      int exIdx = entry.key;
+      SessionExercise sessionExercise = entry.value;
+      final String newWorkoutExerciseHistoryId = newWorkoutHistoryId + "_ex_" + exIdx.toString();
+
       return WorkoutExerciseHistory(
-        exerciseId: sessionExercise.workoutExercise.exercise.slug,
-        exerciseName: sessionExercise.workoutExercise.exercise.name,
-        sets: sessionExercise.sets.map((sessionSet) {
+        id: newWorkoutExerciseHistoryId,
+        workoutHistoryId: newWorkoutHistoryId, // Link to parent WorkoutHistory
+        exerciseSlug: sessionExercise.workoutExercise.exerciseSlug,
+        exerciseName: sessionExercise.workoutExercise.exerciseDetail?.name ?? sessionExercise.workoutExercise.exerciseSlug,
+        orderIndex: exIdx,
+        // notes: sessionExercise.workoutExercise.notes, // If notes from template should carry over
+        sets: sessionExercise.sets.asMap().entries.map((entrySet) {
+          int setIdx = entrySet.key;
+          SessionSet sessionSet = entrySet.value;
           return SetHistory(
-            reps: sessionSet.reps,
-            weight: sessionSet.weight,
+            // id is auto-generated in SetHistory
+            workoutHistoryExerciseId: newWorkoutExerciseHistoryId, // Link to parent WorkoutExerciseHistory
+            setNumber: setIdx + 1,
+            repsPerformed: sessionSet.reps,
+            weightLogged: sessionSet.weight,
             completed: sessionSet.isCompleted,
+            // type, notes, durationSeconds, restTimeAchievedSeconds, weightUnit could be set if available
           );
         }).toList(),
       );
     }).toList();
 
     final workoutHistory = WorkoutHistory(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: newWorkoutHistoryId,
       workoutId: completedSession.workout.id,
       workoutName: completedSession.workout.name,
       startTime: completedSession.startTime,
       endTime: roundedEndTime,
-      exercises: exerciseHistories,
+      exercises: exerciseHistories, // Assign the fully created list
       notes: notes ?? '',
       mood: mood?.index ?? 2, 
-      totalSets: completedSession.completedSets,
-      totalWeight: completedSession.totalWeight,
-      iconCodePoint: completedSession.workout.iconCodePoint,
-      colorValue: completedSession.workout.colorValue,
+      // totalSets and totalWeight are now getters, no longer constructor parameters
+      iconCodePoint: completedSession.workout.iconCodePoint ?? 0xe1a3,
+      colorValue: completedSession.workout.colorValue ?? 0xFF2196F3,
+      durationSeconds: roundedEndTime.difference(completedSession.startTime).inSeconds,
     );
 
     await DatabaseService.instance.saveWorkoutHistory(workoutHistory);

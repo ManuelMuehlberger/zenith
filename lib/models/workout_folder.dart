@@ -1,22 +1,21 @@
+import 'package:uuid/uuid.dart';
+
 class WorkoutFolder {
   final String id;
-  final String name;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  String name;
+  int? orderIndex;
 
   WorkoutFolder({
-    required this.id,
+    String? id,
     required this.name,
-    required this.createdAt,
-    required this.updatedAt,
-  });
+    this.orderIndex,
+  }) : id = id ?? const Uuid().v4();
 
   factory WorkoutFolder.fromMap(Map<String, dynamic> map) {
     return WorkoutFolder(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(map['updatedAt'] ?? DateTime.now().toIso8601String()),
+      id: map['id'] as String,
+      name: map['name'] as String,
+      orderIndex: map['orderIndex'] as int?,
     );
   }
 
@@ -24,22 +23,19 @@ class WorkoutFolder {
     return {
       'id': id,
       'name': name,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'orderIndex': orderIndex,
     };
   }
 
   WorkoutFolder copyWith({
     String? id,
     String? name,
-    DateTime? createdAt,
-    DateTime? updatedAt,
+    int? orderIndex,
   }) {
     return WorkoutFolder(
       id: id ?? this.id,
       name: name ?? this.name,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      orderIndex: orderIndex ?? this.orderIndex,
     );
   }
 }

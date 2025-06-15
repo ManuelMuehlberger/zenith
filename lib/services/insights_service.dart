@@ -75,7 +75,7 @@ class InsightsService {
     // Calculate total statistics
     final totalWorkouts = recentWorkouts.length;
     final totalHours = recentWorkouts.fold<double>(0, (sum, workout) => 
-        sum + workout.duration.inMinutes / 60.0);
+        sum + ((workout.duration?.inMinutes ?? 0) / 60.0));
     final totalWeight = recentWorkouts.fold<double>(0, (sum, workout) => 
         sum + workout.totalWeight);
 
@@ -112,9 +112,9 @@ class InsightsService {
           exerciseInstances.add(ExerciseInstance(
             date: workout.startTime,
             sets: exercise.sets,
-            totalWeight: exercise.sets.fold<double>(0, (sum, set) => sum + (set.weight * set.reps)),
-            totalReps: exercise.sets.fold<int>(0, (sum, set) => sum + set.reps),
-            maxWeight: exercise.sets.isEmpty ? 0 : exercise.sets.map((s) => s.weight).reduce((a, b) => a > b ? a : b),
+            totalWeight: exercise.sets.fold<double>(0, (sum, set) => sum + ((set.weightLogged ?? 0.0) * (set.repsPerformed ?? 0))),
+            totalReps: exercise.sets.fold<int>(0, (sum, set) => sum + (set.repsPerformed ?? 0)),
+            maxWeight: exercise.sets.isEmpty ? 0 : exercise.sets.map((s) => s.weightLogged ?? 0.0).reduce((a, b) => a > b ? a : b),
             totalSets: exercise.sets.length,
           ));
         }
@@ -182,7 +182,7 @@ class InsightsService {
 
       final workoutCount = monthWorkouts.length;
       final totalHours = monthWorkouts.fold<double>(0, (sum, workout) => 
-          sum + workout.duration.inMinutes / 60.0);
+          sum + ((workout.duration?.inMinutes ?? 0) / 60.0));
       final totalWeight = monthWorkouts.fold<double>(0, (sum, workout) => 
           sum + workout.totalWeight);
 

@@ -108,10 +108,16 @@ class WorkoutCard extends StatelessWidget {
                 '${workout.exercises.length} exercise${workout.exercises.length != 1 ? 's' : ''} • ${workout.totalSets} sets',
                 style: TextStyle(color: Colors.blue[300]),
               ),
-              Text(
-                'Updated ${_formatDate(workout.updatedAt)}',
-                style: TextStyle(color: Colors.grey[400], fontSize: 12),
-              ),
+              if (workout.lastUsed != null)
+                Text(
+                  'Last used: ${_formatDate(DateTime.parse(workout.lastUsed!))}',
+                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                )
+              else
+                Text(
+                  'Last used: Never',
+                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                ),
             ],
           ),
           trailing: IconButton(
