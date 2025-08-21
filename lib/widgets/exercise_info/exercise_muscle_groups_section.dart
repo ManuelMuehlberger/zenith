@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/exercise.dart';
+import '../../models/muscle_group.dart';
 
 class ExerciseMuscleGroupsSection extends StatelessWidget {
   final Exercise exercise;
@@ -42,12 +43,12 @@ class ExerciseMuscleGroupsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Muscle Groups',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
+Text(
+  exercise.primaryMuscleGroup.name,
+  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: Colors.grey[400],
+      ),
+),
           const SizedBox(height: 16),
           // Single row with Primary and Secondary side by side
           Row(
@@ -66,7 +67,7 @@ class ExerciseMuscleGroupsSection extends StatelessWidget {
                           ),
                     ),
                     const SizedBox(height: 8),
-                    _buildMuscleGroupChip(context, exercise.primaryMuscleGroup, true),
+                    _buildMuscleGroupChip(context, exercise.primaryMuscleGroup.name, true),
                   ],
                 ),
               ),
@@ -86,12 +87,12 @@ class ExerciseMuscleGroupsSection extends StatelessWidget {
                     const SizedBox(height: 8),
                     if (exercise.secondaryMuscleGroups.isNotEmpty) ...[
                       // List secondary muscles vertically
-                      ...exercise.secondaryMuscleGroups
-                          .map((muscle) => Padding(
-                                padding: const EdgeInsets.only(bottom: 8.0),
-                                child: _buildMuscleGroupChip(context, muscle, false),
-                              ))
-                          .toList(),
+...exercise.secondaryMuscleGroups
+    .map((muscle) => Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: _buildMuscleGroupChip(context, muscle.name, false),
+        ))
+    .toList(),
                     ] else ...[
                       Text(
                         'None',

@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../models/exercise.dart';
+import '../models/muscle_group.dart';
 import '../screens/exercise_info_screen.dart';
 import 'set_edit_options_sheet.dart';
 
@@ -147,14 +148,14 @@ class EditExerciseCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  exercise.exerciseDetail?.primaryMuscleGroup ?? 'N/A', // Use exerciseDetail
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[400],
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
+Text(
+  exercise.exerciseDetail?.primaryMuscleGroup.name ?? 'N/A', // Use exerciseDetail
+  style: TextStyle(
+    fontSize: 13,
+    color: Colors.grey[400],
+    fontWeight: FontWeight.w400,
+  ),
+),
               ],
             ),
           ),

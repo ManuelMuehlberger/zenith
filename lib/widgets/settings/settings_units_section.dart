@@ -1,10 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../../models/user_profile.dart';
+import '../../models/user_data.dart';
+import '../../constants/app_constants.dart';
 
 class SettingsUnitsSection extends StatelessWidget {
-  final UserProfile? userProfile;
-  final Function(String) onUnitsChanged;
+  final UserData? userProfile;
+  final Function(Units) onUnitsChanged;
 
   const SettingsUnitsSection({
     super.key,
@@ -44,23 +45,23 @@ class SettingsUnitsSection extends StatelessWidget {
                     color: Colors.grey[800],
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: CupertinoSlidingSegmentedControl<String>(
+                  child: CupertinoSlidingSegmentedControl<Units>(
                     backgroundColor: Colors.grey[800]!,
                     thumbColor: Colors.blue,
-                    groupValue: userProfile?.units ?? 'metric',
-                    children: const {
-                      'metric': Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    groupValue: userProfile?.units ?? Units.metric,
+                    children: {
+                      Units.metric: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         child: Text(
-                          'kg',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                          Units.metric.weightUnit,
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                         ),
                       ),
-                      'imperial': Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      Units.imperial: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         child: Text(
-                          'lbs',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                          Units.imperial.weightUnit,
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                         ),
                       ),
                     },

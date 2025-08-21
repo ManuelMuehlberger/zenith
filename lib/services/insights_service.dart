@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/workout_history.dart';
+import '../models/workout.dart';
 import 'database_service.dart';
 
 class InsightsService {
@@ -65,19 +65,24 @@ class InsightsService {
   }
 
   Future<WorkoutInsights> _calculateInsights(int monthsBack) async {
-    final allWorkouts = await DatabaseService.instance.getWorkoutHistory();
+    final allWorkouts = await DatabaseService.instance.getWorkouts();
     final cutoffDate = DateTime.now().subtract(Duration(days: monthsBack * 30));
     
     // Filter workouts within the specified time range
     final recentWorkouts = allWorkouts.where((workout) => 
-        workout.startTime.isAfter(cutoffDate)).toList();
+        workout.startedAt != null && workout.startedAt!.isAfter(cutoffDate) && 
+        workout.status == WorkoutStatus.completed).toList();
 
     // Calculate total statistics
     final totalWorkouts = recentWorkouts.length;
     final totalHours = recentWorkouts.fold<double>(0, (sum, workout) => 
-        sum + ((workout.duration?.inMinutes ?? 0) / 60.0));
+        sum + ((workout.completedAt != null && workout.startedAt != null 
+            ? workout.completedAt!.difference(workout.startedAt!).inMinutes 
+            : 0) / 60.0));
     final totalWeight = recentWorkouts.fold<double>(0, (sum, workout) => 
-        sum + workout.totalWeight);
+        sum + workout.exercises.fold(0.0, (exerciseSum, exercise) => 
+            exerciseSum + exercise.sets.fold(0.0, (setSum, set) => 
+                setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0))));
 
     // Calculate monthly data for charts
     final monthlyData = _calculateMonthlyData(recentWorkouts, monthsBack);
@@ -96,25 +101,29 @@ class InsightsService {
   }
 
   Future<ExerciseInsights> _calculateExerciseInsights(String exerciseName, int monthsBack) async {
-    final allWorkouts = await DatabaseService.instance.getWorkoutHistory();
+    final allWorkouts = await DatabaseService.instance.getWorkouts();
     final cutoffDate = DateTime.now().subtract(Duration(days: monthsBack * 30));
     
     // Filter workouts within the specified time range
     final recentWorkouts = allWorkouts.where((workout) => 
-        workout.startTime.isAfter(cutoffDate)).toList();
+        workout.startedAt != null && workout.startedAt!.isAfter(cutoffDate) && 
+        workout.status == WorkoutStatus.completed).toList();
 
     // Find all instances of this exercise across all workouts
     final exerciseInstances = <ExerciseInstance>[];
     
     for (final workout in recentWorkouts) {
       for (final exercise in workout.exercises) {
-        if (exercise.exerciseName.toLowerCase() == exerciseName.toLowerCase()) {
+        // For now, we'll use the exercise slug to match exercises
+        if (exercise.exerciseSlug.toLowerCase() == exerciseName.toLowerCase()) {
           exerciseInstances.add(ExerciseInstance(
-            date: workout.startTime,
+            date: workout.startedAt ?? DateTime.now(),
             sets: exercise.sets,
-            totalWeight: exercise.sets.fold<double>(0, (sum, set) => sum + ((set.weightLogged ?? 0.0) * (set.repsPerformed ?? 0))),
-            totalReps: exercise.sets.fold<int>(0, (sum, set) => sum + (set.repsPerformed ?? 0)),
-            maxWeight: exercise.sets.isEmpty ? 0 : exercise.sets.map((s) => s.weightLogged ?? 0.0).reduce((a, b) => a > b ? a : b),
+            totalWeight: exercise.sets.fold<double>(0, (sum, set) => 
+                sum + ((set.actualWeight ?? 0.0) * (set.actualReps ?? 0))),
+            totalReps: exercise.sets.fold<int>(0, (sum, set) => 
+                sum + (set.actualReps ?? 0)),
+            maxWeight: exercise.sets.isEmpty ? 0 : exercise.sets.map((s) => s.actualWeight ?? 0.0).reduce((a, b) => a > b ? a : b),
             totalSets: exercise.sets.length,
           ));
         }
@@ -167,7 +176,7 @@ class InsightsService {
   }
 
   Map<String, List<MonthlyDataPoint>> _calculateMonthlyData(
-      List<WorkoutHistory> workouts, int monthsBack) {
+      List<Workout> workouts, int monthsBack) {
     final now = DateTime.now();
     final monthlyWorkouts = <MonthlyDataPoint>[];
     final monthlyHours = <MonthlyDataPoint>[];
@@ -176,15 +185,20 @@ class InsightsService {
     for (int i = monthsBack - 1; i >= 0; i--) {
       final monthDate = DateTime(now.year, now.month - i, 1);
       final monthWorkouts = workouts.where((workout) {
-        return workout.startTime.year == monthDate.year &&
-               workout.startTime.month == monthDate.month;
+        return workout.startedAt != null && 
+               workout.startedAt!.year == monthDate.year &&
+               workout.startedAt!.month == monthDate.month;
       }).toList();
 
       final workoutCount = monthWorkouts.length;
       final totalHours = monthWorkouts.fold<double>(0, (sum, workout) => 
-          sum + ((workout.duration?.inMinutes ?? 0) / 60.0));
+          sum + ((workout.completedAt != null && workout.startedAt != null 
+              ? workout.completedAt!.difference(workout.startedAt!).inMinutes 
+              : 0) / 60.0));
       final totalWeight = monthWorkouts.fold<double>(0, (sum, workout) => 
-          sum + workout.totalWeight);
+          sum + workout.exercises.fold(0.0, (exerciseSum, exercise) => 
+              exerciseSum + exercise.sets.fold(0.0, (setSum, set) => 
+                  setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0))));
 
       monthlyWorkouts.add(MonthlyDataPoint(
         month: monthDate,

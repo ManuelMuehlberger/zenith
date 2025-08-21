@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/workout_session.dart';
+import '../models/workout_exercise.dart';
 import 'dart:async';
 
 typedef OnReorder = void Function(int oldIndex, int newIndex);
 typedef ExerciseCardBuilder = Widget Function(BuildContext context, int index, bool isDragging, int? draggingIndex);
 
 class CustomReorderableExerciseList extends StatefulWidget {
-  final List<SessionExercise> exercises;
+  final List<WorkoutExercise> exercises;
   final OnReorder onReorder;
   final ExerciseCardBuilder itemBuilder;
   final EdgeInsets? padding;

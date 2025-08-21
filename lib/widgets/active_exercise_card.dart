@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/workout_session.dart';
+import '../models/workout_exercise.dart';
+import '../models/workout_set.dart';
 import '../services/workout_session_service.dart';
 import '../screens/exercise_info_screen.dart';
+import '../models/muscle_group.dart';
 
 class ActiveExerciseCard extends StatefulWidget {
-  final SessionExercise exercise;
+  final WorkoutExercise exercise;
   final String weightUnit;
   final Set<int> expandedNotes;
   final int exerciseIndex;
@@ -107,28 +109,28 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            widget.exercise.workoutExercise.exerciseDetail?.name ?? widget.exercise.workoutExercise.exerciseSlug,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+Text(
+  widget.exercise.exerciseDetail?.primaryMuscleGroup.name ?? "N/A",
+  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+    color: Colors.blue,
+    fontWeight: FontWeight.w500,
+    fontSize: 14,
+  ),
+),
                           const SizedBox(height: 4),
-                          Text(
-                            widget.exercise.workoutExercise.exerciseDetail?.primaryMuscleGroup ?? "N/A",
-                            style: TextStyle(
-                              color: Colors.blue[300],
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+Text(
+  widget.exercise.exerciseDetail?.primaryMuscleGroup.name ?? "N/A",
+  style: TextStyle(
+    color: Colors.blue[300],
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+  ),
+),
                         ],
                       ),
                     ),
                     // Notes toggle button
-                    if (widget.exercise.workoutExercise.notes?.isNotEmpty ?? false)
+                    if (widget.exercise.notes?.isNotEmpty ?? false)
                       IconButton(
                         onPressed: () => widget.onToggleNotes(widget.exerciseIndex),
                         icon: Icon(
@@ -168,7 +170,7 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                 
                 // Notes field integrated in header (read-only)
                     if (widget.expandedNotes.contains(widget.exerciseIndex) && 
-                    widget.exercise.workoutExercise.notes != null && widget.exercise.workoutExercise.notes!.isNotEmpty) ...[
+                    widget.exercise.notes != null && widget.exercise.notes!.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Container(
                     width: double.infinity,
@@ -179,7 +181,7 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                       border: Border.all(color: Colors.grey[600]!, width: 1),
                     ),
                     child: Text(
-                      widget.exercise.workoutExercise.notes ?? "",
+                      widget.exercise.notes ?? "",
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -247,13 +249,13 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
     );
   }
 
-  Widget _buildSetRow(SessionSet set, int setNumber) {
+  Widget _buildSetRow(WorkoutSet set, int setNumber) {
     final isCompleted = set.isCompleted;
     final canComplete = _canCompleteSet(widget.exercise.id, setNumber);
     
     // Find the original workout set to get target values
-    final originalSet = setNumber <= widget.exercise.workoutExercise.sets.length
-        ? widget.exercise.workoutExercise.sets[setNumber - 1]
+    final originalSet = setNumber <= widget.exercise.sets.length
+        ? widget.exercise.sets[setNumber - 1]
         : null;
     
     return Container(
@@ -296,9 +298,9 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
           Expanded(
             child: _buildDecoratedSetInput(
               controllerKey: '${widget.exercise.id}_${set.id}_reps',
-              initialText: set.reps > 0 ? set.reps.toString() : "",
+              initialText: (set.actualReps ?? 0) > 0 ? set.actualReps.toString() : "",
               goalValue: originalSet?.targetReps?.toString(), // Use targetReps, repRange removed
-              lastValue: set.lastReps != null && set.lastReps! > 0 ? set.lastReps.toString() : null,
+              lastValue: null, // WorkoutSet doesn't have lastReps
               onChanged: (value) {
                 final reps = int.tryParse(value);
                 if (reps != null) {
@@ -316,11 +318,11 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
           Expanded(
             child: _buildDecoratedSetInput(
               controllerKey: '${widget.exercise.id}_${set.id}_weight',
-              initialText: set.weight > 0.0 ? WorkoutSessionService.instance.formatWeight(set.weight) : "",
+              initialText: (set.actualWeight ?? 0.0) > 0.0 ? WorkoutSessionService.instance.formatWeight(set.actualWeight!) : "",
               goalValue: originalSet?.targetWeight != null
                   ? WorkoutSessionService.instance.formatWeight(originalSet!.targetWeight!)
                   : null, // Use targetWeight
-              lastValue: set.lastWeight != null && set.lastWeight! > 0.0 ? WorkoutSessionService.instance.formatWeight(set.lastWeight!) : null,
+              lastValue: null, // WorkoutSet doesn't have lastWeight
               onChanged: (value) {
                 final weight = double.tryParse(value);
                 if (weight != null) {
@@ -479,17 +481,17 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
   }
 
   void _showExerciseInfo(BuildContext context) {
-    if (widget.exercise.workoutExercise.exerciseDetail != null) {
+    if (widget.exercise.exerciseDetail != null) {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ExerciseInfoScreen(exercise: widget.exercise.workoutExercise.exerciseDetail!),
+          builder: (context) => ExerciseInfoScreen(exercise: widget.exercise.exerciseDetail!),
         ),
       );
     } else {
       // Optionally show a message that details are not available or try to fetch them
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Exercise details not available for ${widget.exercise.workoutExercise.exerciseSlug}')),
+        SnackBar(content: Text('Exercise details not available for ${widget.exercise.exerciseSlug}')),
       );
     }
   }

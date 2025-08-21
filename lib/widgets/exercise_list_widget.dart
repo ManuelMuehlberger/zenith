@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:ui';
 import '../models/exercise.dart';
+import '../models/muscle_group.dart';
 import '../services/exercise_service.dart';
 
 class ExerciseListWidget extends StatefulWidget {
@@ -50,7 +51,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
       
       if (_selectedMuscleGroup.isNotEmpty) {
         exercises = exercises.where((exercise) =>
-            exercise.primaryMuscleGroup.toLowerCase() == _selectedMuscleGroup.toLowerCase()
+            exercise.primaryMuscleGroup.name.toLowerCase() == _selectedMuscleGroup.toLowerCase()
         ).toList();
       }
       
@@ -158,7 +159,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    exercise.primaryMuscleGroup,
+                                    exercise.primaryMuscleGroup.name,
                                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                       color: Colors.blue,
                                       fontWeight: FontWeight.w500,
@@ -168,7 +169,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                                   if (exercise.secondaryMuscleGroups.isNotEmpty) ...[
                                     const SizedBox(height: 2),
                                     Text(
-                                      exercise.secondaryMuscleGroups.join(' • '),
+                                      exercise.secondaryMuscleGroups.map((g) => g.name).join(' • '),
                                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                         color: Colors.grey[400],
                                         fontSize: 13,

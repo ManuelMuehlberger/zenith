@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // For date formatting
-import '../models/workout_history.dart';
+import '../models/workout.dart';
 import 'past_workout_list_item.dart';
 
 class DatedWorkoutListView extends StatelessWidget {
   final DateTime selectedDate;
-  final List<WorkoutHistory> workouts;
+  final List<Workout> workouts;
   final bool isLoading;
 
   const DatedWorkoutListView({
@@ -85,8 +85,8 @@ class DatedWorkoutListView extends StatelessWidget {
                       physics: const BouncingScrollPhysics(),
                       itemCount: workouts.length,
                       itemBuilder: (context, index) {
-                        final workoutHistory = workouts[index];
-                        return PastWorkoutListItem(workout: workoutHistory);
+                        final workout = workouts[index];
+                        return PastWorkoutListItem(workout: workout);
                       },
                     ),
         ),

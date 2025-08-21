@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:toml/toml.dart';
 import '../models/exercise.dart';
+import '../models/muscle_group.dart';
 
 class ExerciseService {
   static final ExerciseService _instance = ExerciseService._internal();
@@ -48,7 +49,7 @@ class ExerciseService {
     
     return _exercises.where((exercise) {
       return exercise.name.toLowerCase().contains(query.toLowerCase()) ||
-             exercise.primaryMuscleGroup.toLowerCase().contains(query.toLowerCase());
+             exercise.primaryMuscleGroup.name.toLowerCase().contains(query.toLowerCase());
     }).toList();
   }
 
@@ -56,14 +57,14 @@ class ExerciseService {
     if (muscleGroup.isEmpty) return _exercises;
     
     return _exercises.where((exercise) {
-      return exercise.primaryMuscleGroup.toLowerCase() == muscleGroup.toLowerCase();
+      return exercise.primaryMuscleGroup.name.toLowerCase() == muscleGroup.toLowerCase();
     }).toList();
   }
 
   List<String> get allMuscleGroups {
     final Set<String> muscleGroups = {};
     for (final exercise in _exercises) {
-      muscleGroups.add(exercise.primaryMuscleGroup);
+      muscleGroups.add(exercise.primaryMuscleGroup.name);
     }
     return muscleGroups.toList()..sort();
   }

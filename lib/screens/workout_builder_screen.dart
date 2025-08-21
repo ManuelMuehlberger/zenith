@@ -733,6 +733,7 @@ if (showAnimation) ...[
 
   void _showCreateFolderDialog() {
     final controller = TextEditingController();
+    // ignore: unused_local_variable
     int currentLength = 0;
     showDialog(
       context: context,
@@ -858,6 +859,7 @@ if (showAnimation) ...[
 
   void _showRenameFolderDialog(WorkoutFolder folder) {
     final controller = TextEditingController(text: folder.name);
+    // ignore: unused_local_variable
     int currentLength = folder.name.length;
     showDialog(
       context: context,

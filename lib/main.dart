@@ -51,7 +51,7 @@ class WorkoutTrackerApp extends StatelessWidget {
           systemOverlayStyle: SystemUiOverlayStyle.light,
         ),
         bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          backgroundColor: Colors.black.withOpacity(0.8), // "glass" background
+          backgroundColor: Colors.black.withValues(alpha: 0.8), // "glass" background
           selectedItemColor: Colors.blue,
           unselectedItemColor: Colors.grey,
           type: BottomNavigationBarType.fixed,
@@ -106,7 +106,7 @@ class _MainScreenState extends State<MainScreen> {
       // Refresh home screen history when switching to home tab
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _homeScreenKey.currentState != null) {
-          _homeScreenKey.currentState!.loadWorkoutHistory();
+          _homeScreenKey.currentState!.loadWorkouts();
         }
       });
     });
@@ -123,7 +123,7 @@ class _MainScreenState extends State<MainScreen> {
       if (index == 0) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && _homeScreenKey.currentState != null) {
-            _homeScreenKey.currentState!.loadWorkoutHistory();
+            _homeScreenKey.currentState!.loadWorkouts();
           }
         });
       }
@@ -165,7 +165,7 @@ class _MainScreenState extends State<MainScreen> {
             _currentIndex = index;
           });
           if (index == 0 && _homeScreenKey.currentState != null) {
-            _homeScreenKey.currentState!.loadWorkoutHistory();
+            _homeScreenKey.currentState!.loadWorkouts();
           }
         },
         items: const [

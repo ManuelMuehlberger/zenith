@@ -5,11 +5,12 @@ import 'dart:io';
 import '../services/database_service.dart';
 import '../services/user_service.dart';
 import '../services/workout_service.dart';
-import '../models/user_profile.dart';
+import '../models/user_data.dart';
 import '../widgets/settings/settings_timeline_section.dart';
 import '../widgets/settings/settings_profile_section.dart';
 import '../widgets/settings/settings_units_section.dart';
 import '../widgets/settings/settings_data_section.dart';
+import '../constants/app_constants.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -19,7 +20,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  UserProfile? _userProfile;
+  UserData? _userProfile;
   bool _isLoading = true;
 
   @override
@@ -49,18 +50,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _updateUnits(String newUnits) async {
+  Future<void> _updateUnits(Units newUnits) async {
     if (_userProfile == null) return;
 
     try {
-      final updatedProfile = UserProfile(
-        name: _userProfile!.name,
-        age: _userProfile!.age,
-        units: newUnits,
-        weight: _userProfile!.weight,
-        createdAt: _userProfile!.createdAt,
-      );
-
+      final updatedProfile = _userProfile!.copyWith(units: newUnits);
       await UserService.instance.saveUserProfile(updatedProfile);
       setState(() {
         _userProfile = updatedProfile;

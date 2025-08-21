@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'onboarding_common.dart';
+import '../../constants/app_constants.dart';
 
 class NamePage extends StatefulWidget {
   final TextEditingController nameController;
@@ -183,8 +184,8 @@ class AgePage extends StatelessWidget {
 }
 
 class UnitsPage extends StatelessWidget {
-  final String units;
-  final ValueChanged<String> onUnitsChanged;
+  final Units units;
+  final ValueChanged<Units> onUnitsChanged;
   final VoidCallback onNext;
   final VoidCallback onBack;
 
@@ -233,8 +234,8 @@ class UnitsPage extends StatelessWidget {
             title: 'Metric',
             subtitle: 'Kilograms, Centimeters',
             value: 'metric',
-            isSelected: units == 'metric',
-            onTap: () => onUnitsChanged('metric'),
+            isSelected: units == Units.metric,
+            onTap: () => onUnitsChanged(Units.metric),
           ),
           
           const SizedBox(height: 16),
@@ -243,8 +244,8 @@ class UnitsPage extends StatelessWidget {
             title: 'Imperial',
             subtitle: 'Pounds, Feet & Inches',
             value: 'imperial',
-            isSelected: units == 'imperial',
-            onTap: () => onUnitsChanged('imperial'),
+            isSelected: units == Units.imperial,
+            onTap: () => onUnitsChanged(Units.imperial),
           ),
           
           const Spacer(),
@@ -262,7 +263,7 @@ class UnitsPage extends StatelessWidget {
 
 class WeightPage extends StatelessWidget {
   final double weight;
-  final String units;
+  final Units units;
   final ValueChanged<double> onWeightChanged;
   final VoidCallback onNext;
   final VoidCallback onBack;
@@ -318,18 +319,18 @@ class WeightPage extends StatelessWidget {
             child: CupertinoPicker(
               itemExtent: 50,
               scrollController: FixedExtentScrollController(
-                initialItem: units == 'metric'
+                initialItem: units == Units.metric
                     ? ((weight - 30) * 2).round()
                     : ((weight - 66) * 2).round(),
               ),
               onSelectedItemChanged: (index) {
-                if (units == 'metric') {
+                if (units == Units.metric) {
                   onWeightChanged(30 + (index / 2));
                 } else {
                   onWeightChanged(66 + (index / 2));
                 }
               },
-              children: units == 'metric'
+              children: units == Units.metric
                   ? List.generate(280, (index) {
                       final weightValue = 30 + (index / 2);
                       return Center(

@@ -1,25 +1,29 @@
 import 'package:uuid/uuid.dart';
 import 'exercise.dart'; // Still needed for in-memory representation if fetched
 import 'workout_set.dart'; // Still needed for in-memory representation
+import 'typedefs.dart';
+
+// Sentinel object to distinguish between null and undefined
+const Object _undefined = Object();
 
 // Represents an exercise within a Workout template
 class WorkoutExercise {
-  final String id;
-  final String workoutId; // Foreign key to Workouts table
-  String exerciseSlug; // Identifier for the Exercise
+  final WorkoutExerciseId id;
+  final WorkoutId workoutId; // Foreign key to Workouts table
+  final ExerciseSlug exerciseSlug; // Identifier for the Exercise
   String? notes;
   int? orderIndex;
 
   // Exercise object, loaded from ExerciseService using exerciseSlug
   // This is for in-memory use after fetching, not stored in WorkoutExercises table directly
-  Exercise? exerciseDetail;
+  final Exercise? exerciseDetail;
 
   // Sets are not part of the 'WorkoutExercises' table directly.
   // They will be loaded separately from 'WorkoutSets' table and associated in memory.
   List<WorkoutSet> sets;
 
   WorkoutExercise({
-    String? id,
+    WorkoutExerciseId? id,
     required this.workoutId,
     required this.exerciseSlug,
     this.notes,
@@ -59,10 +63,10 @@ class WorkoutExercise {
   }
 
   WorkoutExercise copyWith({
-    String? id,
-    String? workoutId,
-    String? exerciseSlug,
-    String? notes,
+    WorkoutExerciseId? id,
+    WorkoutId? workoutId,
+    ExerciseSlug? exerciseSlug,
+    Object? notes = _undefined,
     int? orderIndex,
     Exercise? exerciseDetail, // Allow exerciseDetail to be explicitly nulled
     bool setExerciseDetailNull = false,
@@ -72,7 +76,7 @@ class WorkoutExercise {
       id: id ?? this.id,
       workoutId: workoutId ?? this.workoutId,
       exerciseSlug: exerciseSlug ?? this.exerciseSlug,
-      notes: notes ?? this.notes,
+      notes: notes == _undefined ? this.notes : notes as String?,
       orderIndex: orderIndex ?? this.orderIndex,
       exerciseDetail: setExerciseDetailNull ? null : (exerciseDetail ?? this.exerciseDetail),
       sets: sets ?? this.sets,
@@ -80,15 +84,13 @@ class WorkoutExercise {
   }
 
   // Helper method to add a new set (for in-memory manipulation)
-  WorkoutExercise addSet({int? targetReps, double? targetWeight, String? type, int? targetRestSeconds}) {
+  WorkoutExercise addSet({int? targetReps, double? targetWeight, int? targetRestSeconds}) {
     final newSet = WorkoutSet(
       workoutExerciseId: id, // Link to this WorkoutExercise instance
-      setNumber: sets.isNotEmpty ? sets.map((s) => s.setNumber).reduce((a, b) => a > b ? a : b) + 1 : 1, // Ensure unique setNumber
-      type: type,
+      setIndex: sets.length, // Simple index for now
       targetReps: targetReps,
       targetWeight: targetWeight,
       targetRestSeconds: targetRestSeconds,
-      orderIndex: sets.length, // Simple order for now
     );
     return copyWith(sets: [...sets, newSet]);
   }
@@ -99,16 +101,14 @@ class WorkoutExercise {
   }
 
   // Helper method to update a set (for in-memory manipulation)
-  WorkoutExercise updateSet(String setId, {int? targetReps, double? targetWeight, String? type, int? targetRestSeconds, int? setNumber, int? orderIndex}) {
+  WorkoutExercise updateSet(String setId, {int? targetReps, double? targetWeight, int? targetRestSeconds, int? setIndex}) {
     final updatedSets = sets.map((set) {
       if (set.id == setId) {
         return set.copyWith(
           targetReps: targetReps,
           targetWeight: targetWeight,
-          type: type,
           targetRestSeconds: targetRestSeconds,
-          setNumber: setNumber,
-          orderIndex: orderIndex,
+          setIndex: setIndex,
         );
       }
       return set;

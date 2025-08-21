@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../services/database_service.dart';
-import '../models/workout_history.dart';
+import '../models/workout.dart';
 import 'settings_screen.dart';
 import '../widgets/past_workout_list_item.dart';
 
@@ -14,7 +14,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
-  List<WorkoutHistory> _workoutHistory = [];
+  List<Workout> _workoutHistory = [];
   bool _isLoading = true;
 
   @override
@@ -23,7 +23,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        loadWorkoutHistory();
+        loadWorkouts();
       }
     });
   }
@@ -37,11 +37,11 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      loadWorkoutHistory(); 
+      loadWorkouts(); 
     }
   }
 
-  Future<void> loadWorkoutHistory() async {
+  Future<void> loadWorkouts() async {
     if (!mounted) {
       return;
     }
@@ -50,9 +50,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
     try {
       // Run migration to fix icon and color data for existing workouts
-      await DatabaseService.instance.migrateWorkoutHistoryIcons();
+      await DatabaseService.instance.migrateWorkoutIcons();
       
-      final history = await DatabaseService.instance.getWorkoutHistory();
+      final history = await DatabaseService.instance.getWorkouts();
       if (mounted) {
         setState(() {
           _workoutHistory = history.take(10).toList(); 

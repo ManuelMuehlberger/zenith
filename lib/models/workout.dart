@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import 'workout_exercise.dart'; // This will still be used for the model's in-memory representation
+import 'workout_exercise.dart';
+import 'typedefs.dart';
+
+enum WorkoutStatus { template, inProgress, completed }
 
 class Workout {
-  final String id;
+  final WorkoutId id;
   String name;
   String? description;
   int? iconCodePoint;
   int? colorValue;
-  String? folderId;
+  WorkoutFolderId? folderId;
   String? notes;
   String? lastUsed; // ISO8601 string
   int? orderIndex;
-
-  // Exercises are not part of the 'Workouts' table directly.
-  // They will be loaded separately and associated with this model in memory.
   List<WorkoutExercise> exercises;
 
+  // New fields for sessions and history
+  final WorkoutStatus status;
+  final WorkoutId? templateId; // Links a session to its template
+  DateTime? startedAt;
+  DateTime? completedAt;
+
   Workout({
-    String? id,
+    WorkoutId? id,
     required this.name,
     this.description,
     this.iconCodePoint,
@@ -27,12 +33,14 @@ class Workout {
     this.notes,
     this.lastUsed,
     this.orderIndex,
-    this.exercises = const [], // Default to empty list, to be populated after fetching from DB
+    this.exercises = const [],
+    this.status = WorkoutStatus.template,
+    this.templateId,
+    this.startedAt,
+    this.completedAt,
   }) : id = id ?? const Uuid().v4();
 
   factory Workout.fromMap(Map<String, dynamic> map) {
-    // Note: 'exercises' are not in the map from the 'Workouts' table.
-    // They need to be fetched separately.
     return Workout(
       id: map['id'] as String,
       name: map['name'] as String,
@@ -43,13 +51,15 @@ class Workout {
       notes: map['notes'] as String?,
       lastUsed: map['lastUsed'] as String?,
       orderIndex: map['orderIndex'] as int?,
-      exercises: [], // Initialize as empty, to be loaded by service layer
+      status: WorkoutStatus.values[map['status'] as int],
+      templateId: map['templateId'] as String?,
+      startedAt: map['startedAt'] != null ? DateTime.parse(map['startedAt'] as String) : null,
+      completedAt: map['completedAt'] != null ? DateTime.parse(map['completedAt'] as String) : null,
+      exercises: [], // To be loaded separately
     );
   }
 
   Map<String, dynamic> toMap() {
-    // Note: 'exercises' are not part of the 'Workouts' table.
-    // They are stored in the 'WorkoutExercises' table.
     return {
       'id': id,
       'name': name,
@@ -60,20 +70,28 @@ class Workout {
       'notes': notes,
       'lastUsed': lastUsed,
       'orderIndex': orderIndex,
+      'status': status.index,
+      'templateId': templateId,
+      'startedAt': startedAt?.toIso8601String(),
+      'completedAt': completedAt?.toIso8601String(),
     };
   }
 
   Workout copyWith({
-    String? id,
+    WorkoutId? id,
     String? name,
     String? description,
     int? iconCodePoint,
     int? colorValue,
-    Object? folderId = _undefined, // Keep sentinel for nullable fields
+    Object? folderId = _undefined,
     String? notes,
-    Object? lastUsed = _undefined, // Keep sentinel for nullable fields
+    Object? lastUsed = _undefined,
     int? orderIndex,
     List<WorkoutExercise>? exercises,
+    WorkoutStatus? status,
+    WorkoutId? templateId,
+    DateTime? startedAt,
+    DateTime? completedAt,
   }) {
     return Workout(
       id: id ?? this.id,
@@ -86,6 +104,10 @@ class Workout {
       lastUsed: lastUsed == _undefined ? this.lastUsed : lastUsed as String?,
       orderIndex: orderIndex ?? this.orderIndex,
       exercises: exercises ?? this.exercises,
+      status: status ?? this.status,
+      templateId: templateId ?? this.templateId,
+      startedAt: startedAt ?? this.startedAt,
+      completedAt: completedAt ?? this.completedAt,
     );
   }
 
@@ -93,20 +115,58 @@ class Workout {
     return exercises.fold(0, (sum, exercise) => sum + exercise.totalSets);
   }
 
-  // totalWeight for a template is less meaningful as targetWeights can vary.
-  // This will be calculated for WorkoutHistory.
-  // double get totalWeight {
-  //   return exercises.fold(0.0, (sum, exercise) => sum + exercise.totalWeight);
-  // }
+  int get completedSets {
+    return exercises.fold(0, (sum, exercise) => sum + exercise.sets.where((set) => set.isCompleted).length);
+  }
+
+  double get totalWeight {
+    return exercises.fold(0.0, (sum, exercise) {
+      return sum + exercise.sets.fold(0.0, (setSum, set) {
+        if (set.isCompleted && set.actualReps != null && set.actualWeight != null) {
+          return setSum + (set.actualReps! * set.actualWeight!);
+        }
+        return setSum;
+      });
+    });
+  }
 
   IconData get icon {
-    // Provide a default icon if iconCodePoint is null
-    return IconData(iconCodePoint ?? 0xe1a3, fontFamily: 'MaterialIcons'); // Default: Icons.fitness_center
+    // Use a default icon if iconCodePoint is null
+    if (iconCodePoint == null) {
+      return Icons.fitness_center; // Default icon
+    }
+    // For tree shaking to work, we need to use constant IconData
+    // Map common icon code points to Flutter's built-in icons
+    switch (iconCodePoint) {
+      case 0xe1a3: // fitness_center
+        return Icons.fitness_center;
+      case 0xe02f: // directions_run
+        return Icons.directions_run;
+      case 0xe047: // pool
+        return Icons.pool;
+      case 0xe52f: // sports
+        return Icons.sports;
+      case 0xe531: // sports_gymnastics
+        return Icons.sports_gymnastics;
+      case 0xe532: // sports_handball
+        return Icons.sports_handball;
+      case 0xe533: // sports_martial_arts
+        return Icons.sports_martial_arts;
+      case 0xe534: // sports_mma
+        return Icons.sports_mma;
+      case 0xe535: // sports_motorsports
+        return Icons.sports_motorsports;
+      case 0xe536: // sports_score
+        return Icons.sports_score;
+      default:
+        // Fall back to a default icon for unknown code points
+        // This ensures we always return a constant IconData instance
+        return Icons.fitness_center;
+    }
   }
 
   Color get color {
-    // Provide a default color if colorValue is null
-    return Color(colorValue ?? 0xFF2196F3); // Default: Colors.blue.value
+    return Color(colorValue ?? 0xFF2196F3);
   }
 }
 

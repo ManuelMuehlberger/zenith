@@ -9,6 +9,7 @@ import '../widgets/exercise_info/exercise_image_section.dart';
 import '../widgets/exercise_info/exercise_muscle_groups_section.dart';
 import '../widgets/exercise_info/exercise_instructions_section.dart';
 import '../widgets/exercise_info/exercise_stats_section.dart';
+import '../constants/app_constants.dart';
 
 class ExerciseInfoScreen extends StatefulWidget {
   final Exercise exercise;
@@ -54,7 +55,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with TickerProv
     final profile = UserService.instance.currentProfile;
     if (profile != null) {
       setState(() {
-        _useKg = profile.units == 'metric';
+        _useKg = profile.units == Units.metric;
       });
     } else {
       final prefs = await SharedPreferences.getInstance();
@@ -70,7 +71,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with TickerProv
     final profile = UserService.instance.currentProfile;
     if (profile != null && mounted) {
       setState(() {
-        _useKg = profile.units == 'metric';
+        _useKg = profile.units == Units.metric;
       });
     }
   }

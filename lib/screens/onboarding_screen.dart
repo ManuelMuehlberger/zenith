@@ -2,11 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../services/user_service.dart';
 import '../services/export_import_service.dart';
-import '../models/user_profile.dart';
+import '../models/user_data.dart';
 import '../screens/app_wrapper.dart';
 import '../widgets/onboarding/welcome_page.dart';
 import '../widgets/onboarding/profile_setup_pages.dart';
 import '../widgets/onboarding/completion_page.dart';
+import '../constants/app_constants.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -23,7 +24,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   late TextEditingController _nameController;
   late FocusNode _nameFocusNode;
   int _age = 25;
-  String _units = 'metric';
+  Units _units = Units.metric;
   double _weight = 70.0;
 
   @override
@@ -178,12 +179,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
 
     try {
-      final profile = UserProfile(
+      final birthdate = DateTime(DateTime.now().year - _age, 1, 1);
+      final weightHistory = [WeightEntry(
+        timestamp: DateTime.now(),
+        value: _weight,
+      )];
+      
+      final profile = UserData(
         name: _nameController.text.trim(),
-        age: _age,
+        birthdate: birthdate,
         units: _units,
-        weight: _weight,
+        weightHistory: weightHistory,
         createdAt: DateTime.now(),
+        theme: 'dark'
       );
       
       await UserService.instance.saveUserProfile(profile);

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/user_profile.dart';
+import '../models/user_data.dart';
 
 class UserService with ChangeNotifier {
   static final UserService _instance = UserService._internal();
@@ -13,9 +13,9 @@ class UserService with ChangeNotifier {
   static const String _userProfileKey = 'user_profile';
   static const String _onboardingCompleteKey = 'onboarding_complete';
 
-  UserProfile? _currentProfile;
+  UserData? _currentProfile;
 
-  UserProfile? get currentProfile => _currentProfile;
+  UserData? get currentProfile => _currentProfile;
   bool get hasProfile => _currentProfile != null;
 
   Future<void> loadUserProfile() async {
@@ -25,14 +25,14 @@ class UserService with ChangeNotifier {
       
       if (profileJson != null) {
         final profileMap = jsonDecode(profileJson);
-        _currentProfile = UserProfile.fromMap(profileMap);
+        _currentProfile = UserData.fromMap(profileMap);
       }
     } catch (e) {
       _currentProfile = null;
     }
   }
 
-  Future<void> saveUserProfile(UserProfile profile) async {
+  Future<void> saveUserProfile(UserData profile) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_userProfileKey, jsonEncode(profile.toMap()));
@@ -53,7 +53,7 @@ class UserService with ChangeNotifier {
     }
   }
 
-  Future<void> updateProfile(UserProfile profile) async {
+  Future<void> updateProfile(UserData profile) async {
     await saveUserProfile(profile);
   }
 

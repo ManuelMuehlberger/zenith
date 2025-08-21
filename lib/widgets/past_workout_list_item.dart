@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import '../models/workout_history.dart';
+import '../models/workout.dart';
 import '../screens/workout_detail_screen.dart';
 import '../services/user_service.dart';
+import '../constants/app_constants.dart';
 
 class PastWorkoutListItem extends StatelessWidget {
-  final WorkoutHistory workout;
+  final Workout workout;
 
   const PastWorkoutListItem({
     super.key,
@@ -12,8 +13,8 @@ class PastWorkoutListItem extends StatelessWidget {
   });
 
   String _formatWeight(double weight) {
-    final units = UserService.instance.currentProfile?.units ?? 'metric';
-    final isImperial = units == 'imperial';
+    final units = UserService.instance.currentProfile?.units ?? Units.metric;
+    final isImperial = units == Units.imperial;
     final unitLabel = isImperial ? 'lbs' : 'kg';
     final kUnitLabel = isImperial ? 'k lbs' : 'kkg';
 
@@ -105,7 +106,7 @@ class PastWorkoutListItem extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                workout.workoutName,
+                                workout.name,
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -117,7 +118,7 @@ class PastWorkoutListItem extends StatelessWidget {
                             ),
                             const SizedBox(width: 8), 
                             Text(
-                              _formatDate(workout.startTime),
+                              _formatDate(workout.startedAt ?? DateTime.now()),
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[400],
@@ -136,7 +137,9 @@ class PastWorkoutListItem extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              _formatDuration(workout.duration!),
+                              _formatDuration(workout.completedAt != null 
+                                  ? workout.completedAt!.difference(workout.startedAt ?? DateTime.now()) 
+                                  : Duration.zero),
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[400],
@@ -156,7 +159,9 @@ class PastWorkoutListItem extends StatelessWidget {
                                 color: Colors.grey[400],
                               ),
                             ),
-                            if (workout.totalWeight > 0) ...[ 
+                            if (workout.exercises.fold(0.0, (sum, exercise) => 
+                                sum + exercise.sets.fold(0.0, (setSum, set) => 
+                                    setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0))) > 0) ...[ 
                               const SizedBox(width: 12), 
                               Icon(
                                 Icons.fitness_center_outlined, 
@@ -166,7 +171,9 @@ class PastWorkoutListItem extends StatelessWidget {
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  _formatWeight(workout.totalWeight), 
+                                  _formatWeight(workout.exercises.fold(0.0, (sum, exercise) => 
+                                      sum + exercise.sets.fold(0.0, (setSum, set) => 
+                                          setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0)))), 
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.grey[400],
@@ -178,10 +185,10 @@ class PastWorkoutListItem extends StatelessWidget {
                             ],
                           ],
                         ),
-                        if (workout.notes!.isNotEmpty) ...[
+                        if ((workout.notes ?? '').isNotEmpty) ...[
                           const SizedBox(height: 8),
                           Text(
-                            workout.notes!,
+                            workout.notes ?? '',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[300],

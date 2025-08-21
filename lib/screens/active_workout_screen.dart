@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:ui';
 
-import '../models/workout_session.dart';
+import '../models/workout.dart';
 import '../models/exercise.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
@@ -20,9 +20,10 @@ import '../widgets/active_workout_action_buttons.dart';
 import 'exercise_picker_screen.dart';
 import 'workout_completion_screen.dart';
 import '../utils/navigation_helper.dart';
+import '../constants/app_constants.dart';
 
 class ActiveWorkoutScreen extends StatefulWidget {
-  final WorkoutSession session;
+  final Workout session;
 
   const ActiveWorkoutScreen({
     super.key,
@@ -36,7 +37,7 @@ class ActiveWorkoutScreen extends StatefulWidget {
 class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   Timer? _timer;
   final Set<int> _expandedNotes = {};
-  late WorkoutSession _currentSession;
+  late Workout _currentSession;
 
   @override
   void initState() {
@@ -90,7 +91,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   Widget build(BuildContext context) {
     final double topPadding = MediaQuery.of(context).padding.top;
     final double headerHeight = topPadding + ActiveWorkoutAppBar.getContentHeight();
-    final String weightUnit = (UserService.instance.currentProfile?.units == 'imperial') ? 'lbs' : 'kg';
+    final String weightUnit = (UserService.instance.currentProfile?.units == Units.imperial) ? 'lbs' : 'kg';
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -125,8 +126,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   }
 
   Widget _buildHeaderContent(String weightUnit) {
-    final progress = _currentSession.progress;
-    final duration = _currentSession.duration;
+    final progress = _currentSession.completedSets / _currentSession.totalSets;
+    final duration = _currentSession.completedAt != null 
+        ? _currentSession.completedAt!.difference(_currentSession.startedAt ?? DateTime.now()) 
+        : DateTime.now().difference(_currentSession.startedAt ?? DateTime.now());
     
     return Column(
       children: [
@@ -139,7 +142,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    _currentSession.workout.name,
+                    _currentSession.name,
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
@@ -336,8 +339,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                     Icon(Icons.info_outline, color: Colors.orange, size: 16),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text('Drag exercises to reorder them',
-                          style: TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.w500)),
+                  child: Text('Drag exercises to reorder them',
+                      style: TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.w500)),
                     ),
                   ]),
                 ),
@@ -425,8 +428,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     await WorkoutSessionService.instance.updateSet(
       exerciseId,
       setId,
-      reps: reps,
-      weight: weight,
+      actualReps: reps,
+      actualWeight: weight,
       isCompleted: isCompleted,
     );
     final updatedSession = WorkoutSessionService.instance.currentSession;
@@ -449,16 +452,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
     final exercise = _currentSession.exercises[exerciseIndex];
     final lastSet = exercise.sets.isNotEmpty ? exercise.sets.last : null;
-    final newSet = SessionSet(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      reps: lastSet?.reps ?? 10,
-      weight: lastSet?.weight ?? 0.0,
+    final newSet = WorkoutSet(
+      workoutExerciseId: exerciseId,
+      setIndex: exercise.sets.length,
+      actualReps: lastSet?.actualReps ?? 10,
+      actualWeight: lastSet?.actualWeight ?? 0.0,
       isCompleted: false,
     );
 
-    final updatedSets = List<SessionSet>.from(exercise.sets)..add(newSet);
+    final updatedSets = List<WorkoutSet>.from(exercise.sets)..add(newSet);
     final updatedExercise = exercise.copyWith(sets: updatedSets);
-    final updatedExercises = List<SessionExercise>.from(_currentSession.exercises)
+    final updatedExercises = List<WorkoutExercise>.from(_currentSession.exercises)
       ..[exerciseIndex] = updatedExercise;
     final updatedSession = _currentSession.copyWith(exercises: updatedExercises);
 
@@ -476,7 +480,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     
     // If this is the last set, remove the entire exercise instead
     if (exercise.sets.length <= 1) {
-      final updatedExercises = List<SessionExercise>.from(_currentSession.exercises)
+      final updatedExercises = List<WorkoutExercise>.from(_currentSession.exercises)
         ..removeAt(exerciseIndex);
       final updatedSession = _currentSession.copyWith(exercises: updatedExercises);
 
@@ -488,9 +492,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     }
 
     // Remove the specific set
-    final updatedSets = List<SessionSet>.from(exercise.sets)..removeWhere((s) => s.id == setId);
+    final updatedSets = List<WorkoutSet>.from(exercise.sets)..removeWhere((s) => s.id == setId);
     final updatedExercise = exercise.copyWith(sets: updatedSets);
-    final updatedExercises = List<SessionExercise>.from(_currentSession.exercises)
+    final updatedExercises = List<WorkoutExercise>.from(_currentSession.exercises)
       ..[exerciseIndex] = updatedExercise;
     final updatedSession = _currentSession.copyWith(exercises: updatedExercises);
 
@@ -504,7 +508,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     if (newIndex > oldIndex) {
       newIndex -= 1;
     }
-    final exercises = List<SessionExercise>.from(_currentSession.exercises);
+    final exercises = List<WorkoutExercise>.from(_currentSession.exercises);
     final exercise = exercises.removeAt(oldIndex);
     exercises.insert(newIndex, exercise);
 
@@ -526,33 +530,27 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
     if (selectedExercise != null) {
       final newWorkoutExerciseId = DateTime.now().millisecondsSinceEpoch.toString() + "_wex";
-      final newSetId = DateTime.now().millisecondsSinceEpoch.toString() + "_set";
 
       // Create the WorkoutSet template first (though it's immediately wrapped)
       // This part is a bit convoluted due to how SessionSet.fromWorkoutSet works with old fields.
       // Ideally, WorkoutSet for template would be simpler.
       final templateSet = WorkoutSet(
-        id: newSetId, // This ID will be used by SessionSet.fromWorkoutSet
         workoutExerciseId: newWorkoutExerciseId, // Link to the WorkoutExercise being created
-        setNumber: 1,
+        setIndex: 0,
         targetReps: 10,
         targetWeight: 0.0,
       );
 
       final workoutExercise = WorkoutExercise(
         id: newWorkoutExerciseId,
-        workoutId: _currentSession.workout.id, // Link to the parent workout
+        workoutId: _currentSession.id, // Link to the parent workout
         exerciseSlug: selectedExercise.slug,
         exerciseDetail: selectedExercise, // Keep for in-memory model if needed
         sets: [templateSet], // The template WorkoutExercise holds template WorkoutSets
         notes: '',
       );
       
-      // SessionExercise takes a WorkoutExercise (which contains template sets)
-      // and SessionSet.fromWorkoutSet converts template WorkoutSet to SessionSet
-      final sessionExercise = SessionExercise.fromWorkoutExercise(workoutExercise);
-      
-      final updatedExercises = List<SessionExercise>.from(_currentSession.exercises)..add(sessionExercise);
+      final updatedExercises = List<WorkoutExercise>.from(_currentSession.exercises)..add(workoutExercise);
       final updatedSession = _currentSession.copyWith(exercises: updatedExercises);
       
       await WorkoutSessionService.instance.updateSession(updatedSession);
@@ -611,7 +609,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   }
 
   Future<void> _checkForRoutineUpdatesAndFinish() async {
-    final originalWorkout = _currentSession.workout;
+    final originalWorkout = _currentSession.templateId != null 
+        ? WorkoutService.instance.getWorkoutById(_currentSession.templateId!) 
+        : _currentSession;
+    
+    if (originalWorkout == null) {
+      _finishWorkout();
+      return;
+    }
+    
     final sessionExercises = _currentSession.exercises;
     bool hasChanges = sessionExercises.length != originalWorkout.exercises.length;
 
@@ -620,15 +626,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         final sEx = sessionExercises[i];
         final oEx = originalWorkout.exercises[i]; // oEx is WorkoutExercise
         // Compare based on exerciseSlug
-        if (sEx.workoutExercise.exerciseSlug != oEx.exerciseSlug || sEx.sets.length != oEx.sets.length) {
+        if (sEx.exerciseSlug != oEx.exerciseSlug || sEx.sets.length != oEx.sets.length) {
           hasChanges = true;
           break;
         }
         // Further check if sets are different (e.g. reps, weight)
         for (int j = 0; j < sEx.sets.length; j++) {
-          final sSet = sEx.sets[j]; // SessionSet
+          final sSet = sEx.sets[j]; // WorkoutSet
           final oSet = oEx.sets[j]; // WorkoutSet (template)
-          if (sSet.reps != oSet.targetReps || sSet.weight != oSet.targetWeight) {
+          if (sSet.actualReps != oSet.targetReps || sSet.actualWeight != oSet.targetWeight) {
             hasChanges = true;
             break;
           }
@@ -673,31 +679,29 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
   Future<void> _updateRoutineAndFinish() async {
     try {
-      final updatedWorkoutExercises = _currentSession.exercises.map((sEx) { // sEx is SessionExercise
+      final updatedWorkoutExercises = _currentSession.exercises.map((sEx) { // sEx is WorkoutExercise
         // Find the original WorkoutExercise template
-        final originalWorkoutExerciseTemplate = _currentSession.workout.exercises
-            .firstWhere((oEx) => oEx.exerciseSlug == sEx.workoutExercise.exerciseSlug, orElse: () => sEx.workoutExercise);
+        final originalWorkoutExerciseTemplate = _currentSession.exercises
+            .firstWhere((oEx) => oEx.exerciseSlug == sEx.exerciseSlug, orElse: () => sEx);
         
-        final updatedTemplateSets = sEx.sets.asMap().entries.map((entry) { // sEx.sets are SessionSet
+        final updatedTemplateSets = sEx.sets.asMap().entries.map((entry) { // sEx.sets are WorkoutSet
           int idx = entry.key;
-          SessionSet sessionSet = entry.value;
+          WorkoutSet sessionSet = entry.value;
           
-          // Create a new WorkoutSet (template set) based on the SessionSet's performed values
+          // Create a new WorkoutSet (template set) based on the WorkoutSet's performed values
           return WorkoutSet(
-            // id: new Uuid().v4(), // Generate new ID for the template set
             workoutExerciseId: originalWorkoutExerciseTemplate.id, // Link to parent WorkoutExercise template
-            setNumber: idx + 1,
-            targetReps: sessionSet.reps, // Use performed reps as new target
-            targetWeight: sessionSet.weight, // Use performed weight as new target
-            // type, targetRestSeconds, targetWeightUnit could be copied if they existed on SessionSet or set to defaults
-            orderIndex: idx,
+            setIndex: idx,
+            targetReps: sessionSet.actualReps, // Use performed reps as new target
+            targetWeight: sessionSet.actualWeight, // Use performed weight as new target
+            // targetRestSeconds could be copied if they existed on WorkoutSet or set to defaults
           );
         }).toList();
         // Return a new WorkoutExercise template with updated sets
         return originalWorkoutExerciseTemplate.copyWith(sets: updatedTemplateSets);
       }).toList();
 
-      final updatedWorkout = _currentSession.workout.copyWith(exercises: updatedWorkoutExercises);
+      final updatedWorkout = _currentSession.copyWith(exercises: updatedWorkoutExercises);
       await WorkoutService.instance.updateWorkout(updatedWorkout);
     } catch (e) {
       // Log error or show a message

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../services/database_service.dart';
 import '../services/insights_service.dart';
-import '../models/workout_history.dart';
 import '../models/workout.dart';
 import '../services/workout_service.dart';
 import '../screens/exercise_browser_screen.dart';
@@ -13,13 +12,14 @@ import '../widgets/insights_stat_card.dart';
 import '../utils/unit_converter.dart';
 import '../services/user_service.dart';
 import 'package:intl/intl.dart';
+import '../constants/app_constants.dart';
 
-// Helper class to combine WorkoutHistory with its original Workout details
-class WorkoutHistoryDisplayItem {
-  final WorkoutHistory history;
+// Helper class to combine Workout with its original Workout details
+class WorkoutDisplayItem {
+  final Workout workout;
   final Workout? workoutDetails; // Nullable if workout is somehow not found
 
-  WorkoutHistoryDisplayItem({required this.history, this.workoutDetails});
+  WorkoutDisplayItem({required this.workout, this.workoutDetails});
 }
 
 class InsightsScreen extends StatefulWidget {
@@ -39,7 +39,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
   DateTime _selectedDate = DateTime.now();
   DateTime _focusedDate = DateTime.now();
   List<DateTime> _workoutDates = [];
-  List<WorkoutHistoryDisplayItem> _selectedDateWorkoutItems = []; 
+  List<WorkoutDisplayItem> _selectedDateWorkoutItems = []; 
   bool _isLoadingCalendar = false;
   
 
@@ -84,19 +84,19 @@ class _InsightsScreenState extends State<InsightsScreen> {
     }
   }
 
-  void _fetchWorkoutDetailsForHistorySync(List<WorkoutHistory> histories) {
-    List<WorkoutHistoryDisplayItem> displayItems = [];
-    for (var history in histories) {
+  void _fetchWorkoutDetailsForHistorySync(List<Workout> workouts) {
+    List<WorkoutDisplayItem> displayItems = [];
+    for (var workout in workouts) {
       Workout? details;
       try {
-        if (history.workoutId != null) {
-          details = WorkoutService.instance.getWorkoutById(history.workoutId!);
+        if (workout.templateId != null) {
+          details = WorkoutService.instance.getWorkoutById(workout.templateId!);
         } else {
           details = null;
         }
       } catch (e) {
       }
-      displayItems.add(WorkoutHistoryDisplayItem(history: history, workoutDetails: details));
+      displayItems.add(WorkoutDisplayItem(workout: workout, workoutDetails: details));
     }
     setState(() {
       _selectedDateWorkoutItems = displayItems;
@@ -107,7 +107,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
     setState(() { _isLoadingCalendar = true; });
     try {
       final dates = await DatabaseService.instance.getDatesWithWorkouts();
-      final histories = await DatabaseService.instance.getWorkoutHistoryForDate(_selectedDate);
+      final histories = await DatabaseService.instance.getWorkoutsForDate(_selectedDate);
       _fetchWorkoutDetailsForHistorySync(histories); 
       
       if (mounted) {
@@ -189,9 +189,9 @@ class _InsightsScreenState extends State<InsightsScreen> {
   }
 
   String _formatWeight(double weight) {
-    final units = UserService.instance.currentProfile?.units ?? 'metric';
-    final unitLabel = UnitConverter.getWeightUnit(units);
-    final kUnitLabel = units == 'imperial' ? 'k lbs' : 'k kg';
+    final units = UserService.instance.currentProfile?.units ?? Units.metric;
+    final unitLabel = UnitConverter.getWeightUnit(units.name); // Convert enum to string for UnitConverter
+    final kUnitLabel = units == Units.imperial ? 'k lbs' : 'k kg';
 
     if (weight > 999) {
       return '${(weight / 1000).toStringAsFixed(1)}$kUnitLabel';
@@ -200,8 +200,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
   }
 
   String _getWeightUnitLabel() {
-    final units = UserService.instance.currentProfile?.units ?? 'metric';
-    return UnitConverter.getWeightUnit(units);
+    final units = UserService.instance.currentProfile?.units ?? Units.metric;
+    return UnitConverter.getWeightUnit(units.name); // Convert enum to string for UnitConverter
   }
 
   Future<void> _showExercisePicker() async {
@@ -213,7 +213,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
   Future<void> _loadWorkoutsForSelectedDate() async { 
     setState(() { _isLoadingCalendar = true; }); 
     try {
-      final histories = await DatabaseService.instance.getWorkoutHistoryForDate(_selectedDate);
+      final histories = await DatabaseService.instance.getWorkoutsForDate(_selectedDate);
       _fetchWorkoutDetailsForHistorySync(histories); // Use sync version
       if (mounted) {
         setState(() { _isLoadingCalendar = false; });
@@ -520,7 +520,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
             margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: DatedWorkoutListView(
               selectedDate: _selectedDate,
-              workouts: _selectedDateWorkoutItems.map((item) => item.history).toList(), 
+              workouts: _selectedDateWorkoutItems.map((item) => item.workout).toList(), 
               isLoading: _isLoadingCalendar,
             ),
           ),

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-import '../models/workout_session.dart';
+import '../models/workout.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 
@@ -22,7 +22,7 @@ class LiveWorkoutNotificationService {
 
   bool _isServiceRunning = false;
   Timer? _updateTimer;
-  WorkoutSession? _currentSession;
+  Workout? _currentSession;
   int _currentExerciseIndex = 0;
   int _currentSetIndex = 0;
   DateTime? _sessionStartTime;
@@ -84,7 +84,7 @@ class LiveWorkoutNotificationService {
     _onNextSetCallback = callback;
   }
 
-  Future<void> startService(WorkoutSession session, int currentExerciseIndex, int currentSetIndex) async {
+  Future<void> startService(Workout session, int currentExerciseIndex, int currentSetIndex) async {
     final androidPlugin = _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin != null) {
         final bool? permissionGranted = await androidPlugin.requestNotificationsPermission();
@@ -98,7 +98,7 @@ class LiveWorkoutNotificationService {
     _currentSession = session;
     _currentExerciseIndex = currentExerciseIndex;
     _currentSetIndex = currentSetIndex;
-    _sessionStartTime = session.startTime;
+    _sessionStartTime = session.startedAt ?? DateTime.now();
     
     // Start periodic updates every second for real-time elapsed time
     _startPeriodicUpdates();
@@ -116,7 +116,7 @@ class LiveWorkoutNotificationService {
     });
   }
 
-  Future<void> updateNotification(WorkoutSession session, int currentExerciseIndex, int currentSetIndex) async {
+  Future<void> updateNotification(Workout session, int currentExerciseIndex, int currentSetIndex) async {
     if (!_isServiceRunning) {
       await startService(session, currentExerciseIndex, currentSetIndex);
       return;
@@ -142,8 +142,8 @@ class LiveWorkoutNotificationService {
     await _flutterLocalNotificationsPlugin.cancel(notificationId);
   }
 
-  Future<void> restartServiceIfNeeded(WorkoutSession? session, int currentExerciseIndex, int currentSetIndex) async {
-    if (session != null && !session.isCompleted && !_isServiceRunning) {
+  Future<void> restartServiceIfNeeded(Workout? session, int currentExerciseIndex, int currentSetIndex) async {
+    if (session != null && session.status == WorkoutStatus.inProgress && !_isServiceRunning) {
       debugPrint("[LiveWorkoutNotificationService] Restarting notification service for active session");
       await startService(session, currentExerciseIndex, currentSetIndex);
     }
@@ -161,7 +161,7 @@ class LiveWorkoutNotificationService {
     final int completedSets = sessionData['completedSets'] ?? 0;
     final int totalSets = sessionData['totalSets'] ?? 0;
     final int progressValue = sessionData['progressValue'] ?? 0;
-    final bool canAdvanceSet = sessionData['canAdvanceSet'] ?? false;
+    //final bool canAdvanceSet = sessionData['canAdvanceSet'] ?? false;
     
     // Create notification actions
     List<AndroidNotificationAction> actions = [];
@@ -202,20 +202,26 @@ class LiveWorkoutNotificationService {
     );
   }
 
-  Map<String, dynamic> _formatSessionData(WorkoutSession session, int currentExerciseIndex, int currentSetIndex) {
+  Map<String, dynamic> _formatSessionData(Workout session, int currentExerciseIndex, int currentSetIndex) {
     String currentExerciseName = "Workout Starting...";
     String nextExerciseName = "";
     String progressDetails = "";
     String setProgress = "";
-    int totalWorkoutExercises = session.workout.exercises.length;
+    int totalWorkoutExercises = session.exercises.length;
     int currentWorkoutExerciseNum = currentExerciseIndex + 1;
     
     // Use the same progress calculation as the active workout screen
-    int completedSets = session.completedSets;
-    int totalSets = session.totalSets;
+    int completedSets = 0;
+    int totalSets = 0;
+    
+    // Calculate completed and total sets
+    for (final exercise in session.exercises) {
+      totalSets += exercise.sets.length;
+      completedSets += exercise.sets.where((set) => set.isCompleted).length;
+    }
 
     if (totalWorkoutExercises > 0 && currentExerciseIndex < totalWorkoutExercises) {
-      final WorkoutExercise currentWorkoutExercise = session.workout.exercises[currentExerciseIndex];
+      final WorkoutExercise currentWorkoutExercise = session.exercises[currentExerciseIndex];
       // Use exerciseDetail, ensure it's loaded or provide fallback
       currentExerciseName = currentWorkoutExercise.exerciseDetail?.name ?? currentWorkoutExercise.exerciseSlug;
 
@@ -243,7 +249,7 @@ class LiveWorkoutNotificationService {
       }
 
       if (currentExerciseIndex + 1 < totalWorkoutExercises) {
-        final nextWorkoutExercise = session.workout.exercises[currentExerciseIndex + 1];
+        final nextWorkoutExercise = session.exercises[currentExerciseIndex + 1];
         // Use exerciseDetail, ensure it's loaded or provide fallback
         nextExerciseName = "Next: ${nextWorkoutExercise.exerciseDetail?.name ?? nextWorkoutExercise.exerciseSlug}";
       } else {
@@ -263,7 +269,7 @@ class LiveWorkoutNotificationService {
         setProgress = "";
     }
     
-    Duration elapsedTime = DateTime.now().difference(_sessionStartTime ?? session.startTime);
+    Duration elapsedTime = DateTime.now().difference(_sessionStartTime ?? (session.startedAt ?? DateTime.now()));
     String elapsedTimeStr = "${elapsedTime.inMinutes.toString().padLeft(2, '0')}:${(elapsedTime.inSeconds % 60).toString().padLeft(2, '0')}";
 
     // Calculate progress percentage
@@ -284,7 +290,7 @@ class LiveWorkoutNotificationService {
       'totalSets': totalSets,
       'progressValue': progressValue.toInt(),
       'canAdvanceSet': currentExerciseIndex < totalWorkoutExercises && 
-                      currentSetIndex < (totalWorkoutExercises > 0 ? session.workout.exercises[currentExerciseIndex].sets.length : 0),
+                      currentSetIndex < (totalWorkoutExercises > 0 ? session.exercises[currentExerciseIndex].sets.length : 0),
     };
   }
 }

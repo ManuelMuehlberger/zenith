@@ -1,19 +1,20 @@
 import 'package:uuid/uuid.dart';
+import 'typedefs.dart';
 
 class WorkoutFolder {
-  final String id;
+  final WorkoutFolderId id;
   String name;
   int? orderIndex;
 
   WorkoutFolder({
-    String? id,
+    WorkoutFolderId? id,
     required this.name,
     this.orderIndex,
   }) : id = id ?? const Uuid().v4();
 
   factory WorkoutFolder.fromMap(Map<String, dynamic> map) {
     return WorkoutFolder(
-      id: map['id'] as String,
+      id: map['id'] as WorkoutFolderId,
       name: map['name'] as String,
       orderIndex: map['orderIndex'] as int?,
     );
@@ -28,14 +29,17 @@ class WorkoutFolder {
   }
 
   WorkoutFolder copyWith({
-    String? id,
+    WorkoutFolderId? id,
     String? name,
-    int? orderIndex,
+    Object? orderIndex = _undefined,
   }) {
     return WorkoutFolder(
       id: id ?? this.id,
       name: name ?? this.name,
-      orderIndex: orderIndex ?? this.orderIndex,
+      orderIndex: orderIndex == _undefined ? this.orderIndex : orderIndex as int?,
     );
   }
 }
+
+// Sentinel object to distinguish between null and undefined
+const Object _undefined = Object();

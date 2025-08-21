@@ -1,15 +1,16 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/workout_session.dart';
+import '../models/workout.dart';
 import '../services/workout_session_service.dart';
 import '../services/user_service.dart';
 import '../utils/navigation_helper.dart';
 import '../main.dart';
 import 'package:confetti/confetti.dart';
+import '../constants/app_constants.dart';
 
 class WorkoutCompletionScreen extends StatefulWidget {
-  final WorkoutSession session;
+  final Workout session;
 
   const WorkoutCompletionScreen({
     super.key,
@@ -22,7 +23,7 @@ class WorkoutCompletionScreen extends StatefulWidget {
 
 class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
   final _notesController = TextEditingController();
-  WorkoutMood? _selectedMood;
+  int? _selectedMood; // Using int for mood (1-5 scale)
   late ConfettiController _confettiController;
   final GlobalKey _finishButtonKey = GlobalKey();
   Offset? _confettiPosition;
@@ -38,23 +39,6 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
     _confettiController.dispose();
     _notesController.dispose();
     super.dispose();
-  }
-
-  void _triggerConfetti() {
-    if (_finishButtonKey.currentContext != null) {
-      final RenderBox renderBox = _finishButtonKey.currentContext!.findRenderObject() as RenderBox;
-      final Offset buttonCenterGlobal = renderBox.localToGlobal(renderBox.size.center(Offset.zero));
-      
-      setState(() {
-        _confettiPosition = buttonCenterGlobal;
-      });
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _confettiController.play();
-        }
-      });
-    }
   }
 
   @override
@@ -115,7 +99,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      widget.session.workout.name,
+                                      widget.session.name,
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 20,
@@ -141,7 +125,11 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               _buildSummaryItem(
-                                WorkoutSessionService.instance.formatDuration(widget.session.duration),
+                                WorkoutSessionService.instance.formatDuration(
+                                  widget.session.completedAt != null 
+                                      ? widget.session.completedAt!.difference(widget.session.startedAt ?? DateTime.now()) 
+                                      : Duration.zero
+                                ),
                                 'Duration',
                                 Icons.timer_outlined,
                               ),
@@ -151,7 +139,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                                 color: Colors.grey[800],
                               ),
                               _buildSummaryItem(
-                                widget.session.completedSets.toString(),
+                                '${widget.session.completedSets}/${widget.session.totalSets}',
                                 'Sets',
                                 Icons.fitness_center_outlined,
                               ),
@@ -161,7 +149,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                                 color: Colors.grey[800],
                               ),
                               _buildSummaryItem(
-                                '${WorkoutSessionService.instance.formatWeight(widget.session.totalWeight)} ${(UserService.instance.currentProfile?.units == 'imperial') ? 'lbs' : 'kg'}',
+                                '${WorkoutSessionService.instance.formatWeight(widget.session.totalWeight)} ${(UserService.instance.currentProfile?.units == Units.imperial) ? 'lbs' : 'kg'}',
                                 'Weight',
                                 Icons.monitor_weight_outlined,
                               ),
@@ -218,13 +206,14 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: WorkoutMood.values.map((mood) {
-                        final isSelected = _selectedMood == mood;
+                      children: List.generate(5, (index) {
+                        final moodValue = index + 1;
+                        final isSelected = _selectedMood == moodValue;
                         return GestureDetector(
                           onTap: () {
                             HapticFeedback.lightImpact();
                             setState(() {
-                              _selectedMood = mood;
+                              _selectedMood = moodValue;
                             });
                           },
                           child: Container(
@@ -242,12 +231,12 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  mood.emoji,
+                                  _getMoodEmoji(moodValue),
                                   style: const TextStyle(fontSize: 24),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  mood.displayName.split(' ').first,
+                                  _getMoodDisplayName(moodValue),
                                   style: TextStyle(
                                     color: isSelected ? Colors.blue : Colors.grey[400],
                                     fontSize: 10,
@@ -258,7 +247,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                             ),
                           ),
                         );
-                      }).toList(),
+                      }),
                     ),
                     const SizedBox(height: 40),
                     Row(
@@ -371,6 +360,42 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
     );
   }
 
+  // Helper method to get emoji for mood (1-5 scale)
+  String _getMoodEmoji(int mood) {
+    switch (mood) {
+      case 1:
+        return '😢';
+      case 2:
+        return '😔';
+      case 3:
+        return '😐';
+      case 4:
+        return '😊';
+      case 5:
+        return '😄';
+      default:
+        return '😊';
+    }
+  }
+
+  // Helper method to get display name for mood (1-5 scale)
+  String _getMoodDisplayName(int mood) {
+    switch (mood) {
+      case 1:
+        return 'Very Sad';
+      case 2:
+        return 'Sad';
+      case 3:
+        return 'Neutral';
+      case 4:
+        return 'Happy';
+      case 5:
+        return 'Very Happy';
+      default:
+        return 'Happy';
+    }
+  }
+
   Future<void> _completeWorkout() async { 
     try {
       await WorkoutSessionService.instance.completeWorkout(
@@ -434,7 +459,7 @@ class CircleRevealPageRoute<T> extends PageRoute<T> {
   });
 
   final Widget page;
-  final Offset? centerOffset; // Center of the circle reveal
+  final Offset? centerOffset;
 
   @override
   final Duration transitionDuration;

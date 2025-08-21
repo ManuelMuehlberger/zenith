@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../models/workout_session.dart';
+import '../models/workout_exercise.dart';
 
 class ReorderableExerciseCard extends StatefulWidget {
-  final SessionExercise exercise;
+  final WorkoutExercise exercise;
   final Function(String exerciseId) onAddSet;
   final Function(String exerciseId, String setId) onRemoveSet;
   final String weightUnit;
@@ -158,7 +158,7 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                widget.exercise.workoutExercise.exerciseDetail?.name ?? widget.exercise.workoutExercise.exerciseSlug,
+                                widget.exercise.exerciseDetail?.name ?? widget.exercise.exerciseSlug,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
@@ -166,14 +166,14 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                widget.exercise.workoutExercise.exerciseDetail?.primaryMuscleGroup ?? "N/A",
-                                style: TextStyle(
-                                  color: Colors.blue[300],
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+Text(
+  widget.exercise.exerciseDetail?.primaryMuscleGroup.name ?? "N/A",
+  style: TextStyle(
+    color: Colors.blue[300],
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+  ),
+),
                             ],
                           ),
                         ),
@@ -222,7 +222,7 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
                       ),
                       Expanded(
                         child: Text(
-                          '${set.reps} reps, ${set.weight.toStringAsFixed(1)} ${widget.weightUnit}',
+                          '${set.actualReps ?? set.targetReps ?? 0} reps, ${(set.actualWeight ?? set.targetWeight ?? 0).toStringAsFixed(1)} ${widget.weightUnit}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 14,

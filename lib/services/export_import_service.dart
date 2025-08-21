@@ -5,11 +5,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart'; // Added for generating IDs if needed during import
-import '../models/user_profile.dart';
+import '../models/user_data.dart';
 import '../models/workout_folder.dart';
 import '../models/workout.dart';
 import '../models/exercise.dart';
-import '../models/workout_history.dart';
+import '../models/workout_exercise.dart';
+import '../models/workout_set.dart';
 import 'database_service.dart';
 import 'user_service.dart';
 import 'workout_service.dart';
@@ -27,7 +28,7 @@ class ExportImportService {
   
   Future<String?> exportData({
     bool includePersonalData = true,
-    bool includeWorkoutHistory = true,
+    bool includeWorkouts = true,
     bool includeCustomExercises = true,
     DateTime? fromDate,
     DateTime? toDate,
@@ -36,15 +37,16 @@ class ExportImportService {
       final userProfile = UserService.instance.currentProfile;
       final workouts = WorkoutService.instance.workouts;
       final workoutFolders = WorkoutService.instance.folders;
-      final workoutHistory = await DatabaseService.instance.getWorkoutHistory();
+      final workoutHistory = await DatabaseService.instance.getWorkouts();
       await ExerciseService.instance.loadExercises();
       final exercises = ExerciseService.instance.exercises;
       final settings = await DatabaseService.instance.getAppSettings();
 
-      List<WorkoutHistory> filteredHistory = workoutHistory;
+      List<Workout> filteredHistory = workoutHistory;
       if (fromDate != null || toDate != null) {
-        filteredHistory = workoutHistory.where((history) {
-          final historyDate = history.startTime;
+        filteredHistory = workoutHistory.where((workout) {
+          final historyDate = workout.startedAt;
+          if (historyDate == null) return false;
           if (fromDate != null && historyDate.isBefore(fromDate)) return false;
           if (toDate != null && historyDate.isAfter(toDate)) return false;
           return true;
@@ -72,12 +74,12 @@ class ExportImportService {
               "workoutFolders": workoutFolders.length,
               "workouts": workouts.length,
               "exercises": exercises.length, 
-              "workoutSessions": workoutSessions.length,
+              "workouts": workoutSessions.length,
             }
           },
           "exportOptions": <String, dynamic>{
             "includePersonalData": includePersonalData,
-            "includeWorkoutHistory": includeWorkoutHistory,
+            "includeWorkouts": includeWorkouts,
             "includeCustomExercises": includeCustomExercises,
             "dateRange": <String, dynamic>{
               "from": fromDate?.toUtc().toIso8601String(),
@@ -90,7 +92,7 @@ class ExportImportService {
           "workoutFolders": workoutFolders.map((folder) => folder.toMap()).toList(),
           "workouts": workouts.map((workout) => _workoutToExportFormat(workout)).toList(),
           "exercises": exercises.map((exercise) => _exerciseToExportFormat(exercise)).toList(),
-          "workoutSessions": includeWorkoutHistory ? workoutSessions : [],
+          "workouts": includeWorkouts ? workoutSessions : [],
           "customExercises": includeCustomExercises ? customExercisesList.map((exercise) => _exerciseToExportFormat(exercise)).toList() : [],
           "preferences": _settingsToPreferences(settings),
         }
@@ -150,27 +152,27 @@ class ExportImportService {
     return file.path;
   }
 
-  List<Map<String, dynamic>> _convertHistoryToSessions(List<WorkoutHistory> history) {
-    return history.map((h) {
-      // h.exercises are List<WorkoutExerciseHistory>
+  List<Map<String, dynamic>> _convertHistoryToSessions(List<Workout> history) {
+    return history.where((h) => h.status == WorkoutStatus.completed).map((h) {
+      // h.exercises are List<WorkoutExercise>
       // Their toMap() is for DB representation. We need to map them to the export format.
-      List<Map<String,dynamic>> exportedExercises = h.exercises.map((weh) { // weh is WorkoutExerciseHistory
+      List<Map<String,dynamic>> exportedExercises = h.exercises.map((we) { // we is WorkoutExercise
         return {
-          "exerciseId": weh.exerciseSlug, 
-          "exerciseName": weh.exerciseName,
-          "notes": weh.notes,
-          "orderIndex": weh.orderIndex,
-          "sets": weh.sets.map((sh) { // sh is SetHistory
+          "exerciseId": we.exerciseSlug, 
+          "exerciseName": we.exerciseDetail?.name ?? we.exerciseSlug,
+          "notes": we.notes,
+          "orderIndex": we.orderIndex,
+          "sets": we.sets.map((s) { // s is WorkoutSet
             return {
-              "id": sh.id, // Exporting SetHistory ID
-              "reps": sh.repsPerformed,
-              "weight": sh.weightLogged,
-              "completed": sh.completed,
-              "type": sh.type,
-              "notes": sh.notes,
-              "durationSeconds": sh.durationSeconds,
-              "restTimeAchievedSeconds": sh.restTimeAchievedSeconds,
-              "weightUnit": sh.weightUnit,
+              "id": s.id, // Exporting WorkoutSet ID
+              "reps": s.actualReps,
+              "weight": s.actualWeight,
+              "completed": s.isCompleted,
+              "type": null, // WorkoutSet doesn't have a type field
+              "notes": null, // WorkoutSet doesn't have a notes field
+              "durationSeconds": null, // WorkoutSet doesn't have a durationSeconds field
+              "restTimeAchievedSeconds": null, // WorkoutSet doesn't have a restTimeAchievedSeconds field
+              "weightUnit": null, // WorkoutSet doesn't have a weightUnit field
             };
           }).toList(),
         };
@@ -178,17 +180,17 @@ class ExportImportService {
 
       return <String, dynamic>{
         "id": h.id,
-        "workoutId": h.workoutId, // This is workout template ID
+        "workoutId": h.templateId, // This is workout template ID
         "workoutSnapshot": <String, dynamic>{
-          "id": h.workoutId, 
-          "name": h.workoutName,
+          "id": h.templateId, 
+          "name": h.name,
           "exercises": exportedExercises, // Use the mapped exercises
         },
-        "startTime": h.startTime.toUtc().toIso8601String(),
-        "endTime": h.endTime?.toUtc().toIso8601String(),
-        "isCompleted": h.endTime != null,
+        "startTime": h.startedAt?.toUtc().toIso8601String(),
+        "endTime": h.completedAt?.toUtc().toIso8601String(),
+        "isCompleted": h.completedAt != null,
         "notes": h.notes,
-        "mood": h.mood,
+        "mood": null, // Workout doesn't have a mood field
         "exercises": exportedExercises, // Use the same mapped exercises for the main exercises list
       };
     }).toList();
@@ -216,13 +218,13 @@ class ExportImportService {
           "sets": e.sets.map((s) {
             return <String, dynamic>{
               "id": s.id,
-              "setNumber": s.setNumber,
-              "type": s.type,
+              "setIndex": s.setIndex,
               "targetReps": s.targetReps,
               "targetWeight": s.targetWeight,
-              "targetWeightUnit": s.targetWeightUnit,
               "targetRestSeconds": s.targetRestSeconds,
-              "orderIndex": s.orderIndex,
+              "actualReps": s.actualReps,
+              "actualWeight": s.actualWeight,
+              "isCompleted": s.isCompleted,
             };
           }).toList(),
           "notes": e.notes,
@@ -271,8 +273,7 @@ class ExportImportService {
         return false;
       }
       if (dataSection == null ||
-          dataSection["workouts"] == null ||
-          dataSection["workoutSessions"] == null) {
+          dataSection["workouts"] == null) {
         return false;
       }
       return true;
@@ -288,7 +289,7 @@ class ExportImportService {
     final dbService = DatabaseService.instance;
 
     if (data["userProfile"] != null) {
-      final profile = UserProfile.fromMap(data["userProfile"] as Map<String, dynamic>);
+      final profile = UserData.fromMap(data["userProfile"] as Map<String, dynamic>);
       await userService.saveUserProfile(profile);
     }
 
@@ -313,8 +314,8 @@ class ExportImportService {
       }
     }
 
-    if (data["workoutSessions"] != null) {
-      final sessionsData = (data["workoutSessions"] as List);
+    if (data["workouts"] != null) {
+      final sessionsData = (data["workouts"] as List);
       for (final sessionMap in sessionsData) {
         await _importWorkoutSession(sessionMap as Map<String, dynamic>, importedFileUnits);
       }
@@ -375,80 +376,33 @@ class ExportImportService {
   }
 
   Future<void> _importWorkoutSession(Map<String, dynamic> sessionData, String importedFileUnits) async {
-    final String workoutHistoryId = sessionData["id"] as String? ?? const Uuid().v4();
+    final String workoutId = sessionData["id"] as String? ?? const Uuid().v4();
     final workoutSnapshot = sessionData["workoutSnapshot"] as Map<String, dynamic>;
     final snapshotExercises = (workoutSnapshot["exercises"] as List? ?? []);
     
-    final List<WorkoutExerciseHistory> importedExerciseHistories = (sessionData["exercises"] as List? ?? [])
-        .asMap().entries.map((entryEx) {
-          int exIdx = entryEx.key;
-          final exerciseMap = entryEx.value as Map<String, dynamic>;
-          final exerciseSlug = exerciseMap["exerciseId"] as String? ?? exerciseMap["id"] as String? ?? "unknown-slug-$exIdx";
-          
-          String exerciseName = "Imported Exercise";
-          try {
-            final snapshotExerciseMap = snapshotExercises.firstWhere(
-              (snapEx) => (snapEx as Map<String, dynamic>)["exerciseId"] == exerciseSlug,
-              orElse: () => null, 
-            ) as Map<String, dynamic>?;
-            if (snapshotExerciseMap != null) {
-              exerciseName = snapshotExerciseMap["exerciseName"] as String? ?? "Imported Exercise";
-            }
-          } catch (e) { /* Optional: log error */ }
-          
-          final String workoutExerciseHistoryId = exerciseMap["workoutExerciseId"] as String? ?? const Uuid().v4();
+    final List<WorkoutExercise> importedExercises = (sessionData["exercises"] as List? ?? [])
+        .map((exerciseMap) {
+      final List<WorkoutSet> importedSets = (exerciseMap["sets"] as List? ?? [])
+          .map((setMap) {
+        return WorkoutSet.fromMap(setMap);
+      }).toList();
+      return WorkoutExercise.fromMap(exerciseMap).copyWith(sets: importedSets);
+    }).toList();
 
-          final List<SetHistory> importedSets = (exerciseMap["sets"] as List? ?? [])
-              .asMap().entries.map((entrySet) {
-                int setIdx = entrySet.key;
-                final setMap = entrySet.value as Map<String, dynamic>;
-                final rawWeight = (setMap["weight"] as num? ?? 0.0).toDouble();
-                double weightToStore = rawWeight;
-                if (importedFileUnits == "imperial" && (setMap["weightUnit"] == null || setMap["weightUnit"] == "lbs")) {
-                  weightToStore = rawWeight * 0.45359237; // lbs to kg
-                }
-                return SetHistory(
-                  id: setMap["id"] as String? ?? const Uuid().v4(),
-                  workoutHistoryExerciseId: workoutExerciseHistoryId,
-                  setNumber: setMap["setNumber"] as int? ?? (setIdx + 1),
-                  repsPerformed: setMap["reps"] as int? ?? 0,
-                  weightLogged: weightToStore,
-                  completed: setMap["isCompleted"] as bool? ?? false,
-                  type: setMap["type"] as String?,
-                  notes: setMap["notes"] as String?,
-                  durationSeconds: setMap["durationSeconds"] as int?,
-                  restTimeAchievedSeconds: setMap["restTimeAchievedSeconds"] as int?,
-                  weightUnit: "kg", // Always store as kg
-                );
-              })
-              .toList();
-          
-          return WorkoutExerciseHistory(
-            id: workoutExerciseHistoryId,
-            workoutHistoryId: workoutHistoryId,
-            exerciseSlug: exerciseSlug,
-            exerciseName: exerciseName,
-            sets: importedSets,
-            notes: exerciseMap["notes"] as String?,
-            orderIndex: exerciseMap["orderIndex"] as int? ?? exIdx,
-          );
-        })
-        .toList();
-
-    final history = WorkoutHistory(
-      id: workoutHistoryId,
-      workoutId: sessionData["workoutId"] as String?,
-      workoutName: workoutSnapshot["name"] as String? ?? "Imported Workout",
-      startTime: DateTime.parse(sessionData["startTime"] as String),
-      endTime: sessionData["endTime"] != null ? DateTime.parse(sessionData["endTime"] as String) : null,
-      exercises: importedExerciseHistories,
+    final workout = Workout(
+      id: workoutId,
+      name: workoutSnapshot["name"] as String? ?? "Imported Workout",
+      startedAt: sessionData["startTime"] != null ? DateTime.parse(sessionData["startTime"] as String) : null,
+      completedAt: sessionData["endTime"] != null ? DateTime.parse(sessionData["endTime"] as String) : null,
+      exercises: importedExercises,
       notes: sessionData["notes"] as String? ?? "",
-      mood: sessionData["mood"] as int?,
       iconCodePoint: workoutSnapshot["iconCodePoint"] as int?,
       colorValue: workoutSnapshot["colorValue"] as int?,
+      status: WorkoutStatus.completed,
+      templateId: sessionData["workoutId"] as String?,
     );
 
-    await DatabaseService.instance.saveWorkoutHistory(history);
+    await DatabaseService.instance.saveWorkout(workout);
   }
 
   Map<String, dynamic> _preferencesToSettings(Map<String, dynamic> preferences) {

@@ -5,6 +5,7 @@ import '../models/workout_folder.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../models/exercise.dart';
+import '../models/typedefs.dart';
 
 class WorkoutService {
   static final WorkoutService _instance = WorkoutService._internal();
@@ -169,7 +170,7 @@ class WorkoutService {
       final defaultSet = WorkoutSet(
         // id: DateTime.now().millisecondsSinceEpoch.toString(), // ID is auto-generated
         workoutExerciseId: tempWorkoutExerciseId, // Temporary link
-        setNumber: 1,
+        setIndex: 0,
         targetReps: 10,
         targetWeight: 0.0,
       );
@@ -262,19 +263,18 @@ class WorkoutService {
     }
   }
 
-  Future<void> updateSet(String workoutId, String exerciseId, String setId, {int? targetReps, double? targetWeight, String? type, int? targetRestSeconds}) async {
+  Future<void> updateSet(String workoutId, String exerciseId, String setId, {int? targetReps, double? targetWeight, int? targetRestSeconds}) async {
     final workoutIndex = _workouts.indexWhere((w) => w.id == workoutId);
     if (workoutIndex != -1) {
       final exerciseIndex = _workouts[workoutIndex].exercises.indexWhere((e) => e.id == exerciseId);
       if (exerciseIndex != -1) {
         final exercise = _workouts[workoutIndex].exercises[exerciseIndex];
-        // WorkoutExercise.updateSet now takes targetReps, targetWeight, type, targetRestSeconds.
+        // WorkoutExercise.updateSet now takes targetReps, targetWeight, targetRestSeconds.
         // isCompleted is removed for template sets.
         final updatedExercise = exercise.updateSet(
           setId, 
           targetReps: targetReps, 
           targetWeight: targetWeight, 
-          type: type, 
           targetRestSeconds: targetRestSeconds
         );
         

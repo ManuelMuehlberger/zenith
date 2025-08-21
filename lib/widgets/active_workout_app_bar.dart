@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
-import '../models/workout_session.dart';
+import '../models/workout.dart';
 import '../services/workout_session_service.dart';
 
 class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final WorkoutSession session;
+  final Workout session;
   final bool isReorderMode;
   final String weightUnit;
   final VoidCallback onReorderToggle;
@@ -48,8 +48,10 @@ class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget
 
   @override
   Widget build(BuildContext context) {
-    final progress = session.progress;
-    final duration = session.duration;
+    final progress = session.completedSets / session.totalSets;
+    final duration = session.completedAt != null 
+        ? session.completedAt!.difference(session.startedAt ?? DateTime.now()) 
+        : DateTime.now().difference(session.startedAt ?? DateTime.now());
     final double topPadding = MediaQuery.of(context).padding.top;
 
     // This is the height of the visible content area, AFTER SafeArea insets.
@@ -85,7 +87,7 @@ class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget
                         children: [
                           Expanded(
                             child: Text(
-                              session.workout.name,
+                              session.name,
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,

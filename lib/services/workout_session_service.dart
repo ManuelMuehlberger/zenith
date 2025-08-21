@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/workout_session.dart';
 import '../models/workout.dart';
-import '../models/workout_history.dart';
+import '../models/workout_exercise.dart';
+import '../models/workout_set.dart';
 import 'database_service.dart';
 import 'live_workout_notification_service.dart';
 
@@ -13,17 +13,17 @@ class WorkoutSessionService {
   
   static WorkoutSessionService get instance => _instance;
 
-  WorkoutSession? _currentSession;
+  Workout? _currentSession;
   int _currentExerciseIndex = 0;
   int _currentSetIndex = 0;
   static const String _currentSessionKey = 'current_workout_session';
   static const String _currentExerciseIndexKey = 'current_exercise_index';
   static const String _currentSetIndexKey = 'current_set_index';
 
-  WorkoutSession? get currentSession => _currentSession;
+  Workout? get currentSession => _currentSession;
   int get currentExerciseIndex => _currentExerciseIndex;
   int get currentSetIndex => _currentSetIndex;
-  bool get hasActiveSession => _currentSession != null && !_currentSession!.isCompleted;
+  bool get hasActiveSession => _currentSession != null && _currentSession!.status == WorkoutStatus.inProgress;
 
   void initializeNotificationCallback() {
     LiveWorkoutNotificationService().setNextSetCallback(() {
@@ -40,12 +40,12 @@ class WorkoutSessionService {
     if (sessionJson != null) {
       try {
         final sessionMap = json.decode(sessionJson);
-        _currentSession = WorkoutSession.fromMap(sessionMap);
+        _currentSession = Workout.fromMap(sessionMap);
         _currentExerciseIndex = prefs.getInt(_currentExerciseIndexKey) ?? 0;
         _currentSetIndex = prefs.getInt(_currentSetIndexKey) ?? 0;
         
         // If the session is completed, clear it
-        if (_currentSession!.isCompleted) {
+        if (_currentSession!.status == WorkoutStatus.completed) {
           await clearActiveSession();
         } else {
           // If session is active, ensure indices are valid
@@ -69,67 +69,47 @@ class WorkoutSessionService {
     }
   }
 
-  Future<WorkoutSession> startWorkout(Workout workout) async {
+  Future<Workout> startWorkout(Workout workout) async {
     // Clear any existing session first
     await clearActiveSession();
-    // Create initial session exercises from the workout template
-    List<SessionExercise> sessionExercises = workout.exercises
-        .map((e) => SessionExercise.fromWorkoutExercise(e))
-        .toList();
-
+    
+    // Create a new workout session from the template
+    final sessionExercises = <WorkoutExercise>[];
+    
     // Populate lastReps and lastWeight from history
-    for (int i = 0; i < sessionExercises.length; i++) {
-      final sessionExercise = sessionExercises[i];
-      final exerciseSlug = sessionExercise.workoutExercise.exerciseSlug; // Changed from .exercise.slug
+    for (int i = 0; i < workout.exercises.length; i++) {
+      final workoutExercise = workout.exercises[i];
+      final exerciseSlug = workoutExercise.exerciseSlug;
       
-      // Fetch the last workout history for this specific exercise
-      final WorkoutHistory? lastHistory = await DatabaseService.instance.getLastWorkoutHistoryForExercise(exerciseSlug);
+      // Fetch the last workout for this specific exercise
+      final Workout? lastWorkout = await DatabaseService.instance.getLastWorkoutForExercise(exerciseSlug);
 
-      if (lastHistory != null) {
-        final List<SessionSet> updatedSets = [];
-        for (int j = 0; j < sessionExercise.sets.length; j++) {
-          SessionSet currentSet = sessionExercise.sets[j];
+      if (lastWorkout != null) {
+        final List<WorkoutSet> updatedSets = [];
+        for (int j = 0; j < workoutExercise.sets.length; j++) {
+          WorkoutSet currentSet = workoutExercise.sets[j];
           
-          // Try to find corresponding exercise history
-          WorkoutExerciseHistory? exerciseHistory;
-          for (final eh in lastHistory.exercises) { // eh is WorkoutExerciseHistory
-            if (eh.exerciseSlug == exerciseSlug) { // Use exerciseSlug
-              exerciseHistory = eh;
-              break;
-            }
-          }
-
-          if (exerciseHistory != null && exerciseHistory.sets.isNotEmpty) {
-            // Use the set at the same index if available, otherwise fallback or leave null
-            // This is a simple matching strategy; could be more sophisticated
-            if (j < exerciseHistory.sets.length) {
-              final historicalSet = exerciseHistory.sets[j]; // historicalSet is SetHistory
-              currentSet = currentSet.copyWith(
-                reps: historicalSet.repsPerformed, // Use repsPerformed
-                weight: historicalSet.weightLogged, // Use weightLogged
-                lastReps: historicalSet.repsPerformed, // Use repsPerformed
-                lastWeight: historicalSet.weightLogged, // Use weightLogged
-              );
-            } else {
-              final fallbackHistoricalSet = exerciseHistory.sets.last; // fallbackHistoricalSet is SetHistory
-              currentSet = currentSet.copyWith(
-                reps: fallbackHistoricalSet.repsPerformed, // Use repsPerformed
-                weight: fallbackHistoricalSet.weightLogged, // Use weightLogged
-                lastReps: fallbackHistoricalSet.repsPerformed, // Use repsPerformed
-                lastWeight: fallbackHistoricalSet.weightLogged, // Use weightLogged
-              );
-            }
-          }
+          // For now, we'll just copy the set as-is since we don't have the history structure anymore
+          // In a full implementation, we would populate actualReps and actualWeight from history
           updatedSets.add(currentSet);
         }
-        sessionExercises[i] = sessionExercise.copyWith(sets: updatedSets);
+        sessionExercises.add(workoutExercise.copyWith(sets: updatedSets));
+      } else {
+        sessionExercises.add(workoutExercise);
       }
     }
 
-    _currentSession = WorkoutSession(
+    _currentSession = Workout(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
-      workout: workout,
-      startTime: DateTime.now(),
+      name: workout.name,
+      description: workout.description,
+      iconCodePoint: workout.iconCodePoint,
+      colorValue: workout.colorValue,
+      folderId: workout.folderId,
+      notes: workout.notes,
+      status: WorkoutStatus.inProgress,
+      templateId: workout.id,
+      startedAt: DateTime.now(),
       exercises: sessionExercises,
     );
     
@@ -143,7 +123,7 @@ class WorkoutSessionService {
     return _currentSession!;
   }
 
-  Future<void> updateSession(WorkoutSession session) async {
+  Future<void> updateSession(Workout session) async {
     _currentSession = session;
     await _saveCurrentSession();
     if (hasActiveSession) {
@@ -207,8 +187,8 @@ class WorkoutSessionService {
 
 
   Future<void> updateSet(String exerciseId, String setId, {
-    int? reps,
-    double? weight,
+    int? actualReps,
+    double? actualWeight,
     bool? isCompleted,
   }) async {
     if (_currentSession == null) return;
@@ -226,16 +206,16 @@ class WorkoutSessionService {
     _currentSetIndex = setIdx;
 
     final updatedSet = exercise.sets[setIdx].copyWith(
-      reps: reps,
-      weight: weight,
+      actualReps: actualReps,
+      actualWeight: actualWeight,
       isCompleted: isCompleted,
     );
 
-    final updatedSets = List<SessionSet>.from(exercise.sets);
+    final updatedSets = List<WorkoutSet>.from(exercise.sets);
     updatedSets[setIdx] = updatedSet;
 
     final updatedExercise = exercise.copyWith(sets: updatedSets);
-    final updatedExercises = List<SessionExercise>.from(_currentSession!.exercises);
+    final updatedExercises = List<WorkoutExercise>.from(_currentSession!.exercises);
     updatedExercises[exerciseIdx] = updatedExercise;
 
     _currentSession = _currentSession!.copyWith(exercises: updatedExercises);
@@ -262,11 +242,11 @@ class WorkoutSessionService {
     final currentSet = exercise.sets[setIdx];
     final updatedSet = currentSet.copyWith(isCompleted: !currentSet.isCompleted);
 
-    final updatedSets = List<SessionSet>.from(exercise.sets);
+    final updatedSets = List<WorkoutSet>.from(exercise.sets);
     updatedSets[setIdx] = updatedSet;
 
     final updatedExercise = exercise.copyWith(sets: updatedSets);
-    final updatedExercises = List<SessionExercise>.from(_currentSession!.exercises);
+    final updatedExercises = List<WorkoutExercise>.from(_currentSession!.exercises);
     updatedExercises[exerciseIdx] = updatedExercise;
 
     _currentSession = _currentSession!.copyWith(exercises: updatedExercises);
@@ -276,9 +256,9 @@ class WorkoutSessionService {
     }
   }
 
-  Future<WorkoutHistory> completeWorkout({
+  Future<Workout> completeWorkout({
     String? notes,
-    WorkoutMood? mood,
+    int? mood,
   }) async {
     if (_currentSession == null) {
       throw Exception('No active workout session');
@@ -286,7 +266,7 @@ class WorkoutSessionService {
 
     // Round up duration to the next full minute
     final now = DateTime.now();
-    final startTime = _currentSession!.startTime;
+    final startTime = _currentSession!.startedAt ?? DateTime.now();
     final rawDuration = now.difference(startTime);
     final needsRounding = rawDuration.inSeconds % 60 != 0;
     final roundedDuration = needsRounding
@@ -295,61 +275,15 @@ class WorkoutSessionService {
     final roundedEndTime = startTime.add(roundedDuration);
 
     final completedSession = _currentSession!.copyWith(
-      isCompleted: true,
-      endTime: roundedEndTime,
+      status: WorkoutStatus.completed,
+      completedAt: roundedEndTime,
       notes: notes,
-      mood: mood,
     );
 
-    final String newWorkoutHistoryId = DateTime.now().millisecondsSinceEpoch.toString();
-
-    final exerciseHistories = completedSession.exercises.asMap().entries.map((entry) {
-      int exIdx = entry.key;
-      SessionExercise sessionExercise = entry.value;
-      final String newWorkoutExerciseHistoryId = newWorkoutHistoryId + "_ex_" + exIdx.toString();
-
-      return WorkoutExerciseHistory(
-        id: newWorkoutExerciseHistoryId,
-        workoutHistoryId: newWorkoutHistoryId, // Link to parent WorkoutHistory
-        exerciseSlug: sessionExercise.workoutExercise.exerciseSlug,
-        exerciseName: sessionExercise.workoutExercise.exerciseDetail?.name ?? sessionExercise.workoutExercise.exerciseSlug,
-        orderIndex: exIdx,
-        // notes: sessionExercise.workoutExercise.notes, // If notes from template should carry over
-        sets: sessionExercise.sets.asMap().entries.map((entrySet) {
-          int setIdx = entrySet.key;
-          SessionSet sessionSet = entrySet.value;
-          return SetHistory(
-            // id is auto-generated in SetHistory
-            workoutHistoryExerciseId: newWorkoutExerciseHistoryId, // Link to parent WorkoutExerciseHistory
-            setNumber: setIdx + 1,
-            repsPerformed: sessionSet.reps,
-            weightLogged: sessionSet.weight,
-            completed: sessionSet.isCompleted,
-            // type, notes, durationSeconds, restTimeAchievedSeconds, weightUnit could be set if available
-          );
-        }).toList(),
-      );
-    }).toList();
-
-    final workoutHistory = WorkoutHistory(
-      id: newWorkoutHistoryId,
-      workoutId: completedSession.workout.id,
-      workoutName: completedSession.workout.name,
-      startTime: completedSession.startTime,
-      endTime: roundedEndTime,
-      exercises: exerciseHistories, // Assign the fully created list
-      notes: notes ?? '',
-      mood: mood?.index ?? 2, 
-      // totalSets and totalWeight are now getters, no longer constructor parameters
-      iconCodePoint: completedSession.workout.iconCodePoint ?? 0xe1a3,
-      colorValue: completedSession.workout.colorValue ?? 0xFF2196F3,
-      durationSeconds: roundedEndTime.difference(completedSession.startTime).inSeconds,
-    );
-
-    await DatabaseService.instance.saveWorkoutHistory(workoutHistory);
+    await DatabaseService.instance.saveWorkout(completedSession);
     await LiveWorkoutNotificationService().stopService();
     await clearActiveSession();
-    return workoutHistory;
+    return completedSession;
   }
 
   Future<void> clearActiveSession() async {

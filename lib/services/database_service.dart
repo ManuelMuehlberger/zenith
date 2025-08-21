@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/workout_history.dart';
 import '../models/workout.dart';
 import 'workout_service.dart';
 
@@ -11,78 +10,92 @@ class DatabaseService {
   
   static DatabaseService get instance => _instance;
 
-  static const String _workoutHistoryKey = 'workout_history';
+  static const String _workoutHistoryKey = 'workouts';
   static const String _activeWorkoutKey = 'active_workout';
   static const String _settingsKey = 'app_settings';
 
-  // Workout History Management
-  Future<List<WorkoutHistory>> getWorkoutHistory() async {
+  // Workout Management
+  Future<List<Workout>> getWorkouts() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final historyJson = prefs.getStringList(_workoutHistoryKey) ?? [];
+      final workoutsJson = prefs.getStringList(_workoutHistoryKey) ?? [];
       
-      return historyJson
-          .map((json) => WorkoutHistory.fromMap(jsonDecode(json)))
+      return workoutsJson
+          .map((json) => Workout.fromMap(jsonDecode(json)))
           .toList()
-        ..sort((a, b) => b.startTime.compareTo(a.startTime));
+        ..sort((a, b) => (b.startedAt ?? DateTime.now()).compareTo(a.startedAt ?? DateTime.now()));
     } catch (e) {
       return [];
     }
   }
 
-  Future<void> saveWorkoutHistory(WorkoutHistory workout) async {
+  Future<void> saveWorkout(Workout workout) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final historyJson = prefs.getStringList(_workoutHistoryKey) ?? [];
+      final workoutsJson = prefs.getStringList(_workoutHistoryKey) ?? [];
       
-      // Add new workout to history
-      historyJson.add(jsonEncode(workout.toMap()));
+      // Check if workout already exists
+      final existingIndex = workoutsJson.indexWhere((json) {
+        final workoutMap = jsonDecode(json);
+        return workoutMap['id'] == workout.id;
+      });
       
-      await prefs.setStringList(_workoutHistoryKey, historyJson);
+      if (existingIndex != -1) {
+        // Update existing workout
+        workoutsJson[existingIndex] = jsonEncode(workout.toMap());
+      } else {
+        // Add new workout
+        workoutsJson.add(jsonEncode(workout.toMap()));
+      }
+      
+      await prefs.setStringList(_workoutHistoryKey, workoutsJson);
     } catch (e) {
     }
   }
 
-  Future<void> deleteWorkoutHistory(String workoutId) async {
+
+  Future<void> deleteWorkout(String workoutId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final historyJson = prefs.getStringList(_workoutHistoryKey) ?? [];
+      final workoutsJson = prefs.getStringList(_workoutHistoryKey) ?? [];
       
-      final updatedHistoryJson = historyJson.where((json) {
+      final updatedWorkoutsJson = workoutsJson.where((json) {
         final workoutMap = jsonDecode(json);
         return workoutMap['id'] != workoutId;
       }).toList();
       
-      await prefs.setStringList(_workoutHistoryKey, updatedHistoryJson);
+      await prefs.setStringList(_workoutHistoryKey, updatedWorkoutsJson);
     } catch (e) {
       rethrow;
     }
   }
 
-  Future<List<WorkoutHistory>> getWorkoutHistoryForDate(DateTime date) async {
-    final allHistory = await getWorkoutHistory();
+  Future<List<Workout>> getWorkoutsForDate(DateTime date) async {
+    final allWorkouts = await getWorkouts();
     final targetDate = DateTime(date.year, date.month, date.day);
     
-    return allHistory.where((workout) {
+    return allWorkouts.where((workout) {
       final workoutDate = DateTime(
-        workout.startTime.year,
-        workout.startTime.month,
-        workout.startTime.day,
+        workout.startedAt?.year ?? 0,
+        workout.startedAt?.month ?? 0,
+        workout.startedAt?.day ?? 0,
       );
       return workoutDate == targetDate;
     }).toList();
   }
 
   Future<List<DateTime>> getDatesWithWorkouts() async {
-    final allHistory = await getWorkoutHistory();
+    final allHistory = await getWorkouts();
     final dates = <DateTime>{};
     
     for (final workout in allHistory) {
-      dates.add(DateTime(
-        workout.startTime.year,
-        workout.startTime.month,
-        workout.startTime.day,
-      ));
+      if (workout.startedAt != null) {
+        dates.add(DateTime(
+          workout.startedAt!.year,
+          workout.startedAt!.month,
+          workout.startedAt!.day,
+        ));
+      }
     }
     
     return dates.toList()..sort();
@@ -150,19 +163,19 @@ class DatabaseService {
     }
   }
 
-  Future<WorkoutHistory?> getLastWorkoutHistoryForExercise(String exerciseSlug) async {
+  Future<Workout?> getLastWorkoutForExercise(String exerciseSlug) async {
     try {
-      final allHistory = await getWorkoutHistory(); // Already sorted by most recent first
-      for (final historyEntry in allHistory) {
-        // Ensure exercises are loaded for historyEntry if they are fetched lazily in the future.
-        // For now, assuming historyEntry.exercises is populated by WorkoutHistory.fromMap
-        for (final exerciseInHistory in historyEntry.exercises) { 
-          if (exerciseInHistory.exerciseSlug == exerciseSlug) { // Changed from exerciseId
-            return historyEntry; // Return the first (most recent) history containing this exercise
+      final allWorkouts = await getWorkouts(); // Already sorted by most recent first
+      for (final workout in allWorkouts) {
+        // Ensure exercises are loaded for workout if they are fetched lazily in the future.
+        // For now, assuming workout.exercises is populated by Workout.fromMap
+        for (final exerciseInWorkout in workout.exercises) { 
+          if (exerciseInWorkout.exerciseSlug == exerciseSlug) { // Changed from exerciseId
+            return workout; // Return the first (most recent) workout containing this exercise
           }
         }
       }
-      return null; // No history found for this exercise
+      return null; // No workout found for this exercise
     } catch (e) {
       return null;
     }
@@ -171,13 +184,13 @@ class DatabaseService {
   // Data Export/Import
   Future<String> exportWorkoutData() async {
     try {
-      final history = await getWorkoutHistory();
+      final workouts = await getWorkouts();
       final settings = await getAppSettings();
       
       final exportData = {
         'version': '1.0',
         'exportDate': DateTime.now().toIso8601String(),
-        'workoutHistory': history.map((w) => w.toMap()).toList(),
+        'workouts': workouts.map((w) => w.toMap()).toList(),
         'settings': settings,
       };
       
@@ -191,13 +204,13 @@ class DatabaseService {
     try {
       final data = jsonDecode(jsonData);
       
-      if (data['workoutHistory'] != null) {
+      if (data['workouts'] != null) {
         final prefs = await SharedPreferences.getInstance();
-        final historyList = (data['workoutHistory'] as List)
+        final workoutsList = (data['workouts'] as List)
             .map((w) => jsonEncode(w))
             .toList();
         
-        await prefs.setStringList(_workoutHistoryKey, historyList);
+        await prefs.setStringList(_workoutHistoryKey, workoutsList);
       }
       
       if (data['settings'] != null) {
@@ -220,27 +233,27 @@ class DatabaseService {
     }
   }
 
-  Future<void> migrateWorkoutHistoryIcons() async {
+  Future<void> migrateWorkoutIcons() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final historyJson = prefs.getStringList(_workoutHistoryKey) ?? [];
+      final workoutsJson = prefs.getStringList(_workoutHistoryKey) ?? [];
       await WorkoutService.instance.loadData();
       final workouts = WorkoutService.instance.workouts;
       
       bool needsUpdate = false;
-      final updatedHistoryJson = <String>[];
+      final updatedWorkoutsJson = <String>[];
       
-      for (final json in historyJson) {
-        final historyMap = jsonDecode(json);
-        final history = WorkoutHistory.fromMap(historyMap);
+      for (final json in workoutsJson) {
+        final workoutMap = jsonDecode(json);
+        final workout = Workout.fromMap(workoutMap);
         
-        // Check if this history entry needs icon/color update
-        if (history.iconCodePoint == 0xe1a3 && history.colorValue == 0xFF2196F3) {
+        // Check if this workout entry needs icon/color update
+        if (workout.iconCodePoint == 0xe1a3 && workout.colorValue == 0xFF2196F3) {
           // Find matching workout by ID or name
           Workout? matchingWorkout;
           try {
             matchingWorkout = workouts.firstWhere(
-              (w) => w.id == history.workoutId || w.name == history.workoutName,
+              (w) => w.id == workout.templateId || w.name == workout.name,
             );
           } catch (e) {
             // No matching workout found, use default values
@@ -248,32 +261,35 @@ class DatabaseService {
           }
           
           if (matchingWorkout != null) {
-            final updatedHistory = WorkoutHistory(
-              id: history.id,
-              workoutId: history.workoutId,
-              workoutName: history.workoutName,
-              startTime: history.startTime,
-              endTime: history.endTime,
-              exercises: history.exercises, // This list itself might need deep copy if modified
-              notes: history.notes,
-              mood: history.mood,
-              // totalSets and totalWeight are now getters in WorkoutHistory, not constructor params
+            final updatedWorkout = Workout(
+              id: workout.id,
+              name: workout.name,
+              description: workout.description,
               iconCodePoint: matchingWorkout.iconCodePoint ?? 0xe1a3, // Default if null
               colorValue: matchingWorkout.colorValue ?? 0xFF2196F3,    // Default if null
+              folderId: workout.folderId,
+              notes: workout.notes,
+              lastUsed: workout.lastUsed,
+              orderIndex: workout.orderIndex,
+              status: workout.status,
+              templateId: workout.templateId,
+              startedAt: workout.startedAt,
+              completedAt: workout.completedAt,
+              exercises: workout.exercises, // This list itself might need deep copy if modified
             );
             
-            updatedHistoryJson.add(jsonEncode(updatedHistory.toMap()));
+            updatedWorkoutsJson.add(jsonEncode(updatedWorkout.toMap()));
             needsUpdate = true;
           } else {
-            updatedHistoryJson.add(json);
+            updatedWorkoutsJson.add(json);
           }
         } else {
-          updatedHistoryJson.add(json);
+          updatedWorkoutsJson.add(json);
         }
       }
       
       if (needsUpdate) {
-        await prefs.setStringList(_workoutHistoryKey, updatedHistoryJson);
+        await prefs.setStringList(_workoutHistoryKey, updatedWorkoutsJson);
       }
     } catch (e) {
     }

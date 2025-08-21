@@ -2,15 +2,17 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../models/exercise.dart';
-import '../models/workout_history.dart';
+import '../models/workout.dart';
+import '../models/workout_exercise.dart';
 import '../services/database_service.dart';
 import '../services/exercise_service.dart';
 import '../services/user_service.dart';
 import '../utils/unit_converter.dart';
 import 'exercise_info_screen.dart';
+import '../constants/app_constants.dart';
 
 class WorkoutDetailScreen extends StatefulWidget {
-  final WorkoutHistory workout;
+  final Workout workout;
 
   const WorkoutDetailScreen({
     super.key,
@@ -22,9 +24,9 @@ class WorkoutDetailScreen extends StatefulWidget {
 }
 
 class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
-  String _getUnitPreference() {
+  /*String _getUnitPreference() {
     return UserService.instance.currentProfile?.units ?? 'metric';
-  }
+  }*/
 
   String _formatDuration(Duration duration) {
     int totalMinutes = duration.inMinutes;
@@ -92,7 +94,8 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     ];
 
     // Ensure mood index is within valid range (0-4), default to 2 (neutral) if invalid
-    final moodValue = widget.workout.mood ?? 2;
+    // For now, we'll use a default mood since the unified model doesn't have a mood field yet
+    final moodValue = 2; // Default to neutral
     final moodIndex = (moodValue >= 0 && moodValue <= 4) ? moodValue : 2;
 
     return Container(
@@ -123,9 +126,9 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
   }
 
   String _formatWeight(double weight) {
-    final units = UserService.instance.currentProfile?.units ?? 'metric';
-    final unitLabel = UnitConverter.getWeightUnit(units);
-    final kUnitLabel = units == 'imperial' ? 'k lbs' : 'k kg';
+    final units = UserService.instance.currentProfile?.units ?? Units.metric;
+    final unitLabel = UnitConverter.getWeightUnit(units.name); // Convert enum to string for UnitConverter
+    final kUnitLabel = units == Units.imperial ? 'k lbs' : 'k kg';
 
     if (weight > 999) {
       return '${(weight / 1000).toStringAsFixed(1)} $kUnitLabel';
@@ -133,13 +136,13 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     return '${weight.toStringAsFixed(1)} $unitLabel';
   }
   
-  Widget _buildExerciseCard(WorkoutExerciseHistory exercise) {
+  Widget _buildExerciseCard(WorkoutExercise exercise) {
     return GestureDetector(
       onTap: () async {
         Exercise? fullExercise;
         try {
           fullExercise = ExerciseService.instance.exercises.firstWhere(
-            (ex) => ex.name == exercise.exerciseName,
+            (ex) => ex.slug == exercise.exerciseSlug,
           );
         } catch (e) {
           // Element not found in list
@@ -160,7 +163,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error: Could not find details for ${exercise.exerciseName}.'),
+              content: Text('Error: Could not find details for ${exercise.exerciseSlug}.'),
               backgroundColor: Colors.red,
             ),
           );
@@ -177,7 +180,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              exercise.exerciseName,
+              exercise.exerciseSlug,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 18,
@@ -192,9 +195,9 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: set.completed ? Colors.green.withAlpha(51) : Colors.grey[800],
+                  color: set.isCompleted ? Colors.green.withAlpha(51) : Colors.grey[800],
                   borderRadius: BorderRadius.circular(8),
-                  border: set.completed 
+                  border: set.isCompleted 
                       ? Border.all(color: Colors.green.withAlpha(102), width: 1)
                       : null,
                 ),
@@ -204,7 +207,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
-                        color: set.completed ? Colors.green : Colors.grey[600],
+                        color: set.isCompleted ? Colors.green : Colors.grey[600],
                         shape: BoxShape.circle,
                       ),
                       child: Center(
@@ -223,18 +226,18 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                       child: Row(
                         children: [
                           Text(
-                            '${set.repsPerformed} reps',
+                            '${set.actualReps ?? set.targetReps ?? 0} reps',
                             style: TextStyle(
-                              color: set.completed ? Colors.white : Colors.grey[400],
+                              color: set.isCompleted ? Colors.white : Colors.grey[400],
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           const SizedBox(width: 16),
                           Text(
-                            _formatWeight(set.weightLogged ?? 0.0),
+                            _formatWeight(set.actualWeight ?? set.targetWeight ?? 0.0),
                             style: TextStyle(
-                              color: set.completed ? Colors.white : Colors.grey[400],
+                              color: set.isCompleted ? Colors.white : Colors.grey[400],
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
@@ -242,7 +245,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                         ],
                       ),
                     ),
-                    if (set.completed)
+                    if (set.isCompleted)
                       const Icon(
                         Icons.check_circle,
                         color: Colors.green,
@@ -264,7 +267,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
       builder: (BuildContext context) => CupertinoAlertDialog(
         title: const Text('Delete Workout?'),
         content: Text(
-            'Are you sure you want to delete "${widget.workout.workoutName}"? This action cannot be undone.'),
+            'Are you sure you want to delete "${widget.workout.name}"? This action cannot be undone.'),
         actions: <CupertinoDialogAction>[
           CupertinoDialogAction(
             child: const Text('Cancel'),
@@ -285,12 +288,12 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
 
     if (confirmed == true) {
       try {
-        await DatabaseService.instance.deleteWorkoutHistory(widget.workout.id);
+        await DatabaseService.instance.deleteWorkout(widget.workout.id);
         if (mounted) {
           Navigator.of(context).pop(); // Go back to the previous screen
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('"${widget.workout.workoutName}" deleted.'),
+              content: Text('"${widget.workout.name}" deleted.'),
               backgroundColor: Colors.green,
             ),
           );
@@ -386,7 +389,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.workout.workoutName,
+                          widget.workout.name,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,
@@ -395,7 +398,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _formatDate(widget.workout.startTime),
+                          _formatDate(widget.workout.startedAt ?? DateTime.now()),
                           style: TextStyle(
                             color: Colors.grey[400],
                             fontSize: 14,
@@ -422,7 +425,9 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _buildSummaryItem(
-                    _formatDuration(widget.workout.duration ?? Duration.zero),
+                    _formatDuration(widget.workout.completedAt != null 
+                        ? widget.workout.completedAt!.difference(widget.workout.startedAt ?? DateTime.now()) 
+                        : Duration.zero),
                     'Duration',
                     Icons.timer_outlined,
                   ),
@@ -442,7 +447,9 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                     color: Colors.grey[800],
                   ),
                   _buildSummaryItem(
-                    _formatWeight(widget.workout.totalWeight),
+                    _formatWeight(widget.workout.exercises.fold(0.0, (sum, exercise) => 
+                        sum + exercise.sets.fold(0.0, (setSum, set) => 
+                            setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0)))),
                     'Weight',
                     Icons.monitor_weight_outlined,
                   ),
@@ -562,7 +569,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                         ),
                         Expanded(
                           child: Text(
-                            widget.workout.workoutName,
+                            widget.workout.name,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 20,
