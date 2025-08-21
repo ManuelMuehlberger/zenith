@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'muscle_group.dart';
 import 'typedefs.dart';
 
@@ -27,11 +28,25 @@ class Exercise {
       slug: map['slug'] ?? '',
       name: map['name'] ?? '',
       primaryMuscleGroup: MuscleGroup.fromName(map['primary_muscle_group'] ?? ''),
-      secondaryMuscleGroups: List<MuscleGroup>.from((map['secondary_muscle_groups'] ?? []).map((e) => MuscleGroup.fromName(e.toString()))),
-      instructions: List<String>.from(map['instructions'] ?? []),
+      secondaryMuscleGroups: map['secondary_muscle_groups'] != null
+          ? (map['secondary_muscle_groups'] is String
+              ? List<MuscleGroup>.from(
+                  (jsonDecode(map['secondary_muscle_groups']) as List)
+                      .map((e) => MuscleGroup.fromName(e.toString())))
+              : List<MuscleGroup>.from(
+                  (map['secondary_muscle_groups'] as List)
+                      .map((e) => MuscleGroup.fromName(e.toString()))))
+          : [],
+      instructions: map['instructions'] != null
+          ? (map['instructions'] is String
+              ? List<String>.from(jsonDecode(map['instructions']) as List)
+              : List<String>.from(map['instructions'] as List))
+          : [],
       image: map['image'] ?? '',
       animation: map['animation'] ?? '',
-      isBodyWeightExercise: map['is_bodyweight_exercise'] ?? false,
+      isBodyWeightExercise: map['is_bodyweight_exercise'] is int 
+          ? map['is_bodyweight_exercise'] == 1 
+          : map['is_bodyweight_exercise'] ?? false,
     );
   }
 
@@ -39,13 +54,13 @@ class Exercise {
     return {
       'slug': slug,
       'name': name,
-      'primary_muscle_group': primaryMuscleGroup.name.toLowerCase(),
-      'secondary_muscle_groups':
-          secondaryMuscleGroups.map((e) => e.name.toLowerCase()).toList(),
-      'instructions': instructions,
+      'primary_muscle_group': primaryMuscleGroup.name,
+      'secondary_muscle_groups': jsonEncode(
+          secondaryMuscleGroups.map((e) => e.name).toList()),
+      'instructions': jsonEncode(instructions),
       'image': image,
       'animation': animation,
-      'is_bodyweight_exercise': isBodyWeightExercise,
+      'is_bodyweight_exercise': isBodyWeightExercise ? 1 : 0,
     };
   }
 }

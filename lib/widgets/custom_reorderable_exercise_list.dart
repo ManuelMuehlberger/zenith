@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/workout_exercise.dart';
+import '../services/reorder_service.dart';
 import 'dart:async';
 
 typedef OnReorder = void Function(int oldIndex, int newIndex);
@@ -10,6 +11,7 @@ class CustomReorderableExerciseList extends StatefulWidget {
   final List<WorkoutExercise> exercises;
   final OnReorder onReorder;
   final ExerciseCardBuilder itemBuilder;
+  final String workoutId;
   final EdgeInsets? padding;
   final ScrollController? scrollController;
   final double itemExtent; 
@@ -19,6 +21,7 @@ class CustomReorderableExerciseList extends StatefulWidget {
     required this.exercises,
     required this.onReorder,
     required this.itemBuilder,
+    required this.workoutId,
     this.padding,
     this.scrollController,
     this.itemExtent = 180.0,

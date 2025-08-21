@@ -17,6 +17,26 @@ class InsightsService {
   Map<String, dynamic>? _cache;
   DateTime? _lastCacheUpdate;
 
+  // For testing purposes, allow dependency injection
+  Future<List<Workout>> Function()? _workoutsProvider;
+
+  /// For testing purposes, allow injecting a custom workouts provider
+  void setWorkoutsProvider(Future<List<Workout>> Function() provider) {
+    _workoutsProvider = provider;
+  }
+
+  Future<List<Workout>> _getWorkouts() async {
+    try {
+      if (_workoutsProvider != null) {
+        return await _workoutsProvider!();
+      }
+      return await DatabaseService.instance.getWorkouts();
+    } catch (e) {
+      // Return empty list on error to prevent crashes
+      return [];
+    }
+  }
+
   Future<WorkoutInsights> getWorkoutInsights({
     int monthsBack = 6,
     bool forceRefresh = false,
@@ -65,7 +85,7 @@ class InsightsService {
   }
 
   Future<WorkoutInsights> _calculateInsights(int monthsBack) async {
-    final allWorkouts = await DatabaseService.instance.getWorkouts();
+    final allWorkouts = await _getWorkouts();
     final cutoffDate = DateTime.now().subtract(Duration(days: monthsBack * 30));
     
     // Filter workouts within the specified time range
@@ -101,7 +121,7 @@ class InsightsService {
   }
 
   Future<ExerciseInsights> _calculateExerciseInsights(String exerciseName, int monthsBack) async {
-    final allWorkouts = await DatabaseService.instance.getWorkouts();
+    final allWorkouts = await _getWorkouts();
     final cutoffDate = DateTime.now().subtract(Duration(days: monthsBack * 30));
     
     // Filter workouts within the specified time range

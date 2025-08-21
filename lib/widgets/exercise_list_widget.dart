@@ -31,8 +31,15 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
   @override
   void initState() {
     super.initState();
-    _filteredExercises = ExerciseService.instance.exercises;
+    _loadExercises();
     _searchController.addListener(_filterExercises);
+  }
+
+  Future<void> _loadExercises() async {
+    await ExerciseService.instance.loadExercises();
+    setState(() {
+      _filteredExercises = ExerciseService.instance.exercises;
+    });
   }
 
   @override

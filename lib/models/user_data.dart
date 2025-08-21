@@ -58,25 +58,18 @@ class UserData {
       'name': name,
       'birthdate': birthdate.toIso8601String(),
       'units': units.name, // Convert enum to string for storage
-      'weightHistory': weightHistory.map((entry) => entry.toMap()).toList(),
       'createdAt': createdAt.toIso8601String(),
       'theme': theme,
     };
   }
 
   factory UserData.fromMap(Map<String, dynamic> map) {
-    final weightHistoryList = map['weightHistory'] as List?;
-    final weightHistory = weightHistoryList
-            ?.map((e) => WeightEntry.fromMap(e))
-            .toList() ??
-        [];
-
     return UserData(
       id: map['id'] as String? ?? const Uuid().v4(),
       name: map['name'] as String? ?? '',
       birthdate: DateTime.parse(map['birthdate'] as String),
       units: Units.fromString(map['units'] as String? ?? 'metric'),
-      weightHistory: weightHistory,
+      weightHistory: [], // Weight history will be loaded separately from WeightEntry table
       createdAt: DateTime.parse(map['createdAt'] as String? ?? DateTime.now().toIso8601String()),
       theme: map['theme'] as String? ?? 'dark',
     );

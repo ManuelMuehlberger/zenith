@@ -11,10 +11,14 @@ import '../models/workout.dart';
 import '../models/exercise.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
-import 'database_service.dart';
-import 'user_service.dart';
-import 'workout_service.dart';
-import 'exercise_service.dart';
+import 'dao/user_dao.dart';
+import 'dao/weight_entry_dao.dart';
+import 'dao/workout_dao.dart';
+import 'dao/workout_folder_dao.dart';
+import 'dao/workout_exercise_dao.dart';
+import 'dao/workout_set_dao.dart';
+import 'dao/exercise_dao.dart';
+import 'dao/muscle_group_dao.dart';
 
 class ExportImportService {
   static final ExportImportService _instance = ExportImportService._internal();
@@ -22,6 +26,16 @@ class ExportImportService {
   ExportImportService._internal();
   
   static ExportImportService get instance => _instance;
+
+  // Inject DAOs
+  final UserDao _userDao = UserDao();
+  final WeightEntryDao _weightEntryDao = WeightEntryDao();
+  final WorkoutDao _workoutDao = WorkoutDao();
+  final WorkoutFolderDao _workoutFolderDao = WorkoutFolderDao();
+  final WorkoutExerciseDao _workoutExerciseDao = WorkoutExerciseDao();
+  final WorkoutSetDao _workoutSetDao = WorkoutSetDao();
+  final ExerciseDao _exerciseDao = ExerciseDao();
+  final MuscleGroupDao _muscleGroupDao = MuscleGroupDao();
 
   static const String _fileVersion = "1.0.0";
   static const String _appVersion = "1.0.0";
@@ -34,17 +48,71 @@ class ExportImportService {
     DateTime? toDate,
   }) async {
     try {
-      final userProfile = UserService.instance.currentProfile;
-      final workouts = WorkoutService.instance.workouts;
-      final workoutFolders = WorkoutService.instance.folders;
-      final workoutHistory = await DatabaseService.instance.getWorkouts();
-      await ExerciseService.instance.loadExercises();
-      final exercises = ExerciseService.instance.exercises;
-      final settings = await DatabaseService.instance.getAppSettings();
+      // Load data using DAOs
+      final users = await _userDao.getAll();
+      final userProfile = users.isNotEmpty ? users.first : null;
+      
+      // Load weight history for the user
+      List<WeightEntry> weightHistory = [];
+      if (userProfile != null) {
+        weightHistory = await _weightEntryDao.getWeightEntriesByUserId(userProfile.id);
+      }
+      
+      // Update user profile with weight history
+      final userWithHistory = userProfile?.copyWith(weightHistory: weightHistory);
+      
+      final workoutFolders = await _workoutFolderDao.getAllWorkoutFoldersOrdered();
+      final workouts = await _workoutDao.getTemplateWorkouts();
+      
+      // Load exercises and sets for each workout
+      final List<Workout> workoutsWithExercises = [];
+      for (final workout in workouts) {
+        final workoutExercises = await _workoutExerciseDao.getWorkoutExercisesByWorkoutId(workout.id);
+        
+        // Load sets for each exercise
+        final List<WorkoutExercise> exercisesWithSets = [];
+        for (final workoutExercise in workoutExercises) {
+          final sets = await _workoutSetDao.getWorkoutSetsByWorkoutExerciseId(workoutExercise.id);
+          final exerciseWithSets = workoutExercise.copyWith(sets: sets);
+          exercisesWithSets.add(exerciseWithSets);
+        }
+        
+        // Update workout with exercises and sets
+        final workoutWithExercises = workout.copyWith(exercises: exercisesWithSets);
+        workoutsWithExercises.add(workoutWithExercises);
+      }
+      
+      final workoutHistory = await _workoutDao.getCompletedWorkouts();
+      
+      // Load exercises and sets for each history workout
+      final List<Workout> historyWithExercises = [];
+      for (final workout in workoutHistory) {
+        final workoutExercises = await _workoutExerciseDao.getWorkoutExercisesByWorkoutId(workout.id);
+        
+        // Load sets for each exercise
+        final List<WorkoutExercise> exercisesWithSets = [];
+        for (final workoutExercise in workoutExercises) {
+          final sets = await _workoutSetDao.getWorkoutSetsByWorkoutExerciseId(workoutExercise.id);
+          final exerciseWithSets = workoutExercise.copyWith(sets: sets);
+          exercisesWithSets.add(exerciseWithSets);
+        }
+        
+        // Update workout with exercises and sets
+        final workoutWithExercises = workout.copyWith(exercises: exercisesWithSets);
+        historyWithExercises.add(workoutWithExercises);
+      }
+      
+      final exercises = await _exerciseDao.getAllExercises();
+      
+      // For now, we'll use a simple map for settings
+      final settings = <String, dynamic>{
+        'theme': userWithHistory?.theme ?? 'dark',
+        'units': userWithHistory?.units.name ?? 'metric',
+      };
 
-      List<Workout> filteredHistory = workoutHistory;
+      List<Workout> filteredHistory = historyWithExercises;
       if (fromDate != null || toDate != null) {
-        filteredHistory = workoutHistory.where((workout) {
+        filteredHistory = historyWithExercises.where((workout) {
           final historyDate = workout.startedAt;
           if (historyDate == null) return false;
           if (fromDate != null && historyDate.isBefore(fromDate)) return false;
@@ -70,9 +138,9 @@ class ExportImportService {
           "dataIntegrity": <String, dynamic>{
             "checksum": "",
             "recordCount": <String, dynamic>{
-              "userProfile": userProfile != null ? 1 : 0,
+              "userProfile": userWithHistory != null ? 1 : 0,
               "workoutFolders": workoutFolders.length,
-              "workouts": workouts.length,
+              "workouts": workoutsWithExercises.length,
               "exercises": exercises.length, 
               "workouts": workoutSessions.length,
             }
@@ -88,9 +156,9 @@ class ExportImportService {
           }
         },
         "data": <String, dynamic>{
-          "userProfile": includePersonalData ? userProfile?.toMap() : null,
+          "userProfile": includePersonalData ? userWithHistory?.toMap() : null,
           "workoutFolders": workoutFolders.map((folder) => folder.toMap()).toList(),
-          "workouts": workouts.map((workout) => _workoutToExportFormat(workout)).toList(),
+          "workouts": workoutsWithExercises.map((workout) => _workoutToExportFormat(workout)).toList(),
           "exercises": exercises.map((exercise) => _exerciseToExportFormat(exercise)).toList(),
           "workouts": includeWorkouts ? workoutSessions : [],
           "customExercises": includeCustomExercises ? customExercisesList.map((exercise) => _exerciseToExportFormat(exercise)).toList() : [],
@@ -283,32 +351,49 @@ class ExportImportService {
   }
 
   Future<void> _importUserData(Map<String, dynamic> data) async {
-    final userService = UserService.instance;
-    final workoutService = WorkoutService.instance;
     final String importedFileUnits = (data["userProfile"] as Map<String,dynamic>?)?["units"] as String? ?? "metric";
-    final dbService = DatabaseService.instance;
 
     if (data["userProfile"] != null) {
       final profile = UserData.fromMap(data["userProfile"] as Map<String, dynamic>);
-      await userService.saveUserProfile(profile);
+      // Check if user already exists
+      final existingUser = await _userDao.getUserDataById(profile.id);
+      
+      if (existingUser != null) {
+        // Update existing user
+        await _userDao.updateUserData(profile);
+      } else {
+        // Create new user
+        await _userDao.insert(profile);
+      }
+      
+      // Save weight history entries
+      for (final weightEntry in profile.weightHistory) {
+        try {
+          await _weightEntryDao.addWeightEntryForUser(profile.id, weightEntry);
+        } catch (e) {
+          // If entry already exists, update it
+          await _weightEntryDao.updateWeightEntry(profile.id, weightEntry);
+        }
+      }
     }
-
-    await workoutService.loadData(); 
 
     if (data["workoutFolders"] != null) {
       final folders = (data["workoutFolders"] as List)
           .map((f) => WorkoutFolder.fromMap(f as Map<String, dynamic>))
           .toList();
       for (final folder in folders) {
-        final existingFolder = workoutService.folders.firstWhere((ef) => ef.name == folder.name, orElse: () => folder);
-        if(existingFolder.id == folder.id) { 
-             await workoutService.createFolder(folder.name);
+        // Check if folder already exists
+        try {
+          await _workoutFolderDao.insert(folder);
+        } catch (e) {
+          // If folder already exists, update it
+          await _workoutFolderDao.updateWorkoutFolder(folder);
         }
       }
     }
     
     if (data["workouts"] != null) {
-      final workoutsData = (data["workouts"]as List);
+      final workoutsData = (data["workouts"] as List);
       for (final workoutMap in workoutsData) {
         await _importWorkout(workoutMap as Map<String, dynamic>, importedFileUnits);
       }
@@ -321,11 +406,7 @@ class ExportImportService {
       }
     }
 
-    if (data["preferences"] != null) {
-      final preferences = data["preferences"] as Map<String, dynamic>;
-      final settings = _preferencesToSettings(preferences);
-      await dbService.saveAppSettings(settings);
-    }
+    // Note: We're not importing preferences directly as settings are now part of UserData
   }
 
   Future<void> _importWorkout(Map<String, dynamic> workoutData, String importedFileUnits) async {
@@ -354,24 +435,34 @@ class ExportImportService {
     }
 
     final workout = Workout.fromMap(modifiableWorkoutData);
-    final workoutService = WorkoutService.instance;
-    final existingWorkout = workoutService.workouts.cast<Workout?>().firstWhere((w) => w?.id == workout.id, orElse: () => null);
+    
+    // Check if workout already exists
+    final existingWorkout = await _workoutDao.getWorkoutById(workout.id);
 
     if (existingWorkout != null) {
-      await workoutService.updateWorkout(existingWorkout.copyWith(
-        name: workout.name,
-        description: workout.description,
-        folderId: workout.folderId,
-        iconCodePoint: workout.iconCodePoint,
-        colorValue: workout.colorValue,
-        notes: workout.notes,
-        lastUsed: workout.lastUsed,
-        orderIndex: workout.orderIndex,
-        exercises: workout.exercises,
-      ));
+      await _workoutDao.updateWorkout(workout);
     } else {
-      workoutService.workouts.add(workout);
-      await workoutService.saveData();
+      await _workoutDao.insert(workout);
+    }
+    
+    // Import exercises and sets for this workout
+    for (final exercise in workout.exercises) {
+      try {
+        await _workoutExerciseDao.insert(exercise);
+      } catch (e) {
+        // If exercise already exists, update it
+        await _workoutExerciseDao.updateWorkoutExercise(exercise);
+      }
+      
+      // Import sets for this exercise
+      for (final set in exercise.sets) {
+        try {
+          await _workoutSetDao.insert(set);
+        } catch (e) {
+          // If set already exists, update it
+          await _workoutSetDao.updateWorkoutSet(set);
+        }
+      }
     }
   }
 
@@ -402,7 +493,18 @@ class ExportImportService {
       templateId: sessionData["workoutId"] as String?,
     );
 
-    await DatabaseService.instance.saveWorkout(workout);
+    // Save workout using DAO
+    await _workoutDao.insert(workout);
+    
+    // Save exercises and sets using DAOs
+    for (final exercise in importedExercises) {
+      await _workoutExerciseDao.insert(exercise);
+      
+      // Save sets for this exercise
+      for (final set in exercise.sets) {
+        await _workoutSetDao.insert(set);
+      }
+    }
   }
 
   Map<String, dynamic> _preferencesToSettings(Map<String, dynamic> preferences) {

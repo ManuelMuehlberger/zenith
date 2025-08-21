@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 
+import 'workout_service.dart';
+
 /// Service to manage reordering state for workout exercises.
 /// This service helps to decouple reorder logic from the UI widgets.
 class ReorderService extends ChangeNotifier {
@@ -66,9 +68,12 @@ class ReorderService extends ChangeNotifier {
   }
 
   // Called when an item is dropped after reordering
-  void onReorderCompleted() {
+  void onReorderCompleted(String workoutId, int oldIndex, int newIndex) {
     if (_isDragConfirmed) {
       HapticFeedback.mediumImpact(); // Feedback for successful reorder
+      
+      // Persist the reorder to the database
+      WorkoutService.instance.reorderExercisesInWorkout(workoutId, oldIndex, newIndex);
     }
     _resetDragState();
   }

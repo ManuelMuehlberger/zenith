@@ -1,17 +1,22 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_data.dart';
+import 'dao/user_dao.dart';
+import 'dao/weight_entry_dao.dart';
 
 class UserService with ChangeNotifier {
   static final UserService _instance = UserService._internal();
-  factory UserService() => _instance;
+  factory UserService({UserDao? userDao, WeightEntryDao? weightEntryDao}) {
+    _instance._userDao = userDao ?? UserDao();
+    _instance._weightEntryDao = weightEntryDao ?? WeightEntryDao();
+    return _instance;
+  }
   UserService._internal();
   
   static UserService get instance => _instance;
 
-  static const String _userProfileKey = 'user_profile';
-  static const String _onboardingCompleteKey = 'onboarding_complete';
+  // Inject DAOs
+  late UserDao _userDao;
+  late WeightEntryDao _weightEntryDao;
 
   UserData? _currentProfile;
 
@@ -20,12 +25,17 @@ class UserService with ChangeNotifier {
 
   Future<void> loadUserProfile() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final profileJson = prefs.getString(_userProfileKey);
-      
-      if (profileJson != null) {
-        final profileMap = jsonDecode(profileJson);
-        _currentProfile = UserData.fromMap(profileMap);
+      // For now, we'll load the first user profile from the database
+      // In a real app, you might have a way to select which user profile to load
+      final users = await _userDao.getAll();
+      if (users.isNotEmpty) {
+        _currentProfile = users.first;
+        
+        // Load weight history for the user
+        if (_currentProfile != null) {
+          final weightEntries = await _weightEntryDao.getWeightEntriesByUserId(_currentProfile!.id);
+          _currentProfile = _currentProfile!.copyWith(weightHistory: weightEntries);
+        }
       }
     } catch (e) {
       _currentProfile = null;
@@ -34,9 +44,27 @@ class UserService with ChangeNotifier {
 
   Future<void> saveUserProfile(UserData profile) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_userProfileKey, jsonEncode(profile.toMap()));
-      await prefs.setBool(_onboardingCompleteKey, true);
+      // Check if user already exists
+      final existingUser = await _userDao.getUserDataById(profile.id);
+      
+      if (existingUser != null) {
+        // Update existing user
+        await _userDao.updateUserData(profile);
+      } else {
+        // Create new user
+        await _userDao.insert(profile);
+      }
+      
+      // Save weight history entries
+      for (final weightEntry in profile.weightHistory) {
+        try {
+          await _weightEntryDao.addWeightEntryForUser(profile.id, weightEntry);
+        } catch (e) {
+          // If entry already exists, update it
+          await _weightEntryDao.updateWeightEntry(profile.id, weightEntry);
+        }
+      }
+      
       _currentProfile = profile;
       notifyListeners();
     } catch (e) {
@@ -46,8 +74,9 @@ class UserService with ChangeNotifier {
 
   Future<bool> isOnboardingComplete() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool(_onboardingCompleteKey) ?? false;
+      // Check if there's at least one user profile in the database
+      final users = await _userDao.getAll();
+      return users.isNotEmpty;
     } catch (e) {
       return false;
     }
@@ -59,9 +88,13 @@ class UserService with ChangeNotifier {
 
   Future<void> clearUserData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_userProfileKey);
-      await prefs.remove(_onboardingCompleteKey);
+      // Delete all user data and weight entries from the database
+      final users = await _userDao.getAll();
+      for (final user in users) {
+        await _userDao.delete(user.id);
+      }
+      
+      // Note: Weight entries will be deleted automatically due to foreign key constraints
       _currentProfile = null;
       notifyListeners();
     } catch (e) {
@@ -93,4 +126,8 @@ class UserService with ChangeNotifier {
     return '${weight.toStringAsFixed(1)} $unit';
   }
 
+  // Method for testing to reset the service state
+  void resetForTesting() {
+    _currentProfile = null;
+  }
 }

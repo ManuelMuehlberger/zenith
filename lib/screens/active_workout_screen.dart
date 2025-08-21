@@ -353,6 +353,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             exercises: _currentSession.exercises,
             onReorder: _onReorderExercises,
+            workoutId: _currentSession.id,
             itemExtent: 180.0,
             itemBuilder: (context, index, isDragging, draggingIndex) {
               final exercise = _currentSession.exercises[index];
