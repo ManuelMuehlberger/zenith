@@ -4,7 +4,8 @@ import 'package:crypto/crypto.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:uuid/uuid.dart'; // Added for generating IDs if needed during import
+import 'package:uuid/uuid.dart';
+import 'package:meta/meta.dart';
 import '../models/user_data.dart';
 import '../models/workout_folder.dart';
 import '../models/workout.dart';
@@ -21,21 +22,47 @@ import 'dao/exercise_dao.dart';
 import 'dao/muscle_group_dao.dart';
 
 class ExportImportService {
-  static final ExportImportService _instance = ExportImportService._internal();
-  factory ExportImportService() => _instance;
-  ExportImportService._internal();
-  
-  static ExportImportService get instance => _instance;
+  static ExportImportService? _instance;
 
-  // Inject DAOs
-  final UserDao _userDao = UserDao();
-  final WeightEntryDao _weightEntryDao = WeightEntryDao();
-  final WorkoutDao _workoutDao = WorkoutDao();
-  final WorkoutFolderDao _workoutFolderDao = WorkoutFolderDao();
-  final WorkoutExerciseDao _workoutExerciseDao = WorkoutExerciseDao();
-  final WorkoutSetDao _workoutSetDao = WorkoutSetDao();
-  final ExerciseDao _exerciseDao = ExerciseDao();
-  final MuscleGroupDao _muscleGroupDao = MuscleGroupDao();
+  final UserDao _userDao;
+  final WeightEntryDao _weightEntryDao;
+  final WorkoutDao _workoutDao;
+  final WorkoutFolderDao _workoutFolderDao;
+  final WorkoutExerciseDao _workoutExerciseDao;
+  final WorkoutSetDao _workoutSetDao;
+  final ExerciseDao _exerciseDao;
+  final MuscleGroupDao _muscleGroupDao;
+
+  @visibleForTesting
+  ExportImportService.internal(
+    this._userDao,
+    this._weightEntryDao,
+    this._workoutDao,
+    this._workoutFolderDao,
+    this._workoutExerciseDao,
+    this._workoutSetDao,
+    this._exerciseDao,
+    this._muscleGroupDao,
+  );
+
+  static ExportImportService get instance {
+    _instance ??= ExportImportService.internal(
+        UserDao(),
+        WeightEntryDao(),
+        WorkoutDao(),
+        WorkoutFolderDao(),
+        WorkoutExerciseDao(),
+        WorkoutSetDao(),
+        ExerciseDao(),
+        MuscleGroupDao(),
+      );
+    return _instance!;
+  }
+
+  @visibleForTesting
+  static void setTestInstance(ExportImportService testInstance) {
+    _instance = testInstance;
+  }
 
   static const String _fileVersion = "1.0.0";
   static const String _appVersion = "1.0.0";
@@ -141,8 +168,8 @@ class ExportImportService {
               "userProfile": userWithHistory != null ? 1 : 0,
               "workoutFolders": workoutFolders.length,
               "workouts": workoutsWithExercises.length,
-              "exercises": exercises.length, 
-              "workouts": workoutSessions.length,
+              "exercises": exercises.length,
+              "workout_sessions": workoutSessions.length,
             }
           },
           "exportOptions": <String, dynamic>{
@@ -160,7 +187,7 @@ class ExportImportService {
           "workoutFolders": workoutFolders.map((folder) => folder.toMap()).toList(),
           "workouts": workoutsWithExercises.map((workout) => _workoutToExportFormat(workout)).toList(),
           "exercises": exercises.map((exercise) => _exerciseToExportFormat(exercise)).toList(),
-          "workouts": includeWorkouts ? workoutSessions : [],
+          "workout_sessions": includeWorkouts ? workoutSessions : [],
           "customExercises": includeCustomExercises ? customExercisesList.map((exercise) => _exerciseToExportFormat(exercise)).toList() : [],
           "preferences": _settingsToPreferences(settings),
         }
@@ -305,8 +332,8 @@ class ExportImportService {
     return <String, dynamic>{
       "slug": exercise.slug,
       "name": exercise.name,
-      "primaryMuscleGroup": exercise.primaryMuscleGroup,
-      "secondaryMuscleGroups": exercise.secondaryMuscleGroups,
+      "primaryMuscleGroup": exercise.primaryMuscleGroup.name,
+      "secondaryMuscleGroups": exercise.secondaryMuscleGroups.map((e) => e.name).toList(),
       "instructions": exercise.instructions,
       "image": exercise.image,
       "animation": exercise.animation,
@@ -399,8 +426,8 @@ class ExportImportService {
       }
     }
 
-    if (data["workouts"] != null) {
-      final sessionsData = (data["workouts"] as List);
+    if (data["workout_sessions"] != null) {
+      final sessionsData = (data["workout_sessions"] as List);
       for (final sessionMap in sessionsData) {
         await _importWorkoutSession(sessionMap as Map<String, dynamic>, importedFileUnits);
       }

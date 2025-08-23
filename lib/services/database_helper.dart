@@ -7,8 +7,6 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p; // Alias to avoid conflict with path_provider's Directory
 import 'package:toml/toml.dart';
 
-import '../models/exercise.dart';
-import '../models/muscle_group.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();

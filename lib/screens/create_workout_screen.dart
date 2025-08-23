@@ -379,8 +379,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     );
 
     if (selectedExercise != null) {
-      final newWorkoutExerciseId = DateTime.now().millisecondsSinceEpoch.toString() + "_wex_create";
-      final newSetId = DateTime.now().millisecondsSinceEpoch.toString() + "_set_create";
+      final newWorkoutExerciseId = "${DateTime.now().millisecondsSinceEpoch}_wex_create";
+      final newSetId = "${DateTime.now().millisecondsSinceEpoch}_set_create";
 
       final defaultSet = WorkoutSet(
         id: newSetId, // ID for the template set

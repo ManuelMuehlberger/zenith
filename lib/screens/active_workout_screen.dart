@@ -530,7 +530,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     );
 
     if (selectedExercise != null) {
-      final newWorkoutExerciseId = DateTime.now().millisecondsSinceEpoch.toString() + "_wex";
+      final newWorkoutExerciseId = "${DateTime.now().millisecondsSinceEpoch}_wex";
 
       // Create the WorkoutSet template first (though it's immediately wrapped)
       // This part is a bit convoluted due to how SessionSet.fromWorkoutSet works with old fields.

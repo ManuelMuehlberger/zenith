@@ -92,7 +92,7 @@ Text(
           padding: const EdgeInsets.only(bottom: 8.0),
           child: _buildMuscleGroupChip(context, muscle.name, false),
         ))
-    .toList(),
+    ,
                     ] else ...[
                       Text(
                         'None',

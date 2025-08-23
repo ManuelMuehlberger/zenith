@@ -1,5 +1,4 @@
 import '../models/exercise.dart';
-import '../models/muscle_group.dart';
 import 'dao/exercise_dao.dart';
 import 'dao/muscle_group_dao.dart';
 
@@ -10,9 +9,9 @@ class ExerciseService {
   
   static ExerciseService get instance => _instance;
 
-  // Inject DAOs
-  final ExerciseDao _exerciseDao = ExerciseDao();
-  final MuscleGroupDao _muscleGroupDao = MuscleGroupDao();
+  // Inject DAOs - now can be overridden for testing
+  ExerciseDao _exerciseDao = ExerciseDao();
+  MuscleGroupDao _muscleGroupDao = MuscleGroupDao();
 
   // Cache for exercises
   List<Exercise> _exercises = [];
@@ -21,36 +20,67 @@ class ExerciseService {
   // Cache for muscle groups
   List<String> _muscleGroups = [];
 
+  // Constructor for testing with dependency injection
+  ExerciseService.withDependencies({
+    required ExerciseDao exerciseDao,
+    required MuscleGroupDao muscleGroupDao,
+  }) : _exerciseDao = exerciseDao,
+       _muscleGroupDao = muscleGroupDao;
+
   Future<void> loadExercises() async {
+    // Load exercises with individual error handling
     try {
-      // Load exercises from database
       _exercises = await _exerciseDao.getAllExercises();
-      
-      // Load muscle groups from database
+    } catch (e) {
+      _exercises = [];
+      // Log error in production: print('Failed to load exercises: $e');
+    }
+    
+    // Load muscle groups with individual error handling
+    try {
       final muscleGroups = await _muscleGroupDao.getAllMuscleGroups();
       _muscleGroups = muscleGroups.map((mg) => mg.name).toList()..sort();
     } catch (e) {
-      _exercises = [];
       _muscleGroups = [];
+      // Log error in production: print('Failed to load muscle groups: $e');
     }
   }
 
   List<Exercise> searchExercises(String query) {
-    if (query.isEmpty) return _exercises;
+    final trimmedQuery = query.trim();
+    if (trimmedQuery.isEmpty) return _exercises;
+    
+    final lowerQuery = trimmedQuery.toLowerCase();
     
     // Filter exercises in memory
     return _exercises.where((exercise) {
-      return exercise.name.toLowerCase().contains(query.toLowerCase()) ||
-             exercise.primaryMuscleGroup.name.toLowerCase().contains(query.toLowerCase());
+      // Check exercise name
+      if (exercise.name.toLowerCase().contains(lowerQuery)) {
+        return true;
+      }
+      
+      // Check primary muscle group
+      if (exercise.primaryMuscleGroup.name.toLowerCase().contains(lowerQuery)) {
+        return true;
+      }
+      
+      // Check secondary muscle groups
+      if (exercise.secondaryMuscleGroups.any((mg) => 
+          mg.name.toLowerCase().contains(lowerQuery))) {
+        return true;
+      }
+      
+      return false;
     }).toList();
   }
 
   List<Exercise> filterByMuscleGroup(String muscleGroup) {
-    if (muscleGroup.isEmpty) return _exercises;
+    final trimmedMuscleGroup = muscleGroup.trim();
+    if (trimmedMuscleGroup.isEmpty) return _exercises;
     
     // Filter exercises in memory
     return _exercises.where((exercise) {
-      return exercise.primaryMuscleGroup.name.toLowerCase() == muscleGroup.toLowerCase();
+      return exercise.primaryMuscleGroup.name.toLowerCase() == trimmedMuscleGroup.toLowerCase();
     }).toList();
   }
 

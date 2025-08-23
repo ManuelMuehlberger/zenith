@@ -254,7 +254,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ), // Closes Column
       ), // Closes Container

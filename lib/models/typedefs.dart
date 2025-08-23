@@ -1,6 +1,7 @@
 /// This file contains typedefs that correspond to the database schema
 /// and help ensure type safety when working with identifiers and other
 /// commonly used types.
+library;
 
 // User-related typedefs
 typedef UserDataId = String;

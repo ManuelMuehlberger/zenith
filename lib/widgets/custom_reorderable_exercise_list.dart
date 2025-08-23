@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/workout_exercise.dart';
-import '../services/reorder_service.dart';
 import 'dart:async';
 
 typedef OnReorder = void Function(int oldIndex, int newIndex);

@@ -36,13 +36,23 @@ class UserService with ChangeNotifier {
           final weightEntries = await _weightEntryDao.getWeightEntriesByUserId(_currentProfile!.id);
           _currentProfile = _currentProfile!.copyWith(weightHistory: weightEntries);
         }
+        notifyListeners();
+      } else {
+        _currentProfile = null;
+        notifyListeners();
       }
     } catch (e) {
       _currentProfile = null;
+      notifyListeners();
     }
   }
 
   Future<void> saveUserProfile(UserData profile) async {
+    // Validate input
+    if (profile.name.trim().isEmpty) {
+      throw ArgumentError('User name cannot be empty');
+    }
+    
     try {
       // Check if user already exists
       final existingUser = await _userDao.getUserDataById(profile.id);

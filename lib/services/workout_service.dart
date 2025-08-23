@@ -3,12 +3,10 @@ import '../models/workout_folder.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../models/exercise.dart';
-import '../models/typedefs.dart';
 import 'dao/workout_dao.dart';
 import 'dao/workout_folder_dao.dart';
 import 'dao/workout_exercise_dao.dart';
 import 'dao/workout_set_dao.dart';
-import 'exercise_service.dart';
 
 class WorkoutService {
   static final WorkoutService _instance = WorkoutService._internal();
@@ -18,10 +16,16 @@ class WorkoutService {
   static WorkoutService get instance => _instance;
 
   // Inject DAOs
-  final WorkoutDao _workoutDao = WorkoutDao();
-  final WorkoutFolderDao _workoutFolderDao = WorkoutFolderDao();
-  final WorkoutExerciseDao _workoutExerciseDao = WorkoutExerciseDao();
-  final WorkoutSetDao _workoutSetDao = WorkoutSetDao();
+  WorkoutDao _workoutDao = WorkoutDao();
+  WorkoutFolderDao _workoutFolderDao = WorkoutFolderDao();
+  WorkoutExerciseDao _workoutExerciseDao = WorkoutExerciseDao();
+  WorkoutSetDao _workoutSetDao = WorkoutSetDao();
+
+  // Allow for mock injection in tests
+  set workoutDao(WorkoutDao dao) => _workoutDao = dao;
+  set workoutFolderDao(WorkoutFolderDao dao) => _workoutFolderDao = dao;
+  set workoutExerciseDao(WorkoutExerciseDao dao) => _workoutExerciseDao = dao;
+  set workoutSetDao(WorkoutSetDao dao) => _workoutSetDao = dao;
 
   List<Workout> _workouts = [];
   List<WorkoutFolder> _folders = [];
@@ -152,7 +156,7 @@ class WorkoutService {
     // Insert it at the new position
     workoutsInFolder.insert(newIndex, workout);
 
-    // Update orderIndex for all workouts in the folder
+    // Update orderIndex for all workouts in the folder to reflect the new order.
     for (int i = 0; i < workoutsInFolder.length; i++) {
       final updatedWorkout = workoutsInFolder[i].copyWith(orderIndex: i);
       await _workoutDao.updateWorkout(updatedWorkout);
@@ -373,7 +377,9 @@ class WorkoutService {
 
   // Helper methods
   List<Workout> getWorkoutsInFolder(String? folderId) {
-    return _workouts.where((w) => w.folderId == folderId).toList();
+    final workouts = _workouts.where((w) => w.folderId == folderId).toList();
+    workouts.sort((a, b) => (a.orderIndex ?? 0).compareTo(b.orderIndex ?? 0));
+    return workouts;
   }
 
   List<Workout> getWorkoutsNotInFolder() {

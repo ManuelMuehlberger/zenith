@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:ui';
 import '../models/exercise.dart';
-import '../models/muscle_group.dart';
 import '../services/exercise_service.dart';
 
 class ExerciseListWidget extends StatefulWidget {

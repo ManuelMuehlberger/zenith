@@ -89,7 +89,6 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with TickerProv
       setState(() {
         _exerciseInsights = insights;
       });
-    } catch (e) {
     } finally {
       if (mounted) {
         setState(() {

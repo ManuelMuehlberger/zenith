@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/models/workout_set.dart';
-import 'package:zenith/models/typedefs.dart';
 
 void main() {
   group('WorkoutSet', () {

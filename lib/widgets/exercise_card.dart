@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/workout_exercise.dart';
 import '../models/exercise.dart';
-import '../models/muscle_group.dart';
 import '../screens/exercise_info_screen.dart';
 import 'set_edit_options_sheet.dart';
 

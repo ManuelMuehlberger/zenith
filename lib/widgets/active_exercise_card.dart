@@ -4,7 +4,6 @@ import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../services/workout_session_service.dart';
 import '../screens/exercise_info_screen.dart';
-import '../models/muscle_group.dart';
 
 class ActiveExerciseCard extends StatefulWidget {
   final WorkoutExercise exercise;

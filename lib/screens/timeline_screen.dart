@@ -408,7 +408,7 @@ class TimelineScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                  )).toList(),
+                  )),
                 ],
               ),
             ),

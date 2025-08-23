@@ -36,8 +36,8 @@ void main() {
       expect(map['animation'], 'bench_press.gif');
       expect(map['isBodyWeightExercise'], 0);
       // Check that secondary muscle groups and instructions are JSON encoded
-      expect(map['secondaryMuscleGroups'], '[\"Triceps\",\"Shoulders\"]');
-      expect(map['instructions'], '[\"Lie on bench\",\"Press barbell\"]');
+      expect(map['secondaryMuscleGroups'], '["Triceps","Shoulders"]');
+      expect(map['instructions'], '["Lie on bench","Press barbell"]');
     });
 
     test('should convert map to exercise', () {
@@ -45,8 +45,8 @@ void main() {
         'slug': 'squat',
         'name': 'Squat',
         'primaryMuscleGroup': 'Quads',
-        'secondaryMuscleGroups': '[\"Glutes\",\"Hamstrings\"]',
-        'instructions': '[\"Stand with feet shoulder width apart\",\"Lower body\"]',
+        'secondaryMuscleGroups': '["Glutes","Hamstrings"]',
+        'instructions': '["Stand with feet shoulder width apart","Lower body"]',
         'image': 'squat.jpg',
         'animation': 'squat.gif',
         'isBodyWeightExercise': 0,
@@ -73,8 +73,8 @@ void main() {
         'slug': 'push-up',
         'name': 'Push-up',
         'primaryMuscleGroup': 'Chest',
-        'secondaryMuscleGroups': '[\"Triceps\",\"Shoulders\"]',
-        'instructions': '[\"Start in plank position\",\"Lower body\"]',
+        'secondaryMuscleGroups': '["Triceps","Shoulders"]',
+        'instructions': '["Start in plank position","Lower body"]',
         'image': 'push_up.jpg',
         'animation': 'push_up.gif',
         'isBodyWeightExercise': 1,

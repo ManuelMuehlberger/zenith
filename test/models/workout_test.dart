@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/models/workout.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
-import 'package:zenith/models/typedefs.dart';
 
 void main() {
   group('Workout', () {

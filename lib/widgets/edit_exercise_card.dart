@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../models/exercise.dart';
-import '../models/muscle_group.dart';
 import '../screens/exercise_info_screen.dart';
 import 'set_edit_options_sheet.dart';
 

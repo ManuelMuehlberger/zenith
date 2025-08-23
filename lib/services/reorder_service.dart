@@ -8,9 +8,15 @@ import 'workout_service.dart';
 /// This service helps to decouple reorder logic from the UI widgets.
 class ReorderService extends ChangeNotifier {
   static final ReorderService _instance = ReorderService._internal();
+  factory ReorderService({WorkoutService? workoutService}) {
+    _instance._workoutService = workoutService ?? WorkoutService.instance;
+    return _instance;
+  }
+  ReorderService._internal();
+
   static ReorderService get instance => _instance;
 
-  ReorderService._internal();
+  late WorkoutService _workoutService;
 
   bool _isReorderMode = false;
   int? _draggingIndex; // Index of the item currently being dragged
@@ -56,14 +62,11 @@ class ReorderService extends ChangeNotifier {
   }
 
   void onDragUpdated() {
-    // If drag wasn't confirmed, and user moves, cancel the confirmation timer
-    if (!_isDragConfirmed) {
-       _dragStartDelayTimer?.cancel();
-    }
-    // If drag is confirmed, we might want to refresh the timeout
-    if(_isDragConfirmed) {
-        _dragCompletionTimeoutTimer?.cancel();
-        _dragCompletionTimeoutTimer = Timer(_completionTimeout, _resetDragState);
+    // Only refresh timeout if drag is confirmed, don't cancel delay timer
+    // as this interferes with legitimate drag operations
+    if (_isDragConfirmed) {
+      _dragCompletionTimeoutTimer?.cancel();
+      _dragCompletionTimeoutTimer = Timer(_completionTimeout, _resetDragState);
     }
   }
 
@@ -73,7 +76,7 @@ class ReorderService extends ChangeNotifier {
       HapticFeedback.mediumImpact(); // Feedback for successful reorder
       
       // Persist the reorder to the database
-      WorkoutService.instance.reorderExercisesInWorkout(workoutId, oldIndex, newIndex);
+      _workoutService.reorderExercisesInWorkout(workoutId, oldIndex, newIndex);
     }
     _resetDragState();
   }

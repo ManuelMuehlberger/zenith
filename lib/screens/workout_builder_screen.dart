@@ -414,7 +414,7 @@ if (showAnimation) ...[
   }
 
   Widget _buildEmptyState({bool inFolder = false}) {
-    return Container(
+    return SizedBox(
       height: 400, 
       child: Center(
         child: Column(

@@ -232,13 +232,12 @@ Text(
                       ),
                       CupertinoButton(
                         padding: EdgeInsets.zero,
-                        minSize: 30,
                         child: Icon(
                           CupertinoIcons.minus_circle_fill,
                           color: Colors.redAccent[100],
                           size: 22,
                         ),
-                        onPressed: () => widget.onRemoveSet(widget.exercise.id, set.id),
+                        onPressed: () => widget.onRemoveSet(widget.exercise.id, set.id), minimumSize: Size(30, 30),
                       ),
                     ],
                   ),

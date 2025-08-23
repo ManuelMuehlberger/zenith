@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/workout.dart';
@@ -7,7 +8,7 @@ class InsightsService {
   static final InsightsService _instance = InsightsService._internal();
   factory InsightsService() => _instance;
   InsightsService._internal();
-  
+
   static InsightsService get instance => _instance;
 
   static const String _cacheKey = 'insights_cache';
@@ -16,6 +17,9 @@ class InsightsService {
   // Cache structure
   Map<String, dynamic>? _cache;
   DateTime? _lastCacheUpdate;
+
+  // Concurrency lock for calculations
+  final Map<String, Future<dynamic>> _ongoingRequests = {};
 
   // For testing purposes, allow dependency injection
   Future<List<Workout>> Function()? _workoutsProvider;
@@ -37,61 +41,129 @@ class InsightsService {
     }
   }
 
-  Future<WorkoutInsights> getWorkoutInsights({
-    int monthsBack = 6,
+  Future<T> _withCache<T>({
+    required String key,
+    required Future<T> Function() calculator,
+    required T Function(Map<String, dynamic>) fromMap,
+    required Map<String, dynamic> Function(T) toMap,
     bool forceRefresh = false,
   }) async {
-    final cacheKey = 'insights_${monthsBack}m';
-    
-    // Check if we have valid cached data
-    if (!forceRefresh && _cache != null && _lastCacheUpdate != null) {
-      final timeSinceUpdate = DateTime.now().difference(_lastCacheUpdate!);
-      if (timeSinceUpdate < _cacheExpiry && _cache!.containsKey(cacheKey)) {
-        return WorkoutInsights.fromMap(_cache![cacheKey]);
+    if (!forceRefresh) {
+      // 1. Check memory cache for the final result.
+      final cachedItem = _getCachedItem<T>(key, fromMap);
+      if (cachedItem != null) {
+          return cachedItem;
+      }
+
+      // 2. Check if a request for this key is already in progress.
+      if (_ongoingRequests.containsKey(key)) {
+          return await _ongoingRequests[key]!;
       }
     }
 
-    // Calculate fresh insights
-    final insights = await _calculateInsights(monthsBack);
-    
-    // Update cache
-    await _updateCache(cacheKey, insights);
-    
-    return insights;
+    // 3. No cached item and no ongoing request, so we need to calculate.
+    // Create a completer and store its future in the map to lock this key.
+    final completer = Completer<T>();
+    _ongoingRequests[key] = completer.future;
+
+    try {
+      final result = await calculator();
+      await _updateCache(key, toMap(result));
+      // When the calculation is complete, complete the future.
+      completer.complete(result);
+      return result;
+    } catch (e, s) {
+      // If an error occurs, complete the future with an error.
+      completer.completeError(e, s);
+      // Rethrow the error to the original caller.
+      rethrow;
+    } finally {
+      // 4. After the future is completed (with data or error), remove it from the map.
+      _ongoingRequests.remove(key);
+    }
+  }
+
+  T? _getCachedItem<T>(
+      String key, T Function(Map<String, dynamic>) fromMap) {
+    if (_cache != null && _lastCacheUpdate != null) {
+      final timeSinceUpdate = DateTime.now().difference(_lastCacheUpdate!);
+      if (timeSinceUpdate < _cacheExpiry && _cache!.containsKey(key)) {
+        return fromMap(_cache![key]);
+      }
+    }
+    return null;
+  }
+
+  Future<WorkoutInsights> getWorkoutInsights({
+    int monthsBack = 6,
+    bool forceRefresh = false,
+  }) {
+    final cacheKey = 'insights_${monthsBack}m';
+    return _withCache<WorkoutInsights>(
+      key: cacheKey,
+      calculator: () => _calculateInsights(monthsBack),
+      fromMap: (map) => WorkoutInsights.fromMap(map),
+      toMap: (insights) => insights.toMap(),
+      forceRefresh: forceRefresh,
+    );
   }
 
   Future<ExerciseInsights> getExerciseInsights({
     required String exerciseName,
     int monthsBack = 6,
     bool forceRefresh = false,
-  }) async {
-    final cacheKey = 'exercise_${exerciseName}_${monthsBack}m';
-    
-    // Check if we have valid cached data
-    if (!forceRefresh && _cache != null && _lastCacheUpdate != null) {
-      final timeSinceUpdate = DateTime.now().difference(_lastCacheUpdate!);
-      if (timeSinceUpdate < _cacheExpiry && _cache!.containsKey(cacheKey)) {
-        return ExerciseInsights.fromMap(_cache![cacheKey]);
-      }
+  }) {
+    final cacheKey = 'exercise_${exerciseName.trim().toLowerCase()}_${monthsBack}m';
+    return _withCache<ExerciseInsights>(
+      key: cacheKey,
+      calculator: () => _calculateExerciseInsights(exerciseName, monthsBack),
+      fromMap: (map) => ExerciseInsights.fromMap(map),
+      toMap: (insights) => insights.toMap(),
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  List<Workout> _filterWorkouts(List<Workout> allWorkouts, int monthsBack) {
+    final workoutsWithDates = allWorkouts
+        .where((w) => w.startedAt != null && w.status == WorkoutStatus.completed)
+        .toList();
+
+
+    if (workoutsWithDates.isEmpty) {
+        return [];
     }
 
-    // Calculate fresh exercise insights
-    final insights = await _calculateExerciseInsights(exerciseName, monthsBack);
-    
-    // Update cache
-    await _updateExerciseCache(cacheKey, insights);
-    
-    return insights;
+    final now = DateTime.now();
+    final latestWorkoutDate = workoutsWithDates
+        .map((w) => w.startedAt!)
+        .reduce((latest, date) => date.isAfter(latest) ? date : latest);
+
+    final referenceDate =
+        latestWorkoutDate.isAfter(now) ? now : latestWorkoutDate;
+
+    // We want to include workouts from the last N calendar months.
+    // If monthsBack is 1, we want this month. If 6, this month and the previous 5.
+    // The cutoff should be the first day of the start month.
+    final cutoffDate =
+        DateTime(referenceDate.year, referenceDate.month - (monthsBack - 1), 1);
+
+
+    final filteredWorkouts = workoutsWithDates.where((workout) {
+      final startedAt = workout.startedAt!;
+      // We include workouts that are on or after the cutoff date and not in the future relative to the reference date.
+      final isAfterReference = startedAt.isAfter(referenceDate);
+      final isBeforeCutoff = startedAt.isBefore(cutoffDate);
+      final include = !isAfterReference && !isBeforeCutoff;
+
+      return include;
+    }).toList();
+
+    return filteredWorkouts;
   }
 
   Future<WorkoutInsights> _calculateInsights(int monthsBack) async {
     final allWorkouts = await _getWorkouts();
-    final cutoffDate = DateTime.now().subtract(Duration(days: monthsBack * 30));
-    
-    // Filter workouts within the specified time range
-    final recentWorkouts = allWorkouts.where((workout) => 
-        workout.startedAt != null && workout.startedAt!.isAfter(cutoffDate) && 
-        workout.status == WorkoutStatus.completed).toList();
+    final recentWorkouts = _filterWorkouts(allWorkouts, monthsBack);
 
     // Calculate total statistics
     final totalWorkouts = recentWorkouts.length;
@@ -121,13 +193,12 @@ class InsightsService {
   }
 
   Future<ExerciseInsights> _calculateExerciseInsights(String exerciseName, int monthsBack) async {
-    final allWorkouts = await _getWorkouts();
-    final cutoffDate = DateTime.now().subtract(Duration(days: monthsBack * 30));
+    if (exerciseName.trim().isEmpty) {
+      return ExerciseInsights.empty(exerciseName);
+    }
     
-    // Filter workouts within the specified time range
-    final recentWorkouts = allWorkouts.where((workout) => 
-        workout.startedAt != null && workout.startedAt!.isAfter(cutoffDate) && 
-        workout.status == WorkoutStatus.completed).toList();
+    final allWorkouts = await _getWorkouts();
+    final recentWorkouts = _filterWorkouts(allWorkouts, monthsBack);
 
     // Find all instances of this exercise across all workouts
     final exerciseInstances = <ExerciseInstance>[];
@@ -151,21 +222,7 @@ class InsightsService {
     }
 
     if (exerciseInstances.isEmpty) {
-      return ExerciseInsights(
-        exerciseName: exerciseName,
-        totalSessions: 0,
-        totalSets: 0,
-        totalReps: 0,
-        totalWeight: 0,
-        maxWeight: 0,
-        averageWeight: 0,
-        averageReps: 0,
-        averageSets: 0,
-        monthlyVolume: [],
-        monthlyMaxWeight: [],
-        monthlyFrequency: [],
-        lastUpdated: DateTime.now(),
-      );
+      return ExerciseInsights.empty(exerciseName);
     }
 
     // Calculate totals
@@ -173,7 +230,8 @@ class InsightsService {
     final totalSets = exerciseInstances.fold<int>(0, (sum, instance) => sum + instance.totalSets);
     final totalReps = exerciseInstances.fold<int>(0, (sum, instance) => sum + instance.totalReps);
     final totalWeight = exerciseInstances.fold<double>(0, (sum, instance) => sum + instance.totalWeight);
-    final maxWeight = exerciseInstances.isEmpty ? 0.0 : exerciseInstances.map((i) => i.maxWeight).reduce((a, b) => a > b ? a : b);
+    // Fix: Remove redundant empty check since we already returned early if empty
+    final maxWeight = exerciseInstances.map((i) => i.maxWeight).reduce((a, b) => a > b ? a : b);
 
     // Calculate monthly data
     final monthlyData = _calculateExerciseMonthlyData(exerciseInstances, monthsBack);
@@ -198,16 +256,25 @@ class InsightsService {
   Map<String, List<MonthlyDataPoint>> _calculateMonthlyData(
       List<Workout> workouts, int monthsBack) {
     final now = DateTime.now();
+    final referenceDate = workouts.isEmpty 
+        ? now
+        : workouts
+            .where((w) => w.startedAt != null)
+            .map((w) => w.startedAt!)
+            .fold<DateTime>(now, (latest, date) => date.isAfter(latest) && !date.isAfter(now) ? date : latest);
+    
     final monthlyWorkouts = <MonthlyDataPoint>[];
     final monthlyHours = <MonthlyDataPoint>[];
     final monthlyWeight = <MonthlyDataPoint>[];
 
     for (int i = monthsBack - 1; i >= 0; i--) {
-      final monthDate = DateTime(now.year, now.month - i, 1);
+      // Use proper month arithmetic to handle month boundaries correctly
+      final normalizedMonthDate = DateTime(referenceDate.year, referenceDate.month - i, 1);
+      
       final monthWorkouts = workouts.where((workout) {
         return workout.startedAt != null && 
-               workout.startedAt!.year == monthDate.year &&
-               workout.startedAt!.month == monthDate.month;
+               workout.startedAt!.year == normalizedMonthDate.year &&
+               workout.startedAt!.month == normalizedMonthDate.month;
       }).toList();
 
       final workoutCount = monthWorkouts.length;
@@ -221,17 +288,17 @@ class InsightsService {
                   setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0))));
 
       monthlyWorkouts.add(MonthlyDataPoint(
-        month: monthDate,
+        month: normalizedMonthDate,
         value: workoutCount.toDouble(),
       ));
       
       monthlyHours.add(MonthlyDataPoint(
-        month: monthDate,
+        month: normalizedMonthDate,
         value: totalHours,
       ));
       
       monthlyWeight.add(MonthlyDataPoint(
-        month: monthDate,
+        month: normalizedMonthDate,
         value: totalWeight,
       ));
     }
@@ -246,15 +313,23 @@ class InsightsService {
   Map<String, List<MonthlyDataPoint>> _calculateExerciseMonthlyData(
       List<ExerciseInstance> instances, int monthsBack) {
     final now = DateTime.now();
+    final referenceDate = instances.isEmpty 
+        ? now
+        : instances
+            .map((i) => i.date)
+            .fold<DateTime>(now, (latest, date) => date.isAfter(latest) && !date.isAfter(now) ? date : latest);
+    
     final monthlyVolume = <MonthlyDataPoint>[];
     final monthlyMaxWeight = <MonthlyDataPoint>[];
     final monthlyFrequency = <MonthlyDataPoint>[];
 
     for (int i = monthsBack - 1; i >= 0; i--) {
-      final monthDate = DateTime(now.year, now.month - i, 1);
+      // Use proper month arithmetic to handle month boundaries correctly
+      final normalizedMonthDate = DateTime(referenceDate.year, referenceDate.month - i, 1);
+      
       final monthInstances = instances.where((instance) {
-        return instance.date.year == monthDate.year &&
-               instance.date.month == monthDate.month;
+        return instance.date.year == normalizedMonthDate.year &&
+               instance.date.month == normalizedMonthDate.month;
       }).toList();
 
       final volume = monthInstances.fold<double>(0, (sum, instance) => sum + instance.totalWeight);
@@ -262,17 +337,17 @@ class InsightsService {
       final frequency = monthInstances.length.toDouble();
 
       monthlyVolume.add(MonthlyDataPoint(
-        month: monthDate,
+        month: normalizedMonthDate,
         value: volume,
       ));
       
       monthlyMaxWeight.add(MonthlyDataPoint(
-        month: monthDate,
+        month: normalizedMonthDate,
         value: maxWeight,
       ));
       
       monthlyFrequency.add(MonthlyDataPoint(
-        month: monthDate,
+        month: normalizedMonthDate,
         value: frequency,
       ));
     }
@@ -284,37 +359,20 @@ class InsightsService {
     };
   }
 
-  Future<void> _updateCache(String key, WorkoutInsights insights) async {
+  Future<void> _updateCache(String key, Map<String, dynamic> insightsMap) async {
     try {
       _cache ??= {};
-      _cache![key] = insights.toMap();
+      _cache![key] = insightsMap;
       _lastCacheUpdate = DateTime.now();
 
-      // Persist cache to SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       final cacheData = {
         'data': _cache,
-        'lastUpdate': _lastCacheUpdate!.millisecondsSinceEpoch,
+        'lastUpdate': _lastCacheUpdate!.toIso8601String(),
       };
       await prefs.setString(_cacheKey, jsonEncode(cacheData));
     } catch (e) {
-    }
-  }
-
-  Future<void> _updateExerciseCache(String key, ExerciseInsights insights) async {
-    try {
-      _cache ??= {};
-      _cache![key] = insights.toMap();
-      _lastCacheUpdate = DateTime.now();
-
-      // Persist cache to SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      final cacheData = {
-        'data': _cache,
-        'lastUpdate': _lastCacheUpdate!.millisecondsSinceEpoch,
-      };
-      await prefs.setString(_cacheKey, jsonEncode(cacheData));
-    } catch (e) {
+      print('InsightsService: Failed to update cache - $e');
     }
   }
 
@@ -322,16 +380,16 @@ class InsightsService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final cacheJson = prefs.getString(_cacheKey);
-      
+
       if (cacheJson != null) {
         final cacheData = jsonDecode(cacheJson);
-        _cache = Map<String, dynamic>.from(cacheData['data'] ?? {});
-        _lastCacheUpdate = DateTime.fromMillisecondsSinceEpoch(
-            cacheData['lastUpdate'] ?? 0);
+        _cache = Map<String, dynamic>.from(cacheData['data']);
+        _lastCacheUpdate = DateTime.parse(cacheData['lastUpdate']);
       }
     } catch (e) {
       _cache = null;
       _lastCacheUpdate = null;
+      await clearCache();
     }
   }
 
@@ -344,6 +402,15 @@ class InsightsService {
       await prefs.remove(_cacheKey);
     } catch (e) {
     }
+  }
+
+  /// For testing purposes only. Resets the singleton's state.
+  void reset() {
+    _cache = null;
+    _lastCacheUpdate = null;
+    _ongoingRequests.clear();
+    _workoutsProvider = null;
+    clearCache();
   }
 
   // Initialize cache on service creation
@@ -390,23 +457,61 @@ class WorkoutInsights {
   }
 
   factory WorkoutInsights.fromMap(Map<String, dynamic> map) {
-    return WorkoutInsights(
-      totalWorkouts: map['totalWorkouts'] ?? 0,
-      totalHours: (map['totalHours'] ?? 0.0).toDouble(),
-      totalWeight: (map['totalWeight'] ?? 0.0).toDouble(),
-      monthlyWorkouts: (map['monthlyWorkouts'] as List<dynamic>?)
-          ?.map((e) => MonthlyDataPoint.fromMap(e as Map<String, dynamic>))
-          .toList() ?? [],
-      monthlyHours: (map['monthlyHours'] as List<dynamic>?)
-          ?.map((e) => MonthlyDataPoint.fromMap(e as Map<String, dynamic>))
-          .toList() ?? [],
-      monthlyWeight: (map['monthlyWeight'] as List<dynamic>?)
-          ?.map((e) => MonthlyDataPoint.fromMap(e as Map<String, dynamic>))
-          .toList() ?? [],
-      averageWorkoutDuration: (map['averageWorkoutDuration'] ?? 0.0).toDouble(),
-      averageWeightPerWorkout: (map['averageWeightPerWorkout'] ?? 0.0).toDouble(),
-      lastUpdated: DateTime.fromMillisecondsSinceEpoch(map['lastUpdated'] ?? 0),
-    );
+    try {
+      return WorkoutInsights(
+        totalWorkouts: _safeParseInt(map['totalWorkouts']),
+        totalHours: _safeParseDouble(map['totalHours']),
+        totalWeight: _safeParseDouble(map['totalWeight']),
+        monthlyWorkouts: _safeParseMonthlyDataList(map['monthlyWorkouts']),
+        monthlyHours: _safeParseMonthlyDataList(map['monthlyHours']),
+        monthlyWeight: _safeParseMonthlyDataList(map['monthlyWeight']),
+        averageWorkoutDuration: _safeParseDouble(map['averageWorkoutDuration']),
+        averageWeightPerWorkout: _safeParseDouble(map['averageWeightPerWorkout']),
+        lastUpdated: DateTime.fromMillisecondsSinceEpoch(_safeParseInt(map['lastUpdated'])),
+      );
+    } catch (e) {
+      // Return default instance if parsing fails completely
+      return WorkoutInsights(
+        totalWorkouts: 0,
+        totalHours: 0.0,
+        totalWeight: 0.0,
+        monthlyWorkouts: [],
+        monthlyHours: [],
+        monthlyWeight: [],
+        averageWorkoutDuration: 0.0,
+        averageWeightPerWorkout: 0.0,
+        lastUpdated: DateTime.now(),
+      );
+    }
+  }
+
+  static int _safeParseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
+  }
+
+  static double _safeParseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
+  static List<MonthlyDataPoint> _safeParseMonthlyDataList(dynamic value) {
+    if (value == null) return [];
+    if (value is! List) return [];
+    try {
+      return value
+          .where((e) => e is Map<String, dynamic>)
+          .map((e) => MonthlyDataPoint.fromMap(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      return [];
+    }
   }
 }
 
@@ -440,6 +545,26 @@ class ExerciseInsights {
     required this.monthlyFrequency,
     required this.lastUpdated,
   });
+
+  factory ExerciseInsights.empty(String exerciseName) {
+    final now = DateTime.now();
+    final emptyMonthlyData = List.generate(6, (i) => MonthlyDataPoint(month: DateTime(now.year, now.month - 5 + i, 1), value: 0.0));
+    return ExerciseInsights(
+      exerciseName: exerciseName,
+      totalSessions: 0,
+      totalSets: 0,
+      totalReps: 0,
+      totalWeight: 0,
+      maxWeight: 0,
+      averageWeight: 0,
+      averageReps: 0,
+      averageSets: 0,
+      monthlyVolume: emptyMonthlyData,
+      monthlyMaxWeight: emptyMonthlyData,
+      monthlyFrequency: emptyMonthlyData,
+      lastUpdated: now,
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
