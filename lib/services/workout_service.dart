@@ -1,15 +1,18 @@
+import 'package:logging/logging.dart';
 import '../models/workout.dart';
-import '../models/workout_folder.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../models/exercise.dart';
 import 'dao/workout_dao.dart';
-import 'dao/workout_folder_dao.dart';
 import 'dao/workout_exercise_dao.dart';
 import 'dao/workout_set_dao.dart';
+import '../models/workout_folder.dart';
+import 'dao/workout_folder_dao.dart';
 
 class WorkoutService {
   static final WorkoutService _instance = WorkoutService._internal();
+  final Logger _logger = Logger('WorkoutService');
+
   factory WorkoutService() => _instance;
   WorkoutService._internal();
   
@@ -17,15 +20,15 @@ class WorkoutService {
 
   // Inject DAOs
   WorkoutDao _workoutDao = WorkoutDao();
-  WorkoutFolderDao _workoutFolderDao = WorkoutFolderDao();
   WorkoutExerciseDao _workoutExerciseDao = WorkoutExerciseDao();
   WorkoutSetDao _workoutSetDao = WorkoutSetDao();
+  WorkoutFolderDao _workoutFolderDao = WorkoutFolderDao();
 
   // Allow for mock injection in tests
   set workoutDao(WorkoutDao dao) => _workoutDao = dao;
-  set workoutFolderDao(WorkoutFolderDao dao) => _workoutFolderDao = dao;
   set workoutExerciseDao(WorkoutExerciseDao dao) => _workoutExerciseDao = dao;
   set workoutSetDao(WorkoutSetDao dao) => _workoutSetDao = dao;
+  set workoutFolderDao(WorkoutFolderDao dao) => _workoutFolderDao = dao;
 
   List<Workout> _workouts = [];
   List<WorkoutFolder> _folders = [];
@@ -34,32 +37,28 @@ class WorkoutService {
   List<WorkoutFolder> get folders => _folders;
 
   Future<void> loadData() async {
+    _logger.info('Loading all workout data');
     try {
-      // Load folders
-      _folders = await _workoutFolderDao.getAllWorkoutFoldersOrdered();
-      
-      // Load workouts
+
       _workouts = await _workoutDao.getAllWorkouts();
+      _logger.fine('Loaded ${_workouts.length} workouts');
       
-      // Load exercises and sets for each workout
       for (int i = 0; i < _workouts.length; i++) {
         final workout = _workouts[i];
         final workoutExercises = await _workoutExerciseDao.getWorkoutExercisesByWorkoutId(workout.id);
         
-        // Load sets for each exercise
         final List<WorkoutExercise> exercisesWithSets = [];
         for (final workoutExercise in workoutExercises) {
           final sets = await _workoutSetDao.getWorkoutSetsByWorkoutExerciseId(workoutExercise.id);
-          final exerciseWithSets = workoutExercise.copyWith(sets: sets);
-          exercisesWithSets.add(exerciseWithSets);
+          exercisesWithSets.add(workoutExercise.copyWith(sets: sets));
         }
         
-        // Update workout with exercises and sets
         _workouts[i] = workout.copyWith(exercises: exercisesWithSets);
       }
+      _logger.info('Finished loading exercises and sets for all workouts');
     } catch (e) {
+      _logger.severe('Failed to load workout data: $e');
       _workouts = [];
-      _folders = [];
     }
   }
 
@@ -69,40 +68,66 @@ class WorkoutService {
   }
 
   // Folder operations
+  Future<void> loadFolders() async {
+    _logger.info('Loading folder data');
+    try {
+      _folders = await _workoutFolderDao.getAllWorkoutFoldersOrdered();
+      _logger.fine('Loaded ${_folders.length} folders');
+    } catch (e) {
+      _logger.severe('Failed to load folder data: $e');
+      _folders = [];
+    }
+  }
+
   Future<WorkoutFolder> createFolder(String name) async {
-    final folder = WorkoutFolder(
-      name: name,
-    );
-    
+    _logger.info('Creating new folder with name: $name');
+    final folder = WorkoutFolder(name: name);
     await _workoutFolderDao.insert(folder);
     _folders.add(folder);
+    _logger.fine('Folder created with id: ${folder.id}');
     return folder;
   }
 
   Future<void> updateFolder(WorkoutFolder folder) async {
+    _logger.info('Updating folder with id: ${folder.id}');
     await _workoutFolderDao.updateWorkoutFolder(folder);
     final index = _folders.indexWhere((f) => f.id == folder.id);
     if (index != -1) {
       _folders[index] = folder;
+      _logger.fine('Folder updated in cache');
     }
   }
 
   Future<void> deleteFolder(String folderId) async {
-    // Move workouts out of folder before deleting
-    for (int i = 0; i < _workouts.length; i++) {
-      if (_workouts[i].folderId == folderId) {
-        final updatedWorkout = _workouts[i].copyWith(folderId: null);
-        await _workoutDao.updateWorkout(updatedWorkout);
-        _workouts[i] = updatedWorkout;
+    _logger.info('Deleting folder with id: $folderId');
+
+    // Move all workouts in this folder to root
+    final workoutsInFolder = getWorkoutsInFolder(folderId);
+    for (final workout in workoutsInFolder) {
+      final updatedWorkout = workout.copyWith(folderId: null);
+      await _workoutDao.updateWorkout(updatedWorkout);
+      final idx = _workouts.indexWhere((w) => w.id == updatedWorkout.id);
+      if (idx != -1) {
+        _workouts[idx] = updatedWorkout;
       }
     }
-    
+
     await _workoutFolderDao.deleteWorkoutFolder(folderId);
     _folders.removeWhere((f) => f.id == folderId);
+    _logger.fine('Folder deleted from database and cache');
+  }
+
+  WorkoutFolder? getFolderById(String id) {
+    try {
+      return _folders.firstWhere((f) => f.id == id);
+    } catch (e) {
+      return null;
+    }
   }
 
   // Workout operations
   Future<Workout> createWorkout(String name, {String? folderId}) async {
+    _logger.info('Creating new workout with name: $name in folder: $folderId');
     final workout = Workout(
       name: name,
       exercises: [],
@@ -112,42 +137,53 @@ class WorkoutService {
     
     await _workoutDao.insert(workout);
     _workouts.add(workout);
+    _logger.fine('Workout created with id: ${workout.id}');
     return workout;
   }
 
   Future<void> updateWorkout(Workout workout) async {
+    _logger.info('Updating workout with id: ${workout.id}');
     await _workoutDao.updateWorkout(workout);
     final index = _workouts.indexWhere((w) => w.id == workout.id);
     if (index != -1) {
       _workouts[index] = workout;
+      _logger.fine('Workout updated in cache');
     }
   }
 
   Future<void> deleteWorkout(String workoutId) async {
-    // Delete associated exercises and sets first
+    _logger.info('Deleting workout with id: $workoutId');
     final workoutExercises = await _workoutExerciseDao.getWorkoutExercisesByWorkoutId(workoutId);
     for (final exercise in workoutExercises) {
       await _workoutSetDao.deleteWorkoutSetsByWorkoutExerciseId(exercise.id);
     }
     await _workoutExerciseDao.deleteWorkoutExercisesByWorkoutId(workoutId);
+    _logger.fine('Deleted associated exercises and sets');
     
     await _workoutDao.deleteWorkout(workoutId);
     _workouts.removeWhere((w) => w.id == workoutId);
+    _logger.fine('Workout deleted from database and cache');
   }
 
   Future<void> moveWorkoutToFolder(String workoutId, String? folderId) async {
+    _logger.info('Moving workout $workoutId to folder $folderId');
     final index = _workouts.indexWhere((w) => w.id == workoutId);
     if (index != -1) {
       final updatedWorkout = _workouts[index].copyWith(folderId: folderId);
       await _workoutDao.updateWorkout(updatedWorkout);
       _workouts[index] = updatedWorkout;
+      _logger.fine('Workout moved successfully');
+    } else {
+      _logger.warning('Workout with id $workoutId not found in cache');
     }
   }
 
   Future<void> reorderWorkoutsInFolder(String? folderId, int oldIndex, int newIndex) async {
+    _logger.info('Reordering workouts in folder $folderId from $oldIndex to $newIndex');
     final workoutsInFolder = getWorkoutsInFolder(folderId);
     if (oldIndex < 0 || oldIndex >= workoutsInFolder.length || 
         newIndex < 0 || newIndex >= workoutsInFolder.length) {
+      _logger.warning('Invalid reorder indices');
       return;
     }
 
@@ -168,12 +204,17 @@ class WorkoutService {
   }
 
   Future<void> reorderExercisesInWorkout(String workoutId, int oldIndex, int newIndex) async {
+    _logger.info('Reordering exercises in workout $workoutId from $oldIndex to $newIndex');
     final workoutIndex = _workouts.indexWhere((w) => w.id == workoutId);
-    if (workoutIndex == -1) return;
+    if (workoutIndex == -1) {
+      _logger.warning('Workout with id $workoutId not found');
+      return;
+    }
     
     final workout = _workouts[workoutIndex];
     if (oldIndex < 0 || oldIndex >= workout.exercises.length || 
         newIndex < 0 || newIndex >= workout.exercises.length) {
+      _logger.warning('Invalid reorder indices for exercises');
       return;
     }
 
@@ -198,180 +239,160 @@ class WorkoutService {
     _workouts[workoutIndex] = updatedWorkout;
   }
 
-  Future<void> reorderFolders(int oldIndex, int newIndex) async {
-    if (oldIndex < 0 || oldIndex >= _folders.length || 
-        newIndex < 0 || newIndex >= _folders.length) {
-      return;
-    }
-
-    // Remove the folder from the old position
-    final folder = _folders.removeAt(oldIndex);
-    // Insert it at the new position
-    _folders.insert(newIndex, folder);
-
-    // Update orderIndex for all folders
-    for (int i = 0; i < _folders.length; i++) {
-      final updatedFolder = _folders[i].copyWith(orderIndex: i);
-      await _workoutFolderDao.updateWorkoutFolder(updatedFolder);
-      _folders[i] = updatedFolder;
-    }
-  }
-
   // Exercise operations within workout
   Future<void> addExerciseToWorkout(String workoutId, Exercise exerciseDetail) async {
+    _logger.info('Adding exercise ${exerciseDetail.slug} to workout $workoutId');
     final workoutIndex = _workouts.indexWhere((w) => w.id == workoutId);
     if (workoutIndex != -1) {
-      // Create a workout exercise
       final workoutExercise = WorkoutExercise(
         workoutId: workoutId,
         exerciseSlug: exerciseDetail.slug,
         sets: [],
       );
-      
-      // Insert the workout exercise into the database
       await _workoutExerciseDao.insert(workoutExercise);
       
-      // Create a default set
       final defaultSet = WorkoutSet(
         workoutExerciseId: workoutExercise.id,
         setIndex: 0,
         targetReps: 10,
         targetWeight: 0.0,
       );
-      
-      // Insert the default set into the database
       await _workoutSetDao.insert(defaultSet);
       
-      // Update the workout exercise with the set
       final exerciseWithSet = workoutExercise.copyWith(sets: [defaultSet]);
       
-      // Update the workout with the new exercise
-      final updatedExercises = List<WorkoutExercise>.from(_workouts[workoutIndex].exercises);
-      updatedExercises.add(exerciseWithSet);
+      final updatedExercises = List<WorkoutExercise>.from(_workouts[workoutIndex].exercises)..add(exerciseWithSet);
       
       final updatedWorkout = _workouts[workoutIndex].copyWith(exercises: updatedExercises);
       await _workoutDao.updateWorkout(updatedWorkout);
       _workouts[workoutIndex] = updatedWorkout;
+      _logger.fine('Exercise added successfully');
+    } else {
+      _logger.warning('Workout with id $workoutId not found');
     }
   }
 
   Future<void> removeExerciseFromWorkout(String workoutId, String exerciseId) async {
+    _logger.info('Removing exercise $exerciseId from workout $workoutId');
     final workoutIndex = _workouts.indexWhere((w) => w.id == workoutId);
     if (workoutIndex != -1) {
-      // Delete associated sets first
       await _workoutSetDao.deleteWorkoutSetsByWorkoutExerciseId(exerciseId);
-      
-      // Delete the workout exercise
       await _workoutExerciseDao.deleteWorkoutExercise(exerciseId);
       
-      // Update the workout
-      final updatedExercises = _workouts[workoutIndex].exercises
-          .where((e) => e.id != exerciseId)
-          .toList();
+      final updatedExercises = _workouts[workoutIndex].exercises.where((e) => e.id != exerciseId).toList();
       
       final updatedWorkout = _workouts[workoutIndex].copyWith(exercises: updatedExercises);
       await _workoutDao.updateWorkout(updatedWorkout);
       _workouts[workoutIndex] = updatedWorkout;
+      _logger.fine('Exercise removed successfully');
+    } else {
+      _logger.warning('Workout with id $workoutId not found');
     }
   }
 
   Future<void> updateWorkoutExercise(String workoutId, WorkoutExercise exercise) async {
+    _logger.fine('Updating workout exercise ${exercise.id} in workout $workoutId');
     final workoutIndex = _workouts.indexWhere((w) => w.id == workoutId);
     if (workoutIndex != -1) {
-      // Update the workout exercise in the database
       await _workoutExerciseDao.updateWorkoutExercise(exercise);
       
-      // Update the workout
-      final updatedExercises = _workouts[workoutIndex].exercises.map((e) {
-        return e.id == exercise.id ? exercise : e;
-      }).toList();
+      final updatedExercises = _workouts[workoutIndex].exercises.map((e) => e.id == exercise.id ? exercise : e).toList();
       
       final updatedWorkout = _workouts[workoutIndex].copyWith(exercises: updatedExercises);
       await _workoutDao.updateWorkout(updatedWorkout);
       _workouts[workoutIndex] = updatedWorkout;
+    } else {
+      _logger.warning('Workout with id $workoutId not found');
     }
   }
 
   // Set operations within workout exercise
   Future<void> addSetToExercise(String workoutId, String exerciseId, {int targetReps = 10, double targetWeight = 0.0}) async {
+    _logger.info('Adding set to exercise $exerciseId in workout $workoutId');
     final workoutIndex = _workouts.indexWhere((w) => w.id == workoutId);
     if (workoutIndex != -1) {
       final exerciseIndex = _workouts[workoutIndex].exercises.indexWhere((e) => e.id == exerciseId);
       if (exerciseIndex != -1) {
         final exercise = _workouts[workoutIndex].exercises[exerciseIndex];
-        
-        // Determine the next set index
         final nextIndex = exercise.sets.length;
         
-        // Create a new set
         final newSet = WorkoutSet(
           workoutExerciseId: exerciseId,
           setIndex: nextIndex,
           targetReps: targetReps,
           targetWeight: targetWeight,
         );
-        
-        // Insert the new set into the database
         await _workoutSetDao.insert(newSet);
         
-        // Update the exercise with the new set
         final updatedSets = List<WorkoutSet>.from(exercise.sets)..add(newSet);
         final updatedExercise = exercise.copyWith(sets: updatedSets);
         
         await updateWorkoutExercise(workoutId, updatedExercise);
+        _logger.fine('Set added successfully');
+      } else {
+        _logger.warning('Exercise with id $exerciseId not found in workout $workoutId');
       }
+    } else {
+      _logger.warning('Workout with id $workoutId not found');
     }
   }
 
   Future<void> removeSetFromExercise(String workoutId, String exerciseId, String setId) async {
+    _logger.info('Removing set $setId from exercise $exerciseId in workout $workoutId');
     final workoutIndex = _workouts.indexWhere((w) => w.id == workoutId);
     if (workoutIndex != -1) {
       final exerciseIndex = _workouts[workoutIndex].exercises.indexWhere((e) => e.id == exerciseId);
       if (exerciseIndex != -1) {
         final exercise = _workouts[workoutIndex].exercises[exerciseIndex];
         
-        // Delete the set from the database
         await _workoutSetDao.deleteWorkoutSet(setId);
         
-        // Update the exercise without the deleted set
         final updatedSets = exercise.sets.where((s) => s.id != setId).toList();
         final updatedExercise = exercise.copyWith(sets: updatedSets);
         
         await updateWorkoutExercise(workoutId, updatedExercise);
+        _logger.fine('Set removed successfully');
+      } else {
+        _logger.warning('Exercise with id $exerciseId not found in workout $workoutId');
       }
+    } else {
+      _logger.warning('Workout with id $workoutId not found');
     }
   }
 
   Future<void> updateSet(String workoutId, String exerciseId, String setId, {int? targetReps, double? targetWeight, int? targetRestSeconds}) async {
+    _logger.fine('Updating set $setId in exercise $exerciseId');
     final workoutIndex = _workouts.indexWhere((w) => w.id == workoutId);
     if (workoutIndex != -1) {
       final exerciseIndex = _workouts[workoutIndex].exercises.indexWhere((e) => e.id == exerciseId);
       if (exerciseIndex != -1) {
         final exercise = _workouts[workoutIndex].exercises[exerciseIndex];
-        
-        // Find the set to update
         final setIndex = exercise.sets.indexWhere((s) => s.id == setId);
+        
         if (setIndex != -1) {
           final set = exercise.sets[setIndex];
-          
-          // Create updated set
           final updatedSet = set.copyWith(
             targetReps: targetReps ?? set.targetReps,
             targetWeight: targetWeight ?? set.targetWeight,
             targetRestSeconds: targetRestSeconds ?? set.targetRestSeconds,
           );
           
-          // Update the set in the database
           await _workoutSetDao.updateWorkoutSet(updatedSet);
           
-          // Update the exercise with the updated set
           final updatedSets = List<WorkoutSet>.from(exercise.sets);
           updatedSets[setIndex] = updatedSet;
           final updatedExercise = exercise.copyWith(sets: updatedSets);
           
           await updateWorkoutExercise(workoutId, updatedExercise);
+          _logger.fine('Set updated successfully');
+        } else {
+          _logger.warning('Set with id $setId not found in exercise $exerciseId');
         }
+      } else {
+        _logger.warning('Exercise with id $exerciseId not found in workout $workoutId');
       }
+    } else {
+      _logger.warning('Workout with id $workoutId not found');
     }
   }
 
@@ -394,38 +415,17 @@ class WorkoutService {
     }
   }
 
-  WorkoutFolder? getFolderById(String id) {
-    try {
-      return _folders.firstWhere((f) => f.id == id);
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<void> clearUserWorkoutsAndFolders() async {
-    // Delete all workout sets
+  Future<void> clearUserWorkouts() async {
+    _logger.warning('Clearing all user workouts');
     for (final workout in _workouts) {
       for (final exercise in workout.exercises) {
         await _workoutSetDao.deleteWorkoutSetsByWorkoutExerciseId(exercise.id);
       }
-    }
-    
-    // Delete all workout exercises
-    for (final workout in _workouts) {
       await _workoutExerciseDao.deleteWorkoutExercisesByWorkoutId(workout.id);
-    }
-    
-    // Delete all workouts
-    for (final workout in _workouts) {
       await _workoutDao.deleteWorkout(workout.id);
     }
     
-    // Delete all folders
-    for (final folder in _folders) {
-      await _workoutFolderDao.deleteWorkoutFolder(folder.id);
-    }
-    
     _workouts = [];
-    _folders = [];
+    _logger.info('All user workouts cleared');
   }
 }

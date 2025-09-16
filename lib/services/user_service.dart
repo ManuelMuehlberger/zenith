@@ -1,16 +1,22 @@
 import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import '../models/user_data.dart';
 import 'dao/user_dao.dart';
 import 'dao/weight_entry_dao.dart';
 
 class UserService with ChangeNotifier {
   static final UserService _instance = UserService._internal();
+  final Logger _logger = Logger('UserService');
+
   factory UserService({UserDao? userDao, WeightEntryDao? weightEntryDao}) {
     _instance._userDao = userDao ?? UserDao();
     _instance._weightEntryDao = weightEntryDao ?? WeightEntryDao();
     return _instance;
   }
-  UserService._internal();
+  UserService._internal() {
+    _userDao = UserDao();
+    _weightEntryDao = WeightEntryDao();
+  }
   
   static UserService get instance => _instance;
 
@@ -24,70 +30,77 @@ class UserService with ChangeNotifier {
   bool get hasProfile => _currentProfile != null;
 
   Future<void> loadUserProfile() async {
+    _logger.info('Loading user profile');
     try {
-      // For now, we'll load the first user profile from the database
-      // In a real app, you might have a way to select which user profile to load
       final users = await _userDao.getAll();
       if (users.isNotEmpty) {
         _currentProfile = users.first;
+        _logger.fine('Found user profile with id: ${_currentProfile!.id}');
         
-        // Load weight history for the user
-        if (_currentProfile != null) {
-          final weightEntries = await _weightEntryDao.getWeightEntriesByUserId(_currentProfile!.id);
-          _currentProfile = _currentProfile!.copyWith(weightHistory: weightEntries);
-        }
+        final weightEntries = await _weightEntryDao.getWeightEntriesByUserId(_currentProfile!.id);
+        _currentProfile = _currentProfile!.copyWith(weightHistory: weightEntries);
+        _logger.fine('Loaded ${weightEntries.length} weight entries for user');
+        
         notifyListeners();
+        _logger.info('User profile loaded successfully');
       } else {
+        _logger.info('No user profile found');
         _currentProfile = null;
         notifyListeners();
       }
     } catch (e) {
+      _logger.severe('Failed to load user profile: $e');
       _currentProfile = null;
       notifyListeners();
     }
   }
 
   Future<void> saveUserProfile(UserData profile) async {
-    // Validate input
+    _logger.info('Saving user profile for id: ${profile.id}');
     if (profile.name.trim().isEmpty) {
+      _logger.warning('User name is empty');
       throw ArgumentError('User name cannot be empty');
     }
     
     try {
-      // Check if user already exists
       final existingUser = await _userDao.getUserDataById(profile.id);
       
       if (existingUser != null) {
-        // Update existing user
+        _logger.fine('Updating existing user profile');
         await _userDao.updateUserData(profile);
       } else {
-        // Create new user
+        _logger.fine('Creating new user profile');
         await _userDao.insert(profile);
       }
       
-      // Save weight history entries
+      _logger.fine('Saving weight history');
       for (final weightEntry in profile.weightHistory) {
         try {
           await _weightEntryDao.addWeightEntryForUser(profile.id, weightEntry);
         } catch (e) {
-          // If entry already exists, update it
+          _logger.finer('Weight entry already exists, updating: ${weightEntry.id}');
           await _weightEntryDao.updateWeightEntry(profile.id, weightEntry);
         }
       }
       
       _currentProfile = profile;
       notifyListeners();
+      _logger.info('User profile saved successfully');
     } catch (e) {
+      _logger.severe('Failed to save user profile: $e');
       throw Exception('Failed to save user profile: $e');
     }
   }
 
   Future<bool> isOnboardingComplete() async {
+    _logger.fine('Checking if onboarding is complete');
     try {
-      // Check if there's at least one user profile in the database
       final users = await _userDao.getAll();
-      return users.isNotEmpty;
+      final bool isComplete = users.isNotEmpty;
+      _logger.fine('Onboarding complete: $isComplete');
+      return isComplete;
     } catch (e) {
+      _logger.severe('Failed to check onboarding status: $e');
       return false;
     }
   }
@@ -97,17 +110,19 @@ class UserService with ChangeNotifier {
   }
 
   Future<void> clearUserData() async {
+    _logger.warning('Clearing all user data');
     try {
-      // Delete all user data and weight entries from the database
       final users = await _userDao.getAll();
       for (final user in users) {
+        _logger.fine('Deleting user: ${user.id}');
         await _userDao.delete(user.id);
       }
       
-      // Note: Weight entries will be deleted automatically due to foreign key constraints
       _currentProfile = null;
       notifyListeners();
+      _logger.info('All user data cleared successfully');
     } catch (e) {
+      _logger.severe('Failed to clear user data: $e');
       throw Exception('Failed to clear user data: $e');
     }
   }

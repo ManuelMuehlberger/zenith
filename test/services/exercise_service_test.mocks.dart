@@ -3,15 +3,16 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i6;
+import 'dart:async' as _i7;
 
+import 'package:logging/logging.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i5;
-import 'package:sqflite/sqflite.dart' as _i2;
-import 'package:zenith/models/exercise.dart' as _i3;
-import 'package:zenith/models/muscle_group.dart' as _i8;
-import 'package:zenith/services/dao/exercise_dao.dart' as _i4;
-import 'package:zenith/services/dao/muscle_group_dao.dart' as _i7;
+import 'package:mockito/src/dummies.dart' as _i6;
+import 'package:sqflite/sqflite.dart' as _i3;
+import 'package:zenith/models/exercise.dart' as _i4;
+import 'package:zenith/models/muscle_group.dart' as _i9;
+import 'package:zenith/services/dao/exercise_dao.dart' as _i5;
+import 'package:zenith/services/dao/muscle_group_dao.dart' as _i8;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -27,20 +28,25 @@ import 'package:zenith/services/dao/muscle_group_dao.dart' as _i7;
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-class _FakeDatabase_0 extends _i1.SmartFake implements _i2.Database {
-  _FakeDatabase_0(Object parent, Invocation parentInvocation)
+class _FakeLogger_0 extends _i1.SmartFake implements _i2.Logger {
+  _FakeLogger_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeExercise_1 extends _i1.SmartFake implements _i3.Exercise {
-  _FakeExercise_1(Object parent, Invocation parentInvocation)
+class _FakeDatabase_1 extends _i1.SmartFake implements _i3.Database {
+  _FakeDatabase_1(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeExercise_2 extends _i1.SmartFake implements _i4.Exercise {
+  _FakeExercise_2(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
 /// A class which mocks [ExerciseDao].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockExerciseDao extends _i1.Mock implements _i4.ExerciseDao {
+class MockExerciseDao extends _i1.Mock implements _i5.ExerciseDao {
   MockExerciseDao() {
     _i1.throwOnMissingStub(this);
   }
@@ -49,7 +55,7 @@ class MockExerciseDao extends _i1.Mock implements _i4.ExerciseDao {
   String get tableName =>
       (super.noSuchMethod(
             Invocation.getter(#tableName),
-            returnValue: _i5.dummyValue<String>(
+            returnValue: _i6.dummyValue<String>(
               this,
               Invocation.getter(#tableName),
             ),
@@ -57,28 +63,36 @@ class MockExerciseDao extends _i1.Mock implements _i4.ExerciseDao {
           as String);
 
   @override
-  _i6.Future<_i2.Database> get database =>
+  _i2.Logger get logger =>
       (super.noSuchMethod(
-            Invocation.getter(#database),
-            returnValue: _i6.Future<_i2.Database>.value(
-              _FakeDatabase_0(this, Invocation.getter(#database)),
-            ),
+            Invocation.getter(#logger),
+            returnValue: _FakeLogger_0(this, Invocation.getter(#logger)),
           )
-          as _i6.Future<_i2.Database>);
+          as _i2.Logger);
 
   @override
-  _i3.Exercise fromMap(Map<String, dynamic>? map) =>
+  _i7.Future<_i3.Database> get database =>
+      (super.noSuchMethod(
+            Invocation.getter(#database),
+            returnValue: _i7.Future<_i3.Database>.value(
+              _FakeDatabase_1(this, Invocation.getter(#database)),
+            ),
+          )
+          as _i7.Future<_i3.Database>);
+
+  @override
+  _i4.Exercise fromMap(Map<String, dynamic>? map) =>
       (super.noSuchMethod(
             Invocation.method(#fromMap, [map]),
-            returnValue: _FakeExercise_1(
+            returnValue: _FakeExercise_2(
               this,
               Invocation.method(#fromMap, [map]),
             ),
           )
-          as _i3.Exercise);
+          as _i4.Exercise);
 
   @override
-  Map<String, dynamic> toMap(_i3.Exercise? exercise) =>
+  Map<String, dynamic> toMap(_i4.Exercise? exercise) =>
       (super.noSuchMethod(
             Invocation.method(#toMap, [exercise]),
             returnValue: <String, dynamic>{},
@@ -86,141 +100,141 @@ class MockExerciseDao extends _i1.Mock implements _i4.ExerciseDao {
           as Map<String, dynamic>);
 
   @override
-  _i6.Future<List<_i3.Exercise>> getAllExercises() =>
+  _i7.Future<List<_i4.Exercise>> getAllExercises() =>
       (super.noSuchMethod(
             Invocation.method(#getAllExercises, []),
-            returnValue: _i6.Future<List<_i3.Exercise>>.value(<_i3.Exercise>[]),
+            returnValue: _i7.Future<List<_i4.Exercise>>.value(<_i4.Exercise>[]),
           )
-          as _i6.Future<List<_i3.Exercise>>);
+          as _i7.Future<List<_i4.Exercise>>);
 
   @override
-  _i6.Future<_i3.Exercise?> getExerciseBySlug(String? slug) =>
+  _i7.Future<_i4.Exercise?> getExerciseBySlug(String? slug) =>
       (super.noSuchMethod(
             Invocation.method(#getExerciseBySlug, [slug]),
-            returnValue: _i6.Future<_i3.Exercise?>.value(),
+            returnValue: _i7.Future<_i4.Exercise?>.value(),
           )
-          as _i6.Future<_i3.Exercise?>);
+          as _i7.Future<_i4.Exercise?>);
 
   @override
-  _i6.Future<List<_i3.Exercise>> getExercisesByPrimaryMuscleGroup(
+  _i7.Future<List<_i4.Exercise>> getExercisesByPrimaryMuscleGroup(
     String? muscleGroupName,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getExercisesByPrimaryMuscleGroup, [
               muscleGroupName,
             ]),
-            returnValue: _i6.Future<List<_i3.Exercise>>.value(<_i3.Exercise>[]),
+            returnValue: _i7.Future<List<_i4.Exercise>>.value(<_i4.Exercise>[]),
           )
-          as _i6.Future<List<_i3.Exercise>>);
+          as _i7.Future<List<_i4.Exercise>>);
 
   @override
-  _i6.Future<List<_i3.Exercise>> getExercisesBySecondaryMuscleGroup(
+  _i7.Future<List<_i4.Exercise>> getExercisesBySecondaryMuscleGroup(
     String? muscleGroupName,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getExercisesBySecondaryMuscleGroup, [
               muscleGroupName,
             ]),
-            returnValue: _i6.Future<List<_i3.Exercise>>.value(<_i3.Exercise>[]),
+            returnValue: _i7.Future<List<_i4.Exercise>>.value(<_i4.Exercise>[]),
           )
-          as _i6.Future<List<_i3.Exercise>>);
+          as _i7.Future<List<_i4.Exercise>>);
 
   @override
-  _i6.Future<List<_i3.Exercise>> searchExercisesByName(String? query) =>
+  _i7.Future<List<_i4.Exercise>> searchExercisesByName(String? query) =>
       (super.noSuchMethod(
             Invocation.method(#searchExercisesByName, [query]),
-            returnValue: _i6.Future<List<_i3.Exercise>>.value(<_i3.Exercise>[]),
+            returnValue: _i7.Future<List<_i4.Exercise>>.value(<_i4.Exercise>[]),
           )
-          as _i6.Future<List<_i3.Exercise>>);
+          as _i7.Future<List<_i4.Exercise>>);
 
   @override
-  _i6.Future<int> insert(_i3.Exercise? model) =>
+  _i7.Future<int> insert(_i4.Exercise? model) =>
       (super.noSuchMethod(
             Invocation.method(#insert, [model]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<List<int>> insertAll(List<_i3.Exercise>? models) =>
+  _i7.Future<List<int>> insertAll(List<_i4.Exercise>? models) =>
       (super.noSuchMethod(
             Invocation.method(#insertAll, [models]),
-            returnValue: _i6.Future<List<int>>.value(<int>[]),
+            returnValue: _i7.Future<List<int>>.value(<int>[]),
           )
-          as _i6.Future<List<int>>);
+          as _i7.Future<List<int>>);
 
   @override
-  _i6.Future<List<_i3.Exercise>> getAll() =>
+  _i7.Future<List<_i4.Exercise>> getAll() =>
       (super.noSuchMethod(
             Invocation.method(#getAll, []),
-            returnValue: _i6.Future<List<_i3.Exercise>>.value(<_i3.Exercise>[]),
+            returnValue: _i7.Future<List<_i4.Exercise>>.value(<_i4.Exercise>[]),
           )
-          as _i6.Future<List<_i3.Exercise>>);
+          as _i7.Future<List<_i4.Exercise>>);
 
   @override
-  _i6.Future<_i3.Exercise?> getById(String? id) =>
+  _i7.Future<_i4.Exercise?> getById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getById, [id]),
-            returnValue: _i6.Future<_i3.Exercise?>.value(),
+            returnValue: _i7.Future<_i4.Exercise?>.value(),
           )
-          as _i6.Future<_i3.Exercise?>);
+          as _i7.Future<_i4.Exercise?>);
 
   @override
-  _i6.Future<int> update(_i3.Exercise? model, {String? idColumn = 'id'}) =>
+  _i7.Future<int> update(_i4.Exercise? model, {String? idColumn = 'id'}) =>
       (super.noSuchMethod(
             Invocation.method(#update, [model], {#idColumn: idColumn}),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> delete(String? id, {String? idColumn = 'id'}) =>
+  _i7.Future<int> delete(String? id, {String? idColumn = 'id'}) =>
       (super.noSuchMethod(
             Invocation.method(#delete, [id], {#idColumn: idColumn}),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> deleteAll() =>
+  _i7.Future<int> deleteAll() =>
       (super.noSuchMethod(
             Invocation.method(#deleteAll, []),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<List<_i3.Exercise>> rawQuery(
+  _i7.Future<List<_i4.Exercise>> rawQuery(
     String? sql, [
     List<dynamic>? arguments,
   ]) =>
       (super.noSuchMethod(
             Invocation.method(#rawQuery, [sql, arguments]),
-            returnValue: _i6.Future<List<_i3.Exercise>>.value(<_i3.Exercise>[]),
+            returnValue: _i7.Future<List<_i4.Exercise>>.value(<_i4.Exercise>[]),
           )
-          as _i6.Future<List<_i3.Exercise>>);
+          as _i7.Future<List<_i4.Exercise>>);
 
   @override
-  _i6.Future<int> rawUpdate(String? sql, [List<dynamic>? arguments]) =>
+  _i7.Future<int> rawUpdate(String? sql, [List<dynamic>? arguments]) =>
       (super.noSuchMethod(
             Invocation.method(#rawUpdate, [sql, arguments]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> rawDelete(String? sql, [List<dynamic>? arguments]) =>
+  _i7.Future<int> rawDelete(String? sql, [List<dynamic>? arguments]) =>
       (super.noSuchMethod(
             Invocation.method(#rawDelete, [sql, arguments]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 }
 
 /// A class which mocks [MuscleGroupDao].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockMuscleGroupDao extends _i1.Mock implements _i7.MuscleGroupDao {
+class MockMuscleGroupDao extends _i1.Mock implements _i8.MuscleGroupDao {
   MockMuscleGroupDao() {
     _i1.throwOnMissingStub(this);
   }
@@ -229,7 +243,7 @@ class MockMuscleGroupDao extends _i1.Mock implements _i7.MuscleGroupDao {
   String get tableName =>
       (super.noSuchMethod(
             Invocation.getter(#tableName),
-            returnValue: _i5.dummyValue<String>(
+            returnValue: _i6.dummyValue<String>(
               this,
               Invocation.getter(#tableName),
             ),
@@ -237,25 +251,33 @@ class MockMuscleGroupDao extends _i1.Mock implements _i7.MuscleGroupDao {
           as String);
 
   @override
-  _i6.Future<_i2.Database> get database =>
+  _i2.Logger get logger =>
+      (super.noSuchMethod(
+            Invocation.getter(#logger),
+            returnValue: _FakeLogger_0(this, Invocation.getter(#logger)),
+          )
+          as _i2.Logger);
+
+  @override
+  _i7.Future<_i3.Database> get database =>
       (super.noSuchMethod(
             Invocation.getter(#database),
-            returnValue: _i6.Future<_i2.Database>.value(
-              _FakeDatabase_0(this, Invocation.getter(#database)),
+            returnValue: _i7.Future<_i3.Database>.value(
+              _FakeDatabase_1(this, Invocation.getter(#database)),
             ),
           )
-          as _i6.Future<_i2.Database>);
+          as _i7.Future<_i3.Database>);
 
   @override
-  _i8.MuscleGroup fromMap(Map<String, dynamic>? map) =>
+  _i9.MuscleGroup fromMap(Map<String, dynamic>? map) =>
       (super.noSuchMethod(
             Invocation.method(#fromMap, [map]),
-            returnValue: _i8.MuscleGroup.chest,
+            returnValue: _i9.MuscleGroup.chest,
           )
-          as _i8.MuscleGroup);
+          as _i9.MuscleGroup);
 
   @override
-  Map<String, dynamic> toMap(_i8.MuscleGroup? muscleGroup) =>
+  Map<String, dynamic> toMap(_i9.MuscleGroup? muscleGroup) =>
       (super.noSuchMethod(
             Invocation.method(#toMap, [muscleGroup]),
             returnValue: <String, dynamic>{},
@@ -263,107 +285,107 @@ class MockMuscleGroupDao extends _i1.Mock implements _i7.MuscleGroupDao {
           as Map<String, dynamic>);
 
   @override
-  _i6.Future<List<_i8.MuscleGroup>> getAllMuscleGroups() =>
+  _i7.Future<List<_i9.MuscleGroup>> getAllMuscleGroups() =>
       (super.noSuchMethod(
             Invocation.method(#getAllMuscleGroups, []),
-            returnValue: _i6.Future<List<_i8.MuscleGroup>>.value(
-              <_i8.MuscleGroup>[],
+            returnValue: _i7.Future<List<_i9.MuscleGroup>>.value(
+              <_i9.MuscleGroup>[],
             ),
           )
-          as _i6.Future<List<_i8.MuscleGroup>>);
+          as _i7.Future<List<_i9.MuscleGroup>>);
 
   @override
-  _i6.Future<_i8.MuscleGroup?> getMuscleGroupByName(String? name) =>
+  _i7.Future<_i9.MuscleGroup?> getMuscleGroupByName(String? name) =>
       (super.noSuchMethod(
             Invocation.method(#getMuscleGroupByName, [name]),
-            returnValue: _i6.Future<_i8.MuscleGroup?>.value(),
+            returnValue: _i7.Future<_i9.MuscleGroup?>.value(),
           )
-          as _i6.Future<_i8.MuscleGroup?>);
+          as _i7.Future<_i9.MuscleGroup?>);
 
   @override
-  _i6.Future<int> insert(_i8.MuscleGroup? model) =>
+  _i7.Future<int> insert(_i9.MuscleGroup? model) =>
       (super.noSuchMethod(
             Invocation.method(#insert, [model]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<List<int>> insertAll(List<_i8.MuscleGroup>? models) =>
+  _i7.Future<List<int>> insertAll(List<_i9.MuscleGroup>? models) =>
       (super.noSuchMethod(
             Invocation.method(#insertAll, [models]),
-            returnValue: _i6.Future<List<int>>.value(<int>[]),
+            returnValue: _i7.Future<List<int>>.value(<int>[]),
           )
-          as _i6.Future<List<int>>);
+          as _i7.Future<List<int>>);
 
   @override
-  _i6.Future<List<_i8.MuscleGroup>> getAll() =>
+  _i7.Future<List<_i9.MuscleGroup>> getAll() =>
       (super.noSuchMethod(
             Invocation.method(#getAll, []),
-            returnValue: _i6.Future<List<_i8.MuscleGroup>>.value(
-              <_i8.MuscleGroup>[],
+            returnValue: _i7.Future<List<_i9.MuscleGroup>>.value(
+              <_i9.MuscleGroup>[],
             ),
           )
-          as _i6.Future<List<_i8.MuscleGroup>>);
+          as _i7.Future<List<_i9.MuscleGroup>>);
 
   @override
-  _i6.Future<_i8.MuscleGroup?> getById(String? id) =>
+  _i7.Future<_i9.MuscleGroup?> getById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getById, [id]),
-            returnValue: _i6.Future<_i8.MuscleGroup?>.value(),
+            returnValue: _i7.Future<_i9.MuscleGroup?>.value(),
           )
-          as _i6.Future<_i8.MuscleGroup?>);
+          as _i7.Future<_i9.MuscleGroup?>);
 
   @override
-  _i6.Future<int> update(_i8.MuscleGroup? model, {String? idColumn = 'id'}) =>
+  _i7.Future<int> update(_i9.MuscleGroup? model, {String? idColumn = 'id'}) =>
       (super.noSuchMethod(
             Invocation.method(#update, [model], {#idColumn: idColumn}),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> delete(String? id, {String? idColumn = 'id'}) =>
+  _i7.Future<int> delete(String? id, {String? idColumn = 'id'}) =>
       (super.noSuchMethod(
             Invocation.method(#delete, [id], {#idColumn: idColumn}),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> deleteAll() =>
+  _i7.Future<int> deleteAll() =>
       (super.noSuchMethod(
             Invocation.method(#deleteAll, []),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<List<_i8.MuscleGroup>> rawQuery(
+  _i7.Future<List<_i9.MuscleGroup>> rawQuery(
     String? sql, [
     List<dynamic>? arguments,
   ]) =>
       (super.noSuchMethod(
             Invocation.method(#rawQuery, [sql, arguments]),
-            returnValue: _i6.Future<List<_i8.MuscleGroup>>.value(
-              <_i8.MuscleGroup>[],
+            returnValue: _i7.Future<List<_i9.MuscleGroup>>.value(
+              <_i9.MuscleGroup>[],
             ),
           )
-          as _i6.Future<List<_i8.MuscleGroup>>);
+          as _i7.Future<List<_i9.MuscleGroup>>);
 
   @override
-  _i6.Future<int> rawUpdate(String? sql, [List<dynamic>? arguments]) =>
+  _i7.Future<int> rawUpdate(String? sql, [List<dynamic>? arguments]) =>
       (super.noSuchMethod(
             Invocation.method(#rawUpdate, [sql, arguments]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> rawDelete(String? sql, [List<dynamic>? arguments]) =>
+  _i7.Future<int> rawDelete(String? sql, [List<dynamic>? arguments]) =>
       (super.noSuchMethod(
             Invocation.method(#rawDelete, [sql, arguments]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 }

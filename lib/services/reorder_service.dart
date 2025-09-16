@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'package:logging/logging.dart';
 
 import 'workout_service.dart';
 
@@ -8,6 +9,8 @@ import 'workout_service.dart';
 /// This service helps to decouple reorder logic from the UI widgets.
 class ReorderService extends ChangeNotifier {
   static final ReorderService _instance = ReorderService._internal();
+  final Logger _logger = Logger('ReorderService');
+
   factory ReorderService({WorkoutService? workoutService}) {
     _instance._workoutService = workoutService ?? WorkoutService.instance;
     return _instance;
@@ -35,6 +38,7 @@ class ReorderService extends ChangeNotifier {
 
   void toggleReorderMode() {
     _isReorderMode = !_isReorderMode;
+    _logger.info('Reorder mode toggled: $_isReorderMode');
     if (!_isReorderMode) {
       _resetDragState();
     }
@@ -44,16 +48,20 @@ class ReorderService extends ChangeNotifier {
   void onDragStarted(int index) {
     if (!_isReorderMode || _isDragConfirmed) return;
 
+    _logger.fine('Drag started on index: $index');
     _draggingIndex = index;
     _dragStartDelayTimer?.cancel();
     _dragStartDelayTimer = Timer(_initialDragDelay, () {
-      if (_draggingIndex == index) { // Check if still the same item
+      if (_draggingIndex == index) {
+        _logger.info('Drag confirmed for index: $index');
         _isDragConfirmed = true;
         HapticFeedback.selectionClick();
         
-        // Fallback timer to clear state if drag gets stuck
         _dragCompletionTimeoutTimer?.cancel();
-        _dragCompletionTimeoutTimer = Timer(_completionTimeout, _resetDragState);
+        _dragCompletionTimeoutTimer = Timer(_completionTimeout, () {
+          _logger.warning('Drag completion timeout reached. Resetting state.');
+          _resetDragState();
+        });
         
         notifyListeners();
       }
@@ -62,31 +70,33 @@ class ReorderService extends ChangeNotifier {
   }
 
   void onDragUpdated() {
-    // Only refresh timeout if drag is confirmed, don't cancel delay timer
-    // as this interferes with legitimate drag operations
     if (_isDragConfirmed) {
       _dragCompletionTimeoutTimer?.cancel();
-      _dragCompletionTimeoutTimer = Timer(_completionTimeout, _resetDragState);
+      _dragCompletionTimeoutTimer = Timer(_completionTimeout, () {
+        _logger.warning('Drag completion timeout reached during update. Resetting state.');
+        _resetDragState();
+      });
     }
   }
 
-  // Called when an item is dropped after reordering
   void onReorderCompleted(String workoutId, int oldIndex, int newIndex) {
+    _logger.info('Reorder completed for workout: $workoutId, from $oldIndex to $newIndex');
     if (_isDragConfirmed) {
-      HapticFeedback.mediumImpact(); // Feedback for successful reorder
+      HapticFeedback.mediumImpact();
       
-      // Persist the reorder to the database
+      _logger.fine('Persisting reorder to database');
       _workoutService.reorderExercisesInWorkout(workoutId, oldIndex, newIndex);
     }
     _resetDragState();
   }
 
-  // Called if a drag is cancelled (e.g., finger lifted before reorder)
   void onDragCancelled() {
+    _logger.fine('Drag cancelled');
     _resetDragState();
   }
 
   void _resetDragState() {
+    _logger.fine('Resetting drag state');
     bool needsNotify = _draggingIndex != null || _isDragConfirmed;
     _dragStartDelayTimer?.cancel();
     _dragCompletionTimeoutTimer?.cancel();

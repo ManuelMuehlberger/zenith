@@ -1,3 +1,4 @@
+import 'package:logging/logging.dart';
 import '../models/exercise.dart';
 import 'dao/exercise_dao.dart';
 import 'dao/muscle_group_dao.dart';
@@ -6,6 +7,8 @@ class ExerciseService {
   static final ExerciseService _instance = ExerciseService._internal();
   factory ExerciseService() => _instance;
   ExerciseService._internal();
+
+  final Logger _logger = Logger('ExerciseService');
   
   static ExerciseService get instance => _instance;
 
@@ -28,60 +31,60 @@ class ExerciseService {
        _muscleGroupDao = muscleGroupDao;
 
   Future<void> loadExercises() async {
-    // Load exercises with individual error handling
+    _logger.info('Loading exercises and muscle groups');
     try {
       _exercises = await _exerciseDao.getAllExercises();
+      _logger.info('Successfully loaded ${_exercises.length} exercises');
     } catch (e) {
+      _logger.severe('Failed to load exercises: $e');
       _exercises = [];
-      // Log error in production: print('Failed to load exercises: $e');
     }
     
-    // Load muscle groups with individual error handling
     try {
       final muscleGroups = await _muscleGroupDao.getAllMuscleGroups();
       _muscleGroups = muscleGroups.map((mg) => mg.name).toList()..sort();
+      _logger.info('Successfully loaded ${_muscleGroups.length} muscle groups');
     } catch (e) {
+      _logger.severe('Failed to load muscle groups: $e');
       _muscleGroups = [];
-      // Log error in production: print('Failed to load muscle groups: $e');
     }
   }
 
   List<Exercise> searchExercises(String query) {
     final trimmedQuery = query.trim();
-    if (trimmedQuery.isEmpty) return _exercises;
+    _logger.fine('Searching exercises with query: "$trimmedQuery"');
+    if (trimmedQuery.isEmpty) {
+      _logger.fine('Query is empty, returning all exercises');
+      return _exercises;
+    }
     
     final lowerQuery = trimmedQuery.toLowerCase();
     
-    // Filter exercises in memory
-    return _exercises.where((exercise) {
-      // Check exercise name
-      if (exercise.name.toLowerCase().contains(lowerQuery)) {
-        return true;
-      }
-      
-      // Check primary muscle group
-      if (exercise.primaryMuscleGroup.name.toLowerCase().contains(lowerQuery)) {
-        return true;
-      }
-      
-      // Check secondary muscle groups
-      if (exercise.secondaryMuscleGroups.any((mg) => 
-          mg.name.toLowerCase().contains(lowerQuery))) {
-        return true;
-      }
-      
-      return false;
+    final results = _exercises.where((exercise) {
+      final isMatch = exercise.name.toLowerCase().contains(lowerQuery) ||
+                      exercise.primaryMuscleGroup.name.toLowerCase().contains(lowerQuery) ||
+                      exercise.secondaryMuscleGroups.any((mg) => mg.name.toLowerCase().contains(lowerQuery));
+      return isMatch;
     }).toList();
+    
+    _logger.fine('Found ${results.length} exercises for query: "$trimmedQuery"');
+    return results;
   }
 
   List<Exercise> filterByMuscleGroup(String muscleGroup) {
     final trimmedMuscleGroup = muscleGroup.trim();
-    if (trimmedMuscleGroup.isEmpty) return _exercises;
+    _logger.fine('Filtering exercises by muscle group: "$trimmedMuscleGroup"');
+    if (trimmedMuscleGroup.isEmpty) {
+      _logger.fine('Muscle group is empty, returning all exercises');
+      return _exercises;
+    }
     
-    // Filter exercises in memory
-    return _exercises.where((exercise) {
+    final results = _exercises.where((exercise) {
       return exercise.primaryMuscleGroup.name.toLowerCase() == trimmedMuscleGroup.toLowerCase();
     }).toList();
+    
+    _logger.fine('Found ${results.length} exercises for muscle group: "$trimmedMuscleGroup"');
+    return results;
   }
 
   List<String> get allMuscleGroups {

@@ -8,6 +8,7 @@ typedef UserDataId = String;
 
 // Workout-related typedefs
 typedef WorkoutId = String;
+typedef WorkoutTemplateId = String;
 typedef WorkoutFolderId = String;
 typedef WorkoutExerciseId = String;
 typedef WorkoutSetId = String;

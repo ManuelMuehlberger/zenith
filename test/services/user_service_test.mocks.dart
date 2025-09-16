@@ -3,14 +3,15 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i6;
+import 'dart:async' as _i7;
 
+import 'package:logging/logging.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i5;
-import 'package:sqflite/sqflite.dart' as _i2;
-import 'package:zenith/models/user_data.dart' as _i3;
-import 'package:zenith/services/dao/user_dao.dart' as _i4;
-import 'package:zenith/services/dao/weight_entry_dao.dart' as _i7;
+import 'package:mockito/src/dummies.dart' as _i6;
+import 'package:sqflite/sqflite.dart' as _i3;
+import 'package:zenith/models/user_data.dart' as _i4;
+import 'package:zenith/services/dao/user_dao.dart' as _i5;
+import 'package:zenith/services/dao/weight_entry_dao.dart' as _i8;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -26,25 +27,30 @@ import 'package:zenith/services/dao/weight_entry_dao.dart' as _i7;
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-class _FakeDatabase_0 extends _i1.SmartFake implements _i2.Database {
-  _FakeDatabase_0(Object parent, Invocation parentInvocation)
+class _FakeLogger_0 extends _i1.SmartFake implements _i2.Logger {
+  _FakeLogger_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeUserData_1 extends _i1.SmartFake implements _i3.UserData {
-  _FakeUserData_1(Object parent, Invocation parentInvocation)
+class _FakeDatabase_1 extends _i1.SmartFake implements _i3.Database {
+  _FakeDatabase_1(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeWeightEntry_2 extends _i1.SmartFake implements _i3.WeightEntry {
-  _FakeWeightEntry_2(Object parent, Invocation parentInvocation)
+class _FakeUserData_2 extends _i1.SmartFake implements _i4.UserData {
+  _FakeUserData_2(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeWeightEntry_3 extends _i1.SmartFake implements _i4.WeightEntry {
+  _FakeWeightEntry_3(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
 /// A class which mocks [UserDao].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockUserDao extends _i1.Mock implements _i4.UserDao {
+class MockUserDao extends _i1.Mock implements _i5.UserDao {
   MockUserDao() {
     _i1.throwOnMissingStub(this);
   }
@@ -53,7 +59,7 @@ class MockUserDao extends _i1.Mock implements _i4.UserDao {
   String get tableName =>
       (super.noSuchMethod(
             Invocation.getter(#tableName),
-            returnValue: _i5.dummyValue<String>(
+            returnValue: _i6.dummyValue<String>(
               this,
               Invocation.getter(#tableName),
             ),
@@ -61,28 +67,36 @@ class MockUserDao extends _i1.Mock implements _i4.UserDao {
           as String);
 
   @override
-  _i6.Future<_i2.Database> get database =>
+  _i2.Logger get logger =>
       (super.noSuchMethod(
-            Invocation.getter(#database),
-            returnValue: _i6.Future<_i2.Database>.value(
-              _FakeDatabase_0(this, Invocation.getter(#database)),
-            ),
+            Invocation.getter(#logger),
+            returnValue: _FakeLogger_0(this, Invocation.getter(#logger)),
           )
-          as _i6.Future<_i2.Database>);
+          as _i2.Logger);
 
   @override
-  _i3.UserData fromMap(Map<String, dynamic>? map) =>
+  _i7.Future<_i3.Database> get database =>
+      (super.noSuchMethod(
+            Invocation.getter(#database),
+            returnValue: _i7.Future<_i3.Database>.value(
+              _FakeDatabase_1(this, Invocation.getter(#database)),
+            ),
+          )
+          as _i7.Future<_i3.Database>);
+
+  @override
+  _i4.UserData fromMap(Map<String, dynamic>? map) =>
       (super.noSuchMethod(
             Invocation.method(#fromMap, [map]),
-            returnValue: _FakeUserData_1(
+            returnValue: _FakeUserData_2(
               this,
               Invocation.method(#fromMap, [map]),
             ),
           )
-          as _i3.UserData);
+          as _i4.UserData);
 
   @override
-  Map<String, dynamic> toMap(_i3.UserData? userData) =>
+  Map<String, dynamic> toMap(_i4.UserData? userData) =>
       (super.noSuchMethod(
             Invocation.method(#toMap, [userData]),
             returnValue: <String, dynamic>{},
@@ -90,109 +104,109 @@ class MockUserDao extends _i1.Mock implements _i4.UserDao {
           as Map<String, dynamic>);
 
   @override
-  _i6.Future<_i3.UserData?> getUserDataById(String? id) =>
+  _i7.Future<_i4.UserData?> getUserDataById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getUserDataById, [id]),
-            returnValue: _i6.Future<_i3.UserData?>.value(),
+            returnValue: _i7.Future<_i4.UserData?>.value(),
           )
-          as _i6.Future<_i3.UserData?>);
+          as _i7.Future<_i4.UserData?>);
 
   @override
-  _i6.Future<int> updateUserData(_i3.UserData? userData) =>
+  _i7.Future<int> updateUserData(_i4.UserData? userData) =>
       (super.noSuchMethod(
             Invocation.method(#updateUserData, [userData]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> insert(_i3.UserData? model) =>
+  _i7.Future<int> insert(_i4.UserData? model) =>
       (super.noSuchMethod(
             Invocation.method(#insert, [model]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<List<int>> insertAll(List<_i3.UserData>? models) =>
+  _i7.Future<List<int>> insertAll(List<_i4.UserData>? models) =>
       (super.noSuchMethod(
             Invocation.method(#insertAll, [models]),
-            returnValue: _i6.Future<List<int>>.value(<int>[]),
+            returnValue: _i7.Future<List<int>>.value(<int>[]),
           )
-          as _i6.Future<List<int>>);
+          as _i7.Future<List<int>>);
 
   @override
-  _i6.Future<List<_i3.UserData>> getAll() =>
+  _i7.Future<List<_i4.UserData>> getAll() =>
       (super.noSuchMethod(
             Invocation.method(#getAll, []),
-            returnValue: _i6.Future<List<_i3.UserData>>.value(<_i3.UserData>[]),
+            returnValue: _i7.Future<List<_i4.UserData>>.value(<_i4.UserData>[]),
           )
-          as _i6.Future<List<_i3.UserData>>);
+          as _i7.Future<List<_i4.UserData>>);
 
   @override
-  _i6.Future<_i3.UserData?> getById(String? id) =>
+  _i7.Future<_i4.UserData?> getById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getById, [id]),
-            returnValue: _i6.Future<_i3.UserData?>.value(),
+            returnValue: _i7.Future<_i4.UserData?>.value(),
           )
-          as _i6.Future<_i3.UserData?>);
+          as _i7.Future<_i4.UserData?>);
 
   @override
-  _i6.Future<int> update(_i3.UserData? model, {String? idColumn = 'id'}) =>
+  _i7.Future<int> update(_i4.UserData? model, {String? idColumn = 'id'}) =>
       (super.noSuchMethod(
             Invocation.method(#update, [model], {#idColumn: idColumn}),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> delete(String? id, {String? idColumn = 'id'}) =>
+  _i7.Future<int> delete(String? id, {String? idColumn = 'id'}) =>
       (super.noSuchMethod(
             Invocation.method(#delete, [id], {#idColumn: idColumn}),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> deleteAll() =>
+  _i7.Future<int> deleteAll() =>
       (super.noSuchMethod(
             Invocation.method(#deleteAll, []),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<List<_i3.UserData>> rawQuery(
+  _i7.Future<List<_i4.UserData>> rawQuery(
     String? sql, [
     List<dynamic>? arguments,
   ]) =>
       (super.noSuchMethod(
             Invocation.method(#rawQuery, [sql, arguments]),
-            returnValue: _i6.Future<List<_i3.UserData>>.value(<_i3.UserData>[]),
+            returnValue: _i7.Future<List<_i4.UserData>>.value(<_i4.UserData>[]),
           )
-          as _i6.Future<List<_i3.UserData>>);
+          as _i7.Future<List<_i4.UserData>>);
 
   @override
-  _i6.Future<int> rawUpdate(String? sql, [List<dynamic>? arguments]) =>
+  _i7.Future<int> rawUpdate(String? sql, [List<dynamic>? arguments]) =>
       (super.noSuchMethod(
             Invocation.method(#rawUpdate, [sql, arguments]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> rawDelete(String? sql, [List<dynamic>? arguments]) =>
+  _i7.Future<int> rawDelete(String? sql, [List<dynamic>? arguments]) =>
       (super.noSuchMethod(
             Invocation.method(#rawDelete, [sql, arguments]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 }
 
 /// A class which mocks [WeightEntryDao].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockWeightEntryDao extends _i1.Mock implements _i7.WeightEntryDao {
+class MockWeightEntryDao extends _i1.Mock implements _i8.WeightEntryDao {
   MockWeightEntryDao() {
     _i1.throwOnMissingStub(this);
   }
@@ -201,7 +215,7 @@ class MockWeightEntryDao extends _i1.Mock implements _i7.WeightEntryDao {
   String get tableName =>
       (super.noSuchMethod(
             Invocation.getter(#tableName),
-            returnValue: _i5.dummyValue<String>(
+            returnValue: _i6.dummyValue<String>(
               this,
               Invocation.getter(#tableName),
             ),
@@ -209,28 +223,36 @@ class MockWeightEntryDao extends _i1.Mock implements _i7.WeightEntryDao {
           as String);
 
   @override
-  _i6.Future<_i2.Database> get database =>
+  _i2.Logger get logger =>
       (super.noSuchMethod(
-            Invocation.getter(#database),
-            returnValue: _i6.Future<_i2.Database>.value(
-              _FakeDatabase_0(this, Invocation.getter(#database)),
-            ),
+            Invocation.getter(#logger),
+            returnValue: _FakeLogger_0(this, Invocation.getter(#logger)),
           )
-          as _i6.Future<_i2.Database>);
+          as _i2.Logger);
 
   @override
-  _i3.WeightEntry fromMap(Map<String, dynamic>? map) =>
+  _i7.Future<_i3.Database> get database =>
+      (super.noSuchMethod(
+            Invocation.getter(#database),
+            returnValue: _i7.Future<_i3.Database>.value(
+              _FakeDatabase_1(this, Invocation.getter(#database)),
+            ),
+          )
+          as _i7.Future<_i3.Database>);
+
+  @override
+  _i4.WeightEntry fromMap(Map<String, dynamic>? map) =>
       (super.noSuchMethod(
             Invocation.method(#fromMap, [map]),
-            returnValue: _FakeWeightEntry_2(
+            returnValue: _FakeWeightEntry_3(
               this,
               Invocation.method(#fromMap, [map]),
             ),
           )
-          as _i3.WeightEntry);
+          as _i4.WeightEntry);
 
   @override
-  Map<String, dynamic> toMap(_i3.WeightEntry? weightEntry) =>
+  Map<String, dynamic> toMap(_i4.WeightEntry? weightEntry) =>
       (super.noSuchMethod(
             Invocation.method(#toMap, [weightEntry]),
             returnValue: <String, dynamic>{},
@@ -238,134 +260,134 @@ class MockWeightEntryDao extends _i1.Mock implements _i7.WeightEntryDao {
           as Map<String, dynamic>);
 
   @override
-  _i6.Future<List<_i3.WeightEntry>> getWeightEntriesByUserId(
+  _i7.Future<List<_i4.WeightEntry>> getWeightEntriesByUserId(
     String? userDataId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getWeightEntriesByUserId, [userDataId]),
-            returnValue: _i6.Future<List<_i3.WeightEntry>>.value(
-              <_i3.WeightEntry>[],
+            returnValue: _i7.Future<List<_i4.WeightEntry>>.value(
+              <_i4.WeightEntry>[],
             ),
           )
-          as _i6.Future<List<_i3.WeightEntry>>);
+          as _i7.Future<List<_i4.WeightEntry>>);
 
   @override
-  _i6.Future<int> addWeightEntryForUser(
+  _i7.Future<int> addWeightEntryForUser(
     String? userDataId,
-    _i3.WeightEntry? weightEntry,
+    _i4.WeightEntry? weightEntry,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#addWeightEntryForUser, [
               userDataId,
               weightEntry,
             ]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> updateWeightEntry(
+  _i7.Future<int> updateWeightEntry(
     String? userDataId,
-    _i3.WeightEntry? weightEntry,
+    _i4.WeightEntry? weightEntry,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#updateWeightEntry, [userDataId, weightEntry]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> deleteWeightEntry(String? id) =>
+  _i7.Future<int> deleteWeightEntry(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#deleteWeightEntry, [id]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> insert(_i3.WeightEntry? model) =>
+  _i7.Future<int> insert(_i4.WeightEntry? model) =>
       (super.noSuchMethod(
             Invocation.method(#insert, [model]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<List<int>> insertAll(List<_i3.WeightEntry>? models) =>
+  _i7.Future<List<int>> insertAll(List<_i4.WeightEntry>? models) =>
       (super.noSuchMethod(
             Invocation.method(#insertAll, [models]),
-            returnValue: _i6.Future<List<int>>.value(<int>[]),
+            returnValue: _i7.Future<List<int>>.value(<int>[]),
           )
-          as _i6.Future<List<int>>);
+          as _i7.Future<List<int>>);
 
   @override
-  _i6.Future<List<_i3.WeightEntry>> getAll() =>
+  _i7.Future<List<_i4.WeightEntry>> getAll() =>
       (super.noSuchMethod(
             Invocation.method(#getAll, []),
-            returnValue: _i6.Future<List<_i3.WeightEntry>>.value(
-              <_i3.WeightEntry>[],
+            returnValue: _i7.Future<List<_i4.WeightEntry>>.value(
+              <_i4.WeightEntry>[],
             ),
           )
-          as _i6.Future<List<_i3.WeightEntry>>);
+          as _i7.Future<List<_i4.WeightEntry>>);
 
   @override
-  _i6.Future<_i3.WeightEntry?> getById(String? id) =>
+  _i7.Future<_i4.WeightEntry?> getById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getById, [id]),
-            returnValue: _i6.Future<_i3.WeightEntry?>.value(),
+            returnValue: _i7.Future<_i4.WeightEntry?>.value(),
           )
-          as _i6.Future<_i3.WeightEntry?>);
+          as _i7.Future<_i4.WeightEntry?>);
 
   @override
-  _i6.Future<int> update(_i3.WeightEntry? model, {String? idColumn = 'id'}) =>
+  _i7.Future<int> update(_i4.WeightEntry? model, {String? idColumn = 'id'}) =>
       (super.noSuchMethod(
             Invocation.method(#update, [model], {#idColumn: idColumn}),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> delete(String? id, {String? idColumn = 'id'}) =>
+  _i7.Future<int> delete(String? id, {String? idColumn = 'id'}) =>
       (super.noSuchMethod(
             Invocation.method(#delete, [id], {#idColumn: idColumn}),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> deleteAll() =>
+  _i7.Future<int> deleteAll() =>
       (super.noSuchMethod(
             Invocation.method(#deleteAll, []),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<List<_i3.WeightEntry>> rawQuery(
+  _i7.Future<List<_i4.WeightEntry>> rawQuery(
     String? sql, [
     List<dynamic>? arguments,
   ]) =>
       (super.noSuchMethod(
             Invocation.method(#rawQuery, [sql, arguments]),
-            returnValue: _i6.Future<List<_i3.WeightEntry>>.value(
-              <_i3.WeightEntry>[],
+            returnValue: _i7.Future<List<_i4.WeightEntry>>.value(
+              <_i4.WeightEntry>[],
             ),
           )
-          as _i6.Future<List<_i3.WeightEntry>>);
+          as _i7.Future<List<_i4.WeightEntry>>);
 
   @override
-  _i6.Future<int> rawUpdate(String? sql, [List<dynamic>? arguments]) =>
+  _i7.Future<int> rawUpdate(String? sql, [List<dynamic>? arguments]) =>
       (super.noSuchMethod(
             Invocation.method(#rawUpdate, [sql, arguments]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 
   @override
-  _i6.Future<int> rawDelete(String? sql, [List<dynamic>? arguments]) =>
+  _i7.Future<int> rawDelete(String? sql, [List<dynamic>? arguments]) =>
       (super.noSuchMethod(
             Invocation.method(#rawDelete, [sql, arguments]),
-            returnValue: _i6.Future<int>.value(0),
+            returnValue: _i7.Future<int>.value(0),
           )
-          as _i6.Future<int>);
+          as _i7.Future<int>);
 }

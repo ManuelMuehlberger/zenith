@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
@@ -24,6 +25,7 @@ import 'dao/muscle_group_dao.dart';
 class ExportImportService {
   static ExportImportService? _instance;
 
+  final Logger _logger = Logger('ExportImportService');
   final UserDao _userDao;
   final WeightEntryDao _weightEntryDao;
   final WorkoutDao _workoutDao;
@@ -74,26 +76,31 @@ class ExportImportService {
     DateTime? fromDate,
     DateTime? toDate,
   }) async {
+    _logger.info('Starting data export with options: personal=$includePersonalData, workouts=$includeWorkouts, customExercises=$includeCustomExercises, from=$fromDate, to=$toDate');
     try {
       // Load data using DAOs
+      _logger.fine('Loading user data');
       final users = await _userDao.getAll();
       final userProfile = users.isNotEmpty ? users.first : null;
       
       // Load weight history for the user
       List<WeightEntry> weightHistory = [];
       if (userProfile != null) {
+        _logger.fine('Loading weight history for user: ${userProfile.id}');
         weightHistory = await _weightEntryDao.getWeightEntriesByUserId(userProfile.id);
       }
       
       // Update user profile with weight history
       final userWithHistory = userProfile?.copyWith(weightHistory: weightHistory);
       
+      _logger.fine('Loading workout folders and templates');
       final workoutFolders = await _workoutFolderDao.getAllWorkoutFoldersOrdered();
       final workouts = await _workoutDao.getTemplateWorkouts();
       
       // Load exercises and sets for each workout
       final List<Workout> workoutsWithExercises = [];
       for (final workout in workouts) {
+        _logger.finer('Loading exercises for workout template: ${workout.id}');
         final workoutExercises = await _workoutExerciseDao.getWorkoutExercisesByWorkoutId(workout.id);
         
         // Load sets for each exercise
@@ -109,11 +116,13 @@ class ExportImportService {
         workoutsWithExercises.add(workoutWithExercises);
       }
       
+      _logger.fine('Loading workout history');
       final workoutHistory = await _workoutDao.getCompletedWorkouts();
       
       // Load exercises and sets for each history workout
       final List<Workout> historyWithExercises = [];
       for (final workout in workoutHistory) {
+        _logger.finer('Loading exercises for history workout: ${workout.id}');
         final workoutExercises = await _workoutExerciseDao.getWorkoutExercisesByWorkoutId(workout.id);
         
         // Load sets for each exercise
@@ -129,6 +138,7 @@ class ExportImportService {
         historyWithExercises.add(workoutWithExercises);
       }
       
+      _logger.fine('Loading all exercises');
       final exercises = await _exerciseDao.getAllExercises();
       
       // For now, we'll use a simple map for settings
@@ -139,6 +149,7 @@ class ExportImportService {
 
       List<Workout> filteredHistory = historyWithExercises;
       if (fromDate != null || toDate != null) {
+        _logger.fine('Filtering workout history from $fromDate to $toDate');
         filteredHistory = historyWithExercises.where((workout) {
           final historyDate = workout.startedAt;
           if (historyDate == null) return false;
@@ -146,11 +157,13 @@ class ExportImportService {
           if (toDate != null && historyDate.isAfter(toDate)) return false;
           return true;
         }).toList();
+        _logger.fine('Filtered history contains ${filteredHistory.length} workouts');
       }
 
       final workoutSessions = _convertHistoryToSessions(filteredHistory);
       final customExercisesList = <Exercise>[]; // Placeholder
 
+      _logger.fine('Constructing export data map');
       final exportData = <String, dynamic>{
         "metadata": <String, dynamic>{
           "version": _fileVersion,
@@ -196,14 +209,17 @@ class ExportImportService {
       final dataString = jsonEncode(exportData["data"]);
       final checksum = sha256.convert(utf8.encode(dataString)).toString();
       (exportData["metadata"] as Map<String, dynamic>)["dataIntegrity"]["checksum"] = checksum;
+      _logger.fine('Calculated checksum: $checksum');
 
       return await _saveExportFile(exportData);
     } catch (e) {
+      _logger.severe('Failed to export data: $e');
       throw Exception('Failed to export data: $e');
     }
   }
 
   Future<bool> importData() async {
+    _logger.info('Starting data import');
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -211,13 +227,18 @@ class ExportImportService {
         allowMultiple: false,
       );
 
-      if (result == null || result.files.isEmpty) return false;
+      if (result == null || result.files.isEmpty) {
+        _logger.info('No file selected for import');
+        return false;
+      }
 
       final file = File(result.files.single.path!);
+      _logger.fine('Reading import file: ${file.path}');
       final content = await file.readAsString();
       final importData = jsonDecode(content) as Map<String, dynamic>;
 
       if (!_validateImportData(importData)) {
+        _logger.warning('Invalid import data format');
         throw Exception('Invalid data format. Please select a valid backup file.');
       }
 
@@ -226,23 +247,32 @@ class ExportImportService {
       final expectedChecksum = metadata["dataIntegrity"]["checksum"] as String;
       final actualChecksum = sha256.convert(utf8.encode(jsonEncode(data))).toString();
       
+      _logger.fine('Verifying checksum: expected=$expectedChecksum, actual=$actualChecksum');
       if (expectedChecksum != actualChecksum) {
+        _logger.warning('Data integrity check failed');
         throw Exception('Data integrity check failed. The file may be corrupted.');
       }
 
       await _importUserData(data);
+      _logger.info('Data import completed successfully');
       return true;
     } catch (e) {
+      _logger.severe('Failed to import data: $e');
       rethrow;
     }
   }
 
   Future<String> _saveExportFile(Map<String, dynamic> exportData) async {
+    _logger.fine('Saving export file');
     final directory = await getApplicationDocumentsDirectory();
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final fileName = 'workout_tracker_backup_$timestamp.json';
     final file = File('${directory.path}/$fileName');
+    
+    _logger.fine('Writing export data to file: ${file.path}');
     await file.writeAsString(jsonEncode(exportData));
+    
+    _logger.info('Sharing export file');
     await Share.shareXFiles([XFile(file.path)], subject: 'Workout Tracker Data Export - $fileName');
     return file.path;
   }
@@ -356,6 +386,7 @@ class ExportImportService {
   }
 
   bool _validateImportData(Map<String, dynamic> data) {
+    _logger.fine('Validating import data structure');
     try {
       final metadata = data["metadata"] as Map<String, dynamic>?;
       final dataSection = data["data"] as Map<String, dynamic>?;
@@ -365,61 +396,67 @@ class ExportImportService {
           metadata["exportDate"] == null ||
           metadata["dataIntegrity"] == null ||
           (metadata["dataIntegrity"] as Map<String, dynamic>)["checksum"] == null) {
+        _logger.warning('Metadata validation failed');
         return false;
       }
       if (dataSection == null ||
           dataSection["workouts"] == null) {
+        _logger.warning('Data section validation failed');
         return false;
       }
+      _logger.fine('Import data validation successful');
       return true;
     } catch (e) {
+      _logger.severe('Error during import data validation: $e');
       return false;
     }
   }
 
   Future<void> _importUserData(Map<String, dynamic> data) async {
+    _logger.info('Importing user data');
     final String importedFileUnits = (data["userProfile"] as Map<String,dynamic>?)?["units"] as String? ?? "metric";
 
     if (data["userProfile"] != null) {
+      _logger.fine('Importing user profile');
       final profile = UserData.fromMap(data["userProfile"] as Map<String, dynamic>);
-      // Check if user already exists
       final existingUser = await _userDao.getUserDataById(profile.id);
       
       if (existingUser != null) {
-        // Update existing user
+        _logger.fine('Updating existing user: ${profile.id}');
         await _userDao.updateUserData(profile);
       } else {
-        // Create new user
+        _logger.fine('Inserting new user: ${profile.id}');
         await _userDao.insert(profile);
       }
       
-      // Save weight history entries
+      _logger.fine('Importing weight history');
       for (final weightEntry in profile.weightHistory) {
         try {
           await _weightEntryDao.addWeightEntryForUser(profile.id, weightEntry);
         } catch (e) {
-          // If entry already exists, update it
+          _logger.finer('Weight entry already exists, updating: ${weightEntry.id}');
           await _weightEntryDao.updateWeightEntry(profile.id, weightEntry);
         }
       }
     }
 
     if (data["workoutFolders"] != null) {
+      _logger.fine('Importing workout folders');
       final folders = (data["workoutFolders"] as List)
           .map((f) => WorkoutFolder.fromMap(f as Map<String, dynamic>))
           .toList();
       for (final folder in folders) {
-        // Check if folder already exists
         try {
           await _workoutFolderDao.insert(folder);
         } catch (e) {
-          // If folder already exists, update it
+          _logger.finer('Workout folder already exists, updating: ${folder.id}');
           await _workoutFolderDao.updateWorkoutFolder(folder);
         }
       }
     }
     
     if (data["workouts"] != null) {
+      _logger.fine('Importing workout templates');
       final workoutsData = (data["workouts"] as List);
       for (final workoutMap in workoutsData) {
         await _importWorkout(workoutMap as Map<String, dynamic>, importedFileUnits);
@@ -427,6 +464,7 @@ class ExportImportService {
     }
 
     if (data["workout_sessions"] != null) {
+      _logger.fine('Importing workout sessions');
       final sessionsData = (data["workout_sessions"] as List);
       for (final sessionMap in sessionsData) {
         await _importWorkoutSession(sessionMap as Map<String, dynamic>, importedFileUnits);
@@ -437,6 +475,7 @@ class ExportImportService {
   }
 
   Future<void> _importWorkout(Map<String, dynamic> workoutData, String importedFileUnits) async {
+    _logger.finer('Importing workout: ${workoutData["id"]}');
     final modifiableWorkoutData = jsonDecode(jsonEncode(workoutData)) as Map<String, dynamic>;
 
     if (modifiableWorkoutData['exercises'] is List) {
@@ -463,12 +502,13 @@ class ExportImportService {
 
     final workout = Workout.fromMap(modifiableWorkoutData);
     
-    // Check if workout already exists
     final existingWorkout = await _workoutDao.getWorkoutById(workout.id);
 
     if (existingWorkout != null) {
+      _logger.finer('Updating existing workout: ${workout.id}');
       await _workoutDao.updateWorkout(workout);
     } else {
+      _logger.finer('Inserting new workout: ${workout.id}');
       await _workoutDao.insert(workout);
     }
     
@@ -477,7 +517,7 @@ class ExportImportService {
       try {
         await _workoutExerciseDao.insert(exercise);
       } catch (e) {
-        // If exercise already exists, update it
+        _logger.finest('Workout exercise already exists, updating: ${exercise.id}');
         await _workoutExerciseDao.updateWorkoutExercise(exercise);
       }
       
@@ -486,7 +526,7 @@ class ExportImportService {
         try {
           await _workoutSetDao.insert(set);
         } catch (e) {
-          // If set already exists, update it
+          _logger.finest('Workout set already exists, updating: ${set.id}');
           await _workoutSetDao.updateWorkoutSet(set);
         }
       }
@@ -495,6 +535,7 @@ class ExportImportService {
 
   Future<void> _importWorkoutSession(Map<String, dynamic> sessionData, String importedFileUnits) async {
     final String workoutId = sessionData["id"] as String? ?? const Uuid().v4();
+    _logger.finer('Importing workout session: $workoutId');
     final workoutSnapshot = sessionData["workoutSnapshot"] as Map<String, dynamic>;
     final snapshotExercises = (workoutSnapshot["exercises"] as List? ?? []);
     
@@ -532,6 +573,7 @@ class ExportImportService {
         await _workoutSetDao.insert(set);
       }
     }
+    _logger.finer('Successfully imported workout session: $workoutId');
   }
 
   Map<String, dynamic> _preferencesToSettings(Map<String, dynamic> preferences) {

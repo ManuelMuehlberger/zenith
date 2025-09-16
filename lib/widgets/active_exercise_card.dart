@@ -109,11 +109,11 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
 Text(
-  widget.exercise.exerciseDetail?.primaryMuscleGroup.name ?? "N/A",
+  widget.exercise.exerciseDetail?.name ?? widget.exercise.exerciseSlug,
   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
     color: Colors.blue,
-    fontWeight: FontWeight.w500,
-    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    fontSize: 18,
   ),
 ),
                           const SizedBox(height: 4),

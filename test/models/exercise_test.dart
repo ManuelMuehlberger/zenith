@@ -293,7 +293,7 @@ void main() {
         slug: 'compound-exercise',
         name: 'Compound Exercise',
         primaryMuscleGroup: MuscleGroup.chest,
-        secondaryMuscleGroups: [MuscleGroup.triceps, MuscleGroup.shoulders, MuscleGroup.frontDeltoid],
+        secondaryMuscleGroups: [MuscleGroup.triceps, MuscleGroup.shoulders, MuscleGroup.frontDeltoids],
         instructions: ['Perform compound movement'],
         image: 'compound.jpg',
         animation: 'compound.gif',
@@ -301,7 +301,7 @@ void main() {
 
       final map = exercise.toMap();
 
-      expect(map['secondary_muscle_groups'], '["Triceps","Shoulders","Front Deltoid"]');
+      expect(map['secondary_muscle_groups'], '["Triceps","Shoulders","Front Deltoids"]');
     });
 
     test('toMap handles multiple instructions', () {

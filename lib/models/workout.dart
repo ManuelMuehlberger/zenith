@@ -135,8 +135,7 @@ class Workout {
     if (iconCodePoint == null) {
       return Icons.fitness_center; // Default icon
     }
-    // For tree shaking to work, we need to use constant IconData
-    // Map common icon code points to Flutter's built-in icons
+    // Prefer constant mappings (helps tree shaking for common icons)
     switch (iconCodePoint) {
       case 0xe1a3: // fitness_center
         return Icons.fitness_center;
@@ -159,9 +158,8 @@ class Workout {
       case 0xe536: // sports_score
         return Icons.sports_score;
       default:
-        // Fall back to a default icon for unknown code points
-        // This ensures we always return a constant IconData instance
-        return Icons.fitness_center;
+        // Fallback: dynamically construct IconData from code point so arbitrary Material icons render
+        return IconData(iconCodePoint!, fontFamily: 'MaterialIcons');
     }
   }
 

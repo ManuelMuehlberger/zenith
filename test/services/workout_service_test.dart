@@ -2,21 +2,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:zenith/models/workout.dart';
-import 'package:zenith/models/workout_folder.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/models/exercise.dart';
 import 'package:zenith/models/muscle_group.dart';
 import 'package:zenith/services/workout_service.dart';
 import 'package:zenith/services/dao/workout_dao.dart';
-import 'package:zenith/services/dao/workout_folder_dao.dart';
 import 'package:zenith/services/dao/workout_exercise_dao.dart';
 import 'package:zenith/services/dao/workout_set_dao.dart';
 
 // Generate mocks
 @GenerateMocks([
   WorkoutDao,
-  WorkoutFolderDao,
   WorkoutExerciseDao,
   WorkoutSetDao,
 ])
@@ -26,14 +23,12 @@ void main() {
   group('WorkoutService Tests', () {
     late WorkoutService workoutService;
     late MockWorkoutDao mockWorkoutDao;
-    late MockWorkoutFolderDao mockWorkoutFolderDao;
     late MockWorkoutExerciseDao mockWorkoutExerciseDao;
     late MockWorkoutSetDao mockWorkoutSetDao;
 
     setUp(() {
       // Create mocks
       mockWorkoutDao = MockWorkoutDao();
-      mockWorkoutFolderDao = MockWorkoutFolderDao();
       mockWorkoutExerciseDao = MockWorkoutExerciseDao();
       mockWorkoutSetDao = MockWorkoutSetDao();
 
@@ -42,13 +37,9 @@ void main() {
       
       // Reset the service state for each test
       workoutService.workouts.clear();
-      workoutService.folders.clear();
       
       // Inject mocks by overriding the DAO instances in the service
-      // This requires modifying the service to allow for dependency injection.
-      // For this test, we assume the service is modified to allow this.
       workoutService.workoutDao = mockWorkoutDao;
-      workoutService.workoutFolderDao = mockWorkoutFolderDao;
       workoutService.workoutExerciseDao = mockWorkoutExerciseDao;
       workoutService.workoutSetDao = mockWorkoutSetDao;
     });
@@ -65,20 +56,14 @@ void main() {
     });
 
     group('loadData', () {
-      test('should load folders and workouts successfully', () async {
+      test('should load workouts successfully', () async {
         // Arrange
-        final mockFolders = [
-          WorkoutFolder(id: 'folder1', name: 'Chest Workouts', orderIndex: 0),
-          WorkoutFolder(id: 'folder2', name: 'Leg Workouts', orderIndex: 1),
-        ];
-        
         final mockWorkouts = [
           Workout(
             id: 'workout1',
             name: 'Push Day',
             exercises: [],
-            folderId: 'folder1',
-            status: WorkoutStatus.template,
+            status: WorkoutStatus.inProgress,
           ),
         ];
 
@@ -102,8 +87,6 @@ void main() {
         ];
 
         // Mock DAO calls
-        when(mockWorkoutFolderDao.getAllWorkoutFoldersOrdered())
-            .thenAnswer((_) async => mockFolders);
         when(mockWorkoutDao.getAllWorkouts())
             .thenAnswer((_) async => mockWorkouts);
         when(mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutId('workout1'))
@@ -115,7 +98,6 @@ void main() {
         await workoutService.loadData();
 
         // Assert
-        expect(workoutService.folders.length, 2);
         expect(workoutService.workouts.length, 1);
         expect(workoutService.workouts.first.exercises.length, 1);
         expect(workoutService.workouts.first.exercises.first.sets.length, 1);
@@ -123,14 +105,13 @@ void main() {
 
       test('should handle load data errors gracefully', () async {
         // Arrange
-        when(mockWorkoutFolderDao.getAllWorkoutFoldersOrdered())
+        when(mockWorkoutDao.getAllWorkouts())
             .thenThrow(Exception('Database error'));
 
         // Act
         await workoutService.loadData();
 
         // Assert
-        expect(workoutService.folders, isEmpty);
         expect(workoutService.workouts, isEmpty);
       });
     });
@@ -142,147 +123,10 @@ void main() {
       });
     });
 
-    group('Folder Operations', () {
-      group('createFolder', () {
-        test('should create folder successfully', () async {
-          // Arrange
-          const folderName = 'New Folder';
-          
-          when(mockWorkoutFolderDao.insert(any))
-              .thenAnswer((_) async => 1);
-
-          // Act
-          final result = await workoutService.createFolder(folderName);
-
-          // Assert
-          expect(result.name, folderName);
-          expect(workoutService.folders.contains(result), true);
-          verify(mockWorkoutFolderDao.insert(any)).called(1);
-        });
-      });
-
-      group('updateFolder', () {
-        test('should update folder successfully', () async {
-          // Arrange
-          final folder = WorkoutFolder(id: 'folder1', name: 'Original Name');
-          workoutService.folders.add(folder);
-          
-          final updatedFolder = folder.copyWith(name: 'Updated Name');
-          
-          when(mockWorkoutFolderDao.updateWorkoutFolder(updatedFolder))
-              .thenAnswer((_) async => 1);
-
-          // Act
-          await workoutService.updateFolder(updatedFolder);
-
-          // Assert
-          expect(workoutService.folders.first.name, 'Updated Name');
-          verify(mockWorkoutFolderDao.updateWorkoutFolder(updatedFolder)).called(1);
-        });
-
-        test('should handle folder not found', () async {
-          // Arrange
-          final folder = WorkoutFolder(id: 'nonexistent', name: 'Test');
-          
-          when(mockWorkoutFolderDao.updateWorkoutFolder(folder))
-              .thenAnswer((_) async => 1);
-
-          // Act
-          await workoutService.updateFolder(folder);
-
-          // Assert
-          verify(mockWorkoutFolderDao.updateWorkoutFolder(folder)).called(1);
-        });
-      });
-
-      group('deleteFolder', () {
-        test('should delete folder and move workouts out', () async {
-          // Arrange
-          final folder = WorkoutFolder(id: 'folder1', name: 'Test Folder');
-          final workout = Workout(
-            id: 'workout1',
-            name: 'Test Workout',
-            exercises: [],
-            folderId: 'folder1',
-            status: WorkoutStatus.template,
-          );
-          
-          workoutService.folders.add(folder);
-          workoutService.workouts.add(workout);
-          
-          when(mockWorkoutDao.updateWorkout(any))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutFolderDao.deleteWorkoutFolder('folder1'))
-              .thenAnswer((_) async => 1);
-
-          // Act
-          await workoutService.deleteFolder('folder1');
-
-          // Assert
-          expect(workoutService.folders, isEmpty);
-          expect(workoutService.workouts.first.folderId, isNull);
-          verify(mockWorkoutDao.updateWorkout(any)).called(1);
-          verify(mockWorkoutFolderDao.deleteWorkoutFolder('folder1')).called(1);
-        });
-      });
-
-      group('reorderFolders', () {
-        test('should reorder folders successfully', () async {
-          // Arrange
-          final folder1 = WorkoutFolder(id: 'folder1', name: 'Folder 1', orderIndex: 0);
-          final folder2 = WorkoutFolder(id: 'folder2', name: 'Folder 2', orderIndex: 1);
-          
-          workoutService.folders.addAll([folder1, folder2]);
-          
-          when(mockWorkoutFolderDao.updateWorkoutFolder(any))
-              .thenAnswer((_) async => 1);
-
-          // Act
-          await workoutService.reorderFolders(0, 1);
-
-          // Assert
-          expect(workoutService.folders.first.name, 'Folder 2');
-          expect(workoutService.folders.last.name, 'Folder 1');
-          verify(mockWorkoutFolderDao.updateWorkoutFolder(any)).called(2);
-        });
-
-        test('should handle invalid indices', () async {
-          // Arrange
-          final folder = WorkoutFolder(id: 'folder1', name: 'Folder 1');
-          workoutService.folders.add(folder);
-
-          // Act
-          await workoutService.reorderFolders(-1, 0);
-          await workoutService.reorderFolders(0, 5);
-
-          // Assert
-          verifyNever(mockWorkoutFolderDao.updateWorkoutFolder(any));
-        });
-      });
-    });
 
     group('Workout Operations', () {
       group('createWorkout', () {
         test('should create workout successfully', () async {
-          // Arrange
-          const workoutName = 'New Workout';
-          const folderId = 'folder1';
-          
-          when(mockWorkoutDao.insert(any))
-              .thenAnswer((_) async => 1);
-
-          // Act
-          final result = await workoutService.createWorkout(workoutName, folderId: folderId);
-
-          // Assert
-          expect(result.name, workoutName);
-          expect(result.folderId, folderId);
-          expect(result.status, WorkoutStatus.template);
-          expect(workoutService.workouts.contains(result), true);
-          verify(mockWorkoutDao.insert(any)).called(1);
-        });
-
-        test('should create workout without folder', () async {
           // Arrange
           const workoutName = 'New Workout';
           
@@ -294,7 +138,8 @@ void main() {
 
           // Assert
           expect(result.name, workoutName);
-          expect(result.folderId, isNull);
+          expect(result.status, WorkoutStatus.template);
+          expect(workoutService.workouts.contains(result), true);
           verify(mockWorkoutDao.insert(any)).called(1);
         });
       });
@@ -362,91 +207,6 @@ void main() {
         });
       });
 
-      group('moveWorkoutToFolder', () {
-        test('should move workout to folder successfully', () async {
-          // Arrange
-          final workout = Workout(
-            id: 'workout1',
-            name: 'Test Workout',
-            exercises: [],
-            status: WorkoutStatus.template,
-          );
-          workoutService.workouts.add(workout);
-          
-          when(mockWorkoutDao.updateWorkout(any))
-              .thenAnswer((_) async => 1);
-
-          // Act
-          await workoutService.moveWorkoutToFolder('workout1', 'folder1');
-
-          // Assert
-          expect(workoutService.workouts.first.folderId, 'folder1');
-          verify(mockWorkoutDao.updateWorkout(any)).called(1);
-        });
-
-        test('should handle workout not found', () async {
-          // Act
-          await workoutService.moveWorkoutToFolder('nonexistent', 'folder1');
-
-          // Assert
-          verifyNever(mockWorkoutDao.updateWorkout(any));
-        });
-      });
-
-      group('reorderWorkoutsInFolder', () {
-        test('should reorder workouts in folder successfully', () async {
-          // Arrange
-          final workout1 = Workout(
-            id: 'workout1',
-            name: 'Workout 1',
-            exercises: [],
-            folderId: 'folder1',
-            status: WorkoutStatus.template,
-            orderIndex: 0,
-          );
-          final workout2 = Workout(
-            id: 'workout2',
-            name: 'Workout 2',
-            exercises: [],
-            folderId: 'folder1',
-            status: WorkoutStatus.template,
-            orderIndex: 1,
-          );
-          
-          workoutService.workouts.addAll([workout1, workout2]);
-          
-          when(mockWorkoutDao.updateWorkout(any))
-              .thenAnswer((_) async => 1);
-
-          // Act
-          await workoutService.reorderWorkoutsInFolder('folder1', 0, 1);
-
-          // Assert
-          final workoutsInFolder = workoutService.getWorkoutsInFolder('folder1');
-          expect(workoutsInFolder.first.name, 'Workout 2');
-          expect(workoutsInFolder.last.name, 'Workout 1');
-          verify(mockWorkoutDao.updateWorkout(any)).called(2);
-        });
-
-        test('should handle invalid indices', () async {
-          // Arrange
-          final workout = Workout(
-            id: 'workout1',
-            name: 'Workout 1',
-            exercises: [],
-            folderId: 'folder1',
-            status: WorkoutStatus.template,
-          );
-          workoutService.workouts.add(workout);
-
-          // Act
-          await workoutService.reorderWorkoutsInFolder('folder1', -1, 0);
-          await workoutService.reorderWorkoutsInFolder('folder1', 0, 5);
-
-          // Assert
-          verifyNever(mockWorkoutDao.updateWorkout(any));
-        });
-      });
 
       group('reorderExercisesInWorkout', () {
         test('should reorder exercises in workout successfully', () async {
@@ -756,95 +516,6 @@ void main() {
     });
 
     group('Helper Methods', () {
-      group('getWorkoutsInFolder', () {
-        test('should return workouts in specified folder', () {
-          // Arrange
-          final workout1 = Workout(
-            id: 'workout1',
-            name: 'Workout 1',
-            exercises: [],
-            folderId: 'folder1',
-            status: WorkoutStatus.template,
-          );
-          final workout2 = Workout(
-            id: 'workout2',
-            name: 'Workout 2',
-            exercises: [],
-            folderId: 'folder2',
-            status: WorkoutStatus.template,
-          );
-          final workout3 = Workout(
-            id: 'workout3',
-            name: 'Workout 3',
-            exercises: [],
-            folderId: 'folder1',
-            status: WorkoutStatus.template,
-          );
-          
-          workoutService.workouts.addAll([workout1, workout2, workout3]);
-
-          // Act
-          final result = workoutService.getWorkoutsInFolder('folder1');
-
-          // Assert
-          expect(result.length, 2);
-          expect(result.every((w) => w.folderId == 'folder1'), true);
-        });
-
-        test('should return workouts not in any folder when folderId is null', () {
-          // Arrange
-          final workout1 = Workout(
-            id: 'workout1',
-            name: 'Workout 1',
-            exercises: [],
-            folderId: 'folder1',
-            status: WorkoutStatus.template,
-          );
-          final workout2 = Workout(
-            id: 'workout2',
-            name: 'Workout 2',
-            exercises: [],
-            status: WorkoutStatus.template,
-          );
-          
-          workoutService.workouts.addAll([workout1, workout2]);
-
-          // Act
-          final result = workoutService.getWorkoutsInFolder(null);
-
-          // Assert
-          expect(result.length, 1);
-          expect(result.first.folderId, isNull);
-        });
-      });
-
-      group('getWorkoutsNotInFolder', () {
-        test('should return workouts not in any folder', () {
-          // Arrange
-          final workout1 = Workout(
-            id: 'workout1',
-            name: 'Workout 1',
-            exercises: [],
-            folderId: 'folder1',
-            status: WorkoutStatus.template,
-          );
-          final workout2 = Workout(
-            id: 'workout2',
-            name: 'Workout 2',
-            exercises: [],
-            status: WorkoutStatus.template,
-          );
-          
-          workoutService.workouts.addAll([workout1, workout2]);
-
-          // Act
-          final result = workoutService.getWorkoutsNotInFolder();
-
-          // Assert
-          expect(result.length, 1);
-          expect(result.first.folderId, isNull);
-        });
-      });
 
       group('getWorkoutById', () {
         test('should return workout when found', () {
@@ -874,41 +545,16 @@ void main() {
         });
       });
 
-      group('getFolderById', () {
-        test('should return folder when found', () {
+      group('clearUserWorkouts', () {
+        test('should clear all user workouts', () async {
           // Arrange
-          final folder = WorkoutFolder(id: 'folder1', name: 'Test Folder');
-          workoutService.folders.add(folder);
-
-          // Act
-          final result = workoutService.getFolderById('folder1');
-
-          // Assert
-          expect(result, isNotNull);
-          expect(result!.id, 'folder1');
-        });
-
-        test('should return null when not found', () {
-          // Act
-          final result = workoutService.getFolderById('nonexistent');
-
-          // Assert
-          expect(result, isNull);
-        });
-      });
-
-      group('clearUserWorkoutsAndFolders', () {
-        test('should clear all user data', () async {
-          // Arrange
-          final folder = WorkoutFolder(id: 'folder1', name: 'Test Folder');
           final workout = Workout(
             id: 'workout1',
             name: 'Test Workout',
             exercises: [],
-            status: WorkoutStatus.template,
+            status: WorkoutStatus.inProgress,
           );
           
-          workoutService.folders.add(folder);
           workoutService.workouts.add(workout);
           
           when(mockWorkoutSetDao.deleteWorkoutSetsByWorkoutExerciseId(any))
@@ -917,14 +563,11 @@ void main() {
               .thenAnswer((_) async => 1);
           when(mockWorkoutDao.deleteWorkout(any))
               .thenAnswer((_) async => 1);
-          when(mockWorkoutFolderDao.deleteWorkoutFolder(any))
-              .thenAnswer((_) async => 1);
 
           // Act
-          await workoutService.clearUserWorkoutsAndFolders();
+          await workoutService.clearUserWorkouts();
 
           // Assert
-          expect(workoutService.folders, isEmpty);
           expect(workoutService.workouts, isEmpty);
         });
       });

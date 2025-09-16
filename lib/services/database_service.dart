@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/workout.dart';
 import 'workout_service.dart';
@@ -7,6 +8,8 @@ class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   factory DatabaseService() => _instance;
   DatabaseService._internal();
+
+  final Logger _logger = Logger('DatabaseService');
   
   static DatabaseService get instance => _instance;
 
@@ -16,20 +19,26 @@ class DatabaseService {
 
   // Workout Management
   Future<List<Workout>> getWorkouts() async {
+    _logger.fine('Getting all workouts from SharedPreferences');
     try {
       final prefs = await SharedPreferences.getInstance();
       final workoutsJson = prefs.getStringList(_workoutHistoryKey) ?? [];
       
-      return workoutsJson
+      final workouts = workoutsJson
           .map((json) => Workout.fromMap(jsonDecode(json)))
           .toList()
         ..sort((a, b) => (b.startedAt ?? DateTime.now()).compareTo(a.startedAt ?? DateTime.now()));
+      
+      _logger.fine('Successfully retrieved ${workouts.length} workouts');
+      return workouts;
     } catch (e) {
+      _logger.severe('Failed to get workouts: $e');
       return [];
     }
   }
 
   Future<void> saveWorkout(Workout workout) async {
+    _logger.fine('Saving workout with id: ${workout.id}');
     try {
       final prefs = await SharedPreferences.getInstance();
       final workoutsJson = prefs.getStringList(_workoutHistoryKey) ?? [];
@@ -41,20 +50,23 @@ class DatabaseService {
       });
       
       if (existingIndex != -1) {
-        // Update existing workout
+        _logger.fine('Updating existing workout with id: ${workout.id}');
         workoutsJson[existingIndex] = jsonEncode(workout.toMap());
       } else {
-        // Add new workout
+        _logger.fine('Adding new workout with id: ${workout.id}');
         workoutsJson.add(jsonEncode(workout.toMap()));
       }
       
       await prefs.setStringList(_workoutHistoryKey, workoutsJson);
+      _logger.fine('Workout with id: ${workout.id} saved successfully');
     } catch (e) {
+      _logger.severe('Failed to save workout with id: ${workout.id}: $e');
     }
   }
 
 
   Future<void> deleteWorkout(String workoutId) async {
+    _logger.fine('Deleting workout with id: $workoutId');
     try {
       final prefs = await SharedPreferences.getInstance();
       final workoutsJson = prefs.getStringList(_workoutHistoryKey) ?? [];
@@ -65,16 +77,19 @@ class DatabaseService {
       }).toList();
       
       await prefs.setStringList(_workoutHistoryKey, updatedWorkoutsJson);
+      _logger.fine('Workout with id: $workoutId deleted successfully');
     } catch (e) {
+      _logger.severe('Failed to delete workout with id: $workoutId: $e');
       rethrow;
     }
   }
 
   Future<List<Workout>> getWorkoutsForDate(DateTime date) async {
+    _logger.fine('Getting workouts for date: ${date.toIso8601String()}');
     final allWorkouts = await getWorkouts();
     final targetDate = DateTime(date.year, date.month, date.day);
     
-    return allWorkouts.where((workout) {
+    final workoutsForDate = allWorkouts.where((workout) {
       final workoutDate = DateTime(
         workout.startedAt?.year ?? 0,
         workout.startedAt?.month ?? 0,
@@ -82,9 +97,13 @@ class DatabaseService {
       );
       return workoutDate == targetDate;
     }).toList();
+    
+    _logger.fine('Found ${workoutsForDate.length} workouts for date: ${date.toIso8601String()}');
+    return workoutsForDate;
   }
 
   Future<List<DateTime>> getDatesWithWorkouts() async {
+    _logger.fine('Getting dates with workouts');
     final allHistory = await getWorkouts();
     final dates = <DateTime>{};
     
@@ -98,56 +117,71 @@ class DatabaseService {
       }
     }
     
-    return dates.toList()..sort();
+    final sortedDates = dates.toList()..sort();
+    _logger.fine('Found ${sortedDates.length} dates with workouts');
+    return sortedDates;
   }
 
   // Active Workout State Management
   Future<void> saveActiveWorkoutState(Map<String, dynamic> workoutState) async {
+    _logger.fine('Saving active workout state');
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_activeWorkoutKey, jsonEncode(workoutState));
+      _logger.fine('Active workout state saved successfully');
     } catch (e) {
+      _logger.severe('Failed to save active workout state: $e');
     }
   }
 
   Future<Map<String, dynamic>?> getActiveWorkoutState() async {
+    _logger.fine('Getting active workout state');
     try {
       final prefs = await SharedPreferences.getInstance();
       final stateJson = prefs.getString(_activeWorkoutKey);
       
       if (stateJson != null) {
+        _logger.fine('Active workout state found');
         return jsonDecode(stateJson);
       }
+      _logger.fine('No active workout state found');
       return null;
     } catch (e) {
+      _logger.severe('Failed to get active workout state: $e');
       return null;
     }
   }
 
   Future<void> clearActiveWorkoutState() async {
+    _logger.fine('Clearing active workout state');
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_activeWorkoutKey);
+      _logger.fine('Active workout state cleared successfully');
     } catch (e) {
+      _logger.severe('Failed to clear active workout state: $e');
     }
   }
 
   // App Settings Management
   Future<Map<String, dynamic>> getAppSettings() async {
+    _logger.fine('Getting app settings');
     try {
       final prefs = await SharedPreferences.getInstance();
       final settingsJson = prefs.getString(_settingsKey);
       
       if (settingsJson != null) {
+        _logger.fine('App settings found');
         return jsonDecode(settingsJson);
       }
       
-      // Return default settings
+      _logger.fine('No app settings found, returning default settings');
       return {
         'units': 'metric', // 'metric' or 'imperial'
         'theme': 'dark',
       };
     } catch (e) {
+      _logger.severe('Failed to get app settings, returning default settings: $e');
       return {
         'units': 'metric',
         'theme': 'dark',
@@ -156,33 +190,39 @@ class DatabaseService {
   }
 
   Future<void> saveAppSettings(Map<String, dynamic> settings) async {
+    _logger.fine('Saving app settings');
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_settingsKey, jsonEncode(settings));
+      _logger.fine('App settings saved successfully');
     } catch (e) {
+      _logger.severe('Failed to save app settings: $e');
     }
   }
 
   Future<Workout?> getLastWorkoutForExercise(String exerciseSlug) async {
+    _logger.fine('Getting last workout for exercise slug: $exerciseSlug');
     try {
       final allWorkouts = await getWorkouts(); // Already sorted by most recent first
       for (final workout in allWorkouts) {
-        // Ensure exercises are loaded for workout if they are fetched lazily in the future.
-        // For now, assuming workout.exercises is populated by Workout.fromMap
         for (final exerciseInWorkout in workout.exercises) { 
-          if (exerciseInWorkout.exerciseSlug == exerciseSlug) { // Changed from exerciseId
-            return workout; // Return the first (most recent) workout containing this exercise
+          if (exerciseInWorkout.exerciseSlug == exerciseSlug) {
+            _logger.fine('Found last workout with id: ${workout.id} for exercise slug: $exerciseSlug');
+            return workout;
           }
         }
       }
-      return null; // No workout found for this exercise
+      _logger.fine('No workout found for exercise slug: $exerciseSlug');
+      return null;
     } catch (e) {
+      _logger.severe('Failed to get last workout for exercise slug: $exerciseSlug: $e');
       return null;
     }
   }
 
   // Data Export/Import
   Future<String> exportWorkoutData() async {
+    _logger.info('Exporting workout data');
     try {
       final workouts = await getWorkouts();
       final settings = await getAppSettings();
@@ -194,46 +234,60 @@ class DatabaseService {
         'settings': settings,
       };
       
-      return jsonEncode(exportData);
+      final jsonData = jsonEncode(exportData);
+      _logger.info('Workout data exported successfully');
+      return jsonData;
     } catch (e) {
+      _logger.severe('Failed to export workout data: $e');
       return '';
     }
   }
 
   Future<bool> importWorkoutData(String jsonData) async {
+    _logger.info('Importing workout data');
     try {
       final data = jsonDecode(jsonData);
       
       if (data['workouts'] != null) {
+        _logger.fine('Importing workouts');
         final prefs = await SharedPreferences.getInstance();
         final workoutsList = (data['workouts'] as List)
             .map((w) => jsonEncode(w))
             .toList();
         
         await prefs.setStringList(_workoutHistoryKey, workoutsList);
+        _logger.fine('Workouts imported successfully');
       }
       
       if (data['settings'] != null) {
+        _logger.fine('Importing settings');
         await saveAppSettings(data['settings']);
+        _logger.fine('Settings imported successfully');
       }
       
+      _logger.info('Workout data imported successfully');
       return true;
     } catch (e) {
+      _logger.severe('Failed to import workout data: $e');
       return false;
     }
   }
 
   Future<void> clearAllData() async {
+    _logger.warning('Clearing all data from SharedPreferences');
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_workoutHistoryKey);
       await prefs.remove(_activeWorkoutKey);
       await prefs.remove(_settingsKey);
+      _logger.info('All data cleared successfully');
     } catch (e) {
+      _logger.severe('Failed to clear all data: $e');
     }
   }
 
   Future<void> migrateWorkoutIcons() async {
+    _logger.info('Starting workout icon migration');
     try {
       final prefs = await SharedPreferences.getInstance();
       final workoutsJson = prefs.getStringList(_workoutHistoryKey) ?? [];
@@ -247,26 +301,26 @@ class DatabaseService {
         final workoutMap = jsonDecode(json);
         final workout = Workout.fromMap(workoutMap);
         
-        // Check if this workout entry needs icon/color update
         if (workout.iconCodePoint == 0xe1a3 && workout.colorValue == 0xFF2196F3) {
-          // Find matching workout by ID or name
+          _logger.fine('Found workout with default icon/color: ${workout.id}');
           Workout? matchingWorkout;
           try {
             matchingWorkout = workouts.firstWhere(
               (w) => w.id == workout.templateId || w.name == workout.name,
             );
           } catch (e) {
-            // No matching workout found, use default values
+            _logger.warning('No matching workout template found for id: ${workout.id}');
             matchingWorkout = null;
           }
           
           if (matchingWorkout != null) {
+            _logger.fine('Updating workout icon/color for id: ${workout.id}');
             final updatedWorkout = Workout(
               id: workout.id,
               name: workout.name,
               description: workout.description,
-              iconCodePoint: matchingWorkout.iconCodePoint ?? 0xe1a3, // Default if null
-              colorValue: matchingWorkout.colorValue ?? 0xFF2196F3,    // Default if null
+              iconCodePoint: matchingWorkout.iconCodePoint ?? 0xe1a3,
+              colorValue: matchingWorkout.colorValue ?? 0xFF2196F3,
               folderId: workout.folderId,
               notes: workout.notes,
               lastUsed: workout.lastUsed,
@@ -275,7 +329,7 @@ class DatabaseService {
               templateId: workout.templateId,
               startedAt: workout.startedAt,
               completedAt: workout.completedAt,
-              exercises: workout.exercises, // This list itself might need deep copy if modified
+              exercises: workout.exercises,
             );
             
             updatedWorkoutsJson.add(jsonEncode(updatedWorkout.toMap()));
@@ -289,9 +343,14 @@ class DatabaseService {
       }
       
       if (needsUpdate) {
+        _logger.info('Applying updated workout icons to SharedPreferences');
         await prefs.setStringList(_workoutHistoryKey, updatedWorkoutsJson);
+        _logger.info('Workout icon migration completed successfully');
+      } else {
+        _logger.info('No workout icons needed migration');
       }
     } catch (e) {
+      _logger.severe('Failed to migrate workout icons: $e');
     }
   }
 }

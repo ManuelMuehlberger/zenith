@@ -7,7 +7,7 @@ import '../models/exercise.dart';
 import '../screens/exercise_info_screen.dart';
 import 'set_edit_options_sheet.dart';
 
-class EditExerciseCard extends StatelessWidget {
+class EditExerciseCard extends StatefulWidget {
   final WorkoutExercise exercise;
   final int exerciseIndex;
   final bool isNotesExpanded;
@@ -35,8 +35,117 @@ class EditExerciseCard extends StatelessWidget {
     required this.weightUnit,
   });
 
-  void _showExerciseInfo(BuildContext context, Exercise? exerciseDetail) { // Changed to Exercise?
-    if (exerciseDetail == null) return; // Guard against null exerciseDetail
+  @override
+  State<EditExerciseCard> createState() => _EditExerciseCardState();
+}
+
+class _EditExerciseCardState extends State<EditExerciseCard> {
+  late Map<String, TextEditingController> _repsControllers;
+  late Map<String, TextEditingController> _weightControllers;
+  late TextEditingController _notesController;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeControllers();
+  }
+
+  void _initializeControllers() {
+    _repsControllers = {};
+    _weightControllers = {};
+    
+    for (final set in widget.exercise.sets) {
+      final repsKey = 'reps_${widget.exercise.id}_${set.id}';
+      final weightKey = 'weight_${widget.exercise.id}_${set.id}';
+      
+      _repsControllers[repsKey] = TextEditingController(
+        text: set.targetReps?.toString() ?? '',
+      );
+      _weightControllers[weightKey] = TextEditingController(
+        text: set.targetWeight?.toString() ?? '',
+      );
+    }
+    
+    _notesController = TextEditingController(text: widget.exercise.notes ?? '');
+  }
+
+  @override
+  void didUpdateWidget(EditExerciseCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.exercise.id != widget.exercise.id) {
+      _disposeControllers();
+      _initializeControllers();
+      return;
+    }
+
+    final oldSetIds = oldWidget.exercise.sets.map((s) => s.id).toSet();
+    final newSets = widget.exercise.sets;
+
+    // Dispose controllers for removed sets
+    final newSetIds = newSets.map((s) => s.id).toSet();
+    final removedSetIds = oldSetIds.difference(newSetIds);
+    for (final setId in removedSetIds) {
+      final repsKey = 'reps_${oldWidget.exercise.id}_$setId';
+      _repsControllers.remove(repsKey)?.dispose();
+
+      final weightKey = 'weight_${oldWidget.exercise.id}_$setId';
+      _weightControllers.remove(weightKey)?.dispose();
+    }
+
+    // Add or update controllers for all current sets
+    for (final set in newSets) {
+      final repsKey = 'reps_${widget.exercise.id}_${set.id}';
+      if (_repsControllers.containsKey(repsKey)) {
+        // Update existing controller if text differs
+        final controller = _repsControllers[repsKey]!;
+        final newText = set.targetReps?.toString() ?? '';
+        if (controller.text != newText) {
+          controller.text = newText;
+        }
+      } else {
+        // Add new controller
+        _repsControllers[repsKey] = TextEditingController(text: set.targetReps?.toString() ?? '');
+      }
+
+      final weightKey = 'weight_${widget.exercise.id}_${set.id}';
+      if (_weightControllers.containsKey(weightKey)) {
+        // Update existing controller if text differs
+        final controller = _weightControllers[weightKey]!;
+        final newText = set.targetWeight?.toString() ?? '';
+        if (controller.text != newText) {
+          controller.text = newText;
+        }
+      } else {
+        // Add new controller
+        _weightControllers[weightKey] = TextEditingController(text: set.targetWeight?.toString() ?? '');
+      }
+    }
+    
+    // Update notes controller if needed
+    if (_notesController.text != (widget.exercise.notes ?? '')) {
+        _notesController.text = widget.exercise.notes ?? '';
+    }
+  }
+
+  void _disposeControllers() {
+    for (final controller in _repsControllers.values) {
+      controller.dispose();
+    }
+    for (final controller in _weightControllers.values) {
+      controller.dispose();
+    }
+    _notesController.dispose();
+  }
+
+  @override
+  void dispose() {
+    _disposeControllers();
+    super.dispose();
+  }
+
+  void _showExerciseInfo(BuildContext context, Exercise? exerciseDetail) {
+    if (exerciseDetail == null) return;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ExerciseInfoScreen(exercise: exerciseDetail),
@@ -45,7 +154,7 @@ class EditExerciseCard extends StatelessWidget {
   }
 
   void _showSetEditOptions(BuildContext context, int setIndex) {
-    final set = exercise.sets[setIndex];
+    final set = widget.exercise.sets[setIndex];
     
     showModalBottomSheet(
       context: context,
@@ -53,10 +162,10 @@ class EditExerciseCard extends StatelessWidget {
       builder: (context) => SetEditOptionsSheet(
         set: set,
         setIndex: setIndex,
-        canRemoveSet: exercise.sets.length > 1,
-        onToggleRepRange: () => onToggleRepRange(exerciseIndex, setIndex),
-        onRemoveSet: exercise.sets.length > 1 
-          ? () => onRemoveSet(exerciseIndex, setIndex)
+        canRemoveSet: widget.exercise.sets.length > 1,
+        onToggleRepRange: () => widget.onToggleRepRange(widget.exerciseIndex, setIndex),
+        onRemoveSet: widget.exercise.sets.length > 1 
+          ? () => widget.onRemoveSet(widget.exerciseIndex, setIndex)
           : null,
       ),
     );
@@ -67,7 +176,7 @@ class EditExerciseCard extends StatelessWidget {
       context: context,
       builder: (BuildContext context) => CupertinoAlertDialog(
         title: const Text('Remove Exercise'),
-        content: Text('Are you sure you want to remove "${exercise.exerciseDetail?.name ?? exercise.exerciseSlug}" from this workout?'),
+        content: Text('Are you sure you want to remove "${widget.exercise.exerciseDetail?.name ?? widget.exercise.exerciseSlug}" from this workout?'),
         actions: <CupertinoDialogAction>[
           CupertinoDialogAction(
             child: const Text('Cancel'),
@@ -80,7 +189,7 @@ class EditExerciseCard extends StatelessWidget {
             child: const Text('Remove'),
             onPressed: () {
               Navigator.of(context).pop();
-              onRemoveExercise(exerciseIndex);
+              widget.onRemoveExercise(widget.exerciseIndex);
             },
           ),
         ],
@@ -91,7 +200,7 @@ class EditExerciseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      key: ValueKey(exercise.id),
+      key: ValueKey(widget.exercise.id),
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: Colors.grey[900],
@@ -105,7 +214,7 @@ class EditExerciseCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildExerciseHeader(context),
-          if (isNotesExpanded) _buildNotesSection(),
+          if (widget.isNotesExpanded) _buildNotesSection(),
           _buildSetsSection(),
           _buildAddSetButton(),
         ],
@@ -126,38 +235,38 @@ class EditExerciseCard extends StatelessWidget {
       child: Row(
         children: [
           // Drag handle
-          Icon(
-            Icons.drag_handle,
-            color: Colors.grey[600],
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          
-          // Exercise info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  exercise.exerciseDetail?.name ?? exercise.exerciseSlug, // Use exerciseDetail or fallback to slug
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
+            Icon(
+              Icons.drag_handle,
+              color: Colors.grey[600],
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            
+            // Exercise info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.exercise.exerciseDetail?.name ?? widget.exercise.exerciseSlug, // Use exerciseDetail or fallback to slug
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
+                  const SizedBox(height: 2),
 Text(
-  exercise.exerciseDetail?.primaryMuscleGroup.name ?? 'N/A', // Use exerciseDetail
+  widget.exercise.exerciseDetail?.primaryMuscleGroup.name ?? 'N/A', // Use exerciseDetail
   style: TextStyle(
     fontSize: 13,
     color: Colors.grey[400],
     fontWeight: FontWeight.w400,
   ),
 ),
-              ],
+                ],
+              ),
             ),
-          ),
           
           // Action buttons
           Row(
@@ -166,21 +275,21 @@ Text(
               // Notes toggle
               CupertinoButton(
                 padding: EdgeInsets.zero,
-                onPressed: () => onToggleNotes(exerciseIndex),
+                onPressed: () => widget.onToggleNotes(widget.exerciseIndex),
                 child: Container(
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: isNotesExpanded 
+                    color: widget.isNotesExpanded 
                         ? Colors.amber.withAlpha((255 * 0.2).round())
                         : Colors.grey.withAlpha((255 * 0.1).round()),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Icon(
-                    isNotesExpanded 
+                    widget.isNotesExpanded 
                         ? Icons.sticky_note_2 
                         : Icons.sticky_note_2_outlined,
-                    color: isNotesExpanded 
+                    color: widget.isNotesExpanded 
                         ? Colors.amber 
                         : Colors.grey[500],
                     size: 24,
@@ -193,7 +302,7 @@ Text(
               // Info button
               CupertinoButton(
                 padding: EdgeInsets.zero,
-                onPressed: () => _showExerciseInfo(context, exercise.exerciseDetail), // Pass exerciseDetail
+                onPressed: () => _showExerciseInfo(context, widget.exercise.exerciseDetail), // Pass exerciseDetail
                 child: Container(
                   width: 38,
                   height: 38,
@@ -246,7 +355,7 @@ Text(
         ),
       ),
       child: TextFormField(
-        initialValue: exercise.notes,
+        controller: _notesController,
         style: const TextStyle(color: Colors.white, fontSize: 14),
         maxLines: 3,
         decoration: InputDecoration(
@@ -261,7 +370,7 @@ Text(
             borderSide: BorderSide.none,
           ),
         ),
-        onChanged: (value) => onUpdateNotes(exerciseIndex, value),
+        onChanged: (value) => widget.onUpdateNotes(widget.exerciseIndex, value),
       ),
     );
   }
@@ -305,7 +414,7 @@ Text(
           const SizedBox(height: 12),
           
           // Sets list
-          ...exercise.sets.asMap().entries.map((entry) {
+          ...widget.exercise.sets.asMap().entries.map((entry) {
             final setIndex = entry.key;
             final set = entry.value;
             
@@ -348,17 +457,14 @@ Text(
         // Reps field(s)
         Expanded(
           flex: 3,
-          // child: set.isRepRange  // isRepRange removed from WorkoutSet
-          //     ? _buildRepRangeFields(setIndex, set)
-          //     : _buildSingleRepField(setIndex, set),
-          child: _buildTargetRepsField(setIndex, set), // Simplified to single target reps field
+          child: _buildTargetRepsField(setIndex, set),
         ),
         const SizedBox(width: 8),
         
         // Weight field
         Expanded(
           flex: 3,
-          child: _buildTargetWeightField(setIndex, set), // Changed to targetWeight
+          child: _buildTargetWeightField(setIndex, set),
         ),
         const SizedBox(width: 8),
         
@@ -380,54 +486,18 @@ Text(
     );
   }
 
-  // Widget _buildRepRangeFields(int setIndex, WorkoutSet set) {
-  //   // This logic is removed as repRangeMin/Max are not on WorkoutSet anymore
-  //   return Container(); 
-  // }
-
-  Widget _buildTargetRepsField(int setIndex, WorkoutSet set) { // Renamed from _buildSingleRepField
-    return _buildTextField(
-      initialValue: set.targetReps?.toString() ?? '', // Use targetReps
-      onChanged: (value) {
-        final reps = int.tryParse(value);
-        // Allow reps to be null or positive
-        if (value.isEmpty || (reps != null && reps >= 0)) {
-          onUpdateSet(exerciseIndex, setIndex, targetReps: value.isEmpty ? null : reps);
-        }
-      },
-      keyboardType: TextInputType.number,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-    );
-  }
-
-  Widget _buildTargetWeightField(int setIndex, WorkoutSet set) { // Renamed from _buildWeightField
-    return _buildTextField(
-      initialValue: set.targetWeight?.toString() ?? '', // Use targetWeight
-      onChanged: (value) {
-        final weight = double.tryParse(value);
-        if (value.isEmpty || (weight != null && weight >= 0)) {
-          onUpdateSet(exerciseIndex, setIndex, targetWeight: value.isEmpty ? null : weight);
-        }
-      },
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
-      suffix: weightUnit,
-    );
-  }
-
-  Widget _buildTextField({
-    required String initialValue,
-    required Function(String) onChanged,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-    String? suffix,
-  }) {
+  Widget _buildTargetRepsField(int setIndex, WorkoutSet set) {
+    final key = 'reps_${widget.exercise.id}_${set.id}';
+    final controller = _repsControllers[key];
+    
+    if (controller == null) return const SizedBox.shrink();
+    
     return SizedBox(
       height: 36,
       child: TextFormField(
-        initialValue: initialValue,
-        keyboardType: keyboardType,
-        inputFormatters: inputFormatters,
+        controller: controller,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         style: const TextStyle(color: Colors.white, fontSize: 15),
         textAlign: TextAlign.center,
         decoration: InputDecoration(
@@ -435,7 +505,45 @@ Text(
           contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           filled: true,
           fillColor: Colors.grey[800],
-          suffixText: suffix,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Colors.blue, width: 1),
+          ),
+        ),
+        onChanged: (value) {
+          final reps = int.tryParse(value);
+          if (value.isEmpty || (reps != null && reps >= 0)) {
+            widget.onUpdateSet(widget.exerciseIndex, setIndex, targetReps: value.isEmpty ? null : reps);
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildTargetWeightField(int setIndex, WorkoutSet set) {
+    final key = 'weight_${widget.exercise.id}_${set.id}';
+    final controller = _weightControllers[key];
+    
+    if (controller == null) return const SizedBox.shrink();
+    
+    return SizedBox(
+      height: 36,
+      child: TextFormField(
+        controller: controller,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
+        style: const TextStyle(color: Colors.white, fontSize: 15),
+        textAlign: TextAlign.center,
+        decoration: InputDecoration(
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          filled: true,
+          fillColor: Colors.grey[800],
+          suffixText: widget.weightUnit,
           suffixStyle: TextStyle(
             color: Colors.grey[400],
             fontSize: 15,
@@ -449,7 +557,12 @@ Text(
             borderSide: const BorderSide(color: Colors.blue, width: 1),
           ),
         ),
-        onChanged: onChanged,
+        onChanged: (value) {
+          final weight = double.tryParse(value);
+          if (value.isEmpty || (weight != null && weight >= 0)) {
+            widget.onUpdateSet(widget.exerciseIndex, setIndex, targetWeight: value.isEmpty ? null : weight);
+          }
+        },
       ),
     );
   }
@@ -464,7 +577,7 @@ Text(
           color: Colors.blue.withAlpha((255 * 0.1).round()),
           borderRadius: BorderRadius.circular(8),
           padding: EdgeInsets.zero,
-          onPressed: () => onAddSet(exerciseIndex),
+                onPressed: () => widget.onAddSet(widget.exerciseIndex),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

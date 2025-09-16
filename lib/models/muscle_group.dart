@@ -3,26 +3,30 @@ import 'typedefs.dart';
 enum MuscleGroup {
   chest('Chest'),
   triceps('Triceps'),
-  frontDeltoid('Front Deltoid'),
-  lateralDeltoid('Lateral Deltoid'),
-  rearDeltoid('Rear Deltoid'),
+  frontDeltoids('Front Deltoids'),
+  core('Core'),
+  lateralDeltoids('Lateral Deltoids'),
+  rearDeltoids('Rear Deltoids'),
   shoulders('Shoulders'),
-  rotatorCuffPosterior('Rotator Cuff (posterior)'),
-  rotatorCuffAnterior('Rotator Cuff (anterior)'),
   biceps('Biceps'),
+  lats('Lats'),
+  rotatorCuff('Rotator Cuffs'),
   quads('Quads'),
   hamstrings('Hamstrings'),
   glutes('Glutes'),
+  abductors('Abductors'),
   adductors('Adductors'),
   lowerBack('Lower Back'),
   trapezius('Trapezius'),
   forearmFlexors('Forearm Flexors'),
+  forearms('Forearms'),
   calves('Calves'),
   abs('Abs'),
   obliques('Obliques'),
   back('Back'),
   legs('Legs'),
-  cardio('Cardio');
+  cardio('Cardio'),
+  na('NA');  // Musclegroup not found
 
   final MuscleGroupName name;
   const MuscleGroup(this.name);

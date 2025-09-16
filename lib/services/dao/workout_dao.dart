@@ -3,6 +3,8 @@ import '../../models/typedefs.dart';
 import 'base_dao.dart';
 
 class WorkoutDao extends BaseDao<Workout> {
+  WorkoutDao() : super('WorkoutDao');
+
   @override
   String get tableName => 'Workout';
 
@@ -58,26 +60,41 @@ class WorkoutDao extends BaseDao<Workout> {
   /// Get workouts by folder ID
   Future<List<Workout>> getWorkoutsByFolderId(WorkoutFolderId folderId) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'folderId = ?',
-      whereArgs: [folderId],
-    );
-    
-    return maps.map((map) => fromMap(map)).toList()
-      ..sort((a, b) => (a.orderIndex ?? 0).compareTo(b.orderIndex ?? 0));
+    logger.fine('Getting workouts for folderId: $folderId');
+    try {
+      final List<Map<String, dynamic>> maps = await db.query(
+        tableName,
+        where: 'folderId = ?',
+        whereArgs: [folderId],
+      );
+      final workouts = maps.map((map) => fromMap(map)).toList()
+        ..sort((a, b) => (a.orderIndex ?? 0).compareTo(b.orderIndex ?? 0));
+      logger.fine('Found ${workouts.length} workouts for folderId: $folderId');
+      return workouts;
+    } catch (e) {
+      logger.severe('Failed to get workouts for folderId $folderId: $e');
+      rethrow;
+    }
   }
 
   /// Get workouts by status
   Future<List<Workout>> getWorkoutsByStatus(WorkoutStatus status) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'status = ?',
-      whereArgs: [status.index],
-    );
-    
-    return maps.map((map) => fromMap(map)).toList();
+    logger.fine('Getting workouts with status: ${status.name}');
+    try {
+      final List<Map<String, dynamic>> maps = await db.query(
+        tableName,
+        where: 'status = ?',
+        whereArgs: [status.index],
+      );
+      final workouts = maps.map((map) => fromMap(map)).toList();
+      logger.fine(
+          'Found ${workouts.length} workouts with status: ${status.name}');
+      return workouts;
+    } catch (e) {
+      logger.severe('Failed to get workouts with status ${status.name}: $e');
+      rethrow;
+    }
   }
 
   /// Get template workouts (status = template)
@@ -98,29 +115,45 @@ class WorkoutDao extends BaseDao<Workout> {
   /// Get workouts by template ID
   Future<List<Workout>> getWorkoutsByTemplateId(WorkoutId templateId) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'templateId = ?',
-      whereArgs: [templateId],
-    );
-    
-    return maps.map((map) => fromMap(map)).toList();
+    logger.fine('Getting workouts for templateId: $templateId');
+    try {
+      final List<Map<String, dynamic>> maps = await db.query(
+        tableName,
+        where: 'templateId = ?',
+        whereArgs: [templateId],
+      );
+      final workouts = maps.map((map) => fromMap(map)).toList();
+      logger.fine('Found ${workouts.length} workouts for templateId: $templateId');
+      return workouts;
+    } catch (e) {
+      logger.severe('Failed to get workouts for templateId $templateId: $e');
+      rethrow;
+    }
   }
 
   /// Get workouts within a date range
-  Future<List<Workout>> getWorkoutsInDateRange(DateTime startDate, DateTime endDate) async {
+  Future<List<Workout>> getWorkoutsInDateRange(
+      DateTime startDate, DateTime endDate) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.rawQuery('''
-      SELECT * FROM $tableName 
-      WHERE startedAt >= ? AND startedAt <= ? AND status = ?
-      ORDER BY startedAt DESC
-    ''', [
-      startDate.toIso8601String(),
-      endDate.toIso8601String(),
-      WorkoutStatus.completed.index
-    ]);
-    
-    return maps.map((map) => fromMap(map)).toList();
+    logger.fine(
+        'Getting completed workouts between ${startDate.toIso8601String()} and ${endDate.toIso8601String()}');
+    try {
+      final List<Map<String, dynamic>> maps = await db.rawQuery('''
+        SELECT * FROM $tableName 
+        WHERE startedAt >= ? AND startedAt <= ? AND status = ?
+        ORDER BY startedAt DESC
+      ''', [
+        startDate.toIso8601String(),
+        endDate.toIso8601String(),
+        WorkoutStatus.completed.index
+      ]);
+      final workouts = maps.map((map) => fromMap(map)).toList();
+      logger.fine('Found ${workouts.length} workouts in the date range.');
+      return workouts;
+    } catch (e) {
+      logger.severe('Failed to get workouts in date range: $e');
+      rethrow;
+    }
   }
 
   /// Update workout

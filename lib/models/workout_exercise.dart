@@ -6,10 +6,11 @@ import 'typedefs.dart';
 // Sentinel object to distinguish between null and undefined
 const Object _undefined = Object();
 
-// Represents an exercise within a Workout template
+// Represents an exercise within a Workout template or session
 class WorkoutExercise {
   final WorkoutExerciseId id;
-  final WorkoutId workoutId; // Foreign key to Workouts table
+  final WorkoutTemplateId? workoutTemplateId; // Foreign key to WorkoutTemplate table (for template exercises)
+  final WorkoutId? workoutId; // Foreign key to Workout table (for session exercises)
   final ExerciseSlug exerciseSlug; // Identifier for the Exercise
   String? notes;
   int? orderIndex;
@@ -24,13 +25,20 @@ class WorkoutExercise {
 
   WorkoutExercise({
     WorkoutExerciseId? id,
-    required this.workoutId,
+    this.workoutTemplateId,
+    this.workoutId,
     required this.exerciseSlug,
     this.notes,
     this.orderIndex,
     this.exerciseDetail, // Can be loaded post-initialization
     this.sets = const [], // Default to empty list, to be populated after fetching from DB
-  }) : id = id ?? const Uuid().v4();
+  }) : id = id ?? const Uuid().v4() {
+    // Ensure exactly one of workoutTemplateId or workoutId is set
+    assert(
+      (workoutTemplateId != null) != (workoutId != null),
+      'Exactly one of workoutTemplateId or workoutId must be set',
+    );
+  }
 
   // Computed properties
   int get totalSets => sets.length;
@@ -42,7 +50,8 @@ class WorkoutExercise {
     // They need to be fetched/populated separately.
     return WorkoutExercise(
       id: map['id'] as String,
-      workoutId: map['workoutId'] as String,
+      workoutTemplateId: map['workoutTemplateId'] as String?,
+      workoutId: map['workoutId'] as String?,
       exerciseSlug: map['exerciseSlug'] as String,
       notes: map['notes'] as String?,
       orderIndex: map['orderIndex'] as int?,
@@ -55,6 +64,7 @@ class WorkoutExercise {
     // Note: 'sets' and 'exerciseDetail' are not part of the 'WorkoutExercises' table.
     return {
       'id': id,
+      'workoutTemplateId': workoutTemplateId,
       'workoutId': workoutId,
       'exerciseSlug': exerciseSlug,
       'notes': notes,
@@ -64,7 +74,8 @@ class WorkoutExercise {
 
   WorkoutExercise copyWith({
     WorkoutExerciseId? id,
-    WorkoutId? workoutId,
+    Object? workoutTemplateId = _undefined,
+    Object? workoutId = _undefined,
     ExerciseSlug? exerciseSlug,
     Object? notes = _undefined,
     int? orderIndex,
@@ -74,7 +85,8 @@ class WorkoutExercise {
   }) {
     return WorkoutExercise(
       id: id ?? this.id,
-      workoutId: workoutId ?? this.workoutId,
+      workoutTemplateId: workoutTemplateId == _undefined ? this.workoutTemplateId : workoutTemplateId as WorkoutTemplateId?,
+      workoutId: workoutId == _undefined ? this.workoutId : workoutId as WorkoutId?,
       exerciseSlug: exerciseSlug ?? this.exerciseSlug,
       notes: notes == _undefined ? this.notes : notes as String?,
       orderIndex: orderIndex ?? this.orderIndex,

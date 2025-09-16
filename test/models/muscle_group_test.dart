@@ -13,12 +13,11 @@ void main() {
     test('fromName returns correct enum for valid name', () {
       expect(MuscleGroup.fromName('Chest'), MuscleGroup.chest);
       expect(MuscleGroup.fromName('Triceps'), MuscleGroup.triceps);
-      expect(MuscleGroup.fromName('Front Deltoid'), MuscleGroup.frontDeltoid);
-      expect(MuscleGroup.fromName('Lateral Deltoid'), MuscleGroup.lateralDeltoid);
-      expect(MuscleGroup.fromName('Rear Deltoid'), MuscleGroup.rearDeltoid);
+      expect(MuscleGroup.fromName('Front Deltoids'), MuscleGroup.frontDeltoids);
+      expect(MuscleGroup.fromName('Lateral Deltoids'), MuscleGroup.lateralDeltoids);
+      expect(MuscleGroup.fromName('Rear Deltoids'), MuscleGroup.rearDeltoids);
       expect(MuscleGroup.fromName('Shoulders'), MuscleGroup.shoulders);
-      expect(MuscleGroup.fromName('Rotator Cuff (posterior)'), MuscleGroup.rotatorCuffPosterior);
-      expect(MuscleGroup.fromName('Rotator Cuff (anterior)'), MuscleGroup.rotatorCuffAnterior);
+      expect(MuscleGroup.fromName('Rotator Cuffs'), MuscleGroup.rotatorCuff);
       expect(MuscleGroup.fromName('Biceps'), MuscleGroup.biceps);
       expect(MuscleGroup.fromName('Quads'), MuscleGroup.quads);
       expect(MuscleGroup.fromName('Hamstrings'), MuscleGroup.hamstrings);
@@ -40,9 +39,9 @@ void main() {
       expect(MuscleGroup.fromName('CHEST'), MuscleGroup.chest);
       expect(MuscleGroup.fromName('ChEsT'), MuscleGroup.chest);
       expect(MuscleGroup.fromName('triceps'), MuscleGroup.triceps);
-      expect(MuscleGroup.fromName('FRONT DELTOID'), MuscleGroup.frontDeltoid);
-      expect(MuscleGroup.fromName('rotator cuff (posterior)'), MuscleGroup.rotatorCuffPosterior);
-      expect(MuscleGroup.fromName('ROTATOR CUFF (ANTERIOR)'), MuscleGroup.rotatorCuffAnterior);
+      expect(MuscleGroup.fromName('FRONT DELTOIDS'), MuscleGroup.frontDeltoids);
+      expect(MuscleGroup.fromName('rotator cuffs'), MuscleGroup.rotatorCuff);
+      expect(MuscleGroup.fromName('ROTATOR CUFFs'), MuscleGroup.rotatorCuff);
     });
 
     test('fromName throws exception for invalid name', () {

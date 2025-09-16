@@ -2,10 +2,22 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:logging/logging.dart';
 
 import '../models/workout.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
+
+abstract class NotificationServiceAPI {
+  bool get isServiceRunning;
+
+  Future<void> initialize();
+  void setNextSetCallback(Function() callback);
+  Future<void> startService(Workout session, int currentExerciseIndex, int currentSetIndex);
+  Future<void> updateNotification(Workout session, int currentExerciseIndex, int currentSetIndex);
+  Future<void> stopService();
+  Future<void> restartServiceIfNeeded(Workout? session, int currentExerciseIndex, int currentSetIndex);
+}
 
 const String notificationChannelId = 'workout_progress_channel';
 const String notificationChannelName = 'Workout Progress';
@@ -13,8 +25,9 @@ const String notificationChannelDescription = 'Notifications for active workout 
 const int notificationId = 888;
 const String appIcon = 'ic_workout_notification';
 
-class LiveWorkoutNotificationService {
+class LiveWorkoutNotificationService implements NotificationServiceAPI {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  final Logger _logger = Logger('LiveWorkoutNotificationService');
   
   static final LiveWorkoutNotificationService _instance = LiveWorkoutNotificationService._internal();
   factory LiveWorkoutNotificationService() => _instance;
@@ -33,7 +46,7 @@ class LiveWorkoutNotificationService {
   bool get isServiceRunning => _isServiceRunning;
 
   Future<void> initialize() async {
-    // Initialize flutter_local_notifications
+    _logger.info('Initializing notification service');
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings(appIcon);
 
@@ -51,15 +64,11 @@ class LiveWorkoutNotificationService {
     await _flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
-        debugPrint('Notification action: ${notificationResponse.actionId}');
+        _logger.info('Notification action received: ${notificationResponse.actionId}');
         
-        // Handle notification actions
         if (notificationResponse.actionId == 'next_set') {
-          debugPrint('Next set action triggered from notification');
-          // Call the callback if it's set
-          if (_onNextSetCallback != null) {
-            _onNextSetCallback!();
-          }
+          _logger.info('Next set action triggered from notification');
+          _onNextSetCallback?.call();
         }
       },
     );
@@ -78,18 +87,21 @@ class LiveWorkoutNotificationService {
     await _flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
+    _logger.info('Notification service initialized');
   }
 
   void setNextSetCallback(Function() callback) {
+    _logger.fine('Setting next set callback');
     _onNextSetCallback = callback;
   }
 
   Future<void> startService(Workout session, int currentExerciseIndex, int currentSetIndex) async {
+    _logger.info('Starting notification service for session: ${session.id}');
     final androidPlugin = _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     if (androidPlugin != null) {
         final bool? permissionGranted = await androidPlugin.requestNotificationsPermission();
         if (permissionGranted == null || !permissionGranted) {
-            debugPrint("Notification permission not granted for Android.");
+            _logger.warning("Notification permission not granted for Android.");
             return;
         }
     }
@@ -100,11 +112,10 @@ class LiveWorkoutNotificationService {
     _currentSetIndex = currentSetIndex;
     _sessionStartTime = session.startedAt ?? DateTime.now();
     
-    // Start periodic updates every second for real-time elapsed time
     _startPeriodicUpdates();
     
-    // Show initial notification
     await _showNotification();
+    _logger.info('Notification service started successfully');
   }
 
   void _startPeriodicUpdates() {
@@ -117,7 +128,9 @@ class LiveWorkoutNotificationService {
   }
 
   Future<void> updateNotification(Workout session, int currentExerciseIndex, int currentSetIndex) async {
+    _logger.fine('Updating notification for session: ${session.id}');
     if (!_isServiceRunning) {
+      _logger.warning('Service not running, starting it now');
       await startService(session, currentExerciseIndex, currentSetIndex);
       return;
     }
@@ -127,10 +140,15 @@ class LiveWorkoutNotificationService {
     _currentSetIndex = currentSetIndex;
     
     await _showNotification();
+    _logger.fine('Notification updated successfully');
   }
 
   Future<void> stopService() async {
-    if (!_isServiceRunning) return;
+    _logger.info('Stopping notification service');
+    if (!_isServiceRunning) {
+      _logger.info('Service was not running');
+      return;
+    }
     
     _updateTimer?.cancel();
     _updateTimer = null;
@@ -140,19 +158,24 @@ class LiveWorkoutNotificationService {
     _onNextSetCallback = null;
     
     await _flutterLocalNotificationsPlugin.cancel(notificationId);
+    _logger.info('Notification service stopped');
   }
 
   Future<void> restartServiceIfNeeded(Workout? session, int currentExerciseIndex, int currentSetIndex) async {
     if (session != null && session.status == WorkoutStatus.inProgress && !_isServiceRunning) {
-      debugPrint("[LiveWorkoutNotificationService] Restarting notification service for active session");
+      _logger.info('Restarting notification service for active session: ${session.id}');
       await startService(session, currentExerciseIndex, currentSetIndex);
     }
   }
 
   Future<void> _showNotification() async {
-    if (_currentSession == null) return;
+    if (_currentSession == null) {
+      _logger.finer('No current session, skipping notification update');
+      return;
+    }
 
     final sessionData = _formatSessionData(_currentSession!, _currentExerciseIndex, _currentSetIndex);
+    _logger.finest('Showing notification with data: $sessionData');
     
     final String title = sessionData['title'] ?? 'Active Workout';
     final String body = sessionData['body'] ?? 'Tracking progress...';

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/workout.dart';
 import 'database_service.dart';
@@ -9,6 +10,7 @@ class InsightsService {
   factory InsightsService() => _instance;
   InsightsService._internal();
 
+  final Logger _logger = Logger('InsightsService');
   static InsightsService get instance => _instance;
 
   static const String _cacheKey = 'insights_cache';
@@ -30,13 +32,15 @@ class InsightsService {
   }
 
   Future<List<Workout>> _getWorkouts() async {
+    _logger.fine('Getting workouts for insights calculation');
     try {
       if (_workoutsProvider != null) {
+        _logger.fine('Using custom workouts provider');
         return await _workoutsProvider!();
       }
       return await DatabaseService.instance.getWorkouts();
     } catch (e) {
-      // Return empty list on error to prevent crashes
+      _logger.severe('Failed to get workouts: $e');
       return [];
     }
   }
@@ -49,36 +53,35 @@ class InsightsService {
     bool forceRefresh = false,
   }) async {
     if (!forceRefresh) {
-      // 1. Check memory cache for the final result.
       final cachedItem = _getCachedItem<T>(key, fromMap);
       if (cachedItem != null) {
-          return cachedItem;
+        _logger.finer('Returning cached item for key: $key');
+        return cachedItem;
       }
 
-      // 2. Check if a request for this key is already in progress.
       if (_ongoingRequests.containsKey(key)) {
-          return await _ongoingRequests[key]!;
+        _logger.finer('Waiting for ongoing request for key: $key');
+        return await _ongoingRequests[key]!;
       }
+    } else {
+      _logger.fine('Forcing refresh for key: $key');
     }
 
-    // 3. No cached item and no ongoing request, so we need to calculate.
-    // Create a completer and store its future in the map to lock this key.
+    _logger.fine('Calculating value for key: $key');
     final completer = Completer<T>();
     _ongoingRequests[key] = completer.future;
 
     try {
       final result = await calculator();
       await _updateCache(key, toMap(result));
-      // When the calculation is complete, complete the future.
       completer.complete(result);
+      _logger.fine('Successfully calculated and cached value for key: $key');
       return result;
     } catch (e, s) {
-      // If an error occurs, complete the future with an error.
+      _logger.severe('Failed to calculate value for key: $key: $e');
       completer.completeError(e, s);
-      // Rethrow the error to the original caller.
       rethrow;
     } finally {
-      // 4. After the future is completed (with data or error), remove it from the map.
       _ongoingRequests.remove(key);
     }
   }
@@ -162,8 +165,10 @@ class InsightsService {
   }
 
   Future<WorkoutInsights> _calculateInsights(int monthsBack) async {
+    _logger.info('Calculating workout insights for $monthsBack months');
     final allWorkouts = await _getWorkouts();
     final recentWorkouts = _filterWorkouts(allWorkouts, monthsBack);
+    _logger.fine('Found ${recentWorkouts.length} recent workouts');
 
     // Calculate total statistics
     final totalWorkouts = recentWorkouts.length;
@@ -175,11 +180,12 @@ class InsightsService {
         sum + workout.exercises.fold(0.0, (exerciseSum, exercise) => 
             exerciseSum + exercise.sets.fold(0.0, (setSum, set) => 
                 setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0))));
+    _logger.finer('Total stats: workouts=$totalWorkouts, hours=$totalHours, weight=$totalWeight');
 
     // Calculate monthly data for charts
     final monthlyData = _calculateMonthlyData(recentWorkouts, monthsBack);
 
-    return WorkoutInsights(
+    final insights = WorkoutInsights(
       totalWorkouts: totalWorkouts,
       totalHours: totalHours,
       totalWeight: totalWeight,
@@ -190,15 +196,20 @@ class InsightsService {
       averageWeightPerWorkout: totalWorkouts > 0 ? totalWeight / totalWorkouts : 0,
       lastUpdated: DateTime.now(),
     );
+    _logger.info('Workout insights calculation complete');
+    return insights;
   }
 
   Future<ExerciseInsights> _calculateExerciseInsights(String exerciseName, int monthsBack) async {
+    _logger.info('Calculating exercise insights for "$exerciseName" for $monthsBack months');
     if (exerciseName.trim().isEmpty) {
+      _logger.warning('Exercise name is empty, returning empty insights');
       return ExerciseInsights.empty(exerciseName);
     }
     
     final allWorkouts = await _getWorkouts();
     final recentWorkouts = _filterWorkouts(allWorkouts, monthsBack);
+    _logger.fine('Found ${recentWorkouts.length} recent workouts for exercise insights');
 
     // Find all instances of this exercise across all workouts
     final exerciseInstances = <ExerciseInstance>[];
@@ -222,21 +233,23 @@ class InsightsService {
     }
 
     if (exerciseInstances.isEmpty) {
+      _logger.fine('No instances of exercise "$exerciseName" found in recent workouts');
       return ExerciseInsights.empty(exerciseName);
     }
+    _logger.fine('Found ${exerciseInstances.length} instances of exercise "$exerciseName"');
 
     // Calculate totals
     final totalSessions = exerciseInstances.length;
     final totalSets = exerciseInstances.fold<int>(0, (sum, instance) => sum + instance.totalSets);
     final totalReps = exerciseInstances.fold<int>(0, (sum, instance) => sum + instance.totalReps);
     final totalWeight = exerciseInstances.fold<double>(0, (sum, instance) => sum + instance.totalWeight);
-    // Fix: Remove redundant empty check since we already returned early if empty
     final maxWeight = exerciseInstances.map((i) => i.maxWeight).reduce((a, b) => a > b ? a : b);
+    _logger.finer('Total stats for "$exerciseName": sessions=$totalSessions, sets=$totalSets, reps=$totalReps, weight=$totalWeight, maxWeight=$maxWeight');
 
     // Calculate monthly data
     final monthlyData = _calculateExerciseMonthlyData(exerciseInstances, monthsBack);
 
-    return ExerciseInsights(
+    final insights = ExerciseInsights(
       exerciseName: exerciseName,
       totalSessions: totalSessions,
       totalSets: totalSets,
@@ -251,6 +264,8 @@ class InsightsService {
       monthlyFrequency: monthlyData['frequency']!,
       lastUpdated: DateTime.now(),
     );
+    _logger.info('Exercise insights calculation for "$exerciseName" complete');
+    return insights;
   }
 
   Map<String, List<MonthlyDataPoint>> _calculateMonthlyData(
@@ -360,6 +375,7 @@ class InsightsService {
   }
 
   Future<void> _updateCache(String key, Map<String, dynamic> insightsMap) async {
+    _logger.fine('Updating cache for key: $key');
     try {
       _cache ??= {};
       _cache![key] = insightsMap;
@@ -371,12 +387,14 @@ class InsightsService {
         'lastUpdate': _lastCacheUpdate!.toIso8601String(),
       };
       await prefs.setString(_cacheKey, jsonEncode(cacheData));
+      _logger.fine('Cache updated successfully');
     } catch (e) {
-      print('InsightsService: Failed to update cache - $e');
+      _logger.severe('Failed to update cache: $e');
     }
   }
 
   Future<void> _loadCache() async {
+    _logger.info('Loading insights cache from SharedPreferences');
     try {
       final prefs = await SharedPreferences.getInstance();
       final cacheJson = prefs.getString(_cacheKey);
@@ -385,8 +403,12 @@ class InsightsService {
         final cacheData = jsonDecode(cacheJson);
         _cache = Map<String, dynamic>.from(cacheData['data']);
         _lastCacheUpdate = DateTime.parse(cacheData['lastUpdate']);
+        _logger.info('Insights cache loaded successfully');
+      } else {
+        _logger.info('No insights cache found');
       }
     } catch (e) {
+      _logger.warning('Failed to load insights cache, clearing it: $e');
       _cache = null;
       _lastCacheUpdate = null;
       await clearCache();
@@ -394,18 +416,22 @@ class InsightsService {
   }
 
   Future<void> clearCache() async {
+    _logger.info('Clearing insights cache');
     try {
       _cache = null;
       _lastCacheUpdate = null;
       
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_cacheKey);
+      _logger.info('Insights cache cleared successfully');
     } catch (e) {
+      _logger.severe('Failed to clear insights cache: $e');
     }
   }
 
   /// For testing purposes only. Resets the singleton's state.
   void reset() {
+    _logger.warning('Resetting InsightsService state for testing');
     _cache = null;
     _lastCacheUpdate = null;
     _ongoingRequests.clear();

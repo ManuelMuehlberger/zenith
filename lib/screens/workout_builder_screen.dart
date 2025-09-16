@@ -3,12 +3,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:ui';
-import '../models/workout.dart';
+import '../models/workout_template.dart';
 import '../models/workout_folder.dart';
-import '../services/workout_service.dart';
+import '../services/workout_template_service.dart';
 import '../services/workout_session_service.dart';
 import '../widgets/folder_card.dart';
-import '../widgets/reorderable_workout_list.dart';
+import '../widgets/reorderable_workout_template_list.dart';
 import 'create_workout_screen.dart';
 import 'active_workout_screen.dart';
 
@@ -21,14 +21,61 @@ class WorkoutBuilderScreen extends StatefulWidget {
 
 class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   String? _selectedFolderId;
-  final bool _isLoading = false;
+  bool _isLoading = true;
   Timer? _timer;
   bool _isDragging = false;
+
+  // Local caches for templates and counts (to keep the UI responsive and consistent)
+  List<WorkoutTemplate> _templates = [];
+  Map<String?, int> _templateCountByFolder = {};
 
   @override
   void initState() {
     super.initState();
     _startTimer();
+    _initialLoad();
+  }
+
+  Future<void> _initialLoad() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      // Load folders into cache
+      await WorkoutTemplateService.instance.loadFolders();
+      // Load counts and templates
+      await _loadCounts();
+      await _loadTemplates();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadCounts() async {
+    final counts = await WorkoutTemplateService.instance.getTemplateCountByFolder();
+    if (mounted) {
+      setState(() {
+        _templateCountByFolder = counts;
+      });
+    }
+  }
+
+  Future<void> _loadTemplates() async {
+    List<WorkoutTemplate> templates;
+    if (_selectedFolderId == null) {
+      templates = await WorkoutTemplateService.instance.getWorkoutTemplatesWithoutFolder();
+    } else {
+      templates = await WorkoutTemplateService.instance.getWorkoutTemplatesByFolder(_selectedFolderId!);
+    }
+    if (mounted) {
+      setState(() {
+        _templates = templates;
+      });
+    }
   }
 
   @override
@@ -80,6 +127,8 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
           setState(() {
             _selectedFolderId = null;
           });
+          // When navigating back to all workouts, refresh templates
+          _loadTemplates();
         }
       },
       child: Scaffold(
@@ -138,6 +187,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                   setState(() {
                     _selectedFolderId = null;
                   });
+                  _loadTemplates();
                 },
               ),
             Expanded(
@@ -195,14 +245,14 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     return DragTarget<Map<String, dynamic>>(
       onAcceptWithDetails: (details) async {
         final data = details.data;
-        if (data['type'] == 'workout') {
-          await _moveWorkoutToFolder(data['workoutId'], null);
+        if (data['type'] == 'template') {
+          await _moveTemplateToFolder(data['templateId'], null);
         }
         _onDragEnded(); 
       },
       onWillAcceptWithDetails: (details) {
         final data = details.data;
-        return data['type'] == 'workout';
+        return data['type'] == 'template';
       },
       onLeave: (data) {
       },
@@ -277,6 +327,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                               setState(() {
                                 _selectedFolderId = null;
                               });
+                              _loadTemplates();
                             },
                             child: AnimatedDefaultTextStyle(
                               duration: const Duration(milliseconds: 200),
@@ -360,15 +411,13 @@ if (showAnimation) ...[
   }
 
   Widget _buildContent() {
-    final folders = WorkoutService.instance.folders;
-    final workouts = _selectedFolderId == null
-        ? WorkoutService.instance.getWorkoutsNotInFolder()
-        : WorkoutService.instance.getWorkoutsInFolder(_selectedFolderId);
+    final folders = WorkoutTemplateService.instance.folders;
+    final templates = _templates;
 
-    if (folders.isEmpty && workouts.isEmpty && _selectedFolderId == null) {
+    if (folders.isEmpty && templates.isEmpty && _selectedFolderId == null) {
       return _buildEmptyState();
     }
-     if (workouts.isEmpty && _selectedFolderId != null) {
+    if (templates.isEmpty && _selectedFolderId != null) {
       return _buildEmptyState(inFolder: true);
     }
 
@@ -388,23 +437,27 @@ if (showAnimation) ...[
                 ),
               ),
               const SizedBox(height: 8),
-              ...folders.map((folder) => FolderCard(
-                folder: folder,
-                onTap: () => _selectFolder(folder.id),
-                onMorePressed: () => _showFolderActionSheet(folder),
-                onWorkoutDropped: (workoutId) => _moveWorkoutToFolder(workoutId, folder.id),
-              )),
+              ...folders.map((folder) {
+                final count = _templateCountByFolder[folder.id] ?? 0;
+                return FolderCard(
+                  folder: folder,
+                  itemCount: count,
+                  onTap: () => _selectFolder(folder.id),
+                  onMorePressed: () => _showFolderActionSheet(folder),
+                  onWorkoutDropped: (templateId) => _moveTemplateToFolder(templateId, folder.id),
+                );
+              }),
               const SizedBox(height: 16),
             ],
           ],
           
-          ReorderableWorkoutList(
-            workouts: workouts,
+          ReorderableWorkoutTemplateList(
+            templates: templates,
             folderId: _selectedFolderId,
-            onWorkoutTap: _editWorkout,
-            onWorkoutMorePressed: _showWorkoutActionSheet,
-            onWorkoutDroppedToFolder: _moveWorkoutToFolder,
-            onWorkoutReordered: _reorderWorkouts,
+            onTemplateTap: _editWorkout,
+            onTemplateMorePressed: _showTemplateActionSheet,
+            onTemplateDroppedToFolder: _moveTemplateToFolder,
+            onTemplateReordered: _reorderTemplates,
             onDragStarted: _onDragStarted,
             onDragEnded: _onDragEnded,
           ),
@@ -414,7 +467,7 @@ if (showAnimation) ...[
   }
 
   Widget _buildEmptyState({bool inFolder = false}) {
-    return SizedBox(
+    return Container(
       height: 400, 
       child: Center(
         child: Column(
@@ -452,26 +505,23 @@ if (showAnimation) ...[
     setState(() {
       _selectedFolderId = folderId;
     });
+    _loadTemplates();
   }
 
-  Future<void> _moveWorkoutToFolder(String workoutId, String? folderId) async {
+  Future<void> _moveTemplateToFolder(String templateId, String? folderId) async {
     try {
-      await WorkoutService.instance.moveWorkoutToFolder(workoutId, folderId);
+      await WorkoutTemplateService.instance.moveTemplateToFolder(templateId, folderId);
       HapticFeedback.lightImpact();
-      
-      if (folderId == null && _selectedFolderId != null) {
-        // No state change needed here if moving to root, breadcrumb will disappear
-        // _selectedFolderId will be set to null by the onTap of "All Workouts" or back button
-      } else {
-        setState(() {}); // Refresh current folder or root
-      }
+
+      // Refresh counts and current list
+      await _loadCounts();
+      await _loadTemplates();
       
       if (mounted) {
-        final workout = WorkoutService.instance.getWorkoutById(workoutId);
-        final String targetFolderName = folderId != null 
+        final targetFolderName = folderId != null 
             ? (_getFolderName(folderId)) 
             : 'All Workouts';
-        final message = 'Moved "${workout?.name}" to "$targetFolderName"';
+        final message = 'Moved to "$targetFolderName"';
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -495,11 +545,11 @@ if (showAnimation) ...[
     }
   }
 
-  Future<void> _reorderWorkouts(int oldIndex, int newIndex) async {
+  Future<void> _reorderTemplates(int oldIndex, int newIndex) async {
     try {
-      await WorkoutService.instance.reorderWorkoutsInFolder(_selectedFolderId, oldIndex, newIndex);
+      await WorkoutTemplateService.instance.reorderTemplatesInFolder(_selectedFolderId, oldIndex, newIndex);
       HapticFeedback.lightImpact();
-      setState(() {});
+      await _loadTemplates();
     } catch (e) {
       HapticFeedback.heavyImpact();
       if (mounted) {
@@ -515,7 +565,7 @@ if (showAnimation) ...[
   }
 
   String _getFolderName(String folderId) {
-    final folder = WorkoutService.instance.getFolderById(folderId);
+    final folder = WorkoutTemplateService.instance.getFolderById(folderId);
     return folder?.name ?? 'Unknown Folder';
   }
 
@@ -650,7 +700,7 @@ if (showAnimation) ...[
     );
   }
 
-  void _showWorkoutActionSheet(Workout workout) {
+  void _showTemplateActionSheet(WorkoutTemplate template) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -675,22 +725,7 @@ if (showAnimation) ...[
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              ListTile(
-                leading: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.green.withAlpha((255 * 0.2).round()),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.play_arrow, color: Colors.green, size: 20),
-                ),
-                title: const Text('Start Workout', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _startWorkout(workout);
-                },
-              ),
+              // Keeping actions visually similar: Edit and Delete
               ListTile(
                 leading: Container(
                   width: 32,
@@ -704,7 +739,7 @@ if (showAnimation) ...[
                 title: const Text('Edit Workout', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(context);
-                  _editWorkout(workout);
+                  _editWorkout(template);
                 },
               ),
               ListTile(
@@ -720,7 +755,7 @@ if (showAnimation) ...[
                 title: const Text('Delete Workout', style: TextStyle(color: Colors.white)),
                 onTap: () {
                   Navigator.pop(context);
-                  _showDeleteWorkoutDialog(workout);
+                  _showDeleteTemplateDialog(template);
                 },
               ),
               const SizedBox(height: 20),
@@ -733,7 +768,6 @@ if (showAnimation) ...[
 
   void _showCreateFolderDialog() {
     final controller = TextEditingController();
-    // ignore: unused_local_variable
     int currentLength = 0;
     showDialog(
       context: context,
@@ -787,9 +821,11 @@ if (showAnimation) ...[
                         onPressed: () async {
                           final name = controller.text.trim();
                           if (name.isNotEmpty && name.length <= 30) {
-                            await WorkoutService.instance.createFolder(name);
+                            await WorkoutTemplateService.instance.createFolder(name);
                             if (mounted) {
                               Navigator.pop(context);
+                              await _loadCounts();
+                              await _loadTemplates();
                               setState(() {});
                             }
                           } else {
@@ -838,9 +874,11 @@ if (showAnimation) ...[
                         onPressed: () async {
                           final name = controller.text.trim();
                           if (name.isNotEmpty && name.length <= 30) {
-                            await WorkoutService.instance.createFolder(name);
+                            await WorkoutTemplateService.instance.createFolder(name);
                             if (mounted) {
                               Navigator.pop(context);
+                              await _loadCounts();
+                              await _loadTemplates();
                               setState(() {});
                             }
                           } else {
@@ -859,7 +897,6 @@ if (showAnimation) ...[
 
   void _showRenameFolderDialog(WorkoutFolder folder) {
     final controller = TextEditingController(text: folder.name);
-    // ignore: unused_local_variable
     int currentLength = folder.name.length;
     showDialog(
       context: context,
@@ -916,9 +953,10 @@ if (showAnimation) ...[
                               name != folder.name &&
                               name.length <= 30) {
                             final updatedFolder = folder.copyWith(name: name);
-                            await WorkoutService.instance.updateFolder(updatedFolder);
+                            await WorkoutTemplateService.instance.updateFolder(updatedFolder);
                             if (mounted) {
                               Navigator.pop(context);
+                              await _loadCounts();
                               setState(() {});
                             }
                           } else {
@@ -970,9 +1008,10 @@ if (showAnimation) ...[
                               name != folder.name &&
                               name.length <= 30) {
                             final updatedFolder = folder.copyWith(name: name);
-                            await WorkoutService.instance.updateFolder(updatedFolder);
+                            await WorkoutTemplateService.instance.updateFolder(updatedFolder);
                             if (mounted) {
                               Navigator.pop(context);
+                              await _loadCounts();
                               setState(() {});
                             }
                           } else {
@@ -990,7 +1029,8 @@ if (showAnimation) ...[
   }
 
   void _showDeleteFolderDialog(WorkoutFolder folder) {
-    final workoutCount = WorkoutService.instance.getWorkoutsInFolder(folder.id).length;
+    final folderId = folder.id;
+    final workoutCount = _templateCountByFolder[folderId] ?? 0;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1009,12 +1049,14 @@ if (showAnimation) ...[
           ),
           TextButton(
             onPressed: () async {
-              await WorkoutService.instance.deleteFolder(folder.id);
+              await WorkoutTemplateService.instance.deleteFolder(folder.id);
               if (mounted) {
                 Navigator.pop(context);
                 if (_selectedFolderId == folder.id) {
                   _selectedFolderId = null;
                 }
+                await _loadCounts();
+                await _loadTemplates();
                 setState(() {});
               }
             },
@@ -1025,14 +1067,14 @@ if (showAnimation) ...[
     );
   }
 
-  void _showDeleteWorkoutDialog(Workout workout) {
+  void _showDeleteTemplateDialog(WorkoutTemplate template) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],
         title: const Text('Delete Workout', style: TextStyle(color: Colors.white)),
         content: Text(
-          'Are you sure you want to delete "${workout.name}"?\n\nThis action cannot be undone.',
+          'Are you sure you want to delete "${template.name}"?\n\nThis action cannot be undone.',
           style: const TextStyle(color: Colors.white),
         ),
         actions: [
@@ -1042,9 +1084,11 @@ if (showAnimation) ...[
           ),
           TextButton(
             onPressed: () async {
-              await WorkoutService.instance.deleteWorkout(workout.id);
+              await WorkoutTemplateService.instance.deleteWorkoutTemplate(template.id);
               if (mounted) {
                 Navigator.pop(context);
+                await _loadCounts();
+                await _loadTemplates();
                 setState(() {});
               }
             },
@@ -1063,42 +1107,23 @@ if (showAnimation) ...[
       ),
     );
     if (result == true) {
+      await _loadCounts();
+      await _loadTemplates();
       setState(() {});
     }
   }
 
-  void _editWorkout(Workout workout) async {
+  void _editWorkout(WorkoutTemplate template) async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateWorkoutScreen(workout: workout),
+        builder: (context) => CreateWorkoutScreen(workoutTemplate: template),
       ),
     );
     if (result == true) {
+      await _loadCounts();
+      await _loadTemplates();
       setState(() {});
-    }
-  }
-
-  void _startWorkout(Workout workout) async {
-    try {
-      await WorkoutSessionService.instance.startWorkout(workout);
-      HapticFeedback.mediumImpact();
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to start workout: $e'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        );
-      }
     }
   }
 }

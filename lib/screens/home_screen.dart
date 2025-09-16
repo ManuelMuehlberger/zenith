@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import '../services/database_service.dart';
+import 'package:logging/logging.dart';
 import '../models/workout.dart';
+import '../services/workout_service.dart';
 import 'settings_screen.dart';
 import '../widgets/past_workout_list_item.dart';
 
@@ -14,6 +15,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+  final Logger _logger = Logger('HomeScreen');
   List<Workout> _workoutHistory = [];
   bool _isLoading = true;
 
@@ -49,17 +51,36 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _isLoading = true;
     });
     try {
-      // Run migration to fix icon and color data for existing workouts
-      await DatabaseService.instance.migrateWorkoutIcons();
-      
-      final history = await DatabaseService.instance.getWorkouts();
+      _logger.info('Loading recent completed workouts for Home screen');
+
+      // Load all data from DB into WorkoutService cache
+      await WorkoutService.instance.loadData();
+      _logger.fine('Loaded ${WorkoutService.instance.workouts.length} workouts from DB');
+
+      // Filter for completed workouts only
+      final completed = WorkoutService.instance.workouts
+          .where((w) => w.status == WorkoutStatus.completed)
+          .toList();
+
+      // Sort by completedAt desc (fallback to startedAt if needed)
+      completed.sort((a, b) {
+        final DateTime aTime = a.completedAt ?? a.startedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final DateTime bTime = b.completedAt ?? b.startedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bTime.compareTo(aTime);
+      });
+
+      final recent = completed.take(10).toList();
+      _logger.fine('Found ${recent.length} recent completed workouts to display');
+
       if (mounted) {
         setState(() {
-          _workoutHistory = history.take(10).toList(); 
+          _workoutHistory = recent;
           _isLoading = false;
         });
       }
+      _logger.info('Recent workouts loaded successfully for Home screen');
     } catch (e) {
+      _logger.severe('Failed to load recent workouts for Home screen: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;

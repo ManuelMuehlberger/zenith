@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:ui';
-import '../models/workout.dart';
+import '../models/workout_template.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../models/exercise.dart';
-import '../services/workout_service.dart';
+import '../services/workout_template_service.dart';
 import '../services/user_service.dart';
 import '../widgets/edit_workout_name_section.dart';
 import '../widgets/edit_exercise_card.dart';
@@ -14,14 +14,16 @@ import '../widgets/edit_workout_action_buttons.dart';
 import '../widgets/workout_customization_sheet.dart';
 import 'exercise_picker_screen.dart';
 import '../constants/app_constants.dart';
+import '../services/exercise_service.dart';
+import 'package:logging/logging.dart';
 
 class CreateWorkoutScreen extends StatefulWidget {
-  final Workout? workout;
+  final WorkoutTemplate? workoutTemplate;
   final String? folderId;
 
   const CreateWorkoutScreen({
     super.key,
-    this.workout,
+    this.workoutTemplate,
     this.folderId,
   });
 
@@ -30,6 +32,7 @@ class CreateWorkoutScreen extends StatefulWidget {
 }
 
 class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
+  final Logger _logger = Logger('CreateWorkoutScreen');
   final _nameController = TextEditingController();
   List<WorkoutExercise> _exercises = [];
   bool _isLoading = false;
@@ -72,11 +75,20 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.workout != null) {
-      _nameController.text = widget.workout!.name;
-      _exercises = List.from(widget.workout!.exercises);
-      _selectedColor = widget.workout!.color;
-      _selectedIcon = widget.workout!.icon;
+    if (widget.workoutTemplate != null) {
+      _nameController.text = widget.workoutTemplate!.name;
+      // WorkoutTemplate doesn't have exercises directly, we'll need to load them separately
+      // For now, initialize as empty and load exercises in a separate method if needed
+      _exercises = [];
+      _selectedColor = widget.workoutTemplate!.colorValue != null 
+          ? Color(widget.workoutTemplate!.colorValue!) 
+          : Colors.blue;
+      _selectedIcon = widget.workoutTemplate!.iconCodePoint != null 
+          ? IconData(widget.workoutTemplate!.iconCodePoint!, fontFamily: 'MaterialIcons')
+          : Icons.fitness_center;
+
+      // Load template exercises and attach details
+      _loadTemplateExercises();
     }
   }
 
@@ -150,7 +162,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   Widget _buildHeaderContent() {
-    final isEditing = widget.workout != null;
+    final isEditing = widget.workoutTemplate != null;
     
     return SizedBox(
       height: kToolbarHeight,
@@ -300,7 +312,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   Future<void> _saveWorkout() async {
     if (_nameController.text.trim().isEmpty) {
-      _showErrorDialog('Please enter a workout name');
+      _showErrorDialog('Please enter a workout template name');
       return;
     }
 
@@ -314,29 +326,24 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     });
 
     try {
-      if (widget.workout != null) {
-        // Update existing workout
-        final updatedWorkout = widget.workout!.copyWith(
+      if (widget.workoutTemplate != null) {
+        // Update existing workout template metadata and exercises
+        final updatedTemplate = widget.workoutTemplate!.copyWith(
           name: _nameController.text.trim(),
-          exercises: _exercises,
           iconCodePoint: _selectedIcon.codePoint,
           colorValue: _selectedColor.toARGB32(),
         );
-        await WorkoutService.instance.updateWorkout(updatedWorkout);
+        await WorkoutTemplateService.instance.updateWorkoutTemplate(updatedTemplate);
+        await WorkoutTemplateService.instance.saveTemplateExercises(updatedTemplate.id, _exercises);
       } else {
-        // Create new workout
-        final workout = await WorkoutService.instance.createWorkout(
-          _nameController.text.trim(),
+        // Create new workout template and persist its exercises
+        final newTemplate = await WorkoutTemplateService.instance.createWorkoutTemplate(
+          name: _nameController.text.trim(),
           folderId: widget.folderId,
-        );
-        
-        // Update the workout with exercises, icon, and color
-        final updatedWorkout = workout.copyWith(
-          exercises: _exercises,
           iconCodePoint: _selectedIcon.codePoint,
           colorValue: _selectedColor.toARGB32(),
         );
-        await WorkoutService.instance.updateWorkout(updatedWorkout);
+        await WorkoutTemplateService.instance.saveTemplateExercises(newTemplate.id, _exercises);
       }
 
       if (mounted) {
@@ -344,12 +351,55 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _showErrorDialog('Error saving workout: $e');
+        _showErrorDialog('Error saving workout template: $e');
       }
     } finally {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _loadTemplateExercises() async {
+    if (widget.workoutTemplate == null) return;
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final templateId = widget.workoutTemplate!.id;
+      final exercises = await WorkoutTemplateService.instance.getTemplateExercises(templateId);
+
+      // Ensure ExerciseService has data to attach details for UI
+      if (ExerciseService.instance.exercises.isEmpty) {
+        await ExerciseService.instance.loadExercises();
+      }
+      final allExercises = ExerciseService.instance.exercises;
+
+      final withDetails = exercises.map((e) {
+        final matches = allExercises.where((ex) => ex.slug == e.exerciseSlug);
+        final detail = matches.isNotEmpty ? matches.first : null;
+        return e.copyWith(exerciseDetail: detail);
+      }).toList();
+
+      _logger.fine('Loaded ${withDetails.length} exercises for template $templateId');
+      for (final ex in withDetails) {
+        final setsInfo = ex.sets.map((s) => 'idx=${s.setIndex},reps=${s.targetReps},wt=${s.targetWeight}').join('; ');
+        _logger.finer('Exercise ${ex.exerciseSlug} (${ex.id}) sets: [$setsInfo]');
+      }
+
+      if (mounted) {
+        setState(() {
+          _exercises = withDetails;
+        });
+      }
+    } catch (_) {
+      // Silently ignore for now; UI will still allow editing
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -379,26 +429,25 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     );
 
     if (selectedExercise != null) {
-      final newWorkoutExerciseId = "${DateTime.now().millisecondsSinceEpoch}_wex_create";
-      final newSetId = "${DateTime.now().millisecondsSinceEpoch}_set_create";
+      // Use model constructors (UUIDs) for unique IDs to avoid collisions.
+      // First create the exercise to obtain its generated ID, then link the set.
+      var workoutExercise = WorkoutExercise(
+        // For templates, set workoutTemplateId to real id if editing, otherwise a placeholder to satisfy the assert.
+        workoutTemplateId: widget.workoutTemplate?.id ?? "PENDING_TEMPLATE_ID",
+        exerciseSlug: selectedExercise.slug,
+        exerciseDetail: selectedExercise, // UI detail
+        sets: const [],
+      );
 
       final defaultSet = WorkoutSet(
-        id: newSetId, // ID for the template set
-        workoutExerciseId: newWorkoutExerciseId, // Link to the WorkoutExercise being created
-        setIndex: 0, // Add the required setIndex parameter
+        // UUID auto-generated for set id; link to the newly created exercise id.
+        workoutExerciseId: workoutExercise.id,
+        setIndex: 0,
         targetReps: 10,
         targetWeight: 0.0,
       );
 
-      final workoutExercise = WorkoutExercise(
-        id: newWorkoutExerciseId,
-        // workoutId is tricky here. If new workout, ID is not yet known.
-        // If editing, widget.workout.id. For now, use a placeholder or existing.
-        workoutId: widget.workout?.id ?? "PENDING_WORKOUT_ID", 
-        exerciseSlug: selectedExercise.slug,
-        exerciseDetail: selectedExercise, // Keep for UI purposes during creation
-        sets: [defaultSet],
-      );
+      workoutExercise = workoutExercise.copyWith(sets: [defaultSet]);
 
       setState(() {
         _exercises.add(workoutExercise);
@@ -439,15 +488,14 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   void _addSetToExercise(int exerciseIndex) {
-    final exercise = _exercises[exerciseIndex]; // This is a WorkoutExercise
-    final lastSet = exercise.sets.isNotEmpty ? exercise.sets.last : null; // lastSet is WorkoutSet
+    final exercise = _exercises[exerciseIndex];
+    final lastSet = exercise.sets.isNotEmpty ? exercise.sets.last : null;
     
     final newSet = WorkoutSet(
-      // id is auto-generated by Uuid in WorkoutSet model
-      workoutExerciseId: exercise.id, // Link to the parent WorkoutExercise
-      setIndex: exercise.sets.length, // Add the required setIndex parameter
-      targetReps: lastSet?.targetReps ?? 10,
-      targetWeight: lastSet?.targetWeight ?? 0.0,
+      workoutExerciseId: exercise.id,
+      setIndex: exercise.sets.length,
+      targetReps: lastSet?.targetReps,
+      targetWeight: lastSet?.targetWeight,
     );
 
     setState(() {
@@ -474,13 +522,16 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   void _updateSet(int exerciseIndex, int setIndex, {int? targetReps, double? targetWeight, String? type, int? targetRestSeconds}) {
     final exercise = _exercises[exerciseIndex];
     final updatedSets = List<WorkoutSet>.from(exercise.sets);
+    final currentSet = updatedSets[setIndex];
     
-    updatedSets[setIndex] = updatedSets[setIndex].copyWith(
-      targetReps: targetReps,
-      targetWeight: targetWeight,
-      targetRestSeconds: targetRestSeconds,
-      // repRangeMin and repRangeMax are removed from WorkoutSet
+    // Only update the fields that are provided, preserve existing values for others
+    updatedSets[setIndex] = currentSet.copyWith(
+      targetReps: targetReps ?? currentSet.targetReps,
+      targetWeight: targetWeight ?? currentSet.targetWeight,
+      targetRestSeconds: targetRestSeconds ?? currentSet.targetRestSeconds,
     );
+
+    _logger.fine('Update set: exIdx=$exerciseIndex setIdx=$setIndex targetReps=$targetReps targetWeight=$targetWeight rest=$targetRestSeconds');
 
     setState(() {
       _exercises[exerciseIndex] = exercise.copyWith(sets: updatedSets);
@@ -542,6 +593,31 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
         _expandedNotes.add(exerciseIndex);
       }
     });
+  }
+
+  // Method to be called from tests to add an exercise
+  void addExerciseForTest(Exercise exercise) {
+    final workoutExercise = WorkoutExercise(
+      workoutTemplateId: widget.workoutTemplate?.id ?? "PENDING_TEMPLATE_ID",
+      exerciseSlug: exercise.slug,
+      exerciseDetail: exercise,
+      sets: [
+        WorkoutSet(
+          workoutExerciseId: 'temp_id', // This will be replaced by the actual ID
+          setIndex: 0,
+          targetReps: 10,
+          targetWeight: 0.0,
+        ),
+      ],
+    );
+    setState(() {
+      _exercises.add(workoutExercise);
+    });
+  }
+
+  // Method to be called from tests to update a set
+  void updateSetForTest(int exerciseIndex, int setIndex, {int? targetReps, double? targetWeight}) {
+    _updateSet(exerciseIndex, setIndex, targetReps: targetReps, targetWeight: targetWeight);
   }
 
   void _showWorkoutCustomization() {

@@ -4,6 +4,8 @@ import '../../constants/app_constants.dart';
 import 'base_dao.dart';
 
 class UserDao extends BaseDao<UserData> {
+  UserDao() : super('UserDao');
+
   @override
   String get tableName => 'UserData';
 

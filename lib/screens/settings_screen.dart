@@ -5,6 +5,7 @@ import 'dart:io';
 import '../services/database_service.dart';
 import '../services/user_service.dart';
 import '../services/workout_service.dart';
+import '../services/workout_template_service.dart';
 import '../models/user_data.dart';
 import '../widgets/settings/settings_timeline_section.dart';
 import '../widgets/settings/settings_profile_section.dart';
@@ -204,7 +205,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirmed == true) {
       await DatabaseService.instance.clearAllData();
       await UserService.instance.clearUserData();
-      await WorkoutService.instance.clearUserWorkoutsAndFolders();
+      await WorkoutService.instance.clearUserWorkouts();
+      await WorkoutTemplateService.instance.clearUserTemplatesAndFolders();
       if (mounted) {
         _showCupertinoToast('All data cleared');
         await Future.delayed(const Duration(seconds: 1));

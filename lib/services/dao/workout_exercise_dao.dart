@@ -3,6 +3,8 @@ import '../../models/typedefs.dart';
 import 'base_dao.dart';
 
 class WorkoutExerciseDao extends BaseDao<WorkoutExercise> {
+  WorkoutExerciseDao() : super('WorkoutExerciseDao');
+
   @override
   String get tableName => 'WorkoutExercise';
 
@@ -10,7 +12,8 @@ class WorkoutExerciseDao extends BaseDao<WorkoutExercise> {
   WorkoutExercise fromMap(Map<String, dynamic> map) {
     return WorkoutExercise(
       id: map['id'] as WorkoutExerciseId,
-      workoutId: map['workoutId'] as WorkoutId,
+      workoutTemplateId: map['workoutTemplateId'] as WorkoutTemplateId?,
+      workoutId: map['workoutId'] as WorkoutId?,
       exerciseSlug: map['exerciseSlug'] as ExerciseSlug,
       notes: map['notes'] as String?,
       orderIndex: map['orderIndex'] as int?,
@@ -23,6 +26,7 @@ class WorkoutExerciseDao extends BaseDao<WorkoutExercise> {
   Map<String, dynamic> toMap(WorkoutExercise workoutExercise) {
     return {
       'id': workoutExercise.id,
+      'workoutTemplateId': workoutExercise.workoutTemplateId,
       'workoutId': workoutExercise.workoutId,
       'exerciseSlug': workoutExercise.exerciseSlug,
       'notes': workoutExercise.notes,
@@ -36,28 +40,68 @@ class WorkoutExerciseDao extends BaseDao<WorkoutExercise> {
   }
 
   /// Get workout exercises by workout ID
-  Future<List<WorkoutExercise>> getWorkoutExercisesByWorkoutId(WorkoutId workoutId) async {
+  Future<List<WorkoutExercise>> getWorkoutExercisesByWorkoutId(
+      WorkoutId workoutId) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'workoutId = ?',
-      whereArgs: [workoutId],
-    );
-    
-    return maps.map((map) => fromMap(map)).toList()
-      ..sort((a, b) => (a.orderIndex ?? 0).compareTo(b.orderIndex ?? 0));
+    logger.fine('Getting workout exercises for workoutId: $workoutId');
+    try {
+      final List<Map<String, dynamic>> maps = await db.query(
+        tableName,
+        where: 'workoutId = ?',
+        whereArgs: [workoutId],
+        orderBy: 'orderIndex ASC',
+      );
+      final exercises = maps.map((map) => fromMap(map)).toList();
+      logger
+          .fine('Found ${exercises.length} exercises for workoutId: $workoutId');
+      return exercises;
+    } catch (e) {
+      logger.severe('Failed to get exercises for workoutId $workoutId: $e');
+      rethrow;
+    }
+  }
+
+  /// Get workout exercises by workout template ID
+  Future<List<WorkoutExercise>> getWorkoutExercisesByWorkoutTemplateId(
+      WorkoutTemplateId workoutTemplateId) async {
+    final db = await database;
+    logger.fine('Getting workout exercises for workoutTemplateId: $workoutTemplateId');
+    try {
+      final List<Map<String, dynamic>> maps = await db.query(
+        tableName,
+        where: 'workoutTemplateId = ?',
+        whereArgs: [workoutTemplateId],
+        orderBy: 'orderIndex ASC',
+      );
+      final exercises = maps.map((map) => fromMap(map)).toList();
+      logger
+          .fine('Found ${exercises.length} exercises for workoutTemplateId: $workoutTemplateId');
+      return exercises;
+    } catch (e) {
+      logger.severe('Failed to get exercises for workoutTemplateId $workoutTemplateId: $e');
+      rethrow;
+    }
   }
 
   /// Get workout exercises by exercise slug
-  Future<List<WorkoutExercise>> getWorkoutExercisesByExerciseSlug(ExerciseSlug exerciseSlug) async {
+  Future<List<WorkoutExercise>> getWorkoutExercisesByExerciseSlug(
+      ExerciseSlug exerciseSlug) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      where: 'exerciseSlug = ?',
-      whereArgs: [exerciseSlug],
-    );
-    
-    return maps.map((map) => fromMap(map)).toList();
+    logger.fine('Getting workout exercises for exerciseSlug: $exerciseSlug');
+    try {
+      final List<Map<String, dynamic>> maps = await db.query(
+        tableName,
+        where: 'exerciseSlug = ?',
+        whereArgs: [exerciseSlug],
+      );
+      final exercises = maps.map((map) => fromMap(map)).toList();
+      logger.fine(
+          'Found ${exercises.length} exercises for exerciseSlug: $exerciseSlug');
+      return exercises;
+    } catch (e) {
+      logger.severe('Failed to get exercises for exerciseSlug $exerciseSlug: $e');
+      rethrow;
+    }
   }
 
   /// Update workout exercise
@@ -73,10 +117,36 @@ class WorkoutExerciseDao extends BaseDao<WorkoutExercise> {
   /// Delete workout exercises by workout ID
   Future<int> deleteWorkoutExercisesByWorkoutId(WorkoutId workoutId) async {
     final db = await database;
-    return await db.delete(
-      tableName,
-      where: 'workoutId = ?',
-      whereArgs: [workoutId],
-    );
+    logger.fine('Deleting workout exercises for workoutId: $workoutId');
+    try {
+      final count = await db.delete(
+        tableName,
+        where: 'workoutId = ?',
+        whereArgs: [workoutId],
+      );
+      logger.fine('Deleted $count exercises for workoutId: $workoutId');
+      return count;
+    } catch (e) {
+      logger.severe('Failed to delete exercises for workoutId $workoutId: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete workout exercises by workout template ID
+  Future<int> deleteWorkoutExercisesByWorkoutTemplateId(WorkoutTemplateId workoutTemplateId) async {
+    final db = await database;
+    logger.fine('Deleting workout exercises for workoutTemplateId: $workoutTemplateId');
+    try {
+      final count = await db.delete(
+        tableName,
+        where: 'workoutTemplateId = ?',
+        whereArgs: [workoutTemplateId],
+      );
+      logger.fine('Deleted $count exercises for workoutTemplateId: $workoutTemplateId');
+      return count;
+    } catch (e) {
+      logger.severe('Failed to delete exercises for workoutTemplateId $workoutTemplateId: $e');
+      rethrow;
+    }
   }
 }

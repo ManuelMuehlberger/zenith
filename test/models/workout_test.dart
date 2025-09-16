@@ -263,7 +263,8 @@ void main() {
       expect(scoreWorkout.icon, Icons.sports_score);
 
       final unknownWorkout = workout.copyWith(iconCodePoint: 0x123456);
-      expect(unknownWorkout.icon, Icons.fitness_center);
+      expect(unknownWorkout.icon.codePoint, 0x123456);
+      expect(unknownWorkout.icon.fontFamily, 'MaterialIcons');
     });
 
     test('should create workout with different statuses', () {

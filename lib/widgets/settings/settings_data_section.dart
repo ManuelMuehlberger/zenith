@@ -90,7 +90,7 @@ class SettingsDataSection extends StatelessWidget {
 
   Future<void> _exportData(BuildContext context) async {
     try {
-      final exportService = ExportImportService();
+      final exportService = ExportImportService.instance;
       await exportService.exportData();
       
       if (context.mounted) {
@@ -113,7 +113,7 @@ class SettingsDataSection extends StatelessWidget {
 
   Future<void> _importData(BuildContext context) async {
     try {
-      final exportService = ExportImportService();
+      final exportService = ExportImportService.instance;
       await exportService.importData();
       
       if (context.mounted) {

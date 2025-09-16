@@ -1,3 +1,4 @@
+import 'package:logging/logging.dart';
 import '../models/workout.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
@@ -6,18 +7,40 @@ import 'dao/workout_exercise_dao.dart';
 import 'dao/workout_set_dao.dart';
 import 'live_workout_notification_service.dart';
 import 'database_service.dart';
+import 'exercise_service.dart';
+import 'package:meta/meta.dart';
 
 class WorkoutSessionService {
   static final WorkoutSessionService _instance = WorkoutSessionService._internal();
+  final Logger _logger = Logger('WorkoutSessionService');
+
   factory WorkoutSessionService() => _instance;
   WorkoutSessionService._internal();
   
   static WorkoutSessionService get instance => _instance;
 
   // Inject DAOs
-  final WorkoutDao _workoutDao = WorkoutDao();
-  final WorkoutExerciseDao _workoutExerciseDao = WorkoutExerciseDao();
-  final WorkoutSetDao _workoutSetDao = WorkoutSetDao();
+  WorkoutDao _workoutDao = WorkoutDao();
+  WorkoutExerciseDao _workoutExerciseDao = WorkoutExerciseDao();
+  WorkoutSetDao _workoutSetDao = WorkoutSetDao();
+
+  // Allow for mock injection in tests
+  @visibleForTesting
+  set workoutDao(WorkoutDao dao) => _workoutDao = dao;
+  @visibleForTesting
+  set workoutExerciseDao(WorkoutExerciseDao dao) => _workoutExerciseDao = dao;
+  @visibleForTesting
+  set workoutSetDao(WorkoutSetDao dao) => _workoutSetDao = dao;
+
+  // Notification service (injectable for tests)
+  NotificationServiceAPI _notificationService = LiveWorkoutNotificationService();
+  @visibleForTesting
+  set notificationService(NotificationServiceAPI service) => _notificationService = service;
+
+  // Exercise service (injectable for tests)
+  ExerciseService _exerciseService = ExerciseService.instance;
+  @visibleForTesting
+  set exerciseService(ExerciseService svc) => _exerciseService = svc;
 
   Workout? _currentSession;
   int _currentExerciseIndex = 0;
@@ -29,79 +52,137 @@ class WorkoutSessionService {
   bool get hasActiveSession => _currentSession != null && _currentSession!.status == WorkoutStatus.inProgress;
 
   void initializeNotificationCallback() {
-    LiveWorkoutNotificationService().setNextSetCallback(() {
+    _logger.info('Initializing notification callback');
+    _notificationService.setNextSetCallback(() {
       if (hasActiveSession) {
+        _logger.fine('Notification callback triggered for next set');
         nextSet();
       }
     });
   }
 
-  Future<void> loadActiveSession() async {
+  @visibleForTesting
+  WorkoutExercise cloneTemplateExerciseForSession(
+    WorkoutExercise templateExercise,
+    String sessionId,
+    int orderIndex,
+  ) {
+    // Create a new session-scoped exercise with a fresh ID and correct foreign keys
+    final clonedExercise = WorkoutExercise(
+      workoutTemplateId: null,
+      workoutId: sessionId,
+      exerciseSlug: templateExercise.exerciseSlug,
+      notes: templateExercise.notes,
+      orderIndex: orderIndex,
+      exerciseDetail: templateExercise.exerciseDetail,
+      sets: const [],
+    );
+
+    // Deep-clone sets with fresh IDs and link them to the cloned exercise
+    final clonedSets = <WorkoutSet>[];
+    for (int j = 0; j < templateExercise.sets.length; j++) {
+      final s = templateExercise.sets[j];
+      clonedSets.add(WorkoutSet(
+        workoutExerciseId: clonedExercise.id,
+        setIndex: j,
+        targetReps: s.targetReps,
+        targetWeight: s.targetWeight,
+        targetRestSeconds: s.targetRestSeconds,
+        actualReps: null,
+        actualWeight: null,
+        isCompleted: false,
+      ));
+    }
+
+    return clonedExercise.copyWith(sets: clonedSets);
+  }
+
+  @visibleForTesting
+  Future<void> enrichExercisesWithDetails(List<WorkoutExercise> exercises) async {
     try {
-      // Load in-progress workouts from the database
+      if (_exerciseService.exercises.isEmpty) {
+        await _exerciseService.loadExercises();
+      }
+      final all = _exerciseService.exercises;
+      final bySlug = {for (final e in all) e.slug: e};
+      for (int i = 0; i < exercises.length; i++) {
+        final slug = exercises[i].exerciseSlug;
+        final detail = bySlug[slug];
+        exercises[i] = exercises[i].copyWith(exerciseDetail: detail);
+      }
+    } catch (e) {
+      _logger.fine('Could not enrich exercises with details: $e');
+    }
+  }
+
+  Future<void> loadActiveSession() async {
+    _logger.info('Loading active workout session');
+    try {
       final inProgressWorkouts = await _workoutDao.getInProgressWorkouts();
       
       if (inProgressWorkouts.isNotEmpty) {
-        // Load exercises and sets for the first in-progress workout
         _currentSession = inProgressWorkouts.first;
+        _logger.fine('Found active session with id: ${_currentSession!.id}');
+        
         final workoutExercises = await _workoutExerciseDao.getWorkoutExercisesByWorkoutId(_currentSession!.id);
         
-        // Load sets for each exercise
         final List<WorkoutExercise> exercisesWithSets = [];
         for (final workoutExercise in workoutExercises) {
           final sets = await _workoutSetDao.getWorkoutSetsByWorkoutExerciseId(workoutExercise.id);
-          final exerciseWithSets = workoutExercise.copyWith(sets: sets);
-          exercisesWithSets.add(exerciseWithSets);
+          exercisesWithSets.add(workoutExercise.copyWith(sets: sets));
         }
-        
-        // Update workout with exercises and sets
+
+        await enrichExercisesWithDetails(exercisesWithSets);
         _currentSession = _currentSession!.copyWith(exercises: exercisesWithSets);
         
-        // If the session is completed, clear it
         if (_currentSession!.status == WorkoutStatus.completed) {
+          _logger.warning('Loaded session is already completed, clearing it');
           await clearActiveSession();
         } else {
-          // Restart notification service if session is active
-          await LiveWorkoutNotificationService().restartServiceIfNeeded(_currentSession!, _currentExerciseIndex, _currentSetIndex);
+          _logger.info('Restarting notification service for active session');
+          await _notificationService.restartServiceIfNeeded(_currentSession!, _currentExerciseIndex, _currentSetIndex);
         }
+      } else {
+        _logger.info('No active session found');
       }
     } catch (e) {
+      _logger.severe('Failed to load active session: $e');
       await clearActiveSession();
     }
   }
 
   Future<Workout> startWorkout(Workout workout) async {
-    // Clear any existing session first
+    _logger.info('Starting new workout session from template: ${workout.id}');
     await clearActiveSession();
     
-    // Create a new workout session from the template
+    // Pre-generate session ID so cloned exercises can reference it
+    final String sessionId = DateTime.now().millisecondsSinceEpoch.toString();
+
     final sessionExercises = <WorkoutExercise>[];
-    
-    // Populate lastReps and lastWeight from history
+
+    // Populate lastReps and lastWeight from history (if available) while cloning
     for (int i = 0; i < workout.exercises.length; i++) {
-      final workoutExercise = workout.exercises[i];
-      final exerciseSlug = workoutExercise.exerciseSlug;
-      
+      final templateExercise = workout.exercises[i];
+      final exerciseSlug = templateExercise.exerciseSlug;
+
       // Fetch the last workout for this specific exercise
       final Workout? lastWorkout = await DatabaseService.instance.getLastWorkoutForExercise(exerciseSlug);
 
-      if (lastWorkout != null) {
-        final List<WorkoutSet> updatedSets = [];
-        for (int j = 0; j < workoutExercise.sets.length; j++) {
-          WorkoutSet currentSet = workoutExercise.sets[j];
-          
-          // For now, we'll just copy the set as-is since we don't have the history structure anymore
-          // In a full implementation, we would populate actualReps and actualWeight from history
-          updatedSets.add(currentSet);
-        }
-        sessionExercises.add(workoutExercise.copyWith(sets: updatedSets));
-      } else {
-        sessionExercises.add(workoutExercise);
-      }
+      // For now, we preserve template target values; history can be used to prefill actuals in the future
+      final sourceExercise = lastWorkout != null
+          ? templateExercise.copyWith(sets: List<WorkoutSet>.from(templateExercise.sets))
+          : templateExercise;
+
+      // Clone to session-scoped exercise with fresh IDs and proper foreign keys
+      final cloned = cloneTemplateExerciseForSession(sourceExercise, sessionId, i);
+      sessionExercises.add(cloned);
     }
 
+    // Attach exercise details (name, muscle groups) by slug for UI
+    await enrichExercisesWithDetails(sessionExercises);
+
     _currentSession = Workout(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: sessionId,
       name: workout.name,
       description: workout.description,
       iconCodePoint: workout.iconCodePoint,
@@ -114,46 +195,56 @@ class WorkoutSessionService {
       exercises: sessionExercises,
     );
     
-    // Save the workout session to the database
     await _workoutDao.insert(_currentSession!);
+    _logger.fine('Saved new session to database with id: ${_currentSession!.id}');
     
-    // Save exercises and sets to the database
     for (final exercise in _currentSession!.exercises) {
       await _workoutExerciseDao.insert(exercise);
       for (final set in exercise.sets) {
         await _workoutSetDao.insert(set);
       }
     }
+    _logger.fine('Saved exercises and sets for new session');
     
     _currentExerciseIndex = 0;
     _currentSetIndex = 0;
 
     if (_currentSession!.exercises.isNotEmpty) {
-      LiveWorkoutNotificationService().startService(_currentSession!, _currentExerciseIndex, _currentSetIndex);
+      _logger.info('Starting notification service for new session');
+      _notificationService.startService(_currentSession!, _currentExerciseIndex, _currentSetIndex);
     }
     return _currentSession!;
   }
 
   Future<void> updateSession(Workout session) async {
+    _logger.fine('Updating session: ${session.id}');
     _currentSession = session;
     await _workoutDao.updateWorkout(session);
     if (hasActiveSession) {
-      LiveWorkoutNotificationService().updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
+      _notificationService.updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
     }
   }
 
   Future<void> selectExercise(int index) async {
-    if (_currentSession == null || index < 0 || index >= _currentSession!.exercises.length) return;
+    _logger.fine('Selecting exercise at index: $index');
+    if (_currentSession == null || index < 0 || index >= _currentSession!.exercises.length) {
+      _logger.warning('Invalid exercise index');
+      return;
+    }
     _currentExerciseIndex = index;
     _currentSetIndex = 0;
     await _workoutDao.updateWorkout(_currentSession!);
     if (hasActiveSession) {
-      LiveWorkoutNotificationService().updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
+      _notificationService.updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
     }
   }
 
   Future<void> nextSet() async {
-    if (!hasActiveSession) return;
+    _logger.fine('Moving to next set');
+    if (!hasActiveSession) {
+      _logger.warning('No active session to advance set');
+      return;
+    }
     
     final currentExercise = _currentSession!.exercises[_currentExerciseIndex];
     if (_currentSetIndex < currentExercise.sets.length) {
@@ -176,16 +267,19 @@ class WorkoutSessionService {
       }
     }
     await _workoutDao.updateWorkout(_currentSession!);
-    LiveWorkoutNotificationService().updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
+    _notificationService.updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
   }
 
   // Added: Method to go to the previous set or exercise
   Future<void> previousSet() async {
-    if (!hasActiveSession) return;
+    _logger.fine('Moving to previous set');
+    if (!hasActiveSession) {
+      _logger.warning('No active session to go to previous set');
+      return;
+    }
     if (_currentSetIndex > 0) {
       _currentSetIndex--;
     } else {
-      // Move to previous exercise
       if (_currentExerciseIndex > 0) {
         _currentExerciseIndex--;
         final previousExercise = _currentSession!.exercises[_currentExerciseIndex];
@@ -193,7 +287,7 @@ class WorkoutSessionService {
       }
     }
     await _workoutDao.updateWorkout(_currentSession!);
-    LiveWorkoutNotificationService().updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
+    _notificationService.updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
   }
 
 
@@ -202,17 +296,25 @@ class WorkoutSessionService {
     double? actualWeight,
     bool? isCompleted,
   }) async {
-    if (_currentSession == null) return;
+    _logger.fine('Updating set $setId in exercise $exerciseId');
+    if (_currentSession == null) {
+      _logger.warning('No active session to update set');
+      return;
+    }
 
-    // Find the exercise and set indices based on IDs
     final exerciseIdx = _currentSession!.exercises.indexWhere((e) => e.id == exerciseId);
-    if (exerciseIdx == -1) return;
+    if (exerciseIdx == -1) {
+      _logger.warning('Exercise with id $exerciseId not found');
+      return;
+    }
 
     final exercise = _currentSession!.exercises[exerciseIdx];
     final setIdx = exercise.sets.indexWhere((s) => s.id == setId);
-    if (setIdx == -1) return;
+    if (setIdx == -1) {
+      _logger.warning('Set with id $setId not found');
+      return;
+    }
 
-    // Update current indices if the modified set is the current one
     _currentExerciseIndex = exerciseIdx;
     _currentSetIndex = setIdx;
 
@@ -235,21 +337,30 @@ class WorkoutSessionService {
     _currentSession = _currentSession!.copyWith(exercises: updatedExercises);
     await _workoutDao.updateWorkout(_currentSession!);
     if (hasActiveSession) {
-      LiveWorkoutNotificationService().updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
+      _notificationService.updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
     }
   }
 
   Future<void> toggleSetCompletion(String exerciseId, String setId) async {
-    if (_currentSession == null) return;
+    _logger.fine('Toggling completion for set $setId in exercise $exerciseId');
+    if (_currentSession == null) {
+      _logger.warning('No active session to toggle set completion');
+      return;
+    }
 
     final exerciseIdx = _currentSession!.exercises.indexWhere((e) => e.id == exerciseId);
-    if (exerciseIdx == -1) return;
+    if (exerciseIdx == -1) {
+      _logger.warning('Exercise with id $exerciseId not found');
+      return;
+    }
     
     final exercise = _currentSession!.exercises[exerciseIdx];
     final setIdx = exercise.sets.indexWhere((s) => s.id == setId);
-    if (setIdx == -1) return;
+    if (setIdx == -1) {
+      _logger.warning('Set with id $setId not found');
+      return;
+    }
 
-    // Update current indices if the toggled set is the current one
     _currentExerciseIndex = exerciseIdx;
     _currentSetIndex = setIdx;
 
@@ -269,7 +380,7 @@ class WorkoutSessionService {
     _currentSession = _currentSession!.copyWith(exercises: updatedExercises);
     await _workoutDao.updateWorkout(_currentSession!);
     if (hasActiveSession) {
-      LiveWorkoutNotificationService().updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
+      _notificationService.updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
     }
   }
 
@@ -277,7 +388,9 @@ class WorkoutSessionService {
     String? notes,
     int? mood,
   }) async {
+    _logger.info('Completing workout session: ${_currentSession?.id}');
     if (_currentSession == null) {
+      _logger.severe('No active workout session to complete');
       throw Exception('No active workout session');
     }
 
@@ -297,19 +410,21 @@ class WorkoutSessionService {
       notes: notes,
     );
 
-    // Update the workout in the database
     await _workoutDao.updateWorkout(completedSession);
+    _logger.fine('Saved completed session to database');
     
-    await LiveWorkoutNotificationService().stopService();
+    await _notificationService.stopService();
     await clearActiveSession();
+    _logger.info('Workout session completed and cleared');
     return completedSession;
   }
 
   Future<void> clearActiveSession() async {
+    _logger.info('Clearing active session');
     _currentSession = null;
     _currentExerciseIndex = 0;
     _currentSetIndex = 0;
-    await LiveWorkoutNotificationService().stopService();
+    await _notificationService.stopService();
   }
 
   // Helper methods for UI

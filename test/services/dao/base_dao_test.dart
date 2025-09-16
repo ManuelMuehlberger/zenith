@@ -3,6 +3,8 @@ import 'package:zenith/services/dao/base_dao.dart';
 
 // Mock implementation of BaseDao for testing
 class MockDao extends BaseDao<Map<String, dynamic>> {
+  MockDao() : super('MockDao');
+
   @override
   String get tableName => 'test_table';
 

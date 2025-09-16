@@ -5,17 +5,16 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i9;
 
+import 'package:logging/logging.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i8;
-import 'package:sqflite/sqflite.dart' as _i2;
-import 'package:zenith/models/workout.dart' as _i3;
+import 'package:sqflite/sqflite.dart' as _i3;
+import 'package:zenith/models/workout.dart' as _i4;
 import 'package:zenith/models/workout_exercise.dart' as _i5;
-import 'package:zenith/models/workout_folder.dart' as _i4;
 import 'package:zenith/models/workout_set.dart' as _i6;
 import 'package:zenith/services/dao/workout_dao.dart' as _i7;
-import 'package:zenith/services/dao/workout_exercise_dao.dart' as _i11;
-import 'package:zenith/services/dao/workout_folder_dao.dart' as _i10;
-import 'package:zenith/services/dao/workout_set_dao.dart' as _i12;
+import 'package:zenith/services/dao/workout_exercise_dao.dart' as _i10;
+import 'package:zenith/services/dao/workout_set_dao.dart' as _i11;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -31,18 +30,18 @@ import 'package:zenith/services/dao/workout_set_dao.dart' as _i12;
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
-class _FakeDatabase_0 extends _i1.SmartFake implements _i2.Database {
-  _FakeDatabase_0(Object parent, Invocation parentInvocation)
+class _FakeLogger_0 extends _i1.SmartFake implements _i2.Logger {
+  _FakeLogger_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeWorkout_1 extends _i1.SmartFake implements _i3.Workout {
-  _FakeWorkout_1(Object parent, Invocation parentInvocation)
+class _FakeDatabase_1 extends _i1.SmartFake implements _i3.Database {
+  _FakeDatabase_1(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeWorkoutFolder_2 extends _i1.SmartFake implements _i4.WorkoutFolder {
-  _FakeWorkoutFolder_2(Object parent, Invocation parentInvocation)
+class _FakeWorkout_2 extends _i1.SmartFake implements _i4.Workout {
+  _FakeWorkout_2(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -77,28 +76,36 @@ class MockWorkoutDao extends _i1.Mock implements _i7.WorkoutDao {
           as String);
 
   @override
-  _i9.Future<_i2.Database> get database =>
+  _i2.Logger get logger =>
       (super.noSuchMethod(
-            Invocation.getter(#database),
-            returnValue: _i9.Future<_i2.Database>.value(
-              _FakeDatabase_0(this, Invocation.getter(#database)),
-            ),
+            Invocation.getter(#logger),
+            returnValue: _FakeLogger_0(this, Invocation.getter(#logger)),
           )
-          as _i9.Future<_i2.Database>);
+          as _i2.Logger);
 
   @override
-  _i3.Workout fromMap(Map<String, dynamic>? map) =>
+  _i9.Future<_i3.Database> get database =>
+      (super.noSuchMethod(
+            Invocation.getter(#database),
+            returnValue: _i9.Future<_i3.Database>.value(
+              _FakeDatabase_1(this, Invocation.getter(#database)),
+            ),
+          )
+          as _i9.Future<_i3.Database>);
+
+  @override
+  _i4.Workout fromMap(Map<String, dynamic>? map) =>
       (super.noSuchMethod(
             Invocation.method(#fromMap, [map]),
-            returnValue: _FakeWorkout_1(
+            returnValue: _FakeWorkout_2(
               this,
               Invocation.method(#fromMap, [map]),
             ),
           )
-          as _i3.Workout);
+          as _i4.Workout);
 
   @override
-  Map<String, dynamic> toMap(_i3.Workout? workout) =>
+  Map<String, dynamic> toMap(_i4.Workout? workout) =>
       (super.noSuchMethod(
             Invocation.method(#toMap, [workout]),
             returnValue: <String, dynamic>{},
@@ -106,84 +113,84 @@ class MockWorkoutDao extends _i1.Mock implements _i7.WorkoutDao {
           as Map<String, dynamic>);
 
   @override
-  _i9.Future<_i3.Workout?> getWorkoutById(String? id) =>
+  _i9.Future<_i4.Workout?> getWorkoutById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getWorkoutById, [id]),
-            returnValue: _i9.Future<_i3.Workout?>.value(),
+            returnValue: _i9.Future<_i4.Workout?>.value(),
           )
-          as _i9.Future<_i3.Workout?>);
+          as _i9.Future<_i4.Workout?>);
 
   @override
-  _i9.Future<List<_i3.Workout>> getAllWorkouts() =>
+  _i9.Future<List<_i4.Workout>> getAllWorkouts() =>
       (super.noSuchMethod(
             Invocation.method(#getAllWorkouts, []),
-            returnValue: _i9.Future<List<_i3.Workout>>.value(<_i3.Workout>[]),
+            returnValue: _i9.Future<List<_i4.Workout>>.value(<_i4.Workout>[]),
           )
-          as _i9.Future<List<_i3.Workout>>);
+          as _i9.Future<List<_i4.Workout>>);
 
   @override
-  _i9.Future<List<_i3.Workout>> getWorkoutsByFolderId(String? folderId) =>
+  _i9.Future<List<_i4.Workout>> getWorkoutsByFolderId(String? folderId) =>
       (super.noSuchMethod(
             Invocation.method(#getWorkoutsByFolderId, [folderId]),
-            returnValue: _i9.Future<List<_i3.Workout>>.value(<_i3.Workout>[]),
+            returnValue: _i9.Future<List<_i4.Workout>>.value(<_i4.Workout>[]),
           )
-          as _i9.Future<List<_i3.Workout>>);
+          as _i9.Future<List<_i4.Workout>>);
 
   @override
-  _i9.Future<List<_i3.Workout>> getWorkoutsByStatus(
-    _i3.WorkoutStatus? status,
+  _i9.Future<List<_i4.Workout>> getWorkoutsByStatus(
+    _i4.WorkoutStatus? status,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getWorkoutsByStatus, [status]),
-            returnValue: _i9.Future<List<_i3.Workout>>.value(<_i3.Workout>[]),
+            returnValue: _i9.Future<List<_i4.Workout>>.value(<_i4.Workout>[]),
           )
-          as _i9.Future<List<_i3.Workout>>);
+          as _i9.Future<List<_i4.Workout>>);
 
   @override
-  _i9.Future<List<_i3.Workout>> getTemplateWorkouts() =>
+  _i9.Future<List<_i4.Workout>> getTemplateWorkouts() =>
       (super.noSuchMethod(
             Invocation.method(#getTemplateWorkouts, []),
-            returnValue: _i9.Future<List<_i3.Workout>>.value(<_i3.Workout>[]),
+            returnValue: _i9.Future<List<_i4.Workout>>.value(<_i4.Workout>[]),
           )
-          as _i9.Future<List<_i3.Workout>>);
+          as _i9.Future<List<_i4.Workout>>);
 
   @override
-  _i9.Future<List<_i3.Workout>> getInProgressWorkouts() =>
+  _i9.Future<List<_i4.Workout>> getInProgressWorkouts() =>
       (super.noSuchMethod(
             Invocation.method(#getInProgressWorkouts, []),
-            returnValue: _i9.Future<List<_i3.Workout>>.value(<_i3.Workout>[]),
+            returnValue: _i9.Future<List<_i4.Workout>>.value(<_i4.Workout>[]),
           )
-          as _i9.Future<List<_i3.Workout>>);
+          as _i9.Future<List<_i4.Workout>>);
 
   @override
-  _i9.Future<List<_i3.Workout>> getCompletedWorkouts() =>
+  _i9.Future<List<_i4.Workout>> getCompletedWorkouts() =>
       (super.noSuchMethod(
             Invocation.method(#getCompletedWorkouts, []),
-            returnValue: _i9.Future<List<_i3.Workout>>.value(<_i3.Workout>[]),
+            returnValue: _i9.Future<List<_i4.Workout>>.value(<_i4.Workout>[]),
           )
-          as _i9.Future<List<_i3.Workout>>);
+          as _i9.Future<List<_i4.Workout>>);
 
   @override
-  _i9.Future<List<_i3.Workout>> getWorkoutsByTemplateId(String? templateId) =>
+  _i9.Future<List<_i4.Workout>> getWorkoutsByTemplateId(String? templateId) =>
       (super.noSuchMethod(
             Invocation.method(#getWorkoutsByTemplateId, [templateId]),
-            returnValue: _i9.Future<List<_i3.Workout>>.value(<_i3.Workout>[]),
+            returnValue: _i9.Future<List<_i4.Workout>>.value(<_i4.Workout>[]),
           )
-          as _i9.Future<List<_i3.Workout>>);
+          as _i9.Future<List<_i4.Workout>>);
 
   @override
-  _i9.Future<List<_i3.Workout>> getWorkoutsInDateRange(
+  _i9.Future<List<_i4.Workout>> getWorkoutsInDateRange(
     DateTime? startDate,
     DateTime? endDate,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getWorkoutsInDateRange, [startDate, endDate]),
-            returnValue: _i9.Future<List<_i3.Workout>>.value(<_i3.Workout>[]),
+            returnValue: _i9.Future<List<_i4.Workout>>.value(<_i4.Workout>[]),
           )
-          as _i9.Future<List<_i3.Workout>>);
+          as _i9.Future<List<_i4.Workout>>);
 
   @override
-  _i9.Future<int> updateWorkout(_i3.Workout? workout) =>
+  _i9.Future<int> updateWorkout(_i4.Workout? workout) =>
       (super.noSuchMethod(
             Invocation.method(#updateWorkout, [workout]),
             returnValue: _i9.Future<int>.value(0),
@@ -199,7 +206,7 @@ class MockWorkoutDao extends _i1.Mock implements _i7.WorkoutDao {
           as _i9.Future<int>);
 
   @override
-  _i9.Future<int> insert(_i3.Workout? model) =>
+  _i9.Future<int> insert(_i4.Workout? model) =>
       (super.noSuchMethod(
             Invocation.method(#insert, [model]),
             returnValue: _i9.Future<int>.value(0),
@@ -207,7 +214,7 @@ class MockWorkoutDao extends _i1.Mock implements _i7.WorkoutDao {
           as _i9.Future<int>);
 
   @override
-  _i9.Future<List<int>> insertAll(List<_i3.Workout>? models) =>
+  _i9.Future<List<int>> insertAll(List<_i4.Workout>? models) =>
       (super.noSuchMethod(
             Invocation.method(#insertAll, [models]),
             returnValue: _i9.Future<List<int>>.value(<int>[]),
@@ -215,23 +222,23 @@ class MockWorkoutDao extends _i1.Mock implements _i7.WorkoutDao {
           as _i9.Future<List<int>>);
 
   @override
-  _i9.Future<List<_i3.Workout>> getAll() =>
+  _i9.Future<List<_i4.Workout>> getAll() =>
       (super.noSuchMethod(
             Invocation.method(#getAll, []),
-            returnValue: _i9.Future<List<_i3.Workout>>.value(<_i3.Workout>[]),
+            returnValue: _i9.Future<List<_i4.Workout>>.value(<_i4.Workout>[]),
           )
-          as _i9.Future<List<_i3.Workout>>);
+          as _i9.Future<List<_i4.Workout>>);
 
   @override
-  _i9.Future<_i3.Workout?> getById(String? id) =>
+  _i9.Future<_i4.Workout?> getById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#getById, [id]),
-            returnValue: _i9.Future<_i3.Workout?>.value(),
+            returnValue: _i9.Future<_i4.Workout?>.value(),
           )
-          as _i9.Future<_i3.Workout?>);
+          as _i9.Future<_i4.Workout?>);
 
   @override
-  _i9.Future<int> update(_i3.Workout? model, {String? idColumn = 'id'}) =>
+  _i9.Future<int> update(_i4.Workout? model, {String? idColumn = 'id'}) =>
       (super.noSuchMethod(
             Invocation.method(#update, [model], {#idColumn: idColumn}),
             returnValue: _i9.Future<int>.value(0),
@@ -255,185 +262,15 @@ class MockWorkoutDao extends _i1.Mock implements _i7.WorkoutDao {
           as _i9.Future<int>);
 
   @override
-  _i9.Future<List<_i3.Workout>> rawQuery(
+  _i9.Future<List<_i4.Workout>> rawQuery(
     String? sql, [
     List<dynamic>? arguments,
   ]) =>
       (super.noSuchMethod(
             Invocation.method(#rawQuery, [sql, arguments]),
-            returnValue: _i9.Future<List<_i3.Workout>>.value(<_i3.Workout>[]),
+            returnValue: _i9.Future<List<_i4.Workout>>.value(<_i4.Workout>[]),
           )
-          as _i9.Future<List<_i3.Workout>>);
-
-  @override
-  _i9.Future<int> rawUpdate(String? sql, [List<dynamic>? arguments]) =>
-      (super.noSuchMethod(
-            Invocation.method(#rawUpdate, [sql, arguments]),
-            returnValue: _i9.Future<int>.value(0),
-          )
-          as _i9.Future<int>);
-
-  @override
-  _i9.Future<int> rawDelete(String? sql, [List<dynamic>? arguments]) =>
-      (super.noSuchMethod(
-            Invocation.method(#rawDelete, [sql, arguments]),
-            returnValue: _i9.Future<int>.value(0),
-          )
-          as _i9.Future<int>);
-}
-
-/// A class which mocks [WorkoutFolderDao].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockWorkoutFolderDao extends _i1.Mock implements _i10.WorkoutFolderDao {
-  MockWorkoutFolderDao() {
-    _i1.throwOnMissingStub(this);
-  }
-
-  @override
-  String get tableName =>
-      (super.noSuchMethod(
-            Invocation.getter(#tableName),
-            returnValue: _i8.dummyValue<String>(
-              this,
-              Invocation.getter(#tableName),
-            ),
-          )
-          as String);
-
-  @override
-  _i9.Future<_i2.Database> get database =>
-      (super.noSuchMethod(
-            Invocation.getter(#database),
-            returnValue: _i9.Future<_i2.Database>.value(
-              _FakeDatabase_0(this, Invocation.getter(#database)),
-            ),
-          )
-          as _i9.Future<_i2.Database>);
-
-  @override
-  _i4.WorkoutFolder fromMap(Map<String, dynamic>? map) =>
-      (super.noSuchMethod(
-            Invocation.method(#fromMap, [map]),
-            returnValue: _FakeWorkoutFolder_2(
-              this,
-              Invocation.method(#fromMap, [map]),
-            ),
-          )
-          as _i4.WorkoutFolder);
-
-  @override
-  Map<String, dynamic> toMap(_i4.WorkoutFolder? workoutFolder) =>
-      (super.noSuchMethod(
-            Invocation.method(#toMap, [workoutFolder]),
-            returnValue: <String, dynamic>{},
-          )
-          as Map<String, dynamic>);
-
-  @override
-  _i9.Future<_i4.WorkoutFolder?> getWorkoutFolderById(String? id) =>
-      (super.noSuchMethod(
-            Invocation.method(#getWorkoutFolderById, [id]),
-            returnValue: _i9.Future<_i4.WorkoutFolder?>.value(),
-          )
-          as _i9.Future<_i4.WorkoutFolder?>);
-
-  @override
-  _i9.Future<List<_i4.WorkoutFolder>> getAllWorkoutFoldersOrdered() =>
-      (super.noSuchMethod(
-            Invocation.method(#getAllWorkoutFoldersOrdered, []),
-            returnValue: _i9.Future<List<_i4.WorkoutFolder>>.value(
-              <_i4.WorkoutFolder>[],
-            ),
-          )
-          as _i9.Future<List<_i4.WorkoutFolder>>);
-
-  @override
-  _i9.Future<int> updateWorkoutFolder(_i4.WorkoutFolder? workoutFolder) =>
-      (super.noSuchMethod(
-            Invocation.method(#updateWorkoutFolder, [workoutFolder]),
-            returnValue: _i9.Future<int>.value(0),
-          )
-          as _i9.Future<int>);
-
-  @override
-  _i9.Future<int> deleteWorkoutFolder(String? id) =>
-      (super.noSuchMethod(
-            Invocation.method(#deleteWorkoutFolder, [id]),
-            returnValue: _i9.Future<int>.value(0),
-          )
-          as _i9.Future<int>);
-
-  @override
-  _i9.Future<int> insert(_i4.WorkoutFolder? model) =>
-      (super.noSuchMethod(
-            Invocation.method(#insert, [model]),
-            returnValue: _i9.Future<int>.value(0),
-          )
-          as _i9.Future<int>);
-
-  @override
-  _i9.Future<List<int>> insertAll(List<_i4.WorkoutFolder>? models) =>
-      (super.noSuchMethod(
-            Invocation.method(#insertAll, [models]),
-            returnValue: _i9.Future<List<int>>.value(<int>[]),
-          )
-          as _i9.Future<List<int>>);
-
-  @override
-  _i9.Future<List<_i4.WorkoutFolder>> getAll() =>
-      (super.noSuchMethod(
-            Invocation.method(#getAll, []),
-            returnValue: _i9.Future<List<_i4.WorkoutFolder>>.value(
-              <_i4.WorkoutFolder>[],
-            ),
-          )
-          as _i9.Future<List<_i4.WorkoutFolder>>);
-
-  @override
-  _i9.Future<_i4.WorkoutFolder?> getById(String? id) =>
-      (super.noSuchMethod(
-            Invocation.method(#getById, [id]),
-            returnValue: _i9.Future<_i4.WorkoutFolder?>.value(),
-          )
-          as _i9.Future<_i4.WorkoutFolder?>);
-
-  @override
-  _i9.Future<int> update(_i4.WorkoutFolder? model, {String? idColumn = 'id'}) =>
-      (super.noSuchMethod(
-            Invocation.method(#update, [model], {#idColumn: idColumn}),
-            returnValue: _i9.Future<int>.value(0),
-          )
-          as _i9.Future<int>);
-
-  @override
-  _i9.Future<int> delete(String? id, {String? idColumn = 'id'}) =>
-      (super.noSuchMethod(
-            Invocation.method(#delete, [id], {#idColumn: idColumn}),
-            returnValue: _i9.Future<int>.value(0),
-          )
-          as _i9.Future<int>);
-
-  @override
-  _i9.Future<int> deleteAll() =>
-      (super.noSuchMethod(
-            Invocation.method(#deleteAll, []),
-            returnValue: _i9.Future<int>.value(0),
-          )
-          as _i9.Future<int>);
-
-  @override
-  _i9.Future<List<_i4.WorkoutFolder>> rawQuery(
-    String? sql, [
-    List<dynamic>? arguments,
-  ]) =>
-      (super.noSuchMethod(
-            Invocation.method(#rawQuery, [sql, arguments]),
-            returnValue: _i9.Future<List<_i4.WorkoutFolder>>.value(
-              <_i4.WorkoutFolder>[],
-            ),
-          )
-          as _i9.Future<List<_i4.WorkoutFolder>>);
+          as _i9.Future<List<_i4.Workout>>);
 
   @override
   _i9.Future<int> rawUpdate(String? sql, [List<dynamic>? arguments]) =>
@@ -456,7 +293,7 @@ class MockWorkoutFolderDao extends _i1.Mock implements _i10.WorkoutFolderDao {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockWorkoutExerciseDao extends _i1.Mock
-    implements _i11.WorkoutExerciseDao {
+    implements _i10.WorkoutExerciseDao {
   MockWorkoutExerciseDao() {
     _i1.throwOnMissingStub(this);
   }
@@ -473,14 +310,22 @@ class MockWorkoutExerciseDao extends _i1.Mock
           as String);
 
   @override
-  _i9.Future<_i2.Database> get database =>
+  _i2.Logger get logger =>
+      (super.noSuchMethod(
+            Invocation.getter(#logger),
+            returnValue: _FakeLogger_0(this, Invocation.getter(#logger)),
+          )
+          as _i2.Logger);
+
+  @override
+  _i9.Future<_i3.Database> get database =>
       (super.noSuchMethod(
             Invocation.getter(#database),
-            returnValue: _i9.Future<_i2.Database>.value(
-              _FakeDatabase_0(this, Invocation.getter(#database)),
+            returnValue: _i9.Future<_i3.Database>.value(
+              _FakeDatabase_1(this, Invocation.getter(#database)),
             ),
           )
-          as _i9.Future<_i2.Database>);
+          as _i9.Future<_i3.Database>);
 
   @override
   _i5.WorkoutExercise fromMap(Map<String, dynamic>? map) =>
@@ -522,6 +367,20 @@ class MockWorkoutExerciseDao extends _i1.Mock
           as _i9.Future<List<_i5.WorkoutExercise>>);
 
   @override
+  _i9.Future<List<_i5.WorkoutExercise>> getWorkoutExercisesByWorkoutTemplateId(
+    String? workoutTemplateId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getWorkoutExercisesByWorkoutTemplateId, [
+              workoutTemplateId,
+            ]),
+            returnValue: _i9.Future<List<_i5.WorkoutExercise>>.value(
+              <_i5.WorkoutExercise>[],
+            ),
+          )
+          as _i9.Future<List<_i5.WorkoutExercise>>);
+
+  @override
   _i9.Future<List<_i5.WorkoutExercise>> getWorkoutExercisesByExerciseSlug(
     String? exerciseSlug,
   ) =>
@@ -555,6 +414,18 @@ class MockWorkoutExerciseDao extends _i1.Mock
   _i9.Future<int> deleteWorkoutExercisesByWorkoutId(String? workoutId) =>
       (super.noSuchMethod(
             Invocation.method(#deleteWorkoutExercisesByWorkoutId, [workoutId]),
+            returnValue: _i9.Future<int>.value(0),
+          )
+          as _i9.Future<int>);
+
+  @override
+  _i9.Future<int> deleteWorkoutExercisesByWorkoutTemplateId(
+    String? workoutTemplateId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteWorkoutExercisesByWorkoutTemplateId, [
+              workoutTemplateId,
+            ]),
             returnValue: _i9.Future<int>.value(0),
           )
           as _i9.Future<int>);
@@ -653,7 +524,7 @@ class MockWorkoutExerciseDao extends _i1.Mock
 /// A class which mocks [WorkoutSetDao].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockWorkoutSetDao extends _i1.Mock implements _i12.WorkoutSetDao {
+class MockWorkoutSetDao extends _i1.Mock implements _i11.WorkoutSetDao {
   MockWorkoutSetDao() {
     _i1.throwOnMissingStub(this);
   }
@@ -670,14 +541,22 @@ class MockWorkoutSetDao extends _i1.Mock implements _i12.WorkoutSetDao {
           as String);
 
   @override
-  _i9.Future<_i2.Database> get database =>
+  _i2.Logger get logger =>
+      (super.noSuchMethod(
+            Invocation.getter(#logger),
+            returnValue: _FakeLogger_0(this, Invocation.getter(#logger)),
+          )
+          as _i2.Logger);
+
+  @override
+  _i9.Future<_i3.Database> get database =>
       (super.noSuchMethod(
             Invocation.getter(#database),
-            returnValue: _i9.Future<_i2.Database>.value(
-              _FakeDatabase_0(this, Invocation.getter(#database)),
+            returnValue: _i9.Future<_i3.Database>.value(
+              _FakeDatabase_1(this, Invocation.getter(#database)),
             ),
           )
-          as _i9.Future<_i2.Database>);
+          as _i9.Future<_i3.Database>);
 
   @override
   _i6.WorkoutSet fromMap(Map<String, dynamic>? map) =>

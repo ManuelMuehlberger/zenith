@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/workout.dart';
+import '../models/workout_template.dart';
+import '../models/workout_exercise.dart';
 import '../services/workout_session_service.dart';
+import '../services/workout_template_service.dart';
 import '../utils/navigation_helper.dart';
 
 class ExpandableWorkoutCard extends StatefulWidget {
-  final Workout workout;
+  // Unified: support either a concrete Workout (legacy usage) or a WorkoutTemplate (preferred)
+  final Workout? workout;
+  final WorkoutTemplate? template;
+  final Future<List<WorkoutExercise>> Function(String templateId)? loadTemplateExercises;
+
   final VoidCallback onEditPressed;
   final VoidCallback onMorePressed;
   final int index;
@@ -14,13 +21,18 @@ class ExpandableWorkoutCard extends StatefulWidget {
 
   const ExpandableWorkoutCard({
     super.key,
-    required this.workout,
+    this.workout,
+    this.template,
+    this.loadTemplateExercises,
     required this.onEditPressed,
     required this.onMorePressed,
     required this.index,
     this.onDragStartedCallback,
     this.onDragEndCallback,
-  });
+  }) : assert(
+          (workout != null) != (template != null),
+          'Provide exactly one of workout or template',
+        );
 
   @override
   State<ExpandableWorkoutCard> createState() => _ExpandableWorkoutCardState();
@@ -31,6 +43,30 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
   bool _isExpanded = false;
   late AnimationController _animationController;
   late Animation<double> _expandAnimation;
+
+  // For template mode: lazily loaded exercises preview
+  List<WorkoutExercise>? _templateExercises;
+  bool _loadingTemplateExercises = false;
+
+  bool get _isTemplate => widget.template != null;
+
+  String get _displayName =>
+      _isTemplate ? widget.template!.name : widget.workout!.name;
+
+  IconData get _displayIcon =>
+      _isTemplate ? _iconFromCodePoint(widget.template!.iconCodePoint) : widget.workout!.icon;
+
+  Color get _displayColor => _isTemplate
+      ? Color(widget.template!.colorValue ?? 0xFF2196F3)
+      : widget.workout!.color;
+
+  List<WorkoutExercise> get _effectiveExercises =>
+      _isTemplate ? (_templateExercises ?? const []) : widget.workout!.exercises;
+
+  int get _exerciseCount => _effectiveExercises.length;
+
+  int get _totalSets =>
+      _effectiveExercises.fold(0, (sum, e) => sum + e.sets.length);
 
   @override
   void initState() {
@@ -43,6 +79,10 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
       parent: _animationController,
       curve: Curves.easeInOut,
     );
+
+    if (_isTemplate) {
+      _loadTemplateExercises();
+    }
   }
 
   @override
@@ -51,11 +91,44 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
     super.dispose();
   }
 
+  Future<void> _loadTemplateExercises() async {
+    if (_loadingTemplateExercises || !_isTemplate) return;
+    setState(() {
+      _loadingTemplateExercises = true;
+    });
+    try {
+      final items = await (widget.loadTemplateExercises != null
+          ? widget.loadTemplateExercises!(widget.template!.id)
+          : WorkoutTemplateService.instance.getTemplateExercises(widget.template!.id));
+      if (mounted) {
+        setState(() {
+          _templateExercises = items;
+        });
+      }
+    } catch (_) {
+      // Fail silently for preview
+      if (mounted) {
+        setState(() {
+          _templateExercises = const [];
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingTemplateExercises = false;
+        });
+      }
+    }
+  }
+
   void _toggleExpansion() {
     setState(() {
       _isExpanded = !_isExpanded;
       if (_isExpanded) {
         _animationController.forward();
+        if (_isTemplate && _templateExercises == null) {
+          _loadTemplateExercises();
+        }
       } else {
         _animationController.reverse();
       }
@@ -63,11 +136,9 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
     HapticFeedback.lightImpact();
   }
 
-  int _estimateWorkoutDuration(Workout workout) {
+  int _estimateWorkoutDuration(int sets, int exerciseCount) {
     // Estimate 2-3 minutes per set plus 1 minute per exercise for setup
-    final totalSets = workout.totalSets;
-    final exerciseCount = workout.exercises.length;
-    return (totalSets * 3 + exerciseCount * 1).round();
+    return (sets * 3 + exerciseCount * 1).round();
   }
 
   Widget _buildWorkoutStat(String value, String label) {
@@ -93,11 +164,37 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
     );
   }
 
-  void _startWorkout() async {
+  Future<void> _startWorkout() async {
     try {
-      await WorkoutSessionService.instance.startWorkout(widget.workout);
+      if (_isTemplate) {
+        // Ensure exercises are loaded
+        if (_templateExercises == null) {
+          await _loadTemplateExercises();
+        }
+        final exercises = _templateExercises ?? const <WorkoutExercise>[];
+
+        // Build a transient Workout from the template to start the session
+        final template = widget.template!;
+        final templateAsWorkout = Workout(
+          id: template.id, // use template id as linkage
+          name: template.name,
+          description: template.description,
+          iconCodePoint: template.iconCodePoint,
+          colorValue: template.colorValue,
+          folderId: template.folderId,
+          notes: template.notes,
+          status: WorkoutStatus.template,
+          exercises: exercises,
+        );
+
+        await WorkoutSessionService.instance.startWorkout(templateAsWorkout);
+      } else {
+        // Backward compatibility: start from a Workout if provided
+        await WorkoutSessionService.instance.startWorkout(widget.workout!);
+      }
+
       HapticFeedback.mediumImpact();
-      
+
       if (mounted) {
         // Navigate to the Workouts tab (index 1)
         // The WorkoutBuilderScreen on that tab will then display the ActiveWorkoutScreen
@@ -121,13 +218,23 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
 
   @override
   Widget build(BuildContext context) {
+    final exerciseCount = _exerciseCount;
+    final totalSets = _totalSets;
+    final isTemplate = _isTemplate;
+
     return LongPressDraggable<Map<String, dynamic>>(
-      key: ValueKey(widget.workout.id),
-      data: {
-        'workoutId': widget.workout.id,
-        'index': widget.index,
-        'type': 'workout',
-      },
+      key: ValueKey(isTemplate ? widget.template!.id : widget.workout!.id),
+      data: isTemplate
+          ? {
+              'templateId': widget.template!.id,
+              'index': widget.index,
+              'type': 'template',
+            }
+          : {
+              'workoutId': widget.workout!.id,
+              'index': widget.index,
+              'type': 'workout',
+            },
       delay: const Duration(milliseconds: 500),
       onDragStarted: () {
         HapticFeedback.mediumImpact();
@@ -157,7 +264,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    widget.workout.icon,
+                    _displayIcon,
                     color: Colors.white,
                     size: 24,
                   ),
@@ -168,7 +275,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.workout.name,
+                        _displayName,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -177,7 +284,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${widget.workout.exercises.length} exercise${widget.workout.exercises.length != 1 ? 's' : ''} • ${widget.workout.totalSets} sets',
+                        '$exerciseCount exercise${exerciseCount != 1 ? 's' : ''} • $totalSets sets',
                         style: const TextStyle(color: Colors.white70),
                       ),
                     ],
@@ -218,7 +325,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.workout.name,
+                      _displayName,
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontWeight: FontWeight.w600,
@@ -227,7 +334,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${widget.workout.exercises.length} exercise${widget.workout.exercises.length != 1 ? 's' : ''} • ${widget.workout.totalSets} sets',
+                      '$exerciseCount exercise${exerciseCount != 1 ? 's' : ''} • $totalSets sets',
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                   ],
@@ -264,12 +371,12 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: widget.workout.color.withAlpha((255 * 0.2).round()),
+                          color: _displayColor.withAlpha((255 * 0.2).round()),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
-                          widget.workout.icon,
-                          color: widget.workout.color,
+                          _displayIcon,
+                          color: _displayColor,
                           size: 24,
                         ),
                       ),
@@ -284,7 +391,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                               children: [
                                 Expanded(
                                   child: Text(
-                                    widget.workout.name,
+                                    _displayName,
                                     style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
@@ -308,7 +415,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '${widget.workout.exercises.length} ${widget.workout.exercises.length == 1 ? "exercise" : "exercises"}',
+                                    '$exerciseCount ${exerciseCount == 1 ? "exercise" : "exercises"}',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.grey[400],
@@ -322,7 +429,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '${widget.workout.totalSets} ${widget.workout.totalSets == 1 ? "set" : "sets"}',
+                                    '$totalSets ${totalSets == 1 ? "set" : "sets"}',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.grey[400],
@@ -355,7 +462,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                     ],
                   ),
                 ),
-                
+
                 // Expandable content
                 SizeTransition(
                   sizeFactor: _expandAnimation,
@@ -387,27 +494,27 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                             children: [
                               Expanded(
                                 child: _buildWorkoutStat(
-                                  '${widget.workout.exercises.length}',
-                                  widget.workout.exercises.length == 1 ? 'exercise' : 'exercises',
+                                  '$exerciseCount',
+                                  exerciseCount == 1 ? 'exercise' : 'exercises',
                                 ),
                               ),
                               Expanded(
                                 child: _buildWorkoutStat(
-                                  '${widget.workout.totalSets}',
-                                  widget.workout.totalSets == 1 ? 'set' : 'sets',
+                                  '$totalSets',
+                                  totalSets == 1 ? 'set' : 'sets',
                                 ),
                               ),
                               Expanded(
                                 child: _buildWorkoutStat(
-                                  '~${_estimateWorkoutDuration(widget.workout)}',
+                                  '~${_estimateWorkoutDuration(totalSets, exerciseCount)}',
                                   'min',
                                 ),
                               ),
                             ],
                           ),
-                          
-                          // Exercise list preview
-                          if (widget.workout.exercises.isNotEmpty) ...[
+
+                          // Exercise list preview (only build when expanded to avoid offstage duplicates in tests)
+                          if (_isExpanded && _effectiveExercises.isNotEmpty) ...[
                             const SizedBox(height: 20),
                             Text(
                               'Exercises',
@@ -418,7 +525,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                               ),
                             ),
                             const SizedBox(height: 8),
-                            ...widget.workout.exercises.take(3).map((exercise) => 
+                            ..._effectiveExercises.take(3).map((exercise) => 
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 4.0),
                                 child: Row(
@@ -452,11 +559,11 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                                 ),
                               ),
                             ),
-                            if (widget.workout.exercises.length > 3)
+                            if (_effectiveExercises.length > 3)
                               Padding(
                                 padding: const EdgeInsets.only(top: 4.0),
                                 child: Text(
-                                  '+${widget.workout.exercises.length - 3} more ${widget.workout.exercises.length - 3 == 1 ? "exercise" : "exercises"}',
+                                  '+${_effectiveExercises.length - 3} more ${_effectiveExercises.length - 3 == 1 ? "exercise" : "exercises"}',
                                   style: TextStyle(
                                     color: Colors.grey[500],
                                     fontSize: 12,
@@ -465,9 +572,9 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                                 ),
                               ),
                           ],
-                          
+
                           const SizedBox(height: 24),
-                          
+
                           // Start workout button
                           SizedBox(
                             width: double.infinity,
@@ -512,5 +619,35 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
         ),
       ),
     );
+  }
+
+  // Map code point to a constant IconData when known, otherwise fallback to dynamic IconData
+  IconData _iconFromCodePoint(int? codePoint) {
+    if (codePoint == null) return Icons.fitness_center;
+    switch (codePoint) {
+      case 0xe1a3: // fitness_center
+        return Icons.fitness_center;
+      case 0xe02f: // directions_run
+        return Icons.directions_run;
+      case 0xe047: // pool
+        return Icons.pool;
+      case 0xe52f: // sports
+        return Icons.sports;
+      case 0xe531: // sports_gymnastics
+        return Icons.sports_gymnastics;
+      case 0xe532: // sports_handball
+        return Icons.sports_handball;
+      case 0xe533: // sports_martial_arts
+        return Icons.sports_martial_arts;
+      case 0xe534: // sports_mma
+        return Icons.sports_mma;
+      case 0xe535: // sports_motorsports
+        return Icons.sports_motorsports;
+      case 0xe536: // sports_score
+        return Icons.sports_score;
+      default:
+        // Fallback so arbitrary Material icons render correctly for templates
+        return IconData(codePoint, fontFamily: 'MaterialIcons');
+    }
   }
 }

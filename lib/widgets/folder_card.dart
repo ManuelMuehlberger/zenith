@@ -7,6 +7,7 @@ class FolderCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onMorePressed;
   final Function(String) onWorkoutDropped;
+  final int? itemCount;
 
   const FolderCard({
     super.key,
@@ -14,22 +15,25 @@ class FolderCard extends StatelessWidget {
     required this.onTap,
     required this.onMorePressed,
     required this.onWorkoutDropped,
+    this.itemCount,
   });
 
   @override
   Widget build(BuildContext context) {
-    final workoutCount = WorkoutService.instance.getWorkoutsInFolder(folder.id).length;
+    final workoutCount = itemCount ?? WorkoutService.instance.getWorkoutsInFolder(folder.id).length;
     
     return DragTarget<Map<String, dynamic>>(
       onAcceptWithDetails: (details) async {
         final data = details.data;
         if (data['type'] == 'workout') {
           onWorkoutDropped(data['workoutId']);
+        } else if (data['type'] == 'template') {
+          onWorkoutDropped(data['templateId']);
         }
       },
       onWillAcceptWithDetails: (details) {
         final data = details.data;
-        return data['type'] == 'workout';
+        return data['type'] == 'workout' || data['type'] == 'template';
       },
       builder: (context, candidateData, rejectedData) {
         final isHovering = candidateData.isNotEmpty;

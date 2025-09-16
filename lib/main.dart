@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:logging/logging.dart';
 import 'screens/home_screen.dart';
 import 'screens/workout_builder_screen.dart';
 import 'screens/insights_screen.dart';
@@ -14,17 +15,29 @@ import 'utils/navigation_helper.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Set up logging
+  Logger.root.level = Level.INFO; // Set log level to INFO
+  Logger.root.onRecord.listen((record) {
+    debugPrint('${record.level.name}: ${record.time}: ${record.message}');
+  });
+  
+  final logger = Logger('ZenithApp');
+  logger.info('Application startup initiated');
+  
   // Load exercises, workouts, and active session on app startup
   await ExerciseService.instance.loadExercises();
   await WorkoutService.instance.loadData();
   await WorkoutSessionService.instance.loadActiveSession();
   await UserService.instance.loadUserProfile();
-  debugPrint("[Main] Initializing LiveWorkoutNotificationService...");
+  logger.info('Core services initialized');
+  
+  logger.info('Initializing LiveWorkoutNotificationService...');
   await LiveWorkoutNotificationService().initialize(); 
-  debugPrint("[Main] LiveWorkoutNotificationService initialized.");
+  logger.info('LiveWorkoutNotificationService initialized.');
   
   WorkoutSessionService.instance.initializeNotificationCallback();
   
+  logger.info('Starting application');
   runApp(const WorkoutTrackerApp());
 }
 

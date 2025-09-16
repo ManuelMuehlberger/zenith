@@ -3,6 +3,8 @@ import '../../models/typedefs.dart';
 import 'base_dao.dart';
 
 class WorkoutFolderDao extends BaseDao<WorkoutFolder> {
+  WorkoutFolderDao() : super('WorkoutFolderDao');
+
   @override
   String get tableName => 'WorkoutFolder';
 
@@ -32,12 +34,19 @@ class WorkoutFolderDao extends BaseDao<WorkoutFolder> {
   /// Get all workout folders ordered by orderIndex
   Future<List<WorkoutFolder>> getAllWorkoutFoldersOrdered() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      tableName,
-      orderBy: 'orderIndex ASC',
-    );
-    
-    return maps.map((map) => fromMap(map)).toList();
+    logger.fine('Getting all workout folders ordered by orderIndex');
+    try {
+      final List<Map<String, dynamic>> maps = await db.query(
+        tableName,
+        orderBy: 'orderIndex ASC',
+      );
+      final folders = maps.map((map) => fromMap(map)).toList();
+      logger.fine('Found ${folders.length} workout folders');
+      return folders;
+    } catch (e) {
+      logger.severe('Failed to get all workout folders: $e');
+      rethrow;
+    }
   }
 
   /// Update workout folder

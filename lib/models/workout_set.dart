@@ -76,7 +76,7 @@ class WorkoutSet {
       targetRestSeconds: targetRestSeconds == _undefined ? this.targetRestSeconds : targetRestSeconds as int?,
       actualReps: actualReps == _undefined ? this.actualReps : actualReps as int?,
       actualWeight: actualWeight == _undefined ? this.actualWeight : actualWeight as double?,
-      isCompleted: isCompleted == _undefined ? this.isCompleted : isCompleted as bool,
+      isCompleted: isCompleted == _undefined ? this.isCompleted : (isCompleted as bool?) ?? this.isCompleted,
     );
   }
 }
