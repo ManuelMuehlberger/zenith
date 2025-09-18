@@ -265,10 +265,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
                 right: 0,
                 child: ClipRRect(
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                    filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                     child: Container(
                       height: headerHeight,
-                      color: Colors.black54,
+                      color: AppConstants.HEADER_BG_COLOR_MEDIUM,
                       child: SafeArea(
                         bottom: false,
                         child: _buildHeaderContent(),
@@ -477,6 +477,10 @@ class _InsightsScreenState extends State<InsightsScreen> {
               ),
             ),
           ),
+          // Bottom spacer so last content isn't obscured by the translucent tab bar
+          SliverToBoxAdapter(
+            child: SizedBox(height: MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight),
+          ),
         ],
       ),
     );
@@ -525,6 +529,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
             ),
           ),
         ),
+        // Bottom spacer so calendar list items remain visible above the glass tab bar
+        SizedBox(height: MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight),
       ],
     );
   }

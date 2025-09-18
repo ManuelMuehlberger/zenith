@@ -43,6 +43,8 @@ class WorkoutSessionService {
   set exerciseService(ExerciseService svc) => _exerciseService = svc;
 
   Workout? _currentSession;
+  @visibleForTesting
+  set currentSession(Workout? session) => _currentSession = session;
   int _currentExerciseIndex = 0;
   int _currentSetIndex = 0;
 
@@ -292,11 +294,13 @@ class WorkoutSessionService {
 
 
   Future<void> updateSet(String exerciseId, String setId, {
+    int? targetReps,
+    double? targetWeight,
     int? actualReps,
     double? actualWeight,
     bool? isCompleted,
   }) async {
-    _logger.fine('Updating set $setId in exercise $exerciseId');
+    _logger.fine('Updating set $setId in exercise $exerciseId with: targetReps=$targetReps, targetWeight=$targetWeight, actualReps=$actualReps, actualWeight=$actualWeight, isCompleted=$isCompleted');
     if (_currentSession == null) {
       _logger.warning('No active session to update set');
       return;
@@ -318,11 +322,16 @@ class WorkoutSessionService {
     _currentExerciseIndex = exerciseIdx;
     _currentSetIndex = setIdx;
 
-    final updatedSet = exercise.sets[setIdx].copyWith(
-      actualReps: actualReps,
-      actualWeight: actualWeight,
-      isCompleted: isCompleted,
+    final currentSet = exercise.sets[setIdx];
+    final updatedSet = currentSet.copyWith(
+      targetReps: targetReps ?? currentSet.targetReps,
+      targetWeight: targetWeight ?? currentSet.targetWeight,
+      actualReps: actualReps ?? currentSet.actualReps,
+      actualWeight: actualWeight ?? currentSet.actualWeight,
+      isCompleted: isCompleted ?? currentSet.isCompleted,
     );
+    
+    _logger.finer('Set ${updatedSet.id} updated from ${currentSet.toMap()} to ${updatedSet.toMap()}');
 
     // Update the set in the database
     await _workoutSetDao.updateWorkoutSet(updatedSet);
@@ -387,6 +396,7 @@ class WorkoutSessionService {
   Future<Workout> completeWorkout({
     String? notes,
     int? mood,
+    Duration? durationOverride,
   }) async {
     _logger.info('Completing workout session: ${_currentSession?.id}');
     if (_currentSession == null) {
@@ -394,19 +404,31 @@ class WorkoutSessionService {
       throw Exception('No active workout session');
     }
 
-    // Round up duration to the next full minute
     final now = DateTime.now();
-    final startTime = _currentSession!.startedAt ?? DateTime.now();
-    final rawDuration = now.difference(startTime);
-    final needsRounding = rawDuration.inSeconds % 60 != 0;
-    final roundedDuration = needsRounding
-        ? Duration(minutes: rawDuration.inMinutes + 1)
-        : rawDuration;
-    final roundedEndTime = startTime.add(roundedDuration);
+    final startTime = _currentSession!.startedAt ?? now;
+
+    // Use override duration if provided, otherwise apply existing rounding behavior
+    Duration effectiveDuration;
+    if (durationOverride != null) {
+      effectiveDuration = durationOverride;
+    } else {
+      // Round up duration to the next full minute
+      final rawDuration = now.difference(startTime);
+      final needsRounding = rawDuration.inSeconds % 60 != 0;
+      effectiveDuration = needsRounding
+          ? Duration(minutes: rawDuration.inMinutes + 1)
+          : rawDuration;
+    }
+
+    _logger.fine('Completing workout: start=$startTime, '
+        '${durationOverride != null ? 'override=${durationOverride.inMinutes}m' : 'rounded=${effectiveDuration.inMinutes}m'}');
+
+    final endTime = startTime.add(effectiveDuration);
+    _logger.fine('Computed endTime: $endTime');
 
     final completedSession = _currentSession!.copyWith(
       status: WorkoutStatus.completed,
-      completedAt: roundedEndTime,
+      completedAt: endTime,
       notes: notes,
     );
 
@@ -419,8 +441,34 @@ class WorkoutSessionService {
     return completedSession;
   }
 
-  Future<void> clearActiveSession() async {
-    _logger.info('Clearing active session');
+  Future<void> clearActiveSession({bool deleteFromDb = false}) async {
+    _logger.info('Clearing active session. Delete from DB: $deleteFromDb');
+    if (deleteFromDb && _currentSession != null) {
+      final workoutId = _currentSession!.id;
+      _logger.info('Deleting workout and all associated data from database: $workoutId');
+
+      // Re-fetch the workout and its children from the DB to ensure we have the complete data to delete.
+      // This avoids issues with stale in-memory state.
+      final exercisesToDelete = await _workoutExerciseDao.getWorkoutExercisesByWorkoutId(workoutId);
+      
+      for (final exercise in exercisesToDelete) {
+        _logger.info('Deleting data for exercise: ${exercise.id}');
+        // Fetch sets for this specific exercise before deleting them.
+        final setsToDelete = await _workoutSetDao.getWorkoutSetsByWorkoutExerciseId(exercise.id);
+        for (final set in setsToDelete) {
+          _logger.fine('Deleting set: ${set.id}');
+          await _workoutSetDao.deleteWorkoutSet(set.id);
+        }
+        _logger.fine('Deleting exercise: ${exercise.id}');
+        await _workoutExerciseDao.deleteWorkoutExercise(exercise.id);
+      }
+      
+      // Finally, delete the main workout record.
+      _logger.info('Deleting workout record: $workoutId');
+      await _workoutDao.deleteWorkout(workoutId);
+      _logger.info('Workout deletion process complete for workout ID: $workoutId');
+    }
+    
     _currentSession = null;
     _currentExerciseIndex = 0;
     _currentSetIndex = 0;

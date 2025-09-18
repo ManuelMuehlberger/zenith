@@ -109,10 +109,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             right: 0,
             child: ClipRRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                 child: Container(
                   height: headerHeight,
-                  color: Colors.black54,
+                  color: AppConstants.HEADER_BG_COLOR_MEDIUM,
                   child: SafeArea(
                     bottom: false,
                     child: _buildHeaderContent(weightUnit),
@@ -597,7 +597,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             child: const Text('Abort'),
             onPressed: () async {
               Navigator.pop(context);
-              await WorkoutSessionService.instance.clearActiveSession();
+              await WorkoutSessionService.instance.clearActiveSession(deleteFromDb: true);
               if (mounted) {
                 // Navigate back to home and clear the entire navigation stack
                 Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
@@ -636,7 +636,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       ReorderService.instance.toggleReorderMode();
     }
     if (!mounted) return;
-    await Navigator.pushReplacement(
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => WorkoutCompletionScreen(session: _currentSession)),
     );

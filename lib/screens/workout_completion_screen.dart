@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import '../models/workout.dart';
 import '../services/workout_session_service.dart';
@@ -8,6 +9,7 @@ import '../utils/navigation_helper.dart';
 import '../main.dart';
 import 'package:confetti/confetti.dart';
 import '../constants/app_constants.dart';
+import 'package:logging/logging.dart';
 
 class WorkoutCompletionScreen extends StatefulWidget {
   final Workout session;
@@ -24,6 +26,8 @@ class WorkoutCompletionScreen extends StatefulWidget {
 class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
   final _notesController = TextEditingController();
   int? _selectedMood; // Using int for mood (1-5 scale)
+  Duration? _editedDuration;
+  final Logger _logger = Logger('WorkoutCompletionScreen');
   late ConfettiController _confettiController;
   final GlobalKey _finishButtonKey = GlobalKey();
   Offset? _confettiPosition;
@@ -124,14 +128,21 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              _buildSummaryItem(
-                                WorkoutSessionService.instance.formatDuration(
-                                  widget.session.completedAt != null 
-                                      ? widget.session.completedAt!.difference(widget.session.startedAt ?? DateTime.now()) 
-                                      : Duration.zero
+                              GestureDetector(
+                                key: const Key('duration_summary'),
+                                onTap: _showDurationPicker,
+                                child: _buildSummaryItem(
+                                  _formatDurationNoSeconds(
+                                    _stripSeconds(
+                                      _editedDuration ??
+                                          (widget.session.completedAt != null
+                                              ? widget.session.completedAt!.difference(widget.session.startedAt ?? DateTime.now())
+                                              : DateTime.now().difference(widget.session.startedAt ?? DateTime.now()))
+                                    )
+                                  ),
+                                  'Duration',
+                                  Icons.timer_outlined,
                                 ),
-                                'Duration',
-                                Icons.timer_outlined,
                               ),
                               Container(
                                 width: 1,
@@ -207,7 +218,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: List.generate(5, (index) {
-                        final moodValue = index + 1;
+                        final moodValue = 5 - index;
                         final isSelected = _selectedMood == moodValue;
                         return GestureDetector(
                           onTap: () {
@@ -217,8 +228,9 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                             });
                           },
                           child: Container(
+                            key: Key('mood_$moodValue'),
                             width: 60,
-                            height: 70,
+                            height: 60,
                             decoration: BoxDecoration(
                               color: isSelected ? Colors.blue.withAlpha((255 * 0.2).round()) : Colors.grey[900],
                               borderRadius: BorderRadius.circular(12),
@@ -232,16 +244,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                               children: [
                                 Text(
                                   _getMoodEmoji(moodValue),
-                                  style: const TextStyle(fontSize: 24),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _getMoodDisplayName(moodValue),
-                                  style: TextStyle(
-                                    color: isSelected ? Colors.blue : Colors.grey[400],
-                                    fontSize: 10,
-                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                  ),
+                                  style: const TextStyle(fontSize: 28),
                                 ),
                               ],
                             ),
@@ -256,7 +259,20 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                           child: SizedBox( 
                             height: 50,
                             child: TextButton(
-                              onPressed: () => Navigator.pop(context),
+                              key: const Key('back_to_workout_btn'),
+                              onPressed: () {
+                                _logger.fine('Back to Workout tapped');
+                                if (Navigator.of(context).canPop()) {
+                                  Navigator.of(context).pop();
+                                } else {
+                                  _logger.warning('Navigator cannot pop. Routing to MainScreen.');
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(builder: (_) => const MainScreen()),
+                                    (route) => false,
+                                  );
+                                  NavigationHelper.goToHomeTab();
+                                }
+                              },
                               style: TextButton.styleFrom(
                                 backgroundColor: Colors.grey[800],
                                 shape: RoundedRectangleBorder(
@@ -396,11 +412,91 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
     }
   }
 
+  Duration _stripSeconds(Duration d) => Duration(minutes: d.inMinutes);
+
+  String _formatDurationNoSeconds(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    if (h > 0) {
+      return '${h}h ${m}m';
+    }
+    return '${d.inMinutes}m';
+  }
+
+  void _showDurationPicker() {
+    final start = widget.session.startedAt ?? DateTime.now();
+    final initial = _editedDuration ??
+        (widget.session.completedAt != null
+            ? widget.session.completedAt!.difference(start)
+            : DateTime.now().difference(start));
+
+    showCupertinoModalPopup(
+      context: context,
+      builder: (ctx) {
+        Duration temp = initial;
+        return Container(
+          height: 320,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            border: Border.all(color: Colors.grey[900]!, width: 0.5),
+          ),
+          child: Column(
+            children: [
+              // Header with Cancel / Done
+              Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  border: Border(bottom: BorderSide(color: Colors.grey[800]!, width: 0.5)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CupertinoButton(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      onPressed: () { _logger.fine('Duration picker canceled'); Navigator.of(ctx).pop(); },
+                      child: const Text('Cancel'),
+                    ),
+                    CupertinoButton(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      onPressed: () {
+                        setState(() {
+                          _editedDuration = _stripSeconds(temp);
+                        });
+                        _logger.fine('Duration set to: ${_editedDuration != null ? _formatDurationNoSeconds(_editedDuration!) : 'null'}');
+                        Navigator.of(ctx).pop();
+                      },
+                      child: const Text(
+                        'Done',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: CupertinoTimerPicker(
+                  mode: CupertinoTimerPickerMode.hm,
+                  initialTimerDuration: _stripSeconds(initial),
+                  onTimerDurationChanged: (d) {
+                    temp = d;
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _completeWorkout() async { 
     try {
       await WorkoutSessionService.instance.completeWorkout(
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         mood: _selectedMood,
+        durationOverride: _editedDuration,
       );
       
       HapticFeedback.mediumImpact();

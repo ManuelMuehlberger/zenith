@@ -6,6 +6,7 @@ import '../models/workout_exercise.dart';
 import '../services/workout_session_service.dart';
 import '../services/workout_template_service.dart';
 import '../utils/navigation_helper.dart';
+import '../constants/app_constants.dart';
 
 class ExpandableWorkoutCard extends StatefulWidget {
   // Unified: support either a concrete Workout (legacy usage) or a WorkoutTemplate (preferred)
@@ -82,6 +83,41 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
 
     if (_isTemplate) {
       _loadTemplateExercises();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ExpandableWorkoutCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final bool wasTemplate = oldWidget.template != null;
+    final bool isTemplate = widget.template != null;
+
+    // If switching between modes (template vs workout), reset and (re)load as needed
+    if (wasTemplate != isTemplate) {
+      setState(() {
+        _templateExercises = null;
+        _loadingTemplateExercises = false;
+      });
+      if (isTemplate) {
+        _loadTemplateExercises();
+      }
+      return;
+    }
+
+    // In template mode, refresh the lazily-cached exercises when the template instance changes
+    if (isTemplate) {
+      final oldId = oldWidget.template!.id;
+      final newId = widget.template!.id;
+
+      // Reload if the id changed or we received a new template instance (e.g., after editing)
+      if (oldId != newId || oldWidget.template != widget.template) {
+        setState(() {
+          _templateExercises = null;
+          _loadingTemplateExercises = false;
+        });
+        _loadTemplateExercises();
+      }
     }
   }
 
@@ -246,9 +282,9 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
       feedback: Material(
         elevation: 8.0,
         borderRadius: BorderRadius.circular(16.0),
-        child: Container(
-          width: MediaQuery.of(context).size.width - 32,
-          decoration: BoxDecoration(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
+        decoration: BoxDecoration(
             color: Colors.blue.withAlpha((255 * 0.9).round()),
             borderRadius: BorderRadius.circular(16.0),
           ),
@@ -296,7 +332,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
         ),
       ),
       childWhenDragging: Container(
-        margin: const EdgeInsets.only(bottom: 12.0),
+        margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
         decoration: BoxDecoration(
           color: Colors.grey[800]?.withAlpha((255 * 0.5).round()),
           borderRadius: BorderRadius.circular(16),
@@ -345,7 +381,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
         ),
       ),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
+        margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
         decoration: BoxDecoration(
           color: Colors.grey[900],
           borderRadius: BorderRadius.circular(16),

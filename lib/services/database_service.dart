@@ -19,20 +19,19 @@ class DatabaseService {
 
   // Workout Management
   Future<List<Workout>> getWorkouts() async {
-    _logger.fine('Getting all workouts from SharedPreferences');
+    _logger.fine('Getting all workouts from SQL via WorkoutService');
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final workoutsJson = prefs.getStringList(_workoutHistoryKey) ?? [];
-      
-      final workouts = workoutsJson
-          .map((json) => Workout.fromMap(jsonDecode(json)))
-          .toList()
-        ..sort((a, b) => (b.startedAt ?? DateTime.now()).compareTo(a.startedAt ?? DateTime.now()));
-      
-      _logger.fine('Successfully retrieved ${workouts.length} workouts');
+      // Ensure in-memory cache is loaded from the SQL database
+      await WorkoutService.instance.loadData();
+      final workouts = List<Workout>.from(WorkoutService.instance.workouts)
+        ..sort(
+          (a, b) => (b.startedAt ?? DateTime.fromMillisecondsSinceEpoch(0))
+              .compareTo(a.startedAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
+        );
+      _logger.fine('Successfully retrieved ${workouts.length} workouts from SQL');
       return workouts;
     } catch (e) {
-      _logger.severe('Failed to get workouts: $e');
+      _logger.severe('Failed to get workouts from SQL: $e');
       return [];
     }
   }

@@ -196,4 +196,205 @@ void main() {
     final repsBController = (allTextFields[6].widget as TextFormField).controller;
     expect(repsBController!.text, '8');
   });
+
+  testWidgets('tapping reps field selects all text', (tester) async {
+    final exId = 'ex1';
+    final sets = [_set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 12, weight: 30.0)];
+    final exercise = _exercise(id: exId, templateId: 'tpl', slug: 'bench-press', sets: sets);
+
+    await tester.pumpWidget(_wrap(
+      EditExerciseCard(
+        exercise: exercise,
+        exerciseIndex: 0,
+        isNotesExpanded: false,
+        onToggleNotes: (_) {},
+        onRemoveExercise: (_) {},
+        onAddSet: (_) {},
+        onRemoveSet: (_, __) {},
+        onUpdateSet: (_, __, {int? targetReps, double? targetWeight, String? type, int? targetRestSeconds}) {},
+        onUpdateNotes: (_, __) {},
+        onToggleRepRange: (_, __) {},
+        weightUnit: 'kg',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final repsFieldFinder = find.byWidgetPredicate((widget) =>
+        widget is TextFormField && widget.controller?.text == '12');
+    expect(repsFieldFinder, findsOneWidget);
+
+    final repsField = tester.widget<TextFormField>(repsFieldFinder);
+    await tester.tap(repsFieldFinder);
+    await tester.pump();
+
+    expect(repsField.controller!.selection.baseOffset, 0);
+    expect(repsField.controller!.selection.extentOffset, 2);
+  });
+
+  testWidgets('tapping weight field selects all text', (tester) async {
+    final exId = 'ex1';
+    final sets = [_set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 12, weight: 30.5)];
+    final exercise = _exercise(id: exId, templateId: 'tpl', slug: 'bench-press', sets: sets);
+
+    await tester.pumpWidget(_wrap(
+      EditExerciseCard(
+        exercise: exercise,
+        exerciseIndex: 0,
+        isNotesExpanded: false,
+        onToggleNotes: (_) {},
+        onRemoveExercise: (_) {},
+        onAddSet: (_) {},
+        onRemoveSet: (_, __) {},
+        onUpdateSet: (_, __, {int? targetReps, double? targetWeight, String? type, int? targetRestSeconds}) {},
+        onUpdateNotes: (_, __) {},
+        onToggleRepRange: (_, __) {},
+        weightUnit: 'kg',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final weightFieldFinder = find.byWidgetPredicate((widget) =>
+        widget is TextFormField && widget.controller?.text == '30.5');
+    expect(weightFieldFinder, findsOneWidget);
+
+    final weightField = tester.widget<TextFormField>(weightFieldFinder);
+    await tester.tap(weightFieldFinder);
+    await tester.pump();
+
+    expect(weightField.controller!.selection.baseOffset, 0);
+    expect(weightField.controller!.selection.extentOffset, 4);
+  });
+
+  testWidgets('weight field allows multi-digit numbers and up to two decimal places', (tester) async {
+    final exId = 'ex1';
+    final sets = [_set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 12, weight: 0)];
+    final exercise = _exercise(id: exId, templateId: 'tpl', slug: 'bench-press', sets: sets);
+
+    await tester.pumpWidget(_wrap(
+      EditExerciseCard(
+        exercise: exercise,
+        exerciseIndex: 0,
+        isNotesExpanded: false,
+        onToggleNotes: (_) {},
+        onRemoveExercise: (_) {},
+        onAddSet: (_) {},
+        onRemoveSet: (_, __) {},
+        onUpdateSet: (_, __, {int? targetReps, double? targetWeight, String? type, int? targetRestSeconds}) {},
+        onUpdateNotes: (_, __) {},
+        onToggleRepRange: (_, __) {},
+        weightUnit: 'kg',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    // Find field by position, not by text, as text will change
+    final weightFieldFinder = find.byType(TextFormField).at(1);
+
+    // Check initial value
+    var weightField = tester.widget<TextFormField>(weightFieldFinder);
+    expect(weightField.controller!.text, '0.0');
+
+    // Enter a valid value
+    await tester.enterText(weightFieldFinder, '123.45');
+    await tester.pump();
+
+    // Check the updated value
+    weightField = tester.widget<TextFormField>(weightFieldFinder);
+    expect(weightField.controller!.text, '123.45');
+
+    // Enter an invalid value (too many decimal places)
+    await tester.enterText(weightFieldFinder, '123.456');
+    await tester.pump();
+
+    // Check that the value was truncated by the formatter
+    weightField = tester.widget<TextFormField>(weightFieldFinder);
+    expect(weightField.controller!.text, '123.45');
+  });
+
+  testWidgets('typing weight from empty: 1 -> 10 -> 100 does not auto-format mid-typing', (tester) async {
+    final exId = 'ex3';
+    final sets = [_set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 8, weight: null)];
+    final exercise = _exercise(id: exId, templateId: 'tpl', slug: 'ohp', sets: sets);
+
+    await tester.pumpWidget(_wrap(
+      EditExerciseCard(
+        exercise: exercise,
+        exerciseIndex: 0,
+        isNotesExpanded: false,
+        onToggleNotes: (_) {},
+        onRemoveExercise: (_) {},
+        onAddSet: (_) {},
+        onRemoveSet: (_, __) {},
+        onUpdateSet: (_, __, {int? targetReps, double? targetWeight, String? type, int? targetRestSeconds}) {},
+        onUpdateNotes: (_, __) {},
+        onToggleRepRange: (_, __) {},
+        weightUnit: 'kg',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final weightFieldFinder = find.byType(TextFormField).at(1);
+
+    await tester.enterText(weightFieldFinder, '1');
+    await tester.pump();
+    var field = tester.widget<TextFormField>(weightFieldFinder);
+    expect(field.controller!.text, '1');
+
+    await tester.enterText(weightFieldFinder, '10');
+    await tester.pump();
+    field = tester.widget<TextFormField>(weightFieldFinder);
+    expect(field.controller!.text, '10');
+
+    await tester.enterText(weightFieldFinder, '100');
+    await tester.pump();
+    field = tester.widget<TextFormField>(weightFieldFinder);
+    expect(field.controller!.text, '100');
+  });
+
+  testWidgets('select-all then delete weight keeps empty after blur', (tester) async {
+    final exId = 'ex4';
+    final sets = [_set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 8, weight: 1.0)];
+    final exercise = _exercise(id: exId, templateId: 'tpl', slug: 'row', sets: sets);
+
+    await tester.pumpWidget(_wrap(
+      EditExerciseCard(
+        exercise: exercise,
+        exerciseIndex: 0,
+        isNotesExpanded: false,
+        onToggleNotes: (_) {},
+        onRemoveExercise: (_) {},
+        onAddSet: (_) {},
+        onRemoveSet: (_, __) {},
+        onUpdateSet: (_, __, {int? targetReps, double? targetWeight, String? type, int? targetRestSeconds}) {},
+        onUpdateNotes: (_, __) {},
+        onToggleRepRange: (_, __) {},
+        weightUnit: 'kg',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final repsFieldFinder = find.byType(TextFormField).at(0);
+    final weightFieldFinder = find.byType(TextFormField).at(1);
+
+    // Ensure initial
+    var weightField = tester.widget<TextFormField>(weightFieldFinder);
+    expect(weightField.controller!.text, '1.0');
+
+    // Tap to select all (handled by onTap), then clear
+    await tester.tap(weightFieldFinder);
+    await tester.pump();
+    await tester.enterText(weightFieldFinder, '');
+    await tester.pump();
+
+    weightField = tester.widget<TextFormField>(weightFieldFinder);
+    expect(weightField.controller!.text, '');
+
+    // Blur by focusing reps field
+    await tester.tap(repsFieldFinder);
+    await tester.pump();
+
+    // Still empty after blur
+    weightField = tester.widget<TextFormField>(weightFieldFinder);
+    expect(weightField.controller!.text, '');
+  });
 }

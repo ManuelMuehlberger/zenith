@@ -42,6 +42,8 @@ class EditExerciseCard extends StatefulWidget {
 class _EditExerciseCardState extends State<EditExerciseCard> {
   late Map<String, TextEditingController> _repsControllers;
   late Map<String, TextEditingController> _weightControllers;
+  late Map<String, FocusNode> _repsFocusNodes;
+  late Map<String, FocusNode> _weightFocusNodes;
   late TextEditingController _notesController;
 
   @override
@@ -53,6 +55,8 @@ class _EditExerciseCardState extends State<EditExerciseCard> {
   void _initializeControllers() {
     _repsControllers = {};
     _weightControllers = {};
+    _repsFocusNodes = {};
+    _weightFocusNodes = {};
     
     for (final set in widget.exercise.sets) {
       final repsKey = 'reps_${widget.exercise.id}_${set.id}';
@@ -64,6 +68,8 @@ class _EditExerciseCardState extends State<EditExerciseCard> {
       _weightControllers[weightKey] = TextEditingController(
         text: set.targetWeight?.toString() ?? '',
       );
+      _repsFocusNodes[repsKey] = FocusNode();
+      _weightFocusNodes[weightKey] = FocusNode();
     }
     
     _notesController = TextEditingController(text: widget.exercise.notes ?? '');
@@ -88,37 +94,43 @@ class _EditExerciseCardState extends State<EditExerciseCard> {
     for (final setId in removedSetIds) {
       final repsKey = 'reps_${oldWidget.exercise.id}_$setId';
       _repsControllers.remove(repsKey)?.dispose();
+      _repsFocusNodes.remove(repsKey)?.dispose();
 
       final weightKey = 'weight_${oldWidget.exercise.id}_$setId';
       _weightControllers.remove(weightKey)?.dispose();
+      _weightFocusNodes.remove(weightKey)?.dispose();
     }
 
     // Add or update controllers for all current sets
     for (final set in newSets) {
       final repsKey = 'reps_${widget.exercise.id}_${set.id}';
       if (_repsControllers.containsKey(repsKey)) {
-        // Update existing controller if text differs
+        // Update existing controller if text differs and field not focused
         final controller = _repsControllers[repsKey]!;
         final newText = set.targetReps?.toString() ?? '';
-        if (controller.text != newText) {
+        final focus = _repsFocusNodes[repsKey];
+        if ((focus?.hasFocus ?? false) == false && controller.text != newText) {
           controller.text = newText;
         }
       } else {
-        // Add new controller
+        // Add new controller and focus node
         _repsControllers[repsKey] = TextEditingController(text: set.targetReps?.toString() ?? '');
+        _repsFocusNodes.putIfAbsent(repsKey, () => FocusNode());
       }
 
       final weightKey = 'weight_${widget.exercise.id}_${set.id}';
       if (_weightControllers.containsKey(weightKey)) {
-        // Update existing controller if text differs
+        // Update existing controller if text differs and field not focused
         final controller = _weightControllers[weightKey]!;
         final newText = set.targetWeight?.toString() ?? '';
-        if (controller.text != newText) {
+        final focus = _weightFocusNodes[weightKey];
+        if ((focus?.hasFocus ?? false) == false && controller.text != newText) {
           controller.text = newText;
         }
       } else {
-        // Add new controller
+        // Add new controller and focus node
         _weightControllers[weightKey] = TextEditingController(text: set.targetWeight?.toString() ?? '');
+        _weightFocusNodes.putIfAbsent(weightKey, () => FocusNode());
       }
     }
     
@@ -134,6 +146,12 @@ class _EditExerciseCardState extends State<EditExerciseCard> {
     }
     for (final controller in _weightControllers.values) {
       controller.dispose();
+    }
+    for (final node in _repsFocusNodes.values) {
+      node.dispose();
+    }
+    for (final node in _weightFocusNodes.values) {
+      node.dispose();
     }
     _notesController.dispose();
   }
@@ -496,6 +514,7 @@ Text(
       height: 36,
       child: TextFormField(
         controller: controller,
+        focusNode: _repsFocusNodes[key],
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         style: const TextStyle(color: Colors.white, fontSize: 15),
@@ -514,6 +533,11 @@ Text(
             borderSide: const BorderSide(color: Colors.blue, width: 1),
           ),
         ),
+        onTap: () {
+          if (controller.text.isNotEmpty) {
+            controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length);
+          }
+        },
         onChanged: (value) {
           final reps = int.tryParse(value);
           if (value.isEmpty || (reps != null && reps >= 0)) {
@@ -532,37 +556,59 @@ Text(
     
     return SizedBox(
       height: 36,
-      child: TextFormField(
-        controller: controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'))],
-        style: const TextStyle(color: Colors.white, fontSize: 15),
-        textAlign: TextAlign.center,
-        decoration: InputDecoration(
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          filled: true,
-          fillColor: Colors.grey[800],
-          suffixText: widget.weightUnit,
-          suffixStyle: TextStyle(
-            color: Colors.grey[400],
-            fontSize: 15,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Colors.blue, width: 1),
-          ),
-        ),
-        onChanged: (value) {
-          final weight = double.tryParse(value);
-          if (value.isEmpty || (weight != null && weight >= 0)) {
-            widget.onUpdateSet(widget.exerciseIndex, setIndex, targetWeight: value.isEmpty ? null : weight);
+      child: Focus(
+        focusNode: _weightFocusNodes[key],
+        onFocusChange: (hasFocus) {
+          if (!hasFocus) {
+            final txt = controller.text.trim();
+            final weight = double.tryParse(txt);
+            widget.onUpdateSet(
+              widget.exerciseIndex,
+              setIndex,
+              targetWeight: txt.isEmpty ? null : weight,
+            );
           }
         },
+        child: TextFormField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
+          style: const TextStyle(color: Colors.white, fontSize: 15),
+          textAlign: TextAlign.center,
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            filled: true,
+            fillColor: Colors.grey[800],
+            suffixText: widget.weightUnit,
+            suffixStyle: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 15,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.blue, width: 1),
+            ),
+          ),
+          onTap: () {
+            if (controller.text.isNotEmpty) {
+              controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length);
+            }
+          },
+          onFieldSubmitted: (value) {
+            final txt = value.trim();
+            final weight = double.tryParse(txt);
+            widget.onUpdateSet(
+              widget.exerciseIndex,
+              setIndex,
+              targetWeight: txt.isEmpty ? null : weight,
+            );
+          },
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/workout_template.dart';
 import 'expandable_workout_card.dart';
+import '../constants/app_constants.dart';
 
 class ReorderableWorkoutTemplateList extends StatelessWidget {
   final List<WorkoutTemplate> templates;
@@ -41,7 +42,7 @@ class ReorderableWorkoutTemplateList extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: AppConstants.SECTION_VERTICAL_GAP),
         _ReorderableWorkoutTemplateListView(
           templates: templates,
           folderId: folderId,
@@ -143,7 +144,7 @@ class _ReorderableWorkoutTemplateListViewState extends State<_ReorderableWorkout
         
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          height: isHovering ? 60 : 8,
+          height: isHovering ? 60 : 0,
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             color: isHovering ? Colors.blue.withAlpha((255 * 0.3).round()) : Colors.transparent,
@@ -198,6 +199,7 @@ class _ReorderableWorkoutTemplateListViewState extends State<_ReorderableWorkout
           duration: const Duration(milliseconds: 200),
           opacity: isDragged ? 0.5 : 1.0,
           child: ExpandableWorkoutCard(
+            key: ValueKey(template.id), // keep state tied to template identity so edits trigger didUpdateWidget
             template: template,
             index: index,
             onEditPressed: () => widget.onTemplateTap(template),

@@ -50,6 +50,12 @@ class FakeWorkoutExerciseDao extends WorkoutExerciseDao {
   }
 
   @override
+  Future<int> deleteWorkoutExercise(String id) async {
+    _byId.remove(id);
+    return 1;
+  }
+
+  @override
   Future<int> updateWorkoutExercise(WorkoutExercise workoutExercise) async {
     _byId[workoutExercise.id] = workoutExercise;
     return 1;
@@ -75,6 +81,12 @@ class FakeWorkoutSetDao extends WorkoutSetDao {
   @override
   Future<int> updateWorkoutSet(WorkoutSet workoutSet) async {
     _byId[workoutSet.id] = workoutSet;
+    return 1;
+  }
+
+  @override
+  Future<int> deleteWorkoutSet(String id) async {
+    _byId.remove(id);
     return 1;
   }
 
@@ -131,6 +143,36 @@ void main() {
     late FakeWorkoutSetDao workoutSetDao;
     late FakeNotificationService notificationService;
 
+    Workout _buildTemplate() {
+      // Build a template workout with one exercise and one set
+      final templateExerciseId = 'ex-template-1';
+      final templateSetId = 'set-template-1';
+
+      final templateExercise = WorkoutExercise(
+        id: templateExerciseId,
+        workoutTemplateId: 'template-1',
+        exerciseSlug: 'bench-press',
+        notes: 'Template notes',
+        orderIndex: 0,
+        sets: [
+          WorkoutSet(
+            id: templateSetId,
+            workoutExerciseId: templateExerciseId,
+            setIndex: 0,
+            targetReps: 10,
+            targetWeight: 50.0,
+          ),
+        ],
+      );
+
+      return Workout(
+        id: 'template-1',
+        name: 'Push Day',
+        exercises: [templateExercise],
+        status: WorkoutStatus.template,
+      );
+    }
+
     setUp(() async {
       // Mock SharedPreferences to avoid platform channel calls in tests
       SharedPreferences.setMockInitialValues({});
@@ -156,36 +198,6 @@ void main() {
     });
 
     group('startWorkout cloning behavior', () {
-      Workout _buildTemplate() {
-        // Build a template workout with one exercise and one set
-        final templateExerciseId = 'ex-template-1';
-        final templateSetId = 'set-template-1';
-
-        final templateExercise = WorkoutExercise(
-          id: templateExerciseId,
-          workoutTemplateId: 'template-1',
-          exerciseSlug: 'bench-press',
-          notes: 'Template notes',
-          orderIndex: 0,
-          sets: [
-            WorkoutSet(
-              id: templateSetId,
-              workoutExerciseId: templateExerciseId,
-              setIndex: 0,
-              targetReps: 10,
-              targetWeight: 50.0,
-            ),
-          ],
-        );
-
-        return Workout(
-          id: 'template-1',
-          name: 'Push Day',
-          exercises: [templateExercise],
-          status: WorkoutStatus.template,
-        );
-      }
-
       test('clones template exercises and sets with new IDs and correct foreign keys', () async {
         final template = _buildTemplate();
 
@@ -236,6 +248,131 @@ void main() {
         expect(session2.id, isNot(session1.id));
         expect(session2ExId, isNot(session1ExId));
         expect(session2SetId, isNot(session1SetId));
+      });
+    });
+
+    group('updateSet behavior', () {
+      test('updates only targetReps and preserves other values', () async {
+        final template = _buildTemplate();
+        final session = await service.startWorkout(template);
+        final exerciseId = session.exercises.first.id;
+        final setId = session.exercises.first.sets.first.id;
+
+        await service.updateSet(exerciseId, setId, targetReps: 12);
+
+        final updatedSet = service.currentSession!.exercises.first.sets.first;
+        expect(updatedSet.targetReps, 12);
+        expect(updatedSet.targetWeight, 50.0); // Preserved
+      });
+
+      test('updates only targetWeight and preserves other values', () async {
+        final template = _buildTemplate();
+        final session = await service.startWorkout(template);
+        final exerciseId = session.exercises.first.id;
+        final setId = session.exercises.first.sets.first.id;
+
+        await service.updateSet(exerciseId, setId, targetWeight: 55.0);
+
+        final updatedSet = service.currentSession!.exercises.first.sets.first;
+        expect(updatedSet.targetWeight, 55.0);
+        expect(updatedSet.targetReps, 10); // Preserved
+      });
+
+      test('updates multiple fields correctly in a single call', () async {
+        final template = _buildTemplate();
+        final session = await service.startWorkout(template);
+        final exerciseId = session.exercises.first.id;
+        final setId = session.exercises.first.sets.first.id;
+
+        await service.updateSet(
+          exerciseId,
+          setId,
+          targetReps: 8,
+          targetWeight: 60.0,
+          actualReps: 8,
+          actualWeight: 60.0,
+          isCompleted: true,
+        );
+
+        final updatedSet = service.currentSession!.exercises.first.sets.first;
+        expect(updatedSet.targetReps, 8);
+        expect(updatedSet.targetWeight, 60.0);
+        expect(updatedSet.actualReps, 8);
+        expect(updatedSet.actualWeight, 60.0);
+        expect(updatedSet.isCompleted, true);
+      });
+    });
+
+    group('clearActiveSession behavior', () {
+      test('deletes workout and all associated data from database when deleteFromDb is true', () async {
+        // Build a template with exercises and sets
+        final template = _buildTemplate();
+        final session = await service.startWorkout(template);
+
+        // Verify session and its children exist in their respective fake DAOs
+        expect(workoutDao.getInProgressWorkouts(), completion(isNotEmpty));
+        expect(workoutExerciseDao.getWorkoutExercisesByWorkoutId(session.id), completion(isNotEmpty));
+        expect(workoutSetDao.getWorkoutSetsByWorkoutExerciseId(session.exercises.first.id), completion(isNotEmpty));
+
+        // Clear session and delete from DB
+        await service.clearActiveSession(deleteFromDb: true);
+
+        // Verify session is null and all data is removed from fake DAOs
+        expect(service.currentSession, isNull);
+        expect(workoutDao.getInProgressWorkouts(), completion(isEmpty));
+        expect(workoutExerciseDao.getWorkoutExercisesByWorkoutId(session.id), completion(isEmpty));
+        // We need a way to check all sets, not just by one exercise ID.
+        // For this test, checking that the exercises are gone is sufficient to infer sets are gone.
+      });
+
+      test('does not delete workout from database when deleteFromDb is false', () async {
+        final template = Workout(id: 't1', name: 'Test', exercises: [], status: WorkoutStatus.template);
+        final session = await service.startWorkout(template);
+
+        // Verify session exists in DB
+        final workoutsBefore = await workoutDao.getInProgressWorkouts();
+        expect(workoutsBefore.any((w) => w.id == session.id), isTrue);
+
+        // Clear session without deleting from DB
+        await service.clearActiveSession(deleteFromDb: false);
+
+        // Verify session is null but still exists in DB
+        expect(service.currentSession, isNull);
+        final workoutsAfter = await workoutDao.getInProgressWorkouts();
+        expect(workoutsAfter.any((w) => w.id == session.id), isTrue);
+      });
+
+      test('deletes data correctly even if in-memory session state is stale', () async {
+        // 1. Start a workout to populate the database
+        final template = _buildTemplate();
+        final session = await service.startWorkout(template);
+        final exerciseId = session.exercises.first.id;
+
+        // Verify everything is in the fake DAOs
+        expect(await workoutDao.getInProgressWorkouts(), isNotEmpty);
+        expect(await workoutExerciseDao.getWorkoutExercisesByWorkoutId(session.id), isNotEmpty);
+        expect(await workoutSetDao.getWorkoutSetsByWorkoutExerciseId(exerciseId), isNotEmpty);
+
+        // 2. Simulate stale in-memory state by removing sets from the session object
+        // This mimics the bug condition where the in-memory object is incomplete.
+        final staleExercise = session.exercises.first.copyWith(sets: []);
+        final staleSession = session.copyWith(exercises: [staleExercise]);
+        
+        // Manually set the service's internal state to be stale
+        service.currentSession = staleSession;
+
+        // Pre-assertion: The in-memory session's exercise has no sets
+        expect(service.currentSession!.exercises.first.sets, isEmpty);
+
+        // 3. Call clearActiveSession. The fix ensures this method re-fetches from the DAO
+        // instead of trusting the stale in-memory `_currentSession`.
+        await service.clearActiveSession(deleteFromDb: true);
+
+        // 4. Assert that all data was deleted from the DAOs, proving re-fetching worked.
+        expect(service.currentSession, isNull);
+        expect(await workoutDao.getInProgressWorkouts(), isEmpty, reason: "Workout should be deleted");
+        expect(await workoutExerciseDao.getWorkoutExercisesByWorkoutId(session.id), isEmpty, reason: "Exercises should be deleted");
+        expect(await workoutSetDao.getWorkoutSetsByWorkoutExerciseId(exerciseId), isEmpty, reason: "Sets should be deleted because of re-fetching");
       });
     });
   });

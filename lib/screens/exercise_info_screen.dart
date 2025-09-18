@@ -83,7 +83,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with TickerProv
 
     try {
       final insights = await InsightsService.instance.getExerciseInsights(
-        exerciseName: widget.exercise.name,
+        exerciseName: widget.exercise.slug,
         monthsBack: _selectedMonths,
       );
       setState(() {
@@ -99,73 +99,46 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with TickerProv
   }
 
   void _showTimePeriodPicker() {
-    showModalBottomSheet(
+    showCupertinoModalPopup<void>(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
+      builder: (ctx) => CupertinoActionSheet(
+        title: const Text('Select Time Period'),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() {
+                _selectedMonths = 3;
+              });
+              _loadExerciseInsights();
+            },
+            child: const Text('3 months'),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[600],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Text(
-                'Select Time Period',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                title: Text('3 months', style: Theme.of(context).textTheme.titleMedium),
-                trailing: _selectedMonths == 3 ? const Icon(Icons.check, color: Colors.blue) : null,
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _selectedMonths = 3;
-                  });
-                  _loadExerciseInsights();
-                },
-              ),
-              ListTile(
-                title: Text('6 months', style: Theme.of(context).textTheme.titleMedium),
-                trailing: _selectedMonths == 6 ? const Icon(Icons.check, color: Colors.blue) : null,
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _selectedMonths = 6;
-                  });
-                  _loadExerciseInsights();
-                },
-              ),
-              ListTile(
-                title: Text('1 year', style: Theme.of(context).textTheme.titleMedium),
-                trailing: _selectedMonths == 12 ? const Icon(Icons.check, color: Colors.blue) : null,
-                onTap: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _selectedMonths = 12;
-                  });
-                  _loadExerciseInsights();
-                },
-              ),
-              const SizedBox(height: 20),
-            ],
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() {
+                _selectedMonths = 6;
+              });
+              _loadExerciseInsights();
+            },
+            child: const Text('6 months'),
           ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() {
+                _selectedMonths = 12;
+              });
+              _loadExerciseInsights();
+            },
+            child: const Text('1 year'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancel'),
         ),
       ),
     );
@@ -179,14 +152,14 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with TickerProv
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(horizontal: AppConstants.PAGE_HORIZONTAL_PADDING),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ExerciseImageSection(exercise: widget.exercise),
-                const SizedBox(height: 24),
+                SizedBox(height: AppConstants.SECTION_VERTICAL_GAP),
                 ExerciseMuscleGroupsSection(exercise: widget.exercise),
-                const SizedBox(height: 24),
+                SizedBox(height: AppConstants.SECTION_VERTICAL_GAP),
                 ExerciseInstructionsSection(exercise: widget.exercise),
               ],
             ),
@@ -204,7 +177,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with TickerProv
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.symmetric(horizontal: AppConstants.PAGE_HORIZONTAL_PADDING),
             child: ExerciseStatsSection(
               exerciseInsights: _exerciseInsights,
               isLoading: _isLoadingInsights,
@@ -232,7 +205,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with TickerProv
   @override
   Widget build(BuildContext context) {
     final double topPadding = MediaQuery.of(context).padding.top;
-    final double headerHeight = topPadding + kToolbarHeight + 60;
+    final double headerHeight = topPadding + kToolbarHeight + AppConstants.HEADER_EXTRA_HEIGHT;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -249,10 +222,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with TickerProv
             right: 0,
             child: ClipRRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                 child: Container(
                   height: headerHeight,
-                  color: Colors.black54.withOpacity(0.8),
+                  color: AppConstants.HEADER_BG_COLOR_STRONG,
                   child: SafeArea(
                     bottom: false,
                     child: Column(
@@ -263,7 +236,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with TickerProv
                           child: Row(
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                                icon: const Icon(CupertinoIcons.back, color: Colors.white),
                                 onPressed: () => Navigator.of(context).pop(),
                               ),
                               Expanded(
@@ -279,7 +252,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with TickerProv
                         ),
                         // Segmented control
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                          padding: EdgeInsets.symmetric(horizontal: AppConstants.PAGE_HORIZONTAL_PADDING, vertical: 8.0),
                           child: CupertinoSlidingSegmentedControl<int>(
                             children: <int, Widget>{
                               0: Padding(

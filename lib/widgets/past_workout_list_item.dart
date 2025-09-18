@@ -6,10 +6,12 @@ import '../constants/app_constants.dart';
 
 class PastWorkoutListItem extends StatelessWidget {
   final Workout workout;
+  final VoidCallback? onDeleted;
 
   const PastWorkoutListItem({
     super.key,
     required this.workout,
+    this.onDeleted,
   });
 
   String _formatWeight(double weight) {
@@ -56,16 +58,19 @@ class PastWorkoutListItem extends StatelessWidget {
       animation: UserService.instance,
       builder: (context, _) {
         return GestureDetector(
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            final result = await Navigator.push<bool>(
               context,
               MaterialPageRoute(
                 builder: (context) => WorkoutDetailScreen(workout: workout),
               ),
             );
+            if (result == true) {
+              onDeleted?.call();
+            }
           },
           child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
+            margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
             decoration: BoxDecoration(
               color: Colors.grey[900],
               borderRadius: BorderRadius.circular(16),

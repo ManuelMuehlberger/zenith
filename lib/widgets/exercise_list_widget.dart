@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'dart:ui';
 import '../models/exercise.dart';
 import '../services/exercise_service.dart';
+import '../constants/app_constants.dart';
 
 class ExerciseListWidget extends StatefulWidget {
   final Function(Exercise) onExerciseSelected;
@@ -213,9 +214,9 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
               if (widget.title != null || widget.trailing != null)
                 ClipRRect(
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                    filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                     child: Container(
-                      color: Colors.black54,
+                      color: AppConstants.HEADER_BG_COLOR_MEDIUM,
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       child: Row(
                         children: [
@@ -236,9 +237,9 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
               // Search bar with glass effect
               ClipRRect(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                  filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                   child: Container(
-                    color: Colors.black54,
+                    color: AppConstants.HEADER_BG_COLOR_MEDIUM,
                     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                     child: CupertinoSearchTextField(
                       controller: _searchController,
@@ -258,10 +259,10 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
               if (muscleGroups.isNotEmpty)
                 ClipRRect(
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                    filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                     child: Container(
                       height: 52,
-                      color: Colors.black54,
+                      color: AppConstants.HEADER_BG_COLOR_MEDIUM,
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,

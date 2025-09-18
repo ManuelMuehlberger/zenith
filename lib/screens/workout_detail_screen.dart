@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import '../models/exercise.dart';
 import '../models/workout.dart';
 import '../models/workout_exercise.dart';
-import '../services/database_service.dart';
+import '../services/workout_service.dart';
 import '../services/exercise_service.dart';
 import '../services/user_service.dart';
 import '../utils/unit_converter.dart';
@@ -288,9 +288,9 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
 
     if (confirmed == true) {
       try {
-        await DatabaseService.instance.deleteWorkout(widget.workout.id);
+        await WorkoutService.instance.deleteWorkout(widget.workout.id);
         if (mounted) {
-          Navigator.of(context).pop(); // Go back to the previous screen
+          Navigator.of(context).pop(true); // Go back to the previous screen
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('"${widget.workout.name}" deleted.'),
@@ -555,10 +555,10 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
             right: 0,
             child: ClipRRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                 child: Container(
                   height: headerHeight,
-                  color: Colors.black54.withOpacity(0.8),
+                  color: AppConstants.HEADER_BG_COLOR_STRONG,
                   child: SafeArea(
                     bottom: false,
                     child: Row(

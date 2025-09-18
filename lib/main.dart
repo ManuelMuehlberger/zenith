@@ -11,6 +11,8 @@ import 'services/workout_session_service.dart';
 import 'services/user_service.dart';
 import 'services/live_workout_notification_service.dart';
 import 'utils/navigation_helper.dart';
+import 'dart:ui';
+import 'constants/app_constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,7 +66,7 @@ class WorkoutTrackerApp extends StatelessWidget {
           systemOverlayStyle: SystemUiOverlayStyle.light,
         ),
         bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          backgroundColor: Colors.black.withValues(alpha: 0.8), // "glass" background
+          backgroundColor: Colors.transparent,
           selectedItemColor: Colors.blue,
           unselectedItemColor: Colors.grey,
           type: BottomNavigationBarType.fixed,
@@ -166,35 +168,50 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          HapticFeedback.selectionClick();
-          setState(() {
-            _currentIndex = index;
-          });
-          if (index == 0 && _homeScreenKey.currentState != null) {
-            _homeScreenKey.currentState!.loadWorkouts();
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+      bottomNavigationBar: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppConstants.BOTTOM_BAR_BG_COLOR,
+              border: Border(
+                top: BorderSide(color: AppConstants.HEADER_STROKE_COLOR, width: AppConstants.HEADER_STROKE_WIDTH),
+              ),
+            ),
+            child: BottomNavigationBar(
+              backgroundColor: Colors.transparent,
+              currentIndex: _currentIndex,
+              onTap: (index) {
+                HapticFeedback.selectionClick();
+                setState(() {
+                  _currentIndex = index;
+                });
+                if (index == 0 && _homeScreenKey.currentState != null) {
+                  _homeScreenKey.currentState!.loadWorkouts();
+                }
+              },
+              items: const [
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.home),
+                  label: 'Home',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.fitness_center),
+                  label: 'Workouts',
+                ),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.analytics),
+                  label: 'Insights',
+                ),
+              ],
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.fitness_center),
-            label: 'Workouts',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.analytics),
-            label: 'Insights',
-          ),
-        ],
+        ),
       ),
     );
   }

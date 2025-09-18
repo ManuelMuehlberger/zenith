@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/exercise.dart';
 import '../../models/muscle_group.dart';
+import '../../constants/app_constants.dart';
 
 class ExerciseMuscleGroupsSection extends StatelessWidget {
   final Exercise exercise;
@@ -38,7 +39,7 @@ class ExerciseMuscleGroupsSection extends StatelessWidget {
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12.0),
+        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,7 +72,7 @@ Text(
                   ],
                 ),
               ),
-              const SizedBox(width: 16), // Space between columns
+              SizedBox(width: AppConstants.ITEM_HORIZONTAL_GAP), // Space between columns
               // Secondary section
               Expanded(
                 flex: 1,

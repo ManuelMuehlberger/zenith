@@ -11,6 +11,7 @@ import '../widgets/folder_card.dart';
 import '../widgets/reorderable_workout_template_list.dart';
 import 'create_workout_screen.dart';
 import 'active_workout_screen.dart';
+import '../constants/app_constants.dart';
 
 class WorkoutBuilderScreen extends StatefulWidget {
   const WorkoutBuilderScreen({super.key});
@@ -144,10 +145,10 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
               right: 0,
               child: ClipRRect(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                  filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                   child: Container(
                     height: headerHeight,
-                    color: Colors.black54,
+                    color: AppConstants.HEADER_BG_COLOR_MEDIUM,
                     child: SafeArea(
                       bottom: false,
                       child: _buildHeaderContent(),
@@ -237,6 +238,9 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
         SliverToBoxAdapter(
           child: _buildContent(),
         ),
+        SliverToBoxAdapter(
+          child: SizedBox(height: MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight),
+        ),
       ],
     );
   }
@@ -266,7 +270,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
           transform: Matrix4.identity()..scale(showAnimation ? 1.02 : 1.0),
           child: ClipRRect(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+              filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 width: double.infinity,

@@ -111,7 +111,15 @@ class WorkoutExerciseDao extends BaseDao<WorkoutExercise> {
 
   /// Delete workout exercise
   Future<int> deleteWorkoutExercise(WorkoutExerciseId id) async {
-    return await delete(id);
+    logger.fine('Deleting workout exercise with id: $id');
+    try {
+      final result = await delete(id);
+      logger.fine('Successfully deleted workout exercise with id: $id. Rows affected: $result');
+      return result;
+    } catch (e) {
+      logger.severe('Failed to delete workout exercise with id: $id. Error: $e');
+      rethrow;
+    }
   }
 
   /// Delete workout exercises by workout ID

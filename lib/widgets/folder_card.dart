@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/workout_folder.dart';
 import '../services/workout_service.dart';
+import '../constants/app_constants.dart';
 
 class FolderCard extends StatelessWidget {
   final WorkoutFolder folder;
@@ -42,7 +43,7 @@ class FolderCard extends StatelessWidget {
           curve: Curves.easeInOut,
           transform: Matrix4.identity()..scale(isHovering ? 1.05 : 1.0),
           margin: EdgeInsets.only(
-            bottom: isHovering ? 12.0 : 8.0,
+            bottom: isHovering ? AppConstants.CARD_VERTICAL_GAP + 4.0 : AppConstants.CARD_VERTICAL_GAP,
             left: isHovering ? 4.0 : 0.0,
             right: isHovering ? 4.0 : 0.0,
           ),
@@ -125,58 +126,60 @@ class FolderCard extends StatelessWidget {
                             ),
                             if (isHovering) ...[
                               const SizedBox(height: 8),
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withAlpha((255 * 0.2).round()),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Colors.white.withAlpha((255 * 0.3).round()),
-                                    width: 1,
+                              Center(
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withAlpha((255 * 0.2).round()),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: Colors.white.withAlpha((255 * 0.3).round()),
+                                      width: 1,
+                                    ),
                                   ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.move_down_outlined,
-                                      color: Colors.white,
-                                      size: 14,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    const Text(
-                                      'Drop workout here',
-                                      style: TextStyle(
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.move_down_outlined,
                                         color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
+                                        size: 14,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 6),
+                                      const Text(
+                                        'Drop workout here',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
                           ],
                         ),
                       ),
-                      AnimatedContainer(
+                      AnimatedOpacity(
                         duration: const Duration(milliseconds: 200),
-                        width: isHovering ? 48 : 40,
-                        height: isHovering ? 48 : 40,
-                        decoration: BoxDecoration(
-                          color: isHovering 
-                              ? Colors.white.withAlpha((255 * 0.1).round())
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(isHovering ? 12 : 8),
-                        ),
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.more_vert, 
-                            color: isHovering ? Colors.white : Colors.grey,
-                            size: isHovering ? 24 : 24,
+                        opacity: isHovering ? 0.0 : 1.0,
+                        child: SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: IgnorePointer(
+                            ignoring: isHovering,
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.more_vert,
+                                color: Colors.grey,
+                                size: 24,
+                              ),
+                              onPressed: onMorePressed,
+                            ),
                           ),
-                          onPressed: onMorePressed,
                         ),
                       ),
                     ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../models/exercise.dart';
 import '../widgets/exercise_list_widget.dart';
+import '../constants/app_constants.dart';
 
 class ExercisePickerScreen extends StatelessWidget {
   const ExercisePickerScreen({super.key});
@@ -37,9 +38,9 @@ class ExercisePickerScreen extends StatelessWidget {
             height: screenHeaderHeight,
             child: ClipRRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                 child: Container(
-                  color: Colors.black54, 
+                  color: AppConstants.HEADER_BG_COLOR_MEDIUM, 
                   child: SafeArea( 
                     bottom: false, 
                     child: SizedBox(

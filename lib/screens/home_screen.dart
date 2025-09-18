@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:logging/logging.dart';
+import '../constants/app_constants.dart';
 import '../models/workout.dart';
 import '../services/workout_service.dart';
+import '../services/user_service.dart';
 import 'settings_screen.dart';
 import '../widgets/past_workout_list_item.dart';
 
@@ -148,12 +150,21 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               final workout = _workoutHistory[index];
                               return Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                child: PastWorkoutListItem(workout: workout),
+                                child: PastWorkoutListItem(
+                                  workout: workout,
+                                  onDeleted: () {
+                                    // Refresh recent workouts after a deletion from detail screen
+                                    loadWorkouts();
+                                  },
+                                ),
                               );
                             },
                             childCount: _workoutHistory.length,
                           ),
                         ),
+              SliverToBoxAdapter(
+                child: SizedBox(height: MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight),
+              ),
             ],
           ),
           Positioned(
@@ -162,10 +173,10 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             right: 0,
             child: ClipRRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.black54.withOpacity(0.8),
+                    color: AppConstants.HEADER_BG_COLOR_STRONG,
                   ),
                   child: Column(
                     children: [
@@ -180,14 +191,21 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         height: MediaQuery.of(context).padding.top + kToolbarHeight,
                         child: Row(
                           children: [
-                            const Expanded(
-                              child: Text(
-                                'Home',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                            Expanded(
+                              child: AnimatedBuilder(
+                                animation: UserService.instance,
+                                builder: (context, _) {
+                                  final name = UserService.instance.currentProfile?.name.trim();
+                                  final greeting = (name != null && name.isNotEmpty) ? 'Hey, $name!' : 'Hey!';
+                                  return Text(
+                                    greeting,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                             IconButton(
