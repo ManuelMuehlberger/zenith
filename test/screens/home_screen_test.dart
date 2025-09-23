@@ -66,9 +66,15 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert
-      // Header and section
-      expect(find.text('Hey!'), findsOneWidget);
-      expect(find.text('Recent Workouts'), findsOneWidget);
+      // Initially the section header shows the greeting (animated switch after 2s)
+      expect(find.byKey(const ValueKey('greeting_title')), findsOneWidget);
+      expect(find.byKey(const ValueKey('recent_title')), findsNothing);
+
+      // After 2 seconds + animation, it should switch to "Recent Workouts"
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byKey(const ValueKey('greeting_title')), findsNothing);
+      expect(find.byKey(const ValueKey('recent_title')), findsOneWidget);
 
       // Completed workout appears
       expect(find.text('Completed Session'), findsOneWidget);
@@ -100,7 +106,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert
-      expect(find.text('Recent Workouts'), findsOneWidget);
+      // Wait for the section header to switch to "Recent Workouts"
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byKey(const ValueKey('recent_title')), findsOneWidget);
       expect(find.text('No workouts yet'), findsOneWidget);
       expect(find.text('In Progress Only'), findsNothing);
     });

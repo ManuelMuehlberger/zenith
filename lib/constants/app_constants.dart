@@ -39,6 +39,13 @@ class AppConstants {
   static const double HEADER_STROKE_WIDTH = 0.5; // Thin separator stroke width for headers (if used)
   static const Color HEADER_STROKE_COLOR = Color(0x59FFFFFF); // ~35% white stroke for subtle borders
 
+  // Card visual constants
+  // Background: semi-opaque dark surface for iOS-style cards
+  static const Color CARD_BG_COLOR = Color(0xCC101010);
+  // Subtle hairline stroke for glass/dark iOS aesthetics
+  static const double CARD_STROKE_WIDTH = 0.5;
+  static const Color CARD_STROKE_COLOR = HEADER_STROKE_COLOR;
+
   // Header text styles (shared across screens)
   static const double HEADER_TITLE_FONT_SIZE = 24.0;
   static const FontWeight HEADER_TITLE_FONT_WEIGHT = FontWeight.bold;
@@ -47,6 +54,56 @@ class AppConstants {
     fontSize: HEADER_TITLE_FONT_SIZE,
     fontWeight: HEADER_TITLE_FONT_WEIGHT,
     color: HEADER_TITLE_COLOR,
+  );
+
+  // Small header title (collapsed app bar)
+  static const double HEADER_SMALL_TITLE_FONT_SIZE = 18.0;
+  static const FontWeight HEADER_SMALL_TITLE_FONT_WEIGHT = FontWeight.w600;
+  static const TextStyle HEADER_SMALL_TITLE_TEXT_STYLE = TextStyle(
+    fontSize: HEADER_SMALL_TITLE_FONT_SIZE,
+    fontWeight: HEADER_SMALL_TITLE_FONT_WEIGHT,
+    color: HEADER_TITLE_COLOR,
+  );
+
+  // Large header title (expanded app bar)
+  static const double HEADER_LARGE_TITLE_FONT_SIZE = 34.0;
+  static const FontWeight HEADER_LARGE_TITLE_FONT_WEIGHT = FontWeight.w700;
+  static const TextStyle HEADER_LARGE_TITLE_TEXT_STYLE = TextStyle(
+    fontSize: HEADER_LARGE_TITLE_FONT_SIZE,
+    fontWeight: HEADER_LARGE_TITLE_FONT_WEIGHT,
+    color: HEADER_TITLE_COLOR,
+  );
+
+  // iOS-centric text styles for content
+  static const Color TEXT_PRIMARY_COLOR = Color(0xFFFFFFFF);
+  static const Color TEXT_SECONDARY_COLOR = Color(0xFFB0B0B0);
+  static const Color TEXT_TERTIARY_COLOR = Color(0xFF8A8A8A);
+
+  // Titles used in list items and section headers (e.g., exercise names)
+  static const double IOS_TITLE_FONT_SIZE = 18.0;
+  static const FontWeight IOS_TITLE_FONT_WEIGHT = FontWeight.w600;
+  static const TextStyle IOS_TITLE_TEXT_STYLE = TextStyle(
+    fontSize: IOS_TITLE_FONT_SIZE,
+    fontWeight: IOS_TITLE_FONT_WEIGHT,
+    color: TEXT_PRIMARY_COLOR,
+  );
+
+  // Default body text for iOS
+  static const double IOS_BODY_FONT_SIZE = 17.0;
+  static const FontWeight IOS_BODY_FONT_WEIGHT = FontWeight.w400;
+  static const TextStyle IOS_BODY_TEXT_STYLE = TextStyle(
+    fontSize: IOS_BODY_FONT_SIZE,
+    fontWeight: IOS_BODY_FONT_WEIGHT,
+    color: TEXT_PRIMARY_COLOR,
+  );
+
+  // Secondary/label text (e.g., chips, meta)
+  static const double IOS_LABEL_FONT_SIZE = 13.0;
+  static const FontWeight IOS_LABEL_FONT_WEIGHT = FontWeight.w500;
+  static const TextStyle IOS_LABEL_TEXT_STYLE = TextStyle(
+    fontSize: IOS_LABEL_FONT_SIZE,
+    fontWeight: IOS_LABEL_FONT_WEIGHT,
+    color: TEXT_SECONDARY_COLOR,
   );
 
 }

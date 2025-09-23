@@ -48,6 +48,27 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
     super.dispose();
   }
 
+  Widget _buildMuscleGroupChip(BuildContext context, String muscleGroup, bool isPrimary) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: isPrimary ? Colors.blue.withAlpha((255 * 0.2).round()) : Colors.grey[800],
+        border: Border.all(
+          color: isPrimary ? Colors.blue : Colors.grey[600]!,
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        muscleGroup,
+        style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+              color: isPrimary ? Colors.blue : AppConstants.TEXT_SECONDARY_COLOR,
+              fontWeight: isPrimary ? FontWeight.w600 : AppConstants.IOS_LABEL_FONT_WEIGHT,
+            ),
+      ),
+    );
+  }
+
   void _filterExercises() {
     setState(() {
       List<Exercise> exercises = ExerciseService.instance.exercises;
@@ -102,21 +123,21 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                     Icon(
                       CupertinoIcons.search,
                       size: 64,
-                      color: Colors.grey[600],
+                      color: AppConstants.TEXT_TERTIARY_COLOR,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'No exercises found',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.grey[600],
+                      style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
+                        color: AppConstants.TEXT_SECONDARY_COLOR,
                         fontSize: 16,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Try adjusting your search or filters',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[700],
+                      style: AppConstants.IOS_BODY_TEXT_STYLE.copyWith(
+                        color: AppConstants.TEXT_TERTIARY_COLOR,
                         fontSize: 13,
                       ),
                     ),
@@ -125,33 +146,30 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
               )
             : ListView.builder(
                 padding: EdgeInsets.only(
-                  left: 16.0,
-                  right: 16.0,
+                  left: AppConstants.PAGE_HORIZONTAL_PADDING,
+                  right: AppConstants.PAGE_HORIZONTAL_PADDING,
                   // Add space for ExerciseListWidget's own headers AND any additional top padding from parent
                   top: internalHeaderHeight + widget.additionalTopPadding + 20, 
-                  bottom: 16.0,
+                  bottom: AppConstants.PAGE_HORIZONTAL_PADDING,
                 ),
                 itemCount: _filteredExercises.length,
                 itemBuilder: (context, index) {
                   final exercise = _filteredExercises[index];
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
+                    padding: EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
                     child: CupertinoButton(
                       padding: EdgeInsets.zero,
                       onPressed: () => widget.onExerciseSelected(exercise),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.grey[900]?.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(16.0),
+                          color: AppConstants.CARD_BG_COLOR,
+                          borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
                           border: Border.all(
-                            color: Colors.grey[800]?.withOpacity(0.3) ?? Colors.transparent,
-                            width: 0.5,
+                            color: AppConstants.CARD_STROKE_COLOR,
+                            width: AppConstants.CARD_STROKE_WIDTH,
                           ),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 18,
-                        ),
+                        padding: EdgeInsets.all(AppConstants.CARD_PADDING),
                         child: Row(
                           children: [
                             Expanded(
@@ -160,36 +178,26 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                                 children: [
                                   Text(
                                     exercise.name,
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontSize: 18,
-                                    ),
+                                    style: AppConstants.IOS_TITLE_TEXT_STYLE,
                                   ),
                                   const SizedBox(height: 6),
-                                  Text(
-                                    exercise.primaryMuscleGroup.name,
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Colors.blue,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  if (exercise.secondaryMuscleGroups.isNotEmpty) ...[
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      exercise.secondaryMuscleGroups.map((g) => g.name).join(' • '),
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: Colors.grey[400],
-                                        fontSize: 13,
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 6,
+                                    children: [
+                                      _buildMuscleGroupChip(context, exercise.primaryMuscleGroup.name, true),
+                                      ...exercise.secondaryMuscleGroups.map(
+                                        (g) => _buildMuscleGroupChip(context, g.name, false),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
                             const SizedBox(width: 12),
                             Icon(
                               CupertinoIcons.chevron_right,
-                              color: Colors.grey[500],
+                              color: AppConstants.TEXT_SECONDARY_COLOR,
                               size: 16,
                             ),
                           ],
@@ -217,7 +225,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                     filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                     child: Container(
                       color: AppConstants.HEADER_BG_COLOR_MEDIUM,
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      padding: EdgeInsets.symmetric(horizontal: AppConstants.PAGE_HORIZONTAL_PADDING, vertical: 8.0),
                       child: Row(
                         children: [
                           if (widget.title != null)
@@ -240,14 +248,14 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                   filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                   child: Container(
                     color: AppConstants.HEADER_BG_COLOR_MEDIUM,
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                    padding: EdgeInsets.symmetric(horizontal: AppConstants.PAGE_HORIZONTAL_PADDING, vertical: 12.0),
                     child: CupertinoSearchTextField(
                       controller: _searchController,
                       placeholder: 'Search exercises...',
-                      placeholderStyle: TextStyle(color: Colors.grey[400]), // Keep placeholder specific for now
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16),
+                      placeholderStyle: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(color: AppConstants.TEXT_SECONDARY_COLOR),
+                      style: AppConstants.IOS_BODY_TEXT_STYLE,
                       decoration: BoxDecoration(
-                        color: Colors.grey[900]?.withOpacity(0.6),
+                        color: Colors.grey[900]?.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(10.0),
                       ),
                     ),
@@ -263,7 +271,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                     child: Container(
                       height: 52,
                       color: AppConstants.HEADER_BG_COLOR_MEDIUM,
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                      padding: EdgeInsets.symmetric(horizontal: AppConstants.PAGE_HORIZONTAL_PADDING, vertical: 10.0),
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: muscleGroups.length,
@@ -274,15 +282,13 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                             padding: const EdgeInsets.only(right: 8.0),
                             child: CupertinoButton(
                               padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 2.0),
-                              color: isSelected ? Colors.blue : Colors.grey[800]?.withOpacity(0.7),
+                              color: isSelected ? Colors.blue : Colors.grey[800]?.withValues(alpha: 0.7),
                               borderRadius: BorderRadius.circular(12.0),
                               onPressed: () => _selectMuscleGroup(muscleGroup),
                               child: Text(
                                 muscleGroup,
-                                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: isSelected ? Colors.white : Colors.grey[300],
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 13,
+                                style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                                  color: isSelected ? AppConstants.TEXT_PRIMARY_COLOR : AppConstants.TEXT_SECONDARY_COLOR,
                                 ),
                               ),
                             ),

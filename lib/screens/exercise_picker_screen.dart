@@ -50,7 +50,7 @@ class ExercisePickerScreen extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.only(left: 8.0),
                             child: IconButton(
-                              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                              icon: const Icon(Icons.arrow_back_ios_new, color: AppConstants.HEADER_TITLE_COLOR),
                               onPressed: () => Navigator.of(context).pop(),
                               tooltip: 'Back',
                             ),
@@ -59,7 +59,7 @@ class ExercisePickerScreen extends StatelessWidget {
                             child: Text(
                               'Select Exercise',
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w500),
+                              style: AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE,
                             ),
                           ),
                           const SizedBox(width: 56), // This can remain const
