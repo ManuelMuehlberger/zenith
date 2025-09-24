@@ -61,9 +61,12 @@ class ExerciseDao extends BaseDao<Exercise> {
       instructions: map['instructions'] != null
           ? List<String>.from(jsonDecode(map['instructions']) as List)
           : [],
+      equipment: (map['equipment'] as String?) ?? '',
       image: map['image'] as String,
       animation: map['animation'] as String,
-      isBodyWeightExercise: map['isBodyWeightExercise'] == 1,
+      isBodyWeightExercise: map['isBodyWeightExercise'] is int
+          ? map['isBodyWeightExercise'] == 1
+          : (map['isBodyWeightExercise'] ?? false),
     );
   }
 
@@ -76,6 +79,7 @@ class ExerciseDao extends BaseDao<Exercise> {
       'secondaryMuscleGroups': jsonEncode(
           exercise.secondaryMuscleGroups.map((e) => e.name).toList()),
       'instructions': jsonEncode(exercise.instructions),
+      'equipment': exercise.equipment,
       'image': exercise.image,
       'animation': exercise.animation,
       'isBodyWeightExercise': exercise.isBodyWeightExercise ? 1 : 0,

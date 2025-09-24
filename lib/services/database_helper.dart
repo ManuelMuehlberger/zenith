@@ -21,7 +21,7 @@ class DatabaseHelper {
   static final Logger _logger = Logger('DatabaseHelper');
 
   static const String _dbName = 'workout_tracker.db';
-  static const int _dbVersion = 4; // Updated version for WorkoutTemplate
+  static const int _dbVersion = 6; // Added Exercise.equipment column and TOML bodyweight mapping
 
   Future<Database> get database async {
     if (_database != null) {
@@ -80,6 +80,7 @@ class DatabaseHelper {
           primaryMuscleGroup TEXT NOT NULL,
           secondaryMuscleGroups TEXT, -- JSON encoded list
           instructions TEXT, -- JSON encoded list
+          equipment TEXT,
           image TEXT,
           animation TEXT,
           isBodyWeightExercise INTEGER DEFAULT 0, -- 0 for false, 1 for true
@@ -257,6 +258,7 @@ class DatabaseHelper {
             primaryMuscleGroup TEXT NOT NULL,
             secondaryMuscleGroups TEXT, -- JSON encoded list
             instructions TEXT, -- JSON encoded list
+            equipment TEXT,
             image TEXT,
             animation TEXT,
             isBodyWeightExercise INTEGER DEFAULT 0, -- 0 for false, 1 for true
@@ -337,6 +339,54 @@ class DatabaseHelper {
         _logger.info('Version 4 upgrades completed');
       }
       
+      if (oldVersion < 5) {
+        _logger.info('Applying version 5 upgrades');
+        // Add equipment column to Exercise table if it doesn't exist
+        try {
+          await db.execute('ALTER TABLE Exercise ADD COLUMN equipment TEXT');
+          _logger.info('Added equipment column to Exercise table');
+        } catch (e) {
+          _logger.info('equipment column already exists in Exercise table');
+        }
+        _logger.info('Version 5 upgrades completed');
+      }
+      
+      if (oldVersion < 6) {
+        _logger.info('Applying version 6 upgrades');
+        // Recreate Exercise table with proper schema and re-seed data
+        _logger.info('Recreating Exercise table for proper bodyweight handling');
+        try {
+          // Drop the existing Exercise table
+          await db.execute('DROP TABLE IF EXISTS Exercise');
+          
+          // Recreate the Exercise table with the correct schema
+          await db.execute('''
+            CREATE TABLE Exercise (
+              slug TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              primaryMuscleGroup TEXT NOT NULL,
+              secondaryMuscleGroups TEXT, -- JSON encoded list
+              instructions TEXT, -- JSON encoded list
+              equipment TEXT,
+              image TEXT,
+              animation TEXT,
+              isBodyWeightExercise INTEGER DEFAULT 0, -- 0 for false, 1 for true
+              FOREIGN KEY (primaryMuscleGroup) REFERENCES MuscleGroup (name)
+            )
+          ''');
+          
+          // Re-seed exercises from TOML file
+          final tomlString = await rootBundle.loadString('assets/gym_exercises_complete.toml');
+          await _seedExercisesFromToml(db, tomlString);
+          
+          _logger.info('Exercise table recreated and re-seeded successfully');
+        } catch (e) {
+          _logger.severe('Error during Exercise table recreation: $e');
+          rethrow;
+        }
+        _logger.info('Version 6 upgrades completed');
+      }
+      
       _logger.info('Database upgrade completed successfully');
     } catch (e) {
       _logger.severe('Error during database upgrade: $e');
@@ -401,9 +451,14 @@ class DatabaseHelper {
               'primaryMuscleGroup': primaryMuscleGroup,
               'secondaryMuscleGroups': jsonEncode(exerciseData['secondary_muscle_groups'] ?? []),
               'instructions': jsonEncode(exerciseData['instructions'] ?? []),
+              'equipment': exerciseData['equipment'] ?? '',
               'image': exerciseData['image'] ?? '',
               'animation': exerciseData['animation'] ?? '',
-              'isBodyWeightExercise': (exerciseData['is_bodyweight_exercise'] ?? false) ? 1 : 0,
+              'isBodyWeightExercise': (exerciseData['bodyweight'] is bool 
+                  ? (exerciseData['bodyweight'] ? 1 : 0)
+                  : (exerciseData['bodyweight'] is int
+                      ? exerciseData['bodyweight']
+                      : (exerciseData['bodyweight'] ?? false) ? 1 : 0)),
             };
             
             // Insert the exercise into the database

@@ -365,6 +365,8 @@ class ExportImportService {
       "primaryMuscleGroup": exercise.primaryMuscleGroup.name,
       "secondaryMuscleGroups": exercise.secondaryMuscleGroups.map((e) => e.name).toList(),
       "instructions": exercise.instructions,
+      "equipment": exercise.equipment,
+      "isBodyWeightExercise": exercise.isBodyWeightExercise,
       "image": exercise.image,
       "animation": exercise.animation,
     };

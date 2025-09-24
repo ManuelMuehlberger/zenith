@@ -1,3 +1,4 @@
+import 'dart:ui' show Color;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/constants/app_constants.dart';
 
@@ -15,6 +16,16 @@ void main() {
 
     test('DEFAULT_UNITS is correct', () {
       expect(AppConstants.DEFAULT_UNITS, Units.metric);
+    });
+
+    test('Card color constants are defined and correct', () {
+      // Existing card color
+      expect(AppConstants.CARD_BG_COLOR, const Color(0xCC101010));
+      // New exercise card background color should match design (home cards)
+      expect(AppConstants.EXERCISE_CARD_BG_COLOR, const Color(0xFF1A1A1A));
+      // Stroke constants remain consistent
+      expect(AppConstants.CARD_STROKE_WIDTH, isNonZero);
+      expect(AppConstants.CARD_STROKE_COLOR, AppConstants.HEADER_STROKE_COLOR);
     });
   });
 

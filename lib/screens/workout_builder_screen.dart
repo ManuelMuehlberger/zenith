@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:ui';
+import 'package:pull_down_button/pull_down_button.dart';
 import '../models/workout_template.dart';
 import '../models/workout_folder.dart';
 import '../services/workout_template_service.dart';
@@ -21,10 +23,12 @@ class WorkoutBuilderScreen extends StatefulWidget {
 }
 
 class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
+  final ScrollController _scrollController = ScrollController();
   String? _selectedFolderId;
   bool _isLoading = true;
   Timer? _timer;
   bool _isDragging = false;
+  bool _isPillMaximized = true;
 
   // Local caches for templates and counts (to keep the UI responsive and consistent)
   List<WorkoutTemplate> _templates = [];
@@ -35,6 +39,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     super.initState();
     _startTimer();
     _initialLoad();
+    _scrollController.addListener(_onScroll);
   }
 
   Future<void> _initialLoad() async {
@@ -82,6 +87,8 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -159,11 +166,8 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
             ),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _createWorkout,
-          backgroundColor: Colors.blue,
-          child: const Icon(Icons.add),
-        ),
+        floatingActionButton: _buildPillFloatingActionButton(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       ),
     );
   }
@@ -202,9 +206,24 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                 textAlign: isInsideFolder ? TextAlign.center : TextAlign.start, 
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.add, color: Colors.white, size: 28),
-              onPressed: () => _showCreateActionSheet(),
+            PullDownButton(
+              itemBuilder: (context) => [
+                if (_selectedFolderId == null)
+                  PullDownMenuItem(
+                    onTap: () => _showCreateFolderDialog(),
+                    title: 'Create Folder',
+                    icon: Icons.create_new_folder,
+                  ),
+                PullDownMenuItem(
+                  onTap: () => _createWorkout(),
+                  title: 'Create Workout',
+                  icon: Icons.fitness_center,
+                ),
+              ],
+              buttonBuilder: (context, showMenu) => IconButton(
+                icon: const Icon(Icons.add, color: Colors.white, size: 28),
+                onPressed: showMenu,
+              ),
             ),
           ],
         ),
@@ -227,6 +246,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     }
 
     return CustomScrollView(
+      controller: _scrollController,
       slivers: [
         SliverToBoxAdapter(
           child: SizedBox(height: headerHeight),
@@ -492,7 +512,7 @@ if (showAnimation) ...[
             ),
             const SizedBox(height: 8),
             Text(
-              inFolder ? 'Drag workouts here or tap + to create one in this folder.' : 'Tap the + button to create your first workout',
+              inFolder ? 'Drag workouts here or tap the + button to create one in this folder.' : 'Tap the + button to create your first workout',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[700],
@@ -1129,5 +1149,257 @@ if (showAnimation) ...[
       await _loadTemplates();
       setState(() {});
     }
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+
+    final offset = _scrollController.offset;
+    const double threshold = 50.0;
+
+    // At the top, always maximize the pill
+    if (offset < threshold) {
+      if (!_isPillMaximized) {
+        setState(() {
+          _isPillMaximized = true;
+        });
+      }
+      return;
+    }
+
+    // Scrolling down, minimize the pill
+    if (_scrollController.position.userScrollDirection == ScrollDirection.reverse) {
+      if (_isPillMaximized) {
+        setState(() {
+          _isPillMaximized = false;
+        });
+      }
+    }
+    // Scrolling up, maximize the pill
+    else if (_scrollController.position.userScrollDirection == ScrollDirection.forward) {
+      if (!_isPillMaximized) {
+        setState(() {
+          _isPillMaximized = true;
+        });
+      }
+    }
+  }
+
+  Widget _buildPillFloatingActionButton() {
+    final double bottomPadding = MediaQuery.of(context).padding.bottom > 0
+        ? MediaQuery.of(context).padding.bottom + 16.0
+        : 24.0;
+
+    // Maximized content with two separate tap targets
+    final Widget maximizedContent = ClipRRect(
+      borderRadius: BorderRadius.circular(28.0),
+      child: Row(
+        children: [
+          // Left side - Create Workout (tappable)
+          Expanded(
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: _createWorkout,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.add, color: Colors.white, size: 24.0),
+                    SizedBox(width: 8.0),
+                    Flexible(
+                      child: Text(
+                        'Create Workout',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.clip,
+                        maxLines: 1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Divider
+          Container(
+            width: 1.0,
+            height: 32.0,
+            color: Colors.white.withOpacity(0.3),
+          ),
+          // Right side - More Options (tappable)
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _showMoreOptionsSheet,
+              child: const SizedBox(
+                width: 56.0, // Fixed width for the tap target
+                height: 56.0,
+                child: Icon(
+                  Icons.keyboard_arrow_up,
+                  color: Colors.white,
+                  size: 24.0,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    // Minimized content
+    final Widget minimizedContent = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _isPillMaximized = true;
+          });
+        },
+        borderRadius: BorderRadius.circular(28.0),
+        child: const Center(
+          child: Icon(
+            Icons.add,
+            color: Colors.white,
+            size: 28.0,
+          ),
+        ),
+      ),
+    );
+
+    return Container(
+      margin: EdgeInsets.only(bottom: bottomPadding),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        height: 56.0,
+        width: _isPillMaximized ? 230.0 : 56.0,
+        decoration: BoxDecoration(
+          color: AppConstants.ACCENT_COLOR,
+          borderRadius: BorderRadius.circular(28.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 8.0,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Maximized state content
+            AnimatedOpacity(
+              opacity: _isPillMaximized ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeIn,
+              child: maximizedContent,
+            ),
+            // Minimized state content
+            AnimatedOpacity(
+              opacity: _isPillMaximized ? 0.0 : 1.0,
+              duration: const Duration(milliseconds: 150),
+              curve: Curves.easeIn,
+              child: minimizedContent,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMoreOptionsSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: AppConstants.CARD_BG_COLOR,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(AppConstants.SHEET_RADIUS),
+            topRight: Radius.circular(AppConstants.SHEET_RADIUS),
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(top: 12, bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[600],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Freeform Workout option (placeholder for future implementation)
+              ListTile(
+                leading: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: AppConstants.ACCENT_COLOR.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.edit_note,
+                    color: AppConstants.ACCENT_COLOR,
+                    size: 20,
+                  ),
+                ),
+                title: const Text(
+                  'Freeform Workout',
+                  style: TextStyle(color: Colors.white),
+                ),
+                subtitle: const Text(
+                  'Coming soon',
+                  style: TextStyle(color: Colors.grey),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Implement freeform workout
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Freeform workout coming soon!'),
+                      backgroundColor: Colors.orange,
+                    ),
+                  );
+                },
+              ),
+              // Create Folder option (only show when not in a folder)
+              if (_selectedFolderId == null)
+                ListTile(
+                  leading: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.create_new_folder,
+                      color: Colors.blue,
+                      size: 20,
+                    ),
+                  ),
+                  title: const Text(
+                    'Create Folder',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showCreateFolderDialog();
+                  },
+                ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

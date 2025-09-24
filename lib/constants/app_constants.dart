@@ -15,7 +15,7 @@ class AppConstants {
   };
 
   /// Default values
-  static const String DEFAULT_THEME = 'light';
+  static const String DEFAULT_THEME = 'dark';
   static const Units DEFAULT_UNITS = Units.metric;
 
   /// Spacing constants (unify card/list spacing across the app)
@@ -42,6 +42,8 @@ class AppConstants {
   // Card visual constants
   // Background: semi-opaque dark surface for iOS-style cards
   static const Color CARD_BG_COLOR = Color(0xCC101010);
+  // Exercise card background color to match home screen cards
+  static const Color EXERCISE_CARD_BG_COLOR = Color(0xFF1A1A1A); // Dark grey matching home screen
   // Subtle hairline stroke for glass/dark iOS aesthetics
   static const double CARD_STROKE_WIDTH = 0.5;
   static const Color CARD_STROKE_COLOR = HEADER_STROKE_COLOR;
@@ -79,6 +81,9 @@ class AppConstants {
   static const Color TEXT_SECONDARY_COLOR = Color(0xFFB0B0B0);
   static const Color TEXT_TERTIARY_COLOR = Color(0xFF8A8A8A);
 
+  // Accent color used throughout the app
+  static const Color ACCENT_COLOR = Color(0xFF007AFF); // Standard iOS blue
+
   // Titles used in list items and section headers (e.g., exercise names)
   static const double IOS_TITLE_FONT_SIZE = 18.0;
   static const FontWeight IOS_TITLE_FONT_WEIGHT = FontWeight.w600;
@@ -106,6 +111,14 @@ class AppConstants {
     color: TEXT_SECONDARY_COLOR,
   );
 
+  // Normal text style for general purpose
+  static const double IOS_NORMAL_FONT_SIZE = 15.0;
+  static const FontWeight IOS_NORMAL_FONT_WEIGHT = FontWeight.w500;
+  static const TextStyle IOS_NORMAL_TEXT_STYLE = TextStyle(
+    fontSize: IOS_NORMAL_FONT_SIZE,
+    fontWeight: IOS_NORMAL_FONT_WEIGHT,
+    color: TEXT_SECONDARY_COLOR,
+  );
 }
 
 /// Supported measurement units
@@ -130,4 +143,71 @@ enum Units {
       orElse: () => Units.metric, // Default to metric
     );
   }
+}
+
+/// Equipment types available in the application
+enum EquipmentType {
+  barbell('Barbell'),
+  dumbbell('Dumbbell'), // Note: Corrected spelling from "Dumbell" in data
+  cable('Cable'),
+  machine('Machine'),
+  none('None');
+
+  final String displayName;
+  const EquipmentType(this.displayName);
+
+  static EquipmentType fromString(String value) {
+    // Handle the misspelling in the data ("Dumbell" instead of "Dumbbell")
+    final normalizedValue = value == 'Dumbell' ? 'Dumbbell' : value;
+    return values.firstWhere(
+      (e) => e.displayName == normalizedValue,
+      orElse: () => EquipmentType.none,
+    );
+  }
+
+  static List<EquipmentType> get all => values.toList();
+}
+
+/// Muscle groups available in the application
+/// This mirrors the MuscleGroup enum in models/muscle_group.dart
+/// but provides a consistent reference for UI components
+enum AppMuscleGroup {
+  chest('Chest'),
+  triceps('Triceps'),
+  frontDeltoids('Front Deltoids'),
+  core('Core'),
+  lateralDeltoids('Lateral Deltoids'),
+  rearDeltoids('Rear Deltoids'),
+  shoulders('Shoulders'),
+  biceps('Biceps'),
+  lats('Lats'),
+  rotatorCuff('Rotator Cuffs'),
+  quads('Quads'),
+  hamstrings('Hamstrings'),
+  glutes('Glutes'),
+  abductors('Abductors'),
+  adductors('Adductors'),
+  lowerBack('Lower Back'),
+  trapezius('Trapezius'),
+  forearmFlexors('Forearm Flexors'),
+  forearms('Forearms'),
+  calves('Calves'),
+  abs('Abs'),
+  obliques('Obliques'),
+  back('Back'),
+  legs('Legs'),
+  cardio('Cardio'),
+  na('NA');
+
+  final String displayName;
+  const AppMuscleGroup(this.displayName);
+
+  static AppMuscleGroup fromString(String value) {
+    return values.firstWhere(
+      (e) => e.displayName == value,
+      orElse: () => AppMuscleGroup.na,
+    );
+  }
+
+  static List<AppMuscleGroup> get all => values.toList();
 }

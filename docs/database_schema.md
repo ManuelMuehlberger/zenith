@@ -87,6 +87,7 @@ erDiagram
         String primaryMuscleGroup FK
         List secondaryMuscleGroups FK
         List instructions
+        String equipment
         String image
         String animation
         bool isBodyWeightExercise
@@ -197,9 +198,22 @@ A catalog of available exercises.
 | `primaryMuscleGroup` | String | Foreign Key (MuscleGroup.name) | The primary muscle group targeted by the exercise. |
 | `secondaryMuscleGroups`| List (String) | Foreign Key (MuscleGroup.name) | A list of secondary muscle groups involved. (Stored as a serialized list, e.g., JSON string, in a typical DB). |
 | `instructions` | List (String) | Nullable | A list of instructions for performing the exercise. (Stored as a serialized list). |
+| `equipment` | String | Not Null | Required equipment to perform the exercise. Examples include: 'Barbell', 'Dumbbell', 'Machine', 'Cable', 'Kettlebell', 'None'. Stored as a plain string. |
 | `image` | String | Nullable | Path or URL to an image of the exercise. |
 | `animation` | String | Nullable | Path or URL to an animation demonstrating the exercise. |
 | `isBodyWeightExercise`| bool | Not Null, Default: false | Flag indicating if the exercise is a bodyweight exercise (no weight needed). |
+
+#### Exercise Import Mapping Notes
+
+- Source (TOML) fields:
+  - `equipment`: String, required
+  - `bodyweight`: bool
+- Database mapping:
+  - `equipment` → `Exercise.equipment` (String)
+  - `bodyweight` → `Exercise.isBodyWeightExercise` (bool)
+- Semantics:
+  - If `isBodyWeightExercise` is true, sets in the UI should not require or display external weight loading by default.
+  - `equipment` is informational (used for filtering, display, and guidance); no FK is enforced.
 
 ### `MuscleGroup`
 A lookup table for muscle groups.

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'dart:async';
 import 'package:logging/logging.dart';
 import '../constants/app_constants.dart';
 import '../models/workout.dart';
@@ -20,6 +21,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<Workout> _workoutHistory = [];
   bool _isLoading = true;
   bool _showGreetingTitle = true;
+  Timer? _greetingTimer;
 
   @override
   void initState() {
@@ -31,7 +33,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       }
     });
     // Show greeting in the header for 2 seconds on startup, then switch to "Recent Workouts"
-    Future.delayed(const Duration(seconds: 2), () {
+    _greetingTimer = Timer(const Duration(seconds: 2), () {
       if (!mounted) return;
       setState(() {
         _showGreetingTitle = false;
@@ -42,6 +44,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _greetingTimer?.cancel();
     super.dispose();
   }
 
@@ -207,42 +210,48 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
           // Content
           if (_isLoading)
-            const SliverFillRemaining(
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: Colors.blue,
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 32.0),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.blue,
+                  ),
                 ),
               ),
             )
           else if (_workoutHistory.isEmpty)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.fitness_center,
-                      size: 64,
-                      color: Colors.grey,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'No workouts yet',
-                      style: TextStyle(
-                        fontSize: 18,
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32.0),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.fitness_center,
+                        size: 64,
                         color: Colors.grey,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Start by creating a workout in the Builder tab',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
+                      const SizedBox(height: 16),
+                      const Text(
+                        'No workouts yet',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.grey,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Start by creating a workout in the Builder tab',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             )
