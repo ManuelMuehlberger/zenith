@@ -1,4 +1,5 @@
 import 'dart:ui' show Color;
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/constants/app_constants.dart';
 
@@ -26,6 +27,18 @@ void main() {
       // Stroke constants remain consistent
       expect(AppConstants.CARD_STROKE_WIDTH, isNonZero);
       expect(AppConstants.CARD_STROKE_COLOR, AppConstants.HEADER_STROKE_COLOR);
+    });
+
+    test('Button and action text constants are defined', () {
+      expect(AppConstants.BACK_BUTTON_TOOLTIP, 'Back');
+      expect(AppConstants.SELECT_EXERCISE_TITLE, 'Select Exercise');
+      expect(AppConstants.DONE_BUTTON_TEXT, 'Done');
+    });
+
+    test('Header button text style is defined correctly', () {
+      expect(AppConstants.HEADER_BUTTON_TEXT_STYLE.color, AppConstants.ACCENT_COLOR);
+      expect(AppConstants.HEADER_BUTTON_TEXT_STYLE.fontSize, 16);
+      expect(AppConstants.HEADER_BUTTON_TEXT_STYLE.fontWeight, FontWeight.w600);
     });
   });
 

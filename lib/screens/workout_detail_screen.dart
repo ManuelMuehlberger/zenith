@@ -114,11 +114,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
           const SizedBox(width: 12),
           Text(
             'Mood: ${moodLabels[moodIndex]}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+            style: AppConstants.IOS_NORMAL_TEXT_STYLE,
           ),
         ],
       ),
@@ -181,11 +177,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
           children: [
             Text(
               exercise.exerciseSlug,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppConstants.IOS_TITLE_TEXT_STYLE,
             ),
             const SizedBox(height: 12),
             ...exercise.sets.asMap().entries.map((entry) {
@@ -213,9 +205,8 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                       child: Center(
                         child: Text(
                           '${index + 1}',
-                          style: const TextStyle(
+                          style: AppConstants.IOS_SUBTEXT_STYLE.copyWith(
                             color: Colors.white,
-                            fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -227,19 +218,15 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                         children: [
                           Text(
                             '${set.actualReps ?? set.targetReps ?? 0} reps',
-                            style: TextStyle(
-                              color: set.isCompleted ? Colors.white : Colors.grey[400],
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                            style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
+                              color: set.isCompleted ? Colors.white : AppConstants.TEXT_SECONDARY_COLOR,
                             ),
                           ),
                           const SizedBox(width: 16),
                           Text(
                             _formatWeight(set.actualWeight ?? set.targetWeight ?? 0.0),
-                            style: TextStyle(
-                              color: set.isCompleted ? Colors.white : Colors.grey[400],
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                            style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
+                              color: set.isCompleted ? Colors.white : AppConstants.TEXT_SECONDARY_COLOR,
                             ),
                           ),
                         ],
@@ -318,19 +305,12 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
         const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: AppConstants.IOS_TITLE_TEXT_STYLE,
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
-            color: Colors.grey[400],
-            fontSize: 12,
-          ),
+          style: AppConstants.IOS_SUBTEXT_STYLE,
         ),
       ],
     );
@@ -390,19 +370,12 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                       children: [
                         Text(
                           widget.workout.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: AppConstants.HEADER_LARGE_TITLE_TEXT_STYLE,
                         ),
                         const SizedBox(height: 4),
                         Text(
                           _formatDate(widget.workout.startedAt ?? DateTime.now()),
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 14,
-                          ),
+                          style: AppConstants.IOS_SUBTITLE_TEXT_STYLE,
                         ),
                       ],
                     ),
@@ -477,20 +450,12 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                   children: [
                     const Text(
                       'Notes',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: AppConstants.IOS_TITLE_TEXT_STYLE,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       widget.workout.notes ?? '',
-                      style: TextStyle(
-                        color: Colors.grey[300],
-                        fontSize: 14,
-                        fontStyle: FontStyle.italic,
-                      ),
+                      style: AppConstants.IOS_SUBTEXT_STYLE.copyWith(fontStyle: FontStyle.italic),
                     ),
                   ],
                 ),
@@ -501,11 +466,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
             // Exercises section
             const Text(
               'Exercises',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppConstants.HEADER_TITLE_TEXT_STYLE,
             ),
             const SizedBox(height: 12),
 
@@ -520,11 +481,10 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                 height: 50,
                 child: ElevatedButton.icon(
                   icon: const Icon(CupertinoIcons.delete, color: Colors.red),
-                  label: const Text(
+                  label: Text(
                     'Delete Workout',
-                    style: TextStyle(
+                    style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
                       color: Colors.red,
-                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -570,11 +530,7 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                         Expanded(
                           child: Text(
                             widget.workout.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),

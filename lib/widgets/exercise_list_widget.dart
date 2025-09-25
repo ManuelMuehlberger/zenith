@@ -5,6 +5,7 @@ import 'package:pull_down_button/pull_down_button.dart';
 import '../models/exercise.dart';
 import '../services/exercise_service.dart';
 import '../constants/app_constants.dart';
+import '../screens/exercise_info_screen.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 
 class ExerciseListWidget extends StatefulWidget {
@@ -12,6 +13,7 @@ class ExerciseListWidget extends StatefulWidget {
   final String? title;
   final Widget? trailing;
   final double additionalTopPadding;
+  final List<Exercise>? selectedExercises;
 
   const ExerciseListWidget({
     super.key,
@@ -19,6 +21,7 @@ class ExerciseListWidget extends StatefulWidget {
     this.title,
     this.trailing,
     this.additionalTopPadding = 0.0,
+    this.selectedExercises,
   });
 
   @override
@@ -36,7 +39,6 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
   final ScrollController _scrollController = ScrollController();
   bool _showSearchBar = true;
   double _searchBarHeight = 68.0; // Height of the search bar
-  double _scrollThreshold = 20.0; // Scroll distance threshold before triggering animation
   double _lastScrollOffset = 0.0; // Last scroll offset to track scroll distance
 
   @override
@@ -56,10 +58,10 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    
+
     final currentOffset = _scrollController.offset;
     final delta = currentOffset - _lastScrollOffset;
-    
+
     // Always show search bar when at the top
     if (currentOffset <= 0) {
       if (!_showSearchBar) {
@@ -70,9 +72,9 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
       _lastScrollOffset = currentOffset;
       return;
     }
-    
-    // Only trigger animation if scrolled more than threshold
-    if (delta.abs() > _scrollThreshold) {
+
+    // Hysteresis check
+    if (delta.abs() > AppConstants.SCROLL_HYSTERESIS_THRESHOLD) {
       if (delta > 0) {
         // Scrolling down - hide search bar
         if (_showSearchBar) {
@@ -212,6 +214,14 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
       _selectedBodyweight = null;
       _filterExercises();
     });
+  }
+
+  void _navigateToExerciseInfo(BuildContext context, Exercise exercise) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ExerciseInfoScreen(exercise: exercise),
+      ),
+    );
   }
 
   Widget _buildFilterTag({
@@ -369,56 +379,91 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                 itemCount: _filteredExercises.length,
                 itemBuilder: (context, index) {
                   final exercise = _filteredExercises[index];
+                  final bool isSelected = widget.selectedExercises?.contains(exercise) ?? false;
+                  final bool isMultiSelectMode = widget.selectedExercises != null;
+                  
                   return Padding(
                     padding: EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
-                    child: CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: () => widget.onExerciseSelected(exercise),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppConstants.EXERCISE_CARD_BG_COLOR,
-                          borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-                          border: Border.all(
-                            color: AppConstants.CARD_STROKE_COLOR,
-                            width: AppConstants.CARD_STROKE_WIDTH,
-                          ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppConstants.ACCENT_COLOR.withOpacity(0.3) : AppConstants.EXERCISE_CARD_BG_COLOR,
+                        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+                        border: Border.all(
+                          color: isSelected ? AppConstants.ACCENT_COLOR : AppConstants.CARD_STROKE_COLOR,
+                          width: AppConstants.CARD_STROKE_WIDTH,
                         ),
-                        padding: EdgeInsets.all(AppConstants.CARD_PADDING),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    exercise.name,
-                                    style: AppConstants.IOS_TITLE_TEXT_STYLE,
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Wrap(
-                                    spacing: 6,
-                                    runSpacing: 6,
-                                    children: [
-                                      _buildMuscleGroupChip(context, exercise.primaryMuscleGroup.name, true),
-                                      if (exercise.secondaryMuscleGroups.isNotEmpty)
-                                        _buildMuscleGroupChip(
-                                          context,
-                                          exercise.secondaryMuscleGroups.map((g) => g.name).join(', '),
-                                          false,
+                      ),
+                      child: Row(
+                        children: [
+                          // Main tappable area for selection
+                          Expanded(
+                            child: CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () => widget.onExerciseSelected(exercise),
+                              child: Padding(
+                                padding: EdgeInsets.all(AppConstants.CARD_PADDING),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            exercise.name,
+                                            style: AppConstants.IOS_TITLE_TEXT_STYLE,
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Wrap(
+                                            spacing: 6,
+                                            runSpacing: 6,
+                                            children: [
+                                              _buildMuscleGroupChip(context, exercise.primaryMuscleGroup.name, true),
+                                              if (exercise.secondaryMuscleGroups.isNotEmpty)
+                                                _buildMuscleGroupChip(
+                                                  context,
+                                                  exercise.secondaryMuscleGroups.map((g) => g.name).join(', '),
+                                                  false,
+                                                ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (isSelected)
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 12.0),
+                                        child: Icon(
+                                          CupertinoIcons.check_mark_circled_solid,
+                                          color: AppConstants.ACCENT_COLOR,
+                                          size: 24,
                                         ),
-                                    ],
-                                  ),
-                                ],
+                                      )
+                                    else if (!isMultiSelectMode)
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 12.0),
+                                        child: Icon(
+                                          CupertinoIcons.chevron_right,
+                                          color: AppConstants.TEXT_SECONDARY_COLOR,
+                                          size: 16,
+                                        ),
+                                      ),
+                                  ],
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Icon(
-                              CupertinoIcons.chevron_right,
-                              color: AppConstants.TEXT_SECONDARY_COLOR,
-                              size: 16,
+                          ),
+                          // Info button (always visible in multi-select mode, or when not selected in single-select mode)
+                          if (isMultiSelectMode)
+                            CupertinoButton(
+                              padding: const EdgeInsets.all(12.0),
+                              onPressed: () => _navigateToExerciseInfo(context, exercise),
+                              child: Icon(
+                                CupertinoIcons.info_circle,
+                                color: AppConstants.TEXT_SECONDARY_COLOR,
+                                size: 20,
+                              ),
                             ),
-                          ],
-                        ),
+                        ],
                       ),
                     ),
                   );

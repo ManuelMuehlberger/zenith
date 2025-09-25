@@ -4,33 +4,55 @@ import '../models/exercise.dart';
 import '../widgets/exercise_list_widget.dart';
 import '../constants/app_constants.dart';
 
-class ExercisePickerScreen extends StatelessWidget {
-  const ExercisePickerScreen({super.key});
+class ExercisePickerScreen extends StatefulWidget {
+  final bool multiSelect;
+
+  const ExercisePickerScreen({super.key, this.multiSelect = false});
+
+  @override
+  State<ExercisePickerScreen> createState() => _ExercisePickerScreenState();
+}
+
+class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
+  final List<Exercise> _selectedExercises = [];
+
+  void _toggleExerciseSelection(Exercise exercise) {
+    setState(() {
+      if (_selectedExercises.contains(exercise)) {
+        _selectedExercises.remove(exercise);
+      } else {
+        _selectedExercises.add(exercise);
+      }
+    });
+  }
 
   void _selectExercise(BuildContext context, Exercise exercise) {
-    Navigator.of(context).pop(exercise);
+    if (widget.multiSelect) {
+      _toggleExerciseSelection(exercise);
+    } else {
+      Navigator.of(context).pop(exercise);
+    }
+  }
+
+  void _done() {
+    Navigator.of(context).pop(_selectedExercises);
   }
 
   @override
   Widget build(BuildContext context) {
     final double topPadding = MediaQuery.of(context).padding.top;
-    final double screenHeaderHeight = topPadding + kToolbarHeight; // Height of the "Select Exercise" header
+    final double screenHeaderHeight = topPadding + kToolbarHeight;
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
-        fit: StackFit.expand, 
+        fit: StackFit.expand,
         children: [
-          // Main content: ExerciseListWidget
-          // It's placed directly in the Stack.
-          // Its internal ListView will be padded by screenHeaderHeight (for the "Select Exercise" bar)
-          // PLUS its own internalHeaderHeight (for its search/filter bars).
           ExerciseListWidget(
             onExerciseSelected: (exercise) => _selectExercise(context, exercise),
-            additionalTopPadding: screenHeaderHeight, // Pass the height of the screen's custom header
+            selectedExercises: widget.multiSelect ? _selectedExercises : null,
+            additionalTopPadding: screenHeaderHeight,
           ),
-          
-          // Custom glass "Select Exercise" header overlay
           Positioned(
             top: 0,
             left: 0,
@@ -40,11 +62,11 @@ class ExercisePickerScreen extends StatelessWidget {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                 child: Container(
-                  color: AppConstants.HEADER_BG_COLOR_MEDIUM, 
-                  child: SafeArea( 
-                    bottom: false, 
+                  color: AppConstants.HEADER_BG_COLOR_MEDIUM,
+                  child: SafeArea(
+                    bottom: false,
                     child: SizedBox(
-                      height: kToolbarHeight, 
+                      height: kToolbarHeight,
                       child: Row(
                         children: [
                           Padding(
@@ -52,17 +74,26 @@ class ExercisePickerScreen extends StatelessWidget {
                             child: IconButton(
                               icon: const Icon(Icons.arrow_back_ios_new, color: AppConstants.HEADER_TITLE_COLOR),
                               onPressed: () => Navigator.of(context).pop(),
-                              tooltip: 'Back',
+                              tooltip: AppConstants.BACK_BUTTON_TOOLTIP,
                             ),
                           ),
-                          Expanded( // Removed const
+                          Expanded(
                             child: Text(
-                              'Select Exercise',
+                              AppConstants.SELECT_EXERCISE_TITLE,
                               textAlign: TextAlign.center,
                               style: AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE,
                             ),
                           ),
-                          const SizedBox(width: 56), // This can remain const
+                          if (widget.multiSelect)
+                            TextButton(
+                              onPressed: _done,
+                              child: Text(
+                                AppConstants.DONE_BUTTON_TEXT,
+                                style: AppConstants.HEADER_BUTTON_TEXT_STYLE,
+                              ),
+                            )
+                          else
+                            const SizedBox(width: 56),
                         ],
                       ),
                     ),

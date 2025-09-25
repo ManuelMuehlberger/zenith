@@ -112,77 +112,68 @@ class PastWorkoutListItem extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 workout.name,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                                maxLines: 2, 
+                                style: AppConstants.CARD_TITLE_TEXT_STYLE,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const SizedBox(width: 8), 
+                            const SizedBox(width: 8),
                             Text(
                               _formatDate(workout.startedAt ?? DateTime.now()),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[400],
-                              ),
+                              style: AppConstants.IOS_SUBTEXT_STYLE,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6), 
+                        const SizedBox(height: 6),
                         // Subtext row (Duration, Sets, Weight)
                         Row(
                           children: [
                             Icon(
-                              Icons.timer_outlined, 
+                              Icons.timer_outlined,
                               size: 16,
-                              color: Colors.grey[400],
+                              color: AppConstants.TEXT_TERTIARY_COLOR,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              _formatDuration(workout.completedAt != null 
-                                  ? workout.completedAt!.difference(workout.startedAt ?? DateTime.now()) 
+                              _formatDuration(workout.completedAt != null
+                                  ? workout.completedAt!.difference(workout.startedAt ?? DateTime.now())
                                   : Duration.zero),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[400],
-                              ),
+                              style: AppConstants.IOS_SUBTEXT_STYLE,
                             ),
-                            const SizedBox(width: 12), 
+                            const SizedBox(width: 12),
                             Icon(
-                              Icons.layers_outlined, 
+                              Icons.layers_outlined,
                               size: 16,
-                              color: Colors.grey[400],
+                              color: AppConstants.TEXT_TERTIARY_COLOR,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               '${workout.totalSets} sets',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[400],
-                              ),
+                              style: AppConstants.IOS_SUBTEXT_STYLE,
                             ),
-                            if (workout.exercises.fold(0.0, (sum, exercise) => 
-                                sum + exercise.sets.fold(0.0, (setSum, set) => 
-                                    setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0))) > 0) ...[ 
-                              const SizedBox(width: 12), 
+                            if (workout.exercises.fold(0.0, (sum, exercise) =>
+                                    sum +
+                                    exercise.sets.fold(
+                                        0.0, (setSum, set) => setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0))) >
+                                0) ...[
+                              const SizedBox(width: 12),
                               Icon(
-                                Icons.fitness_center_outlined, 
+                                Icons.fitness_center_outlined,
                                 size: 16,
-                                color: Colors.grey[400],
+                                color: AppConstants.TEXT_TERTIARY_COLOR,
                               ),
                               const SizedBox(width: 4),
                               Flexible(
                                 child: Text(
-                                  _formatWeight(workout.exercises.fold(0.0, (sum, exercise) => 
-                                      sum + exercise.sets.fold(0.0, (setSum, set) => 
-                                          setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0)))), 
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[400],
-                                  ),
+                                  _formatWeight(workout.exercises.fold(
+                                      0.0,
+                                      (sum, exercise) =>
+                                          sum +
+                                          exercise.sets.fold(
+                                              0.0,
+                                              (setSum, set) =>
+                                                  setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0)))),
+                                  style: AppConstants.IOS_SUBTEXT_STYLE,
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
                                 ),
@@ -194,11 +185,7 @@ class PastWorkoutListItem extends StatelessWidget {
                           const SizedBox(height: 8),
                           Text(
                             workout.notes ?? '',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[300],
-                              fontStyle: FontStyle.italic,
-                            ),
+                            style: AppConstants.IOS_SUBTEXT_STYLE.copyWith(fontStyle: FontStyle.italic),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),

@@ -43,7 +43,7 @@ void main() {
             workout: workout,
             index: 0,
             onEditPressed: () {},
-            onMorePressed: () {},
+            onDeletePressed: () {},
           ),
         ),
       ),
@@ -108,7 +108,7 @@ void main() {
             loadTemplateExercises: loader,
             index: 0,
             onEditPressed: () {},
-            onMorePressed: () {},
+            onDeletePressed: () {},
           ),
         ),
       ),
@@ -129,40 +129,6 @@ void main() {
     expect(find.text('2 sets'), findsWidgets);
   });
 
-  testWidgets('ExpandableWorkoutCard (template) exposes template drag payload', (WidgetTester tester) async {
-    const templateId = 'template_drag_1';
-    final template = WorkoutTemplate(
-      id: templateId,
-      name: 'Drag Template',
-      iconCodePoint: 0xe1a3,
-      colorValue: 0xFF2196F3,
-    );
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          backgroundColor: Colors.black,
-          body: ExpandableWorkoutCard(
-            template: template,
-            index: 3,
-            onEditPressed: () {},
-            onMorePressed: () {},
-            loadTemplateExercises: (id) async => const [],
-          ),
-        ),
-      ),
-    );
-
-    // Access the underlying draggable to inspect its data payload
-    final draggableFinder = find.byType(LongPressDraggable<Map<String, dynamic>>);
-    expect(draggableFinder, findsOneWidget);
-
-    final draggable = tester.widget<LongPressDraggable<Map<String, dynamic>>>(draggableFinder);
-    final data = draggable.data!;
-    expect(data['type'], 'template');
-    expect(data['templateId'], templateId);
-    expect(data['index'], 3);
-  });
 
   testWidgets('ExpandableWorkoutCard (template) refreshes counts when template instance changes (same id)', (WidgetTester tester) async {
     // Arrange
@@ -202,7 +168,7 @@ void main() {
             loadTemplateExercises: loader,
             index: 0,
             onEditPressed: () {},
-            onMorePressed: () {},
+            onDeletePressed: () {},
           ),
         ),
       ),
@@ -248,7 +214,7 @@ void main() {
             loadTemplateExercises: loader,
             index: 0,
             onEditPressed: () {},
-            onMorePressed: () {},
+            onDeletePressed: () {},
           ),
         ),
       ),
@@ -297,7 +263,7 @@ void main() {
             loadTemplateExercises: loader,
             index: 0,
             onEditPressed: () {},
-            onMorePressed: () {},
+            onDeletePressed: () {},
           ),
         ),
       ),
@@ -334,7 +300,7 @@ void main() {
             workout: workout,
             index: 0,
             onEditPressed: () {},
-            onMorePressed: () {},
+            onDeletePressed: () {},
           ),
         ),
       ),

@@ -422,25 +422,47 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   Future<void> _addExercise() async {
-    final selectedExercise = await Navigator.of(context).push<Exercise>(
+    final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const ExercisePickerScreen(),
+        builder: (context) => const ExercisePickerScreen(multiSelect: true),
       ),
     );
 
-    if (selectedExercise != null) {
-      // Use model constructors (UUIDs) for unique IDs to avoid collisions.
-      // First create the exercise to obtain its generated ID, then link the set.
+    if (result is List<Exercise>) {
+      final newWorkoutExercises = result.map((selectedExercise) {
+        var workoutExercise = WorkoutExercise(
+          workoutTemplateId: widget.workoutTemplate?.id ?? "PENDING_TEMPLATE_ID",
+          exerciseSlug: selectedExercise.slug,
+          exerciseDetail: selectedExercise,
+          sets: const [],
+        );
+
+        final defaultSet = WorkoutSet(
+          workoutExerciseId: workoutExercise.id,
+          setIndex: 0,
+          targetReps: 10,
+          targetWeight: 0.0,
+        );
+
+        return workoutExercise.copyWith(sets: [defaultSet]);
+      }).toList();
+
+      setState(() {
+        _exercises.addAll(newWorkoutExercises);
+      });
+
+      HapticFeedback.lightImpact();
+    } else if (result is Exercise) {
+      // Handle single exercise selection for backward compatibility
+      final selectedExercise = result;
       var workoutExercise = WorkoutExercise(
-        // For templates, set workoutTemplateId to real id if editing, otherwise a placeholder to satisfy the assert.
         workoutTemplateId: widget.workoutTemplate?.id ?? "PENDING_TEMPLATE_ID",
         exerciseSlug: selectedExercise.slug,
-        exerciseDetail: selectedExercise, // UI detail
+        exerciseDetail: selectedExercise,
         sets: const [],
       );
 
       final defaultSet = WorkoutSet(
-        // UUID auto-generated for set id; link to the newly created exercise id.
         workoutExerciseId: workoutExercise.id,
         setIndex: 0,
         targetReps: 10,
@@ -452,7 +474,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       setState(() {
         _exercises.add(workoutExercise);
       });
-      
+
       HapticFeedback.lightImpact();
     }
   }

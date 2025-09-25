@@ -262,4 +262,193 @@ void main() {
     // Clear All should still be visible
     expect(clearFinder, findsOneWidget);
   });
+
+  testWidgets('ExerciseListWidget - Multi-select mode shows info buttons', (tester) async {
+    final exercises = [
+      Exercise(
+        slug: 'bench-press',
+        name: 'Bench Press',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: [MuscleGroup.triceps],
+        instructions: const ['Press'],
+        equipment: 'Barbell',
+        image: '',
+        animation: '',
+        isBodyWeightExercise: false,
+      ),
+      Exercise(
+        slug: 'push-up',
+        name: 'Push-Up',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: const [],
+        instructions: const ['Push'],
+        equipment: 'None',
+        image: '',
+        animation: '',
+        isBodyWeightExercise: true,
+      ),
+    ];
+    ExerciseService.instance.setDependenciesForTesting(
+      exerciseDao: _FakeExerciseDao(exercises),
+      muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.chest, MuscleGroup.triceps]),
+    );
+
+    await tester.pumpWidget(_wrap(ExerciseListWidget(
+      onExerciseSelected: (_) {},
+      selectedExercises: [], // Multi-select mode
+    )));
+    await tester.pumpAndSettle();
+
+    // Should show info buttons for all exercises in multi-select mode
+    expect(find.byIcon(CupertinoIcons.info_circle), findsNWidgets(2));
+  });
+
+  testWidgets('ExerciseListWidget - Single-select mode shows chevron icons', (tester) async {
+    final exercises = [
+      Exercise(
+        slug: 'bench-press',
+        name: 'Bench Press',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: [MuscleGroup.triceps],
+        instructions: const ['Press'],
+        equipment: 'Barbell',
+        image: '',
+        animation: '',
+        isBodyWeightExercise: false,
+      ),
+    ];
+    ExerciseService.instance.setDependenciesForTesting(
+      exerciseDao: _FakeExerciseDao(exercises),
+      muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.chest, MuscleGroup.triceps]),
+    );
+
+    await tester.pumpWidget(_wrap(ExerciseListWidget(
+      onExerciseSelected: (_) {},
+      // No selectedExercises parameter = single-select mode
+    )));
+    await tester.pumpAndSettle();
+
+    // Should show chevron icon in single-select mode
+    expect(find.byIcon(CupertinoIcons.chevron_right), findsOneWidget);
+    // Should not show info button
+    expect(find.byIcon(CupertinoIcons.info_circle), findsNothing);
+  });
+
+  testWidgets('ExerciseListWidget - Multi-select mode highlights selected exercises', (tester) async {
+    final exercises = [
+      Exercise(
+        slug: 'bench-press',
+        name: 'Bench Press',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: [MuscleGroup.triceps],
+        instructions: const ['Press'],
+        equipment: 'Barbell',
+        image: '',
+        animation: '',
+        isBodyWeightExercise: false,
+      ),
+      Exercise(
+        slug: 'push-up',
+        name: 'Push-Up',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: const [],
+        instructions: const ['Push'],
+        equipment: 'None',
+        image: '',
+        animation: '',
+        isBodyWeightExercise: true,
+      ),
+    ];
+    ExerciseService.instance.setDependenciesForTesting(
+      exerciseDao: _FakeExerciseDao(exercises),
+      muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.chest, MuscleGroup.triceps]),
+    );
+
+    await tester.pumpWidget(_wrap(ExerciseListWidget(
+      onExerciseSelected: (_) {},
+      selectedExercises: [exercises[0]], // First exercise selected
+    )));
+    await tester.pumpAndSettle();
+
+    // Should show checkmark for selected exercise
+    expect(find.byIcon(CupertinoIcons.check_mark_circled_solid), findsOneWidget);
+    
+    // Should not show chevron for selected exercise
+    expect(find.byIcon(CupertinoIcons.chevron_right), findsNothing);
+  });
+
+  testWidgets('ExerciseListWidget - Multi-select mode calls onExerciseSelected when exercise tapped', (tester) async {
+    final exercises = [
+      Exercise(
+        slug: 'bench-press',
+        name: 'Bench Press',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: [MuscleGroup.triceps],
+        instructions: const ['Press'],
+        equipment: 'Barbell',
+        image: '',
+        animation: '',
+        isBodyWeightExercise: false,
+      ),
+    ];
+    ExerciseService.instance.setDependenciesForTesting(
+      exerciseDao: _FakeExerciseDao(exercises),
+      muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.chest, MuscleGroup.triceps]),
+    );
+
+    Exercise? selectedExercise;
+    await tester.pumpWidget(_wrap(ExerciseListWidget(
+      onExerciseSelected: (exercise) {
+        selectedExercise = exercise;
+      },
+      selectedExercises: [], // Multi-select mode
+    )));
+    await tester.pumpAndSettle();
+
+    // Tap the exercise
+    await tester.tap(find.text('Bench Press'));
+    await tester.pumpAndSettle();
+
+    // Should call onExerciseSelected with the tapped exercise
+    expect(selectedExercise, isNotNull);
+    expect(selectedExercise!.slug, equals('bench-press'));
+  });
+
+  testWidgets('ExerciseListWidget - Info button navigation works', (tester) async {
+    final exercises = [
+      Exercise(
+        slug: 'bench-press',
+        name: 'Bench Press',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: [MuscleGroup.triceps],
+        instructions: const ['Press'],
+        equipment: 'Barbell',
+        image: '',
+        animation: '',
+        isBodyWeightExercise: false,
+      ),
+    ];
+    ExerciseService.instance.setDependenciesForTesting(
+      exerciseDao: _FakeExerciseDao(exercises),
+      muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.chest, MuscleGroup.triceps]),
+    );
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: ExerciseListWidget(
+          onExerciseSelected: (_) {},
+          selectedExercises: [], // Multi-select mode
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    // Tap the info button
+    await tester.tap(find.byIcon(CupertinoIcons.info_circle));
+    await tester.pumpAndSettle();
+
+    // Should navigate to ExerciseInfoScreen (we can't test the actual screen without more setup,
+    // but we can verify the tap doesn't cause errors)
+    expect(tester.takeException(), isNull);
+  });
 }

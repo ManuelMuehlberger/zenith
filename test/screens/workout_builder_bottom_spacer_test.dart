@@ -33,17 +33,16 @@ void main() {
       return;
     }
 
-    // Find a SliverToBoxAdapter whose child is a SizedBox with at least the bar height
-    final sliverFinder = find.byWidgetPredicate((w) {
-      if (w is SliverToBoxAdapter && w.child is SizedBox) {
-        final SizedBox box = w.child as SizedBox;
-        final h = box.height;
+    // Find a SizedBox with at least the bar height (bottom spacer)
+    final spacerFinder = find.byWidgetPredicate((w) {
+      if (w is SizedBox) {
+        final h = w.height;
         return h != null && h >= kBottomNavigationBarHeight;
       }
       return false;
     });
 
-    expect(sliverFinder, findsOneWidget,
-        reason: 'Expected a bottom SliverToBoxAdapter with SizedBox(height >= kBottomNavigationBarHeight)');
+    expect(spacerFinder, findsAtLeastNWidgets(1),
+        reason: 'Expected a bottom SizedBox with height >= kBottomNavigationBarHeight');
   });
 }

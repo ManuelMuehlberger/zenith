@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
+import 'dart:developer' as developer; // Add debug logging
 import 'dart:ui';
 import 'package:pull_down_button/pull_down_button.dart';
 import '../models/workout_template.dart';
@@ -29,6 +30,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   Timer? _timer;
   bool _isDragging = false;
   bool _isPillMaximized = true;
+  double _lastScrollOffset = 0.0;
 
   // Local caches for templates and counts (to keep the UI responsive and consistent)
   List<WorkoutTemplate> _templates = [];
@@ -101,6 +103,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   }
 
   void _onDragStarted() {
+    developer.log('Drag started, selectedFolderId: $_selectedFolderId');
     // Only set _isDragging if we are inside a folder,
     // as the "drop out" animation is only relevant then.
     if (_selectedFolderId != null) {
@@ -111,6 +114,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   }
 
   void _onDragEnded() {
+    developer.log('Drag ended');
     // Always reset _isDragging on drag end.
     setState(() {
       _isDragging = false;
@@ -125,9 +129,6 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       return ActiveWorkoutScreen(session: sessionService.currentSession!);
     }
     
-    final double topPadding = MediaQuery.of(context).padding.top;
-    final double headerHeight = topPadding + kToolbarHeight;
-    
     return PopScope(
       canPop: _selectedFolderId == null,
       onPopInvokedWithResult: (didPop, result) {
@@ -141,33 +142,136 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       },
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: Stack(
-          children: [
-            Positioned.fill(
-              child: _buildMainContent(headerHeight),
-            ),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: ClipRRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
-                  child: Container(
-                    height: headerHeight,
-                    color: AppConstants.HEADER_BG_COLOR_MEDIUM,
-                    child: SafeArea(
-                      bottom: false,
-                      child: _buildHeaderContent(),
+        body: CustomScrollView(
+          controller: _scrollController,
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              stretch: true,
+              centerTitle: true,
+              automaticallyImplyLeading: false,
+              leading: const SizedBox(width: kToolbarHeight),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              expandedHeight: AppConstants.HEADER_EXTRA_HEIGHT + kToolbarHeight,
+              actions: [
+                SizedBox(
+                  width: kToolbarHeight,
+                  child: PullDownButton(
+                    itemBuilder: (context) => [
+                      if (_selectedFolderId == null)
+                        PullDownMenuItem(
+                          onTap: () => _showCreateFolderDialog(),
+                          title: 'Create Folder',
+                          icon: Icons.create_new_folder,
+                        ),
+                      PullDownMenuItem(
+                        onTap: () => _createWorkout(),
+                        title: 'Create Workout',
+                        icon: Icons.fitness_center,
+                      ),
+                    ],
+                    buttonBuilder: (context, showMenu) => IconButton(
+                      icon: const Icon(Icons.add, color: Colors.white, size: 28),
+                      onPressed: showMenu,
                     ),
                   ),
                 ),
+              ],
+              flexibleSpace: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Persistent glass effect layer (covers expanded and collapsed states)
+                      ClipRRect(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(
+                            sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+                            sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                          ),
+                          child: Container(color: AppConstants.HEADER_BG_COLOR_STRONG),
+                        ),
+                      ),
+                      // FlexibleSpaceBar handles title positioning and parallax of the large title
+                      FlexibleSpaceBar(
+                        centerTitle: true,
+                        title: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [_buildSmallTitle()],
+                        ),
+                        background: Align(
+                          alignment: Alignment.center,
+                          child: _buildLargeTitle(),
+                        ),
+                        collapseMode: CollapseMode.parallax,
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
+            // Content
+            if (_isLoading)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32.0),
+                  child: Center(
+                    child: CircularProgressIndicator(color: Colors.blue),
+                  ),
+                ),
+              )
+            else
+              SliverToBoxAdapter(
+                child: _buildMainContentWithoutHeader(),
+              ),
           ],
         ),
         floatingActionButton: _buildPillFloatingActionButton(),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      ),
+    );
+  }
+
+  Widget _buildSmallTitle() {
+    final bool isInsideFolder = _selectedFolderId != null;
+    String title = 'Workouts';
+    if (isInsideFolder) {
+      title = _getFolderName(_selectedFolderId!);
+    }
+
+    // Using AnimatedSwitcher similar to home screen to prevent duplication
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 400),
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SizeTransition(sizeFactor: animation, axisAlignment: -1.0, child: child),
+      ),
+      child: Text(
+        title,
+        key: ValueKey('small_$title'),
+        style: AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE,
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildLargeTitle() {
+    final bool isInsideFolder = _selectedFolderId != null;
+    String title = 'Workouts';
+    if (isInsideFolder) {
+      title = _getFolderName(_selectedFolderId!);
+    }
+
+    // Using AnimatedSwitcher similar to home screen to prevent duplication
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 400),
+      transitionBuilder: (child, animation) => FadeTransition(opacity: animation),
+      child: Text(
+        title,
+        key: ValueKey('large_$title'),
+        style: AppConstants.HEADER_LARGE_TITLE_TEXT_STYLE,
+        textAlign: TextAlign.center,
       ),
     );
   }
@@ -231,6 +335,23 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     );
   }
 
+  Widget _buildMainContentWithoutHeader() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.blue),
+      );
+    }
+
+    return Column(
+      children: [
+        if (_selectedFolderId != null)
+          _buildBreadcrumbNavigation(),
+        _buildContent(),
+        SizedBox(height: MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight),
+      ],
+    );
+  }
+
   Widget _buildMainContent(double headerHeight) {
     if (_isLoading) {
       return Column(
@@ -269,6 +390,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     return DragTarget<Map<String, dynamic>>(
       onAcceptWithDetails: (details) async {
         final data = details.data;
+        developer.log('Breadcrumb onAcceptWithDetails: $data');
         if (data['type'] == 'template') {
           await _moveTemplateToFolder(data['templateId'], null);
         }
@@ -276,6 +398,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       },
       onWillAcceptWithDetails: (details) {
         final data = details.data;
+        developer.log('Breadcrumb onWillAcceptWithDetails: $data');
         return data['type'] == 'template';
       },
       onLeave: (data) {
@@ -467,20 +590,21 @@ if (showAnimation) ...[
                   folder: folder,
                   itemCount: count,
                   onTap: () => _selectFolder(folder.id),
-                  onMorePressed: () => _showFolderActionSheet(folder),
-                  onWorkoutDropped: (templateId) => _moveTemplateToFolder(templateId, folder.id),
+                  onRenamePressed: () => _showRenameFolderDialog(folder),
+                  onDeletePressed: () => _showDeleteFolderDialog(folder),
+                  onWorkoutDropped: (templateId) =>
+                      _moveTemplateToFolder(templateId, folder.id),
+                  isDragging: _isDragging,
                 );
               }),
               const SizedBox(height: 16),
             ],
           ],
-          
           ReorderableWorkoutTemplateList(
             templates: templates,
             folderId: _selectedFolderId,
             onTemplateTap: _editWorkout,
-            onTemplateMorePressed: _showTemplateActionSheet,
-            onTemplateDroppedToFolder: _moveTemplateToFolder,
+            onTemplateDeletePressed: _showDeleteTemplateDialog,
             onTemplateReordered: _reorderTemplates,
             onDragStarted: _onDragStarted,
             onDragEnded: _onDragEnded,
@@ -533,6 +657,7 @@ if (showAnimation) ...[
   }
 
   Future<void> _moveTemplateToFolder(String templateId, String? folderId) async {
+    developer.log('Moving template $templateId to folder $folderId');
     try {
       await WorkoutTemplateService.instance.moveTemplateToFolder(templateId, folderId);
       HapticFeedback.lightImpact();
@@ -546,6 +671,7 @@ if (showAnimation) ...[
             ? (_getFolderName(folderId)) 
             : 'All Workouts';
         final message = 'Moved to "$targetFolderName"';
+        developer.log('Successfully moved template $templateId to folder $folderId');
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -556,6 +682,7 @@ if (showAnimation) ...[
         );
       }
     } catch (e) {
+      developer.log('Failed to move template $templateId to folder $folderId: $e');
       HapticFeedback.heavyImpact();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -570,11 +697,14 @@ if (showAnimation) ...[
   }
 
   Future<void> _reorderTemplates(int oldIndex, int newIndex) async {
+    developer.log('Reordering templates: oldIndex=$oldIndex, newIndex=$newIndex');
     try {
       await WorkoutTemplateService.instance.reorderTemplatesInFolder(_selectedFolderId, oldIndex, newIndex);
       HapticFeedback.lightImpact();
       await _loadTemplates();
+      developer.log('Successfully reordered templates: oldIndex=$oldIndex, newIndex=$newIndex');
     } catch (e) {
+      developer.log('Failed to reorder templates: oldIndex=$oldIndex, newIndex=$newIndex, error=$e');
       HapticFeedback.heavyImpact();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -659,136 +789,6 @@ if (showAnimation) ...[
     );
   }
 
-  void _showFolderActionSheet(WorkoutFolder folder) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[600],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              ListTile(
-                leading: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withAlpha((255 * 0.2).round()),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.edit, color: Colors.blue, size: 20),
-                ),
-                title: const Text('Rename Folder', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showRenameFolderDialog(folder);
-                },
-              ),
-              ListTile(
-                leading: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.red.withAlpha((255 * 0.2).round()),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.delete, color: Colors.red, size: 20),
-                ),
-                title: const Text('Delete Folder', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showDeleteFolderDialog(folder);
-                },
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showTemplateActionSheet(WorkoutTemplate template) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[600],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              // Keeping actions visually similar: Edit and Delete
-              ListTile(
-                leading: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withAlpha((255 * 0.2).round()),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.edit, color: Colors.blue, size: 20),
-                ),
-                title: const Text('Edit Workout', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _editWorkout(template);
-                },
-              ),
-              ListTile(
-                leading: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.red.withAlpha((255 * 0.2).round()),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.delete, color: Colors.red, size: 20),
-                ),
-                title: const Text('Delete Workout', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showDeleteTemplateDialog(template);
-                },
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   void _showCreateFolderDialog() {
     final controller = TextEditingController();
@@ -1055,71 +1055,129 @@ if (showAnimation) ...[
   void _showDeleteFolderDialog(WorkoutFolder folder) {
     final folderId = folder.id;
     final workoutCount = _templateCountByFolder[folderId] ?? 0;
+    final contentText = workoutCount > 0
+        ? 'Are you sure you want to delete "${folder.name}"?\n\n$workoutCount workout${workoutCount != 1 ? 's' : ''} will be moved to All Workouts.'
+        : 'Are you sure you want to delete "${folder.name}"?';
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: const Text('Delete Folder', style: TextStyle(color: Colors.white)),
-        content: Text(
-          workoutCount > 0
-              ? 'Are you sure you want to delete "${folder.name}"?\n\n$workoutCount workout${workoutCount != 1 ? 's' : ''} will be moved to All Workouts.'
-              : 'Are you sure you want to delete "${folder.name}"?',
-          style: const TextStyle(color: Colors.white),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey[400])),
-          ),
-          TextButton(
-            onPressed: () async {
-              await WorkoutTemplateService.instance.deleteFolder(folder.id);
-              if (mounted) {
-                Navigator.pop(context);
-                if (_selectedFolderId == folder.id) {
-                  _selectedFolderId = null;
-                }
-                await _loadCounts();
-                await _loadTemplates();
-                setState(() {});
-              }
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      builder: (context) {
+        return Theme.of(context).platform == TargetPlatform.iOS
+            ? CupertinoAlertDialog(
+                title: const Text('Delete Folder', style: AppConstants.IOS_TITLE_TEXT_STYLE),
+                content: Text(contentText, style: AppConstants.IOS_BODY_TEXT_STYLE),
+                actions: [
+                  CupertinoDialogAction(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  CupertinoDialogAction(
+                    isDestructiveAction: true,
+                    onPressed: () async {
+                      await WorkoutTemplateService.instance.deleteFolder(folder.id);
+                      if (mounted) {
+                        Navigator.pop(context);
+                        if (_selectedFolderId == folder.id) {
+                          _selectedFolderId = null;
+                        }
+                        await _loadCounts();
+                        await _loadTemplates();
+                        setState(() {});
+                      }
+                    },
+                    child: const Text('Delete'),
+                  ),
+                ],
+              )
+            : AlertDialog(
+                backgroundColor: Colors.grey[900],
+                title: const Text('Delete Folder', style: TextStyle(color: Colors.white)),
+                content: Text(
+                  contentText,
+                  style: const TextStyle(color: Colors.white),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Cancel', style: TextStyle(color: Colors.grey[400])),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      await WorkoutTemplateService.instance.deleteFolder(folder.id);
+                      if (mounted) {
+                        Navigator.pop(context);
+                        if (_selectedFolderId == folder.id) {
+                          _selectedFolderId = null;
+                        }
+                        await _loadCounts();
+                        await _loadTemplates();
+                        setState(() {});
+                      }
+                    },
+                    child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                  ),
+                ],
+              );
+      },
     );
   }
 
   void _showDeleteTemplateDialog(WorkoutTemplate template) {
+    final contentText = 'Are you sure you want to delete "${template.name}"?\n\nThis action cannot be undone.';
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: const Text('Delete Workout', style: TextStyle(color: Colors.white)),
-        content: Text(
-          'Are you sure you want to delete "${template.name}"?\n\nThis action cannot be undone.',
-          style: const TextStyle(color: Colors.white),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey[400])),
-          ),
-          TextButton(
-            onPressed: () async {
-              await WorkoutTemplateService.instance.deleteWorkoutTemplate(template.id);
-              if (mounted) {
-                Navigator.pop(context);
-                await _loadCounts();
-                await _loadTemplates();
-                setState(() {});
-              }
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      builder: (context) {
+        return Theme.of(context).platform == TargetPlatform.iOS
+            ? CupertinoAlertDialog(
+                title: const Text('Delete Workout', style: AppConstants.IOS_TITLE_TEXT_STYLE),
+                content: Text(contentText, style: AppConstants.IOS_BODY_TEXT_STYLE),
+                actions: [
+                  CupertinoDialogAction(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  CupertinoDialogAction(
+                    isDestructiveAction: true,
+                    onPressed: () async {
+                      await WorkoutTemplateService.instance.deleteWorkoutTemplate(template.id);
+                      if (mounted) {
+                        Navigator.pop(context);
+                        await _loadCounts();
+                        await _loadTemplates();
+                        setState(() {});
+                      }
+                    },
+                    child: const Text('Delete'),
+                  ),
+                ],
+              )
+            : AlertDialog(
+                backgroundColor: Colors.grey[900],
+                title: const Text('Delete Workout', style: TextStyle(color: Colors.white)),
+                content: Text(
+                  contentText,
+                  style: const TextStyle(color: Colors.white),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Cancel', style: TextStyle(color: Colors.grey[400])),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      await WorkoutTemplateService.instance.deleteWorkoutTemplate(template.id);
+                      if (mounted) {
+                        Navigator.pop(context);
+                        await _loadCounts();
+                        await _loadTemplates();
+                        setState(() {});
+                      }
+                    },
+                    child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                  ),
+                ],
+              );
+      },
     );
   }
 
@@ -1154,34 +1212,38 @@ if (showAnimation) ...[
   void _onScroll() {
     if (!_scrollController.hasClients) return;
 
-    final offset = _scrollController.offset;
-    const double threshold = 50.0;
+    final currentOffset = _scrollController.offset;
+    final delta = currentOffset - _lastScrollOffset;
 
-    // At the top, always maximize the pill
-    if (offset < threshold) {
+    // Always show pill when at the top
+    if (currentOffset <= 0) {
       if (!_isPillMaximized) {
         setState(() {
           _isPillMaximized = true;
         });
       }
+      _lastScrollOffset = currentOffset;
       return;
     }
 
-    // Scrolling down, minimize the pill
-    if (_scrollController.position.userScrollDirection == ScrollDirection.reverse) {
-      if (_isPillMaximized) {
-        setState(() {
-          _isPillMaximized = false;
-        });
+    // Hysteresis check
+    if (delta.abs() > AppConstants.SCROLL_HYSTERESIS_THRESHOLD) {
+      if (delta > 0) {
+        // Scrolling down
+        if (_isPillMaximized) {
+          setState(() {
+            _isPillMaximized = false;
+          });
+        }
+      } else {
+        // Scrolling up
+        if (!_isPillMaximized) {
+          setState(() {
+            _isPillMaximized = true;
+          });
+        }
       }
-    }
-    // Scrolling up, maximize the pill
-    else if (_scrollController.position.userScrollDirection == ScrollDirection.forward) {
-      if (!_isPillMaximized) {
-        setState(() {
-          _isPillMaximized = true;
-        });
-      }
+      _lastScrollOffset = currentOffset;
     }
   }
 
@@ -1201,24 +1263,35 @@ if (showAnimation) ...[
               color: Colors.transparent,
               child: InkWell(
                 onTap: _createWorkout,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.add, color: Colors.white, size: 24.0),
-                    SizedBox(width: 8.0),
-                    Flexible(
-                      child: Text(
-                        'Create Workout',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        overflow: TextOverflow.clip,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Only show content if there's enough space
+                    if (constraints.maxWidth < 100) {
+                      return const SizedBox.shrink();
+                    }
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.add, color: Colors.white, size: 24.0),
+                        if (constraints.maxWidth > 120) ...[
+                          const SizedBox(width: 8.0),
+                          Flexible(
+                            child: Text(
+                              'Create Workout',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16.0,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow.clip,
+                              maxLines: 1,
+                            ),
+                          ),
+                        ],
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -1230,17 +1303,32 @@ if (showAnimation) ...[
             color: Colors.white.withOpacity(0.3),
           ),
           // Right side - More Options (tappable)
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: _showMoreOptionsSheet,
-              child: const SizedBox(
-                width: 56.0, // Fixed width for the tap target
-                height: 56.0,
-                child: Icon(
-                  Icons.keyboard_arrow_up,
-                  color: Colors.white,
-                  size: 24.0,
+          PullDownButton(
+            itemBuilder: (context) => [
+              if (_selectedFolderId == null)
+                PullDownMenuItem(
+                  onTap: () => _showCreateFolderDialog(),
+                  title: 'Create Folder',
+                  icon: Icons.create_new_folder,
+                ),
+              PullDownMenuItem(
+                onTap: () => _createWorkout(),
+                title: 'Create Workout',
+                icon: Icons.fitness_center,
+              ),
+            ],
+            buttonBuilder: (context, showMenu) => Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: showMenu,
+                child: const SizedBox(
+                  width: 56.0, // Fixed width for the tap target
+                  height: 56.0,
+                  child: Icon(
+                    Icons.keyboard_arrow_up,
+                    color: Colors.white,
+                    size: 24.0,
+                  ),
                 ),
               ),
             ),
@@ -1291,18 +1379,24 @@ if (showAnimation) ...[
           alignment: Alignment.center,
           children: [
             // Maximized state content
-            AnimatedOpacity(
-              opacity: _isPillMaximized ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 150),
-              curve: Curves.easeIn,
-              child: maximizedContent,
+            IgnorePointer(
+              ignoring: !_isPillMaximized,
+              child: AnimatedOpacity(
+                opacity: _isPillMaximized ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 150),
+                curve: Curves.easeIn,
+                child: maximizedContent,
+              ),
             ),
             // Minimized state content
-            AnimatedOpacity(
-              opacity: _isPillMaximized ? 0.0 : 1.0,
-              duration: const Duration(milliseconds: 150),
-              curve: Curves.easeIn,
-              child: minimizedContent,
+            IgnorePointer(
+              ignoring: _isPillMaximized,
+              child: AnimatedOpacity(
+                opacity: _isPillMaximized ? 0.0 : 1.0,
+                duration: const Duration(milliseconds: 150),
+                curve: Curves.easeIn,
+                child: minimizedContent,
+              ),
             ),
           ],
         ),
@@ -1310,96 +1404,4 @@ if (showAnimation) ...[
     );
   }
 
-  void _showMoreOptionsSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: AppConstants.CARD_BG_COLOR,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(AppConstants.SHEET_RADIUS),
-            topRight: Radius.circular(AppConstants.SHEET_RADIUS),
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle bar
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[600],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              // Freeform Workout option (placeholder for future implementation)
-              ListTile(
-                leading: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: AppConstants.ACCENT_COLOR.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.edit_note,
-                    color: AppConstants.ACCENT_COLOR,
-                    size: 20,
-                  ),
-                ),
-                title: const Text(
-                  'Freeform Workout',
-                  style: TextStyle(color: Colors.white),
-                ),
-                subtitle: const Text(
-                  'Coming soon',
-                  style: TextStyle(color: Colors.grey),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  // TODO: Implement freeform workout
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Freeform workout coming soon!'),
-                      backgroundColor: Colors.orange,
-                    ),
-                  );
-                },
-              ),
-              // Create Folder option (only show when not in a folder)
-              if (_selectedFolderId == null)
-                ListTile(
-                  leading: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.create_new_folder,
-                      color: Colors.blue,
-                      size: 20,
-                    ),
-                  ),
-                  title: const Text(
-                    'Create Folder',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showCreateFolderDialog();
-                  },
-                ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

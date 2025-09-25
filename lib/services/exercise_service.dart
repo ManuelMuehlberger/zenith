@@ -180,9 +180,9 @@ class ExerciseService {
     return _muscleGroups;
   }
 
-  /// Filter exercises by equipment type.
-  ///
-  /// Example inputs: "Barbell", "Dumbbell", "Machine", "Cable", "None"
+  // Filter exercises by equipment type.
+  //
+  // Example inputs: "Barbell", "Dumbbell", "Machine", "Cable", "None"
   List<Exercise> filterByEquipment(String equipment) {
     final eq = equipment.trim().toLowerCase();
     _logger.fine('Filtering exercises by equipment: "$eq"');

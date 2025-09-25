@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pull_down_button/pull_down_button.dart';
 import '../models/workout.dart';
 import '../models/workout_template.dart';
 import '../models/workout_exercise.dart';
@@ -15,10 +17,8 @@ class ExpandableWorkoutCard extends StatefulWidget {
   final Future<List<WorkoutExercise>> Function(String templateId)? loadTemplateExercises;
 
   final VoidCallback onEditPressed;
-  final VoidCallback onMorePressed;
+  final VoidCallback onDeletePressed;
   final int index;
-  final VoidCallback? onDragStartedCallback;
-  final VoidCallback? onDragEndCallback;
 
   const ExpandableWorkoutCard({
     super.key,
@@ -26,10 +26,8 @@ class ExpandableWorkoutCard extends StatefulWidget {
     this.template,
     this.loadTemplateExercises,
     required this.onEditPressed,
-    required this.onMorePressed,
+    required this.onDeletePressed,
     required this.index,
-    this.onDragStartedCallback,
-    this.onDragEndCallback,
   }) : assert(
           (workout != null) != (template != null),
           'Provide exactly one of workout or template',
@@ -256,137 +254,16 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
   Widget build(BuildContext context) {
     final exerciseCount = _exerciseCount;
     final totalSets = _totalSets;
-    final isTemplate = _isTemplate;
 
-    return LongPressDraggable<Map<String, dynamic>>(
-      key: ValueKey(isTemplate ? widget.template!.id : widget.workout!.id),
-      data: isTemplate
-          ? {
-              'templateId': widget.template!.id,
-              'index': widget.index,
-              'type': 'template',
-            }
-          : {
-              'workoutId': widget.workout!.id,
-              'index': widget.index,
-              'type': 'workout',
-            },
-      delay: const Duration(milliseconds: 500),
-      onDragStarted: () {
-        HapticFeedback.mediumImpact();
-        widget.onDragStartedCallback?.call();
-      },
-      onDragEnd: (details) {
-        widget.onDragEndCallback?.call();
-      },
-      feedback: Material(
-        elevation: 8.0,
-        borderRadius: BorderRadius.circular(16.0),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
-        decoration: BoxDecoration(
-            color: Colors.blue.withAlpha((255 * 0.9).round()),
-            borderRadius: BorderRadius.circular(16.0),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha((255 * 0.2).round()),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    _displayIcon,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _displayName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$exerciseCount exercise${exerciseCount != 1 ? 's' : ''} • $totalSets sets',
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      childWhenDragging: Container(
-        margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
-        decoration: BoxDecoration(
-          color: Colors.grey[800]?.withAlpha((255 * 0.5).round()),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[700]!, width: 1),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.grey[700],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.fitness_center,
-                  color: Colors.grey[600],
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _displayName,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w600,
-                        fontSize: 18,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '$exerciseCount exercise${exerciseCount != 1 ? 's' : ''} • $totalSets sets',
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      child: Container(
+    return Container(
         margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
         decoration: BoxDecoration(
           color: Colors.grey[900],
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _isExpanded ? Colors.blue.withAlpha((255 * 0.5).round()) : Colors.grey[800]!,
+            color: _isExpanded
+                ? Colors.blue.withAlpha((255 * 0.5).round())
+                : Colors.grey[800]!,
             width: _isExpanded ? 2 : 1,
           ),
         ),
@@ -489,9 +366,28 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                               size: 24,
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.more_vert, color: Colors.grey),
-                            onPressed: widget.onMorePressed,
+                          PullDownButton(
+                            itemBuilder: (context) => [
+                              PullDownMenuItem(
+                                onTap: widget.onEditPressed,
+                                title: 'Edit Workout',
+                                icon: CupertinoIcons.pencil,
+                              ),
+                              PullDownMenuItem(
+                                onTap: widget.onDeletePressed,
+                                title: 'Delete Workout',
+                                isDestructive: true,
+                                icon: CupertinoIcons.delete,
+                              ),
+                            ],
+                            buttonBuilder: (context, showMenu) => CupertinoButton(
+                              onPressed: showMenu,
+                              padding: EdgeInsets.zero,
+                              child: const Icon(
+                                CupertinoIcons.ellipsis_circle,
+                                color: Colors.grey,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -653,7 +549,6 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
             ),
           ),
         ),
-      ),
     );
   }
 

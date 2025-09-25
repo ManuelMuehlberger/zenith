@@ -2,6 +2,7 @@
 
 import 'dart:ui' show Color;
 import 'package:flutter/painting.dart' show TextStyle, FontWeight;
+import 'package:flutter/widgets.dart';
 
 /// Application-wide constants and enums
 class AppConstants {
@@ -19,17 +20,23 @@ class AppConstants {
   static const Units DEFAULT_UNITS = Units.metric;
 
   /// Spacing constants (unify card/list spacing across the app)
-  static const double CARD_VERTICAL_GAP = 12.0;       // Gap between cards/items in lists
-  static const double SECTION_VERTICAL_GAP = 16.0;    // Gap between sections/headers and lists
-  static const double ITEM_HORIZONTAL_GAP = 16.0;     // Standard horizontal gap between icon/text
+  static const double CARD_VERTICAL_GAP = 12.0; // Gap between cards/items in lists
+  static const double SECTION_VERTICAL_GAP = 16.0; // Gap between sections/headers and lists
+  static const double ITEM_HORIZONTAL_GAP = 16.0; // Standard horizontal gap between icon/text
+  static const double SCROLL_HYSTERESIS_THRESHOLD = 150.0; // Scroll distance to trigger animations
+
+  /// Drag and Drop animations
+  static const Duration DRAG_ANIMATION_DURATION = Duration(milliseconds: 200);
+  static const Curve DRAG_ANIMATION_CURVE = Curves.easeInOut;
+  static const double DRAG_ITEM_LIFT_SCALE = 1.05;
 
   /// iOS-style UI metrics
-  static const double CARD_RADIUS = 12.0;             // Standard corner radius for cards/containers
-  static const double SHEET_RADIUS = 20.0;            // Corner radius for bottom sheets/action sheets
-  static const double HEADER_EXTRA_HEIGHT = 60.0;     // Extra header height below toolbar for controls
-  static const double HEADER_BLUR_SIGMA = 10.0;       // Blur intensity for translucent headers
+  static const double CARD_RADIUS = 12.0; // Standard corner radius for cards/containers
+  static const double SHEET_RADIUS = 20.0; // Corner radius for bottom sheets/action sheets
+  static const double HEADER_EXTRA_HEIGHT = 60.0; // Extra header height below toolbar for controls
+  static const double HEADER_BLUR_SIGMA = 10.0; // Blur intensity for translucent headers
   static const double PAGE_HORIZONTAL_PADDING = 16.0; // Standard page horizontal padding
-  static const double CARD_PADDING = 16.0;            // Standard internal padding for cards/containers
+  static const double CARD_PADDING = 16.0; // Standard internal padding for cards/containers
 
   // Glass header constants
   static const double GLASS_BLUR_SIGMA = HEADER_BLUR_SIGMA; // Alias for consistency with "glass" components
@@ -118,6 +125,47 @@ class AppConstants {
     fontSize: IOS_NORMAL_FONT_SIZE,
     fontWeight: IOS_NORMAL_FONT_WEIGHT,
     color: TEXT_SECONDARY_COLOR,
+  );
+
+  // Subtitle text style (e.g., for workout details)
+  static const double IOS_SUBTITLE_FONT_SIZE = 15.0;
+  static const FontWeight IOS_SUBTITLE_FONT_WEIGHT = FontWeight.w400;
+  static const TextStyle IOS_SUBTITLE_TEXT_STYLE = TextStyle(
+    fontSize: IOS_SUBTITLE_FONT_SIZE,
+    fontWeight: IOS_SUBTITLE_FONT_WEIGHT,
+    color: TEXT_SECONDARY_COLOR,
+  );
+
+  // Subtext style (smaller, grayer)
+  static const double IOS_SUBTEXT_FONT_SIZE = 13.0;
+  static const FontWeight IOS_SUBTEXT_FONT_WEIGHT = FontWeight.w400;
+  static const TextStyle IOS_SUBTEXT_STYLE = TextStyle(
+    fontSize: IOS_SUBTEXT_FONT_SIZE,
+    fontWeight: IOS_SUBTEXT_FONT_WEIGHT,
+    color: TEXT_TERTIARY_COLOR,
+  );
+
+  // Card-specific text styles
+  static const TextStyle CARD_TITLE_TEXT_STYLE = TextStyle(
+    fontSize: 17.0,
+    fontWeight: FontWeight.w600,
+    color: TEXT_PRIMARY_COLOR,
+  );
+
+  static const TextStyle CARD_SUBTITLE_TEXT_STYLE = TextStyle(
+    fontSize: 15.0,
+    fontWeight: FontWeight.w400,
+    color: TEXT_SECONDARY_COLOR,
+  );
+
+  // Button and action text constants
+  static const String BACK_BUTTON_TOOLTIP = 'Back';
+  static const String SELECT_EXERCISE_TITLE = 'Select Exercise';
+  static const String DONE_BUTTON_TEXT = 'Done';
+  static const TextStyle HEADER_BUTTON_TEXT_STYLE = TextStyle(
+    color: ACCENT_COLOR,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
   );
 }
 

@@ -196,7 +196,10 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     // FlexibleSpaceBar handles title positioning and parallax of the large title
                     FlexibleSpaceBar(
                       centerTitle: true,
-                      title: smallTitle,
+                      title: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [smallTitle],
+                      ),
                       background: Align(
                         alignment: Alignment.center,
                         child: largeTitle,
@@ -234,20 +237,14 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         color: Colors.grey,
                       ),
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         'No workouts yet',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey,
-                        ),
+                        style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(color: AppConstants.TEXT_SECONDARY_COLOR),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Start by creating a workout in the Builder tab',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
+                        style: AppConstants.IOS_SUBTITLE_TEXT_STYLE.copyWith(color: AppConstants.TEXT_SECONDARY_COLOR),
                         textAlign: TextAlign.center,
                       ),
                     ],
