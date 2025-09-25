@@ -98,7 +98,7 @@ void main() {
     late FakeWorkoutSetDao workoutSetDao;
     late FakeNotificationService notificationService;
 
-    Workout _buildTemplate() {
+    Workout buildTemplate() {
       final templateExerciseId = 'ex-template-1';
       final templateSetId = 'set-template-1';
       final templateExercise = WorkoutExercise(
@@ -142,7 +142,7 @@ void main() {
     });
 
     test('uses durationOverride exactly, without rounding', () async {
-      final template = _buildTemplate();
+      final template = buildTemplate();
       final session = await service.startWorkout(template);
 
       final customStart = DateTime(2025, 1, 1, 12, 0, 0);
@@ -155,7 +155,7 @@ void main() {
     });
 
     test('falls back to rounded behavior when durationOverride is null', () async {
-      final template = _buildTemplate();
+      final template = buildTemplate();
       final session = await service.startWorkout(template);
 
       final customStart = DateTime(2025, 1, 1, 12, 0, 0);

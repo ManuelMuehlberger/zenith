@@ -4,11 +4,7 @@ import 'package:mockito/mockito.dart';
 
 import 'package:zenith/models/workout.dart';
 import 'package:zenith/services/workout_service.dart';
-import 'package:zenith/services/dao/workout_dao.dart';
-import 'package:zenith/services/dao/workout_exercise_dao.dart';
-import 'package:zenith/services/dao/workout_set_dao.dart';
 import 'package:zenith/screens/home_screen.dart';
-import 'package:zenith/widgets/past_workout_list_item.dart';
 
 // Reuse generated mocks from existing tests
 import '../services/workout_service_test.mocks.dart';

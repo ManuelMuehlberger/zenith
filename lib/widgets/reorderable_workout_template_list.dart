@@ -73,7 +73,6 @@ class _ReorderableWorkoutTemplateListState
 
   Widget _buildReorderableItem(int index) {
     final template = widget.templates[index];
-    final isDragging = _draggingIndex == index;
 
     final card = ExpandableWorkoutCard(
       key: ValueKey(template.id),
@@ -132,11 +131,13 @@ class _ReorderableWorkoutTemplateListState
     );
 
     return DragTarget<Map<String, dynamic>>(
-      onWillAccept: (data) {
-        if (data == null || data['type'] != 'template') return false;
+      onWillAcceptWithDetails: (details) {
+        final data = details.data;
+        if (data['type'] != 'template') return false;
         final draggedIndex = data['index'] as int;
         if (draggedIndex == index) return false;
-        developer.log('Drag target will accept template at index: $index, draggedIndex: $draggedIndex');
+        developer.log(
+            'Drag target will accept template at index: $index, draggedIndex: $draggedIndex');
         setState(() {
           _dropIndex = index;
         });
@@ -148,13 +149,15 @@ class _ReorderableWorkoutTemplateListState
           _dropIndex = null;
         });
       },
-      onAccept: (data) {
+      onAcceptWithDetails: (details) {
+        final data = details.data;
         final draggedIndex = data['index'] as int;
         int newIndex = index;
         if (draggedIndex < index) {
           newIndex--;
         }
-        developer.log('Drag target accept template: draggedIndex: $draggedIndex, newIndex: $newIndex');
+        developer.log(
+            'Drag target accept template: draggedIndex: $draggedIndex, newIndex: $newIndex');
         widget.onTemplateReordered(draggedIndex, newIndex);
         setState(() {
           _dropIndex = null;
@@ -197,8 +200,9 @@ class _ReorderableWorkoutTemplateListState
 
   Widget _buildDropZone(int targetIndex) {
     return DragTarget<Map<String, dynamic>>(
-      onWillAccept: (data) {
-        if (data == null || data['type'] != 'template') return false;
+      onWillAcceptWithDetails: (details) {
+        final data = details.data;
+        if (data['type'] != 'template') return false;
         final draggedIndex = data['index'] as int;
         if (draggedIndex == targetIndex || draggedIndex == targetIndex - 1) {
           return false;
@@ -213,7 +217,8 @@ class _ReorderableWorkoutTemplateListState
           _dropIndex = null;
         });
       },
-      onAccept: (data) {
+      onAcceptWithDetails: (details) {
+        final data = details.data;
         final draggedIndex = data['index'] as int;
         int newIndex = targetIndex;
         if (draggedIndex < targetIndex) {

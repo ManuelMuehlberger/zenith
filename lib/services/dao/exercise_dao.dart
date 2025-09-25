@@ -12,7 +12,7 @@ class ExerciseDao extends BaseDao<Exercise> {
   @override
   Exercise fromMap(Map<String, dynamic> map) {
     // Helper function to safely get muscle group with fallback
-    MuscleGroup _safeMuscleGroupFromName(String name, String exerciseSlug) {
+    MuscleGroup safeMuscleGroupFromName(String name, String exerciseSlug) {
       if (name.trim().isEmpty) {
         logger.warning('Empty muscle group name for exercise $exerciseSlug, using NA as fallback');
         return MuscleGroup.na;
@@ -26,7 +26,7 @@ class ExerciseDao extends BaseDao<Exercise> {
     }
 
     // Helper function to safely parse secondary muscle groups
-    List<MuscleGroup> _safeSecondaryMuscleGroups(String? secondaryMuscleGroupsJson, String exerciseSlug) {
+    List<MuscleGroup> safeSecondaryMuscleGroups(String? secondaryMuscleGroupsJson, String exerciseSlug) {
       if (secondaryMuscleGroupsJson == null) return [];
       
       try {
@@ -56,8 +56,8 @@ class ExerciseDao extends BaseDao<Exercise> {
     return Exercise(
       slug: exerciseSlug,
       name: map['name'] as String,
-      primaryMuscleGroup: _safeMuscleGroupFromName(map['primaryMuscleGroup'] as String, exerciseSlug),
-      secondaryMuscleGroups: _safeSecondaryMuscleGroups(map['secondaryMuscleGroups'] as String?, exerciseSlug),
+      primaryMuscleGroup: safeMuscleGroupFromName(map['primaryMuscleGroup'] as String, exerciseSlug),
+      secondaryMuscleGroups: safeSecondaryMuscleGroups(map['secondaryMuscleGroups'] as String?, exerciseSlug),
       instructions: map['instructions'] != null
           ? List<String>.from(jsonDecode(map['instructions']) as List)
           : [],

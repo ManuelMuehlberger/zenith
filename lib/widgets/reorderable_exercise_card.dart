@@ -232,12 +232,13 @@ Text(
                       ),
                       CupertinoButton(
                         padding: EdgeInsets.zero,
+                        onPressed: () => widget.onRemoveSet(widget.exercise.id, set.id),
+                        minimumSize: const Size(30, 30),
                         child: Icon(
                           CupertinoIcons.minus_circle_fill,
                           color: Colors.redAccent[100],
                           size: 22,
                         ),
-                        onPressed: () => widget.onRemoveSet(widget.exercise.id, set.id), minimumSize: Size(30, 30),
                       ),
                     ],
                   ),
@@ -268,7 +269,8 @@ Text(
                 SizedBox(width: 8),
                 Text(
                   'Add Set',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ],
             ),

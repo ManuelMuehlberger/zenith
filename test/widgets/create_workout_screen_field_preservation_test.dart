@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/models/exercise.dart';
 import 'package:zenith/models/muscle_group.dart';
-import 'package:zenith/models/workout_exercise.dart';
-import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/screens/create_workout_screen.dart';
 
 void main() {

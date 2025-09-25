@@ -532,7 +532,7 @@ class WorkoutInsights {
     if (value is! List) return [];
     try {
       return value
-          .where((e) => e is Map<String, dynamic>)
+          .whereType<Map<String, dynamic>>()
           .map((e) => MonthlyDataPoint.fromMap(e as Map<String, dynamic>))
           .toList();
     } catch (e) {

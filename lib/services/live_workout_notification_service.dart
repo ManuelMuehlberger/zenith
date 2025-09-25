@@ -43,8 +43,10 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
   // Callback for handling notification actions
   Function()? _onNextSetCallback;
   
+  @override
   bool get isServiceRunning => _isServiceRunning;
 
+  @override
   Future<void> initialize() async {
     _logger.info('Initializing notification service');
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -90,11 +92,13 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
     _logger.info('Notification service initialized');
   }
 
+  @override
   void setNextSetCallback(Function() callback) {
     _logger.fine('Setting next set callback');
     _onNextSetCallback = callback;
   }
 
+  @override
   Future<void> startService(Workout session, int currentExerciseIndex, int currentSetIndex) async {
     _logger.info('Starting notification service for session: ${session.id}');
     final androidPlugin = _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
@@ -127,6 +131,7 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
     });
   }
 
+  @override
   Future<void> updateNotification(Workout session, int currentExerciseIndex, int currentSetIndex) async {
     _logger.fine('Updating notification for session: ${session.id}');
     if (!_isServiceRunning) {
@@ -143,6 +148,7 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
     _logger.fine('Notification updated successfully');
   }
 
+  @override
   Future<void> stopService() async {
     _logger.info('Stopping notification service');
     if (!_isServiceRunning) {
@@ -161,6 +167,7 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
     _logger.info('Notification service stopped');
   }
 
+  @override
   Future<void> restartServiceIfNeeded(Workout? session, int currentExerciseIndex, int currentSetIndex) async {
     if (session != null && session.status == WorkoutStatus.inProgress && !_isServiceRunning) {
       _logger.info('Restarting notification service for active session: ${session.id}');

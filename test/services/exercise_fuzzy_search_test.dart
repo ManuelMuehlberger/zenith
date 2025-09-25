@@ -2,8 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:zenith/models/exercise.dart';
 import 'package:zenith/models/muscle_group.dart';
-import 'package:zenith/services/dao/exercise_dao.dart';
-import 'package:zenith/services/dao/muscle_group_dao.dart';
 import 'package:zenith/services/exercise_service.dart';
 
 // Reuse mocks generated in exercise_service_test.dart

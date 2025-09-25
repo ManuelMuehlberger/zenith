@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/workout.dart';
 import 'expandable_workout_card.dart';
 
@@ -175,38 +176,50 @@ class _ReorderableWorkoutListViewState extends State<_ReorderableWorkoutListView
 
   Widget _buildWorkoutWithDropTarget(int index) {
     final workout = widget.workouts[index];
-    final isDragged = _draggedIndex == index;
-    
-    return DragTarget<Map<String, dynamic>>(
-      onWillAcceptWithDetails: (details) {
-        final data = details.data;
-        if (data['type'] != 'workout') return false;
-        
-        final draggedIndex = data['index'] as int;
-        setState(() {
-          _draggedIndex = draggedIndex;
-        });
-        return false; // We handle reordering in the drop zones, not on the cards themselves
+    final isCurrentlyDragged = _draggedIndex == index;
+
+    final card = ExpandableWorkoutCard(
+      workout: workout,
+      index: index,
+      onEditPressed: () => widget.onWorkoutTap(workout),
+      onDeletePressed: () => widget.onWorkoutMorePressed(workout),
+    );
+
+    return LongPressDraggable<Map<String, dynamic>>(
+      data: {
+        'type': 'workout',
+        'index': index,
+        'id': workout.id,
       },
-      onLeave: (data) {
+      onDragStarted: () {
+        HapticFeedback.lightImpact();
+        setState(() {
+          _draggedIndex = index;
+        });
+        widget.onDragStarted?.call();
+      },
+      onDragEnd: (details) {
         setState(() {
           _draggedIndex = null;
+          _hoveredIndex = null;
         });
+        widget.onDragEnded?.call();
       },
-      builder: (context, candidateData, rejectedData) {
-        return AnimatedOpacity(
-          duration: const Duration(milliseconds: 200),
-          opacity: isDragged ? 0.5 : 1.0,
-          child: ExpandableWorkoutCard(
-            workout: workout,
-            index: index,
-            onEditPressed: () => widget.onWorkoutTap(workout),
-            onMorePressed: () => widget.onWorkoutMorePressed(workout),
-            onDragStartedCallback: widget.onDragStarted,
-            onDragEndCallback: widget.onDragEnded,
+      feedback: Material(
+        color: Colors.transparent,
+        child: SizedBox(
+          width: MediaQuery.of(context).size.width,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: card,
           ),
-        );
-      },
+        ),
+      ),
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: isCurrentlyDragged ? 0.5 : 1.0,
+        child: card,
+      ),
     );
   }
 }

@@ -156,7 +156,7 @@ class ExerciseService {
     final bodyweight = e.isBodyWeightExercise ? 'bodyweight' : '';
     final blob = '${e.name.toLowerCase()} ${e.primaryMuscleGroup.name.toLowerCase()} $secondaries $equipment $bodyweight';
     // Use a very fine-grained log level because this is called many times during fuzzy evaluation.
-    _logger.finest('buildSearchBlob(${e.name}) => "${blob}" (len=${blob.length})');
+    _logger.finest('buildSearchBlob(${e.name}) => "$blob" (len=${blob.length})');
     return blob;
   }
 

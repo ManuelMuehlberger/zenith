@@ -7,9 +7,6 @@ import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/services/database_service.dart';
 import 'package:zenith/services/workout_service.dart';
-import 'package:zenith/services/dao/workout_dao.dart';
-import 'package:zenith/services/dao/workout_exercise_dao.dart';
-import 'package:zenith/services/dao/workout_set_dao.dart';
 
 /* Use existing generated mocks from workout_service_test.mocks.dart to avoid new codegen */
 import 'workout_service_test.mocks.dart';

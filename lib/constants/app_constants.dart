@@ -1,7 +1,5 @@
  // ignore_for_file: constant_identifier_names
 
-import 'dart:ui' show Color;
-import 'package:flutter/painting.dart' show TextStyle, FontWeight;
 import 'package:flutter/widgets.dart';
 
 /// Application-wide constants and enums

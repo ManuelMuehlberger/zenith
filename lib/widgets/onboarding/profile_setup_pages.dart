@@ -392,7 +392,7 @@ class UnitOption extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.grey[900],
+        color: isSelected ? Colors.blue.withAlpha((255 * 0.1).round()) : Colors.grey[900],
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isSelected ? Colors.blue : Colors.grey[700]!,

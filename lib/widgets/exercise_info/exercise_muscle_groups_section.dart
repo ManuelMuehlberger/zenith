@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../models/exercise.dart';
-import '../../models/muscle_group.dart';
 import '../../constants/app_constants.dart';
 
 class ExerciseMuscleGroupsSection extends StatelessWidget {

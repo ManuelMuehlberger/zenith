@@ -38,7 +38,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
   // Scroll controller to detect scroll direction
   final ScrollController _scrollController = ScrollController();
   bool _showSearchBar = true;
-  double _searchBarHeight = 68.0; // Height of the search bar
+  final double _searchBarHeight = 68.0; // Height of the search bar
   double _lastScrollOffset = 0.0; // Last scroll offset to track scroll distance
 
   @override

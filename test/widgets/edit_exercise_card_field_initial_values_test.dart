@@ -5,7 +5,7 @@ import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/widgets/edit_exercise_card.dart';
 
 void main() {
-  Widget _wrap(Widget child) {
+  Widget wrap(Widget child) {
     return MaterialApp(
       home: Scaffold(
         backgroundColor: Colors.black,
@@ -14,7 +14,7 @@ void main() {
     );
   }
 
-  WorkoutExercise _exercise({
+  WorkoutExercise exercise0({
     required String id,
     required String templateId,
     required String slug,
@@ -32,7 +32,7 @@ void main() {
     );
   }
 
-  WorkoutSet _set({
+  WorkoutSet set({
     required String id,
     required String workoutExerciseId,
     required int setIndex,
@@ -53,13 +53,13 @@ void main() {
   testWidgets('renders targetReps for multiple sets without missing values', (tester) async {
     final exId = 'ex1';
     final sets = <WorkoutSet>[
-      _set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 12, weight: 30.0),
-      _set(id: 's2', workoutExerciseId: exId, setIndex: 1, reps: 10, weight: 32.5),
-      _set(id: 's3', workoutExerciseId: exId, setIndex: 2, reps: 8,  weight: 35.0),
+      set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 12, weight: 30.0),
+      set(id: 's2', workoutExerciseId: exId, setIndex: 1, reps: 10, weight: 32.5),
+      set(id: 's3', workoutExerciseId: exId, setIndex: 2, reps: 8,  weight: 35.0),
     ];
-    final exercise = _exercise(id: exId, templateId: 'tpl', slug: 'bench-press', sets: sets);
+    final exercise = exercise0(id: exId, templateId: 'tpl', slug: 'bench-press', sets: sets);
 
-    await tester.pumpWidget(_wrap(
+    await tester.pumpWidget(wrap(
       EditExerciseCard(
         key: ValueKey(exercise.id),
         exercise: exercise,
@@ -94,13 +94,13 @@ void main() {
   testWidgets('renders targetWeight for multiple sets without missing values', (tester) async {
     final exId = 'ex2';
     final sets = <WorkoutSet>[
-      _set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 5,  weight: 20.0),
-      _set(id: 's2', workoutExerciseId: exId, setIndex: 1, reps: 5,  weight: 22.5),
-      _set(id: 's3', workoutExerciseId: exId, setIndex: 2, reps: 5,  weight: 25.0),
+      set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 5,  weight: 20.0),
+      set(id: 's2', workoutExerciseId: exId, setIndex: 1, reps: 5,  weight: 22.5),
+      set(id: 's3', workoutExerciseId: exId, setIndex: 2, reps: 5,  weight: 25.0),
     ];
-    final exercise = _exercise(id: exId, templateId: 'tpl', slug: 'squat', sets: sets);
+    final exercise = exercise0(id: exId, templateId: 'tpl', slug: 'squat', sets: sets);
 
-    await tester.pumpWidget(_wrap(
+    await tester.pumpWidget(wrap(
       EditExerciseCard(
         key: ValueKey(exercise.id),
         exercise: exercise,
@@ -132,26 +132,26 @@ void main() {
   });
 
   testWidgets('unique field keys prevent TextFormField state reuse across exercises', (tester) async {
-    final ex1 = _exercise(
+    final ex1 = exercise0(
       id: 'exA',
       templateId: 'tpl',
       slug: 'deadlift',
       sets: [
-        _set(id: 'sA1', workoutExerciseId: 'exA', setIndex: 0, reps: 3, weight: 100.0),
-        _set(id: 'sA2', workoutExerciseId: 'exA', setIndex: 1, reps: 3, weight: 110.0),
+        set(id: 'sA1', workoutExerciseId: 'exA', setIndex: 0, reps: 3, weight: 100.0),
+        set(id: 'sA2', workoutExerciseId: 'exA', setIndex: 1, reps: 3, weight: 110.0),
       ],
     );
-    final ex2 = _exercise(
+    final ex2 = exercise0(
       id: 'exB',
       templateId: 'tpl',
       slug: 'pull-up',
       sets: [
-        _set(id: 'sB1', workoutExerciseId: 'exB', setIndex: 0, reps: 10, weight: 0.0),
-        _set(id: 'sB2', workoutExerciseId: 'exB', setIndex: 1, reps: 8,  weight: 0.0),
+        set(id: 'sB1', workoutExerciseId: 'exB', setIndex: 0, reps: 10, weight: 0.0),
+        set(id: 'sB2', workoutExerciseId: 'exB', setIndex: 1, reps: 8,  weight: 0.0),
       ],
     );
 
-    await tester.pumpWidget(_wrap(Column(
+    await tester.pumpWidget(wrap(Column(
       children: [
         EditExerciseCard(
           key: ValueKey(ex1.id),
@@ -199,10 +199,10 @@ void main() {
 
   testWidgets('tapping reps field selects all text', (tester) async {
     final exId = 'ex1';
-    final sets = [_set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 12, weight: 30.0)];
-    final exercise = _exercise(id: exId, templateId: 'tpl', slug: 'bench-press', sets: sets);
+    final sets = [set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 12, weight: 30.0)];
+    final exercise = exercise0(id: exId, templateId: 'tpl', slug: 'bench-press', sets: sets);
 
-    await tester.pumpWidget(_wrap(
+    await tester.pumpWidget(wrap(
       EditExerciseCard(
         exercise: exercise,
         exerciseIndex: 0,
@@ -233,10 +233,10 @@ void main() {
 
   testWidgets('tapping weight field selects all text', (tester) async {
     final exId = 'ex1';
-    final sets = [_set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 12, weight: 30.5)];
-    final exercise = _exercise(id: exId, templateId: 'tpl', slug: 'bench-press', sets: sets);
+    final sets = [set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 12, weight: 30.5)];
+    final exercise = exercise0(id: exId, templateId: 'tpl', slug: 'bench-press', sets: sets);
 
-    await tester.pumpWidget(_wrap(
+    await tester.pumpWidget(wrap(
       EditExerciseCard(
         exercise: exercise,
         exerciseIndex: 0,
@@ -267,10 +267,10 @@ void main() {
 
   testWidgets('weight field allows multi-digit numbers and up to two decimal places', (tester) async {
     final exId = 'ex1';
-    final sets = [_set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 12, weight: 0)];
-    final exercise = _exercise(id: exId, templateId: 'tpl', slug: 'bench-press', sets: sets);
+    final sets = [set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 12, weight: 0)];
+    final exercise = exercise0(id: exId, templateId: 'tpl', slug: 'bench-press', sets: sets);
 
-    await tester.pumpWidget(_wrap(
+    await tester.pumpWidget(wrap(
       EditExerciseCard(
         exercise: exercise,
         exerciseIndex: 0,
@@ -313,10 +313,10 @@ void main() {
 
   testWidgets('typing weight from empty: 1 -> 10 -> 100 does not auto-format mid-typing', (tester) async {
     final exId = 'ex3';
-    final sets = [_set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 8, weight: null)];
-    final exercise = _exercise(id: exId, templateId: 'tpl', slug: 'ohp', sets: sets);
+    final sets = [set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 8, weight: null)];
+    final exercise = exercise0(id: exId, templateId: 'tpl', slug: 'ohp', sets: sets);
 
-    await tester.pumpWidget(_wrap(
+    await tester.pumpWidget(wrap(
       EditExerciseCard(
         exercise: exercise,
         exerciseIndex: 0,
@@ -353,10 +353,10 @@ void main() {
 
   testWidgets('select-all then delete weight keeps empty after blur', (tester) async {
     final exId = 'ex4';
-    final sets = [_set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 8, weight: 1.0)];
-    final exercise = _exercise(id: exId, templateId: 'tpl', slug: 'row', sets: sets);
+    final sets = [set(id: 's1', workoutExerciseId: exId, setIndex: 0, reps: 8, weight: 1.0)];
+    final exercise = exercise0(id: exId, templateId: 'tpl', slug: 'row', sets: sets);
 
-    await tester.pumpWidget(_wrap(
+    await tester.pumpWidget(wrap(
       EditExerciseCard(
         exercise: exercise,
         exerciseIndex: 0,

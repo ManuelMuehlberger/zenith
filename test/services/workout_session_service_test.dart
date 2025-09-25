@@ -143,7 +143,7 @@ void main() {
     late FakeWorkoutSetDao workoutSetDao;
     late FakeNotificationService notificationService;
 
-    Workout _buildTemplate() {
+    Workout buildTemplate() {
       // Build a template workout with one exercise and one set
       final templateExerciseId = 'ex-template-1';
       final templateSetId = 'set-template-1';
@@ -199,7 +199,7 @@ void main() {
 
     group('startWorkout cloning behavior', () {
       test('clones template exercises and sets with new IDs and correct foreign keys', () async {
-        final template = _buildTemplate();
+        final template = buildTemplate();
 
         final session = await service.startWorkout(template);
 
@@ -232,7 +232,7 @@ void main() {
       });
 
       test('starting a session twice from the same template creates fresh IDs each time', () async {
-        final template = _buildTemplate();
+        final template = buildTemplate();
 
         final session1 = await service.startWorkout(template);
         final session1ExId = session1.exercises.first.id;
@@ -253,7 +253,7 @@ void main() {
 
     group('updateSet behavior', () {
       test('updates only targetReps and preserves other values', () async {
-        final template = _buildTemplate();
+        final template = buildTemplate();
         final session = await service.startWorkout(template);
         final exerciseId = session.exercises.first.id;
         final setId = session.exercises.first.sets.first.id;
@@ -266,7 +266,7 @@ void main() {
       });
 
       test('updates only targetWeight and preserves other values', () async {
-        final template = _buildTemplate();
+        final template = buildTemplate();
         final session = await service.startWorkout(template);
         final exerciseId = session.exercises.first.id;
         final setId = session.exercises.first.sets.first.id;
@@ -279,7 +279,7 @@ void main() {
       });
 
       test('updates multiple fields correctly in a single call', () async {
-        final template = _buildTemplate();
+        final template = buildTemplate();
         final session = await service.startWorkout(template);
         final exerciseId = session.exercises.first.id;
         final setId = session.exercises.first.sets.first.id;
@@ -306,7 +306,7 @@ void main() {
     group('clearActiveSession behavior', () {
       test('deletes workout and all associated data from database when deleteFromDb is true', () async {
         // Build a template with exercises and sets
-        final template = _buildTemplate();
+        final template = buildTemplate();
         final session = await service.startWorkout(template);
 
         // Verify session and its children exist in their respective fake DAOs
@@ -344,7 +344,7 @@ void main() {
 
       test('deletes data correctly even if in-memory session state is stale', () async {
         // 1. Start a workout to populate the database
-        final template = _buildTemplate();
+        final template = buildTemplate();
         final session = await service.startWorkout(template);
         final exerciseId = session.exercises.first.id;
 
