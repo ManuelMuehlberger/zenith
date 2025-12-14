@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
-import '../models/workout_session.dart';
+import '../models/workout.dart';
 import '../services/workout_session_service.dart';
+import '../constants/app_constants.dart';
 
 class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final WorkoutSession session;
+  final Workout session;
   final bool isReorderMode;
   final String weightUnit;
   final VoidCallback onReorderToggle;
@@ -48,8 +49,10 @@ class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget
 
   @override
   Widget build(BuildContext context) {
-    final progress = session.progress;
-    final duration = session.duration;
+    final progress = session.completedSets / session.totalSets;
+    final duration = session.completedAt != null 
+        ? session.completedAt!.difference(session.startedAt ?? DateTime.now()) 
+        : DateTime.now().difference(session.startedAt ?? DateTime.now());
     final double topPadding = MediaQuery.of(context).padding.top;
 
     // This is the height of the visible content area, AFTER SafeArea insets.
@@ -67,11 +70,11 @@ class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget
       preferredSize: Size.fromHeight(totalWidgetHeight), // Inform parent of our actual, dynamic size
       child: ClipRRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+          filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
           child: Container(
             // This container is the one being blurred. Its height should be the total widget height.
             height: totalWidgetHeight, 
-            color: Colors.black54,
+            color: AppConstants.HEADER_BG_COLOR_MEDIUM,
             child: SafeArea(
               bottom: false,
               child: Column( // This Column's height will be contentRenderHeight
@@ -85,7 +88,7 @@ class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget
                         children: [
                           Expanded(
                             child: Text(
-                              session.workout.name,
+                              session.name,
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,

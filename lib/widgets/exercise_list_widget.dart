@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:ui';
+import 'package:pull_down_button/pull_down_button.dart';
 import '../models/exercise.dart';
 import '../services/exercise_service.dart';
+import '../constants/app_constants.dart';
+import '../screens/exercise_info_screen.dart';
 
 class ExerciseListWidget extends StatefulWidget {
   final Function(Exercise) onExerciseSelected;
   final String? title;
   final Widget? trailing;
   final double additionalTopPadding;
+  final List<Exercise>? selectedExercises;
 
   const ExerciseListWidget({
     super.key,
@@ -16,6 +20,7 @@ class ExerciseListWidget extends StatefulWidget {
     this.title,
     this.trailing,
     this.additionalTopPadding = 0.0,
+    this.selectedExercises,
   });
 
   @override
@@ -24,52 +29,307 @@ class ExerciseListWidget extends StatefulWidget {
 
 class _ExerciseListWidgetState extends State<ExerciseListWidget> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedMuscleGroup = '';
+  String? _selectedMuscleGroup;
+  String? _selectedEquipment;
+  bool? _selectedBodyweight; // null = all, true = bodyweight only, false = non-bodyweight only
   List<Exercise> _filteredExercises = [];
+  
+  // Scroll controller to detect scroll direction
+  final ScrollController _scrollController = ScrollController();
+  bool _showSearchBar = true;
+  final double _searchBarHeight = 68.0; // Height of the search bar
+  double _lastScrollOffset = 0.0; // Last scroll offset to track scroll distance
 
   @override
   void initState() {
     super.initState();
-    _filteredExercises = ExerciseService.instance.exercises;
+    _loadExercises();
     _searchController.addListener(_filterExercises);
+    _scrollController.addListener(_onScroll);
+  }
+
+  Future<void> _loadExercises() async {
+    // If exercises are already loaded, use them directly
+    if (ExerciseService.instance.exercises.isNotEmpty) {
+      setState(() {
+        _filteredExercises = ExerciseService.instance.exercises;
+      });
+      return;
+    }
+    
+    // Otherwise, load them from the service
+    await ExerciseService.instance.loadExercises();
+    setState(() {
+      _filteredExercises = ExerciseService.instance.exercises;
+    });
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+
+    final currentOffset = _scrollController.offset;
+    final delta = currentOffset - _lastScrollOffset;
+
+    // Always show search bar when at the top
+    if (currentOffset <= 0) {
+      if (!_showSearchBar) {
+        setState(() {
+          _showSearchBar = true;
+        });
+      }
+      _lastScrollOffset = currentOffset;
+      return;
+    }
+
+    // Hysteresis check
+    if (delta.abs() > AppConstants.SCROLL_HYSTERESIS_THRESHOLD) {
+      if (delta > 0) {
+        // Scrolling down - hide search bar
+        if (_showSearchBar) {
+          setState(() {
+            _showSearchBar = false;
+          });
+        }
+      } else {
+        // Scrolling up - show search bar
+        if (!_showSearchBar) {
+          setState(() {
+            _showSearchBar = true;
+          });
+        }
+      }
+      _lastScrollOffset = currentOffset;
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  Widget _buildMuscleGroupChip(BuildContext context, String muscleGroup, bool isPrimary) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: isPrimary ? AppConstants.ACCENT_COLOR.withAlpha((255 * 0.2).round()) : Colors.grey[800],
+        border: Border.all(
+          color: isPrimary ? AppConstants.ACCENT_COLOR : Colors.grey[600]!,
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Text(
+        muscleGroup,
+        style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+              color: isPrimary ? AppConstants.ACCENT_COLOR : AppConstants.TEXT_SECONDARY_COLOR,
+              fontWeight: isPrimary ? FontWeight.w600 : AppConstants.IOS_LABEL_FONT_WEIGHT,
+            ),
+      ),
+    );
   }
 
   void _filterExercises() {
     setState(() {
+      final query = _searchController.text;
+      debugPrint('ExerciseListWidget: _filterExercises called with query="$query"');
       List<Exercise> exercises = ExerciseService.instance.exercises;
       
-      if (_searchController.text.isNotEmpty) {
-        exercises = ExerciseService.instance.searchExercises(_searchController.text);
+      if (query.isNotEmpty) {
+        debugPrint('ExerciseListWidget: Calling searchExercises with query="$query"');
+        exercises = ExerciseService.instance.searchExercises(query);
+        debugPrint('ExerciseListWidget: searchExercises returned ${exercises.length} results');
       }
       
-      if (_selectedMuscleGroup.isNotEmpty) {
+      // Filter by muscle group (single selection)
+      if (_selectedMuscleGroup != null) {
+        debugPrint('ExerciseListWidget: Filtering by muscle group: $_selectedMuscleGroup');
+        final before = exercises.length;
         exercises = exercises.where((exercise) =>
-            exercise.primaryMuscleGroup.toLowerCase() == _selectedMuscleGroup.toLowerCase()
+            exercise.primaryMuscleGroup.name == _selectedMuscleGroup
         ).toList();
+        debugPrint('ExerciseListWidget: Muscle group filter reduced results from $before to ${exercises.length}');
+      }
+      
+      // Filter by equipment (single selection)
+      if (_selectedEquipment != null) {
+        debugPrint('ExerciseListWidget: Filtering by equipment: $_selectedEquipment');
+        final before = exercises.length;
+        exercises = exercises.where((exercise) {
+          // Handle the spelling variation in the data ("Dumbell" vs "Dumbbell")
+          final exerciseEquipment = exercise.equipment;
+          final normalizedExerciseEquipment = exerciseEquipment == 'Dumbell' ? 'Dumbbell' : exerciseEquipment;
+          return normalizedExerciseEquipment == _selectedEquipment;
+        }).toList();
+        debugPrint('ExerciseListWidget: Equipment filter reduced results from $before to ${exercises.length}');
+      }
+      
+      // Filter by bodyweight
+      if (_selectedBodyweight != null) {
+        debugPrint('ExerciseListWidget: Filtering by bodyweight: $_selectedBodyweight');
+        final before = exercises.length;
+        exercises = exercises.where((exercise) =>
+            exercise.isBodyWeightExercise == _selectedBodyweight
+        ).toList();
+        debugPrint('ExerciseListWidget: Bodyweight filter reduced results from $before to ${exercises.length}');
       }
       
       _filteredExercises = exercises;
+      debugPrint('ExerciseListWidget: _filterExercises completed with ${_filteredExercises.length} final results');
     });
   }
 
-  void _selectMuscleGroup(String muscleGroup) {
+  void _toggleMuscleGroup(String muscleGroup) {
     setState(() {
-      _selectedMuscleGroup = _selectedMuscleGroup == muscleGroup ? '' : muscleGroup;
+      if (_selectedMuscleGroup == muscleGroup) {
+        _selectedMuscleGroup = null;
+        debugPrint('ExerciseListWidget: Deselecting muscle group "$muscleGroup"');
+      } else {
+        _selectedMuscleGroup = muscleGroup;
+        debugPrint('ExerciseListWidget: Selecting muscle group "$muscleGroup"');
+      }
       _filterExercises();
     });
   }
 
+  void _toggleEquipment(String equipment) {
+    setState(() {
+      if (_selectedEquipment == equipment) {
+        _selectedEquipment = null;
+        debugPrint('ExerciseListWidget: Deselecting equipment "$equipment"');
+      } else {
+        _selectedEquipment = equipment;
+        debugPrint('ExerciseListWidget: Selecting equipment "$equipment"');
+      }
+      _filterExercises();
+    });
+  }
+
+  void _toggleBodyweight() {
+    setState(() {
+      _selectedBodyweight = _selectedBodyweight == true ? null : true;
+      debugPrint('ExerciseListWidget: Bodyweight filter toggled to $_selectedBodyweight');
+      _filterExercises();
+    });
+  }
+
+  void _clearAllFilters() {
+    setState(() {
+      debugPrint('ExerciseListWidget: Clearing all filters');
+      _selectedMuscleGroup = null;
+      _selectedEquipment = null;
+      _selectedBodyweight = null;
+      _filterExercises();
+    });
+  }
+
+  void _navigateToExerciseInfo(BuildContext context, Exercise exercise) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ExerciseInfoScreen(exercise: exercise),
+      ),
+    );
+  }
+
+  Widget _buildFilterTag({
+    required BuildContext context,
+    required String title,
+    required bool isSelected,
+    required List<String> items,
+    required Function(String) onItemSelected,
+    required String? selectedItem,
+  }) {
+    return PullDownButton(
+      itemBuilder: (context) => items
+          .map((item) => PullDownMenuItem.selectable(
+                title: item,
+                selected: selectedItem == item,
+                onTap: () => onItemSelected(item),
+              ))
+          .toList(),
+      buttonBuilder: (context, showMenu) => CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: showMenu,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? AppConstants.ACCENT_COLOR : Colors.grey[800]?.withAlpha(178),
+            borderRadius: BorderRadius.circular(10.0),
+            border: Border.all(
+              color: isSelected ? AppConstants.ACCENT_COLOR : Colors.grey[600]!,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isSelected ? selectedItem! : title,
+                style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
+                  color: isSelected ? Colors.white : AppConstants.TEXT_SECONDARY_COLOR,
+                  fontWeight: isSelected ? FontWeight.w600 : null,
+                ),
+              ),
+              const SizedBox(width: 2),
+              Icon(
+                CupertinoIcons.chevron_down,
+                size: 14,
+                color: isSelected ? Colors.white : AppConstants.TEXT_SECONDARY_COLOR,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBodyweightTag({
+    required BuildContext context,
+    required bool isSelected,
+  }) {
+    return CupertinoButton(
+      key: const Key('bodyweight_tag_button'),
+      padding: EdgeInsets.zero,
+      onPressed: _toggleBodyweight,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppConstants.ACCENT_COLOR : Colors.grey[800]?.withAlpha(178),
+          borderRadius: BorderRadius.circular(10.0),
+          border: Border.all(
+            color: isSelected ? AppConstants.ACCENT_COLOR : Colors.grey[600]!,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          'Bodyweight',
+          style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
+            color: isSelected ? Colors.white : AppConstants.TEXT_SECONDARY_COLOR,
+            fontWeight: isSelected ? FontWeight.w600 : null,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final muscleGroups = ExerciseService.instance.allMuscleGroups
-        .where((group) => group.trim().isNotEmpty)
+    // Use predefined muscle groups from AppMuscleGroup enum (excluding NA)
+    final muscleGroups = AppMuscleGroup.values
+        .where((group) => group != AppMuscleGroup.na)
+        .map((group) => group.displayName)
         .toList();
+    
+    // Use predefined equipment types from EquipmentType enum
+    final equipmentList = EquipmentType.values
+        .map((equipment) => equipment.displayName)
+        .toList();
+
+    // Determine if any filter is active to enable/disable Clear All
+    final bool hasAnyFilter = _selectedMuscleGroup != null ||
+        _selectedEquipment != null ||
+        _selectedBodyweight != null;
 
     // Calculate internal header height for ExerciseListWidget's own search/filter bars
     double internalHeaderHeight = 0;
@@ -78,10 +338,10 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
       // Currently, ExercisePickerScreen doesn't pass these, so this might be 0.
       internalHeaderHeight += 48; 
     }
-    internalHeaderHeight += 68;
-    if (muscleGroups.isNotEmpty) {
-      internalHeaderHeight += 52;
+    if (_showSearchBar) {
+      internalHeaderHeight += _searchBarHeight; // Search bar height
     }
+    internalHeaderHeight += 60; // Tag filter row height
 
     return Stack(
       children: [
@@ -94,21 +354,21 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                     Icon(
                       CupertinoIcons.search,
                       size: 64,
-                      color: Colors.grey[600],
+                      color: AppConstants.TEXT_TERTIARY_COLOR,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'No exercises found',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.grey[600],
+                      style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
+                        color: AppConstants.TEXT_SECONDARY_COLOR,
                         fontSize: 16,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Try adjusting your search or filters',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[700],
+                      style: AppConstants.IOS_BODY_TEXT_STYLE.copyWith(
+                        color: AppConstants.TEXT_TERTIARY_COLOR,
                         fontSize: 13,
                       ),
                     ),
@@ -116,76 +376,103 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                 ),
               )
             : ListView.builder(
+                controller: _scrollController,
                 padding: EdgeInsets.only(
-                  left: 16.0,
-                  right: 16.0,
+                  left: AppConstants.PAGE_HORIZONTAL_PADDING,
+                  right: AppConstants.PAGE_HORIZONTAL_PADDING,
                   // Add space for ExerciseListWidget's own headers AND any additional top padding from parent
                   top: internalHeaderHeight + widget.additionalTopPadding + 20, 
-                  bottom: 16.0,
+                  bottom: AppConstants.PAGE_HORIZONTAL_PADDING,
                 ),
                 itemCount: _filteredExercises.length,
                 itemBuilder: (context, index) {
                   final exercise = _filteredExercises[index];
+                  final bool isSelected = widget.selectedExercises?.contains(exercise) ?? false;
+                  final bool isMultiSelectMode = widget.selectedExercises != null;
+                  
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: () => widget.onExerciseSelected(exercise),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[900]?.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(16.0),
-                          border: Border.all(
-                            color: Colors.grey[800]?.withOpacity(0.3) ?? Colors.transparent,
-                            width: 0.5,
-                          ),
+                    padding: EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppConstants.ACCENT_COLOR.withOpacity(0.3) : AppConstants.EXERCISE_CARD_BG_COLOR,
+                        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+                        border: Border.all(
+                          color: isSelected ? AppConstants.ACCENT_COLOR : AppConstants.CARD_STROKE_COLOR,
+                          width: AppConstants.CARD_STROKE_WIDTH,
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 18,
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    exercise.name,
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontSize: 18,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    exercise.primaryMuscleGroup,
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Colors.blue,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  if (exercise.secondaryMuscleGroups.isNotEmpty) ...[
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      exercise.secondaryMuscleGroups.join(' • '),
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: Colors.grey[400],
-                                        fontSize: 13,
+                      ),
+                      child: Row(
+                        children: [
+                          // Main tappable area for selection
+                          Expanded(
+                            child: CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () => widget.onExerciseSelected(exercise),
+                              child: Padding(
+                                padding: EdgeInsets.all(AppConstants.CARD_PADDING),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            exercise.name,
+                                            style: AppConstants.IOS_TITLE_TEXT_STYLE,
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Wrap(
+                                            spacing: 6,
+                                            runSpacing: 6,
+                                            children: [
+                                              _buildMuscleGroupChip(context, exercise.primaryMuscleGroup.name, true),
+                                              if (exercise.secondaryMuscleGroups.isNotEmpty)
+                                                _buildMuscleGroupChip(
+                                                  context,
+                                                  exercise.secondaryMuscleGroups.map((g) => g.name).join(', '),
+                                                  false,
+                                                ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
                                     ),
+                                    if (isSelected)
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 12.0),
+                                        child: Icon(
+                                          CupertinoIcons.check_mark_circled_solid,
+                                          color: AppConstants.ACCENT_COLOR,
+                                          size: 24,
+                                        ),
+                                      )
+                                    else if (!isMultiSelectMode)
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 12.0),
+                                        child: Icon(
+                                          CupertinoIcons.chevron_right,
+                                          color: AppConstants.TEXT_SECONDARY_COLOR,
+                                          size: 16,
+                                        ),
+                                      ),
                                   ],
-                                ],
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Icon(
-                              CupertinoIcons.chevron_right,
-                              color: Colors.grey[500],
-                              size: 16,
+                          ),
+                          // Info button (always visible in multi-select mode, or when not selected in single-select mode)
+                          if (isMultiSelectMode)
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                padding: const EdgeInsets.all(8),
+                                constraints: const BoxConstraints(),
+                                onPressed: () => _navigateToExerciseInfo(context, exercise),
+                                icon: Icon(CupertinoIcons.info_circle, color: AppConstants.TEXT_SECONDARY_COLOR, size: 28),
+                                tooltip: 'Exercise Info',
+                              ),
                             ),
-                          ],
-                        ),
+                        ],
                       ),
                     ),
                   );
@@ -206,10 +493,10 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
               if (widget.title != null || widget.trailing != null)
                 ClipRRect(
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                    filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                     child: Container(
-                      color: Colors.black54,
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                      color: AppConstants.HEADER_BG_COLOR_MEDIUM,
+                      padding: EdgeInsets.symmetric(horizontal: AppConstants.PAGE_HORIZONTAL_PADDING, vertical: 8.0),
                       child: Row(
                         children: [
                           if (widget.title != null)
@@ -226,64 +513,98 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                   ),
                 ),
 
-              // Search bar with glass effect
-              ClipRRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                  child: Container(
-                    color: Colors.black54,
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                    child: CupertinoSearchTextField(
-                      controller: _searchController,
-                      placeholder: 'Search exercises...',
-                      placeholderStyle: TextStyle(color: Colors.grey[400]), // Keep placeholder specific for now
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900]?.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(10.0),
+              // Search bar with glass effect (collapses on scroll with animation)
+              AnimatedContainer(
+                key: const Key('exercise_search_container'),
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                height: _showSearchBar ? _searchBarHeight : 0,
+                child: ClipRRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+                    child: Container(
+                      color: AppConstants.HEADER_BG_COLOR_STRONG, // Changed to fully opaque
+                      padding: EdgeInsets.symmetric(horizontal: AppConstants.PAGE_HORIZONTAL_PADDING, vertical: 12.0),
+                      child: CupertinoSearchTextField(
+                        controller: _searchController,
+                        placeholder: 'Search exercises...',
+                        placeholderStyle: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(color: AppConstants.TEXT_SECONDARY_COLOR),
+                        style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(color: AppConstants.TEXT_PRIMARY_COLOR),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[900]?.withAlpha(153),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
 
-              // Muscle group filter chips with glass effect
-              if (muscleGroups.isNotEmpty)
-                ClipRRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                    child: Container(
-                      height: 52,
-                      color: Colors.black54,
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: muscleGroups.length,
-                        itemBuilder: (context, index) {
-                          final muscleGroup = muscleGroups[index];
-                          final isSelected = _selectedMuscleGroup == muscleGroup;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: CupertinoButton(
-                              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 2.0),
-                              color: isSelected ? Colors.blue : Colors.grey[800]?.withOpacity(0.7),
-                              borderRadius: BorderRadius.circular(12.0),
-                              onPressed: () => _selectMuscleGroup(muscleGroup),
-                              child: Text(
-                                muscleGroup,
-                                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: isSelected ? Colors.white : Colors.grey[300],
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 13,
+              // iOS-style tag filters with dropdown functionality
+              ClipRRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+                  child: Container(
+                    height: 60,
+                    color: AppConstants.HEADER_BG_COLOR_MEDIUM,
+                    padding: EdgeInsets.symmetric(horizontal: AppConstants.PAGE_HORIZONTAL_PADDING),
+                    child: Row(
+                      children: [
+                        // Scrollable tags section
+                        Expanded(
+                          child: SingleChildScrollView(
+                            key: const Key('tags_scroll'),
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                // Muscle Groups Tag
+                                _buildFilterTag(
+                                  context: context,
+                                  title: 'Muscles',
+                                  isSelected: _selectedMuscleGroup != null,
+                                  items: muscleGroups,
+                                  onItemSelected: _toggleMuscleGroup,
+                                  selectedItem: _selectedMuscleGroup,
                                 ),
-                              ),
+                                const SizedBox(width: 8),
+                                // Equipment Tag
+                                _buildFilterTag(
+                                  context: context,
+                                  title: 'Equipment',
+                                  isSelected: _selectedEquipment != null,
+                                  items: equipmentList,
+                                  onItemSelected: _toggleEquipment,
+                                  selectedItem: _selectedEquipment,
+                                ),
+                                const SizedBox(width: 8),
+                                // Bodyweight Tag
+                                _buildBodyweightTag(
+                                  context: context,
+                                  isSelected: _selectedBodyweight == true,
+                                ),
+                                const SizedBox(width: 8),
+                              ],
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Clear All icon button (always visible)
+                        CupertinoButton(
+                          key: const Key('clear_all_button'),
+                          padding: EdgeInsets.zero,
+                          onPressed: hasAnyFilter ? _clearAllFilters : null,
+                          child: Icon(
+                            CupertinoIcons.xmark_circle_fill,
+                            size: 24,
+                            color: hasAnyFilter ? AppConstants.ACCENT_COLOR : AppConstants.TEXT_TERTIARY_COLOR,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                      ],
                     ),
                   ),
                 ),
+              ),
             ],
           ),
         ),

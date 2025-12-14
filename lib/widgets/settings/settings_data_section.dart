@@ -90,7 +90,7 @@ class SettingsDataSection extends StatelessWidget {
 
   Future<void> _exportData(BuildContext context) async {
     try {
-      final exportService = ExportImportService();
+      final exportService = ExportImportService.instance;
       await exportService.exportData();
       
       if (context.mounted) {
@@ -113,14 +113,14 @@ class SettingsDataSection extends StatelessWidget {
 
   Future<void> _importData(BuildContext context) async {
     try {
-      final exportService = ExportImportService();
-      await exportService.importData();
+      final exportService = ExportImportService.instance;
+      final success = await exportService.importData();
       
-      if (context.mounted) {
+      if (context.mounted && success) {
         _showSuccessDialog(
           context,
           'Import Successful',
-          'Your data has been imported successfully.',
+          'Your data has been imported successfully. Please restart the app to ensure all changes take effect.',
         );
       }
     } catch (e) {

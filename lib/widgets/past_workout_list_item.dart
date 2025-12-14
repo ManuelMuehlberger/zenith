@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
-import '../models/workout_history.dart';
+import '../models/workout.dart';
 import '../screens/workout_detail_screen.dart';
 import '../services/user_service.dart';
+import '../constants/app_constants.dart';
 
 class PastWorkoutListItem extends StatelessWidget {
-  final WorkoutHistory workout;
+  final Workout workout;
+  final VoidCallback? onDeleted;
 
   const PastWorkoutListItem({
     super.key,
     required this.workout,
+    this.onDeleted,
   });
 
   String _formatWeight(double weight) {
-    final units = UserService.instance.currentProfile?.units ?? 'metric';
-    final isImperial = units == 'imperial';
+    final units = UserService.instance.currentProfile?.units ?? Units.metric;
+    final isImperial = units == Units.imperial;
     final unitLabel = isImperial ? 'lbs' : 'kg';
     final kUnitLabel = isImperial ? 'k lbs' : 'kkg';
 
@@ -55,44 +58,58 @@ class PastWorkoutListItem extends StatelessWidget {
       animation: UserService.instance,
       builder: (context, _) {
         return GestureDetector(
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            final result = await Navigator.push<bool>(
               context,
               MaterialPageRoute(
                 builder: (context) => WorkoutDetailScreen(workout: workout),
               ),
             );
+            if (result == true) {
+              onDeleted?.call();
+            }
           },
           child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
+            margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
             decoration: BoxDecoration(
-              color: Colors.grey[900],
-              borderRadius: BorderRadius.circular(16),
+              color: AppConstants.CARD_BG_COLOR,
+              borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
               border: Border.all(
-                color: Colors.grey[800]!,
-                width: 1,
+                color: AppConstants.CARD_STROKE_COLOR,
+                width: AppConstants.CARD_STROKE_WIDTH,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha((255 * 0.15).round()),
+                  blurRadius: 8.0,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16), 
+              padding: const EdgeInsets.all(AppConstants.CARD_PADDING), 
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Workout icon 
+                  // Workout icon with rounded modern styling
                   Container(
-                    width: 48,
-                    height: 48,
+                    width: 52,
+                    height: 52,
                     decoration: BoxDecoration(
-                      color: workout.color.withAlpha((255 * 0.2).round()),
-                      borderRadius: BorderRadius.circular(12),
+                      color: workout.color.withAlpha((255 * 0.15).round()),
+                      borderRadius: BorderRadius.circular(26), // Fully rounded
+                      border: Border.all(
+                        color: workout.color.withAlpha((255 * 0.3).round()),
+                        width: 0.5,
+                      ),
                     ),
                     child: Icon(
-                      workout.icon, // Use workout icon or a default
+                      workout.icon,
                       color: workout.color,
-                      size: 24,
+                      size: 26,
                     ),
                   ),
-                  const SizedBox(width: 16), 
+                  const SizedBox(width: AppConstants.ITEM_HORIZONTAL_GAP), 
                   // Workout details
                   Expanded(
                     child: Column(
@@ -105,100 +122,168 @@ class PastWorkoutListItem extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                workout.workoutName,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                                maxLines: 2, 
+                                workout.name,
+                                style: AppConstants.CARD_TITLE_TEXT_STYLE,
+                                maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const SizedBox(width: 8), 
+                            const SizedBox(width: 8),
                             Text(
-                              _formatDate(workout.startTime),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[400],
-                              ),
+                              _formatDate(workout.startedAt ?? DateTime.now()),
+                              style: AppConstants.IOS_SUBTEXT_STYLE,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6), 
-                        // Subtext row (Duration, Sets, Weight)
+                        const SizedBox(height: 8),
+                        // Stats row with modern pill styling
                         Row(
                           children: [
-                            Icon(
-                              Icons.timer_outlined, 
-                              size: 16,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _formatDuration(workout.duration),
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[400],
+                            // Duration
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.1).round()),
+                                borderRadius: BorderRadius.circular(6),
                               ),
-                            ),
-                            const SizedBox(width: 12), 
-                            Icon(
-                              Icons.layers_outlined, 
-                              size: 16,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${workout.totalSets} sets',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[400],
-                              ),
-                            ),
-                            if (workout.totalWeight > 0) ...[ 
-                              const SizedBox(width: 12), 
-                              Icon(
-                                Icons.fitness_center_outlined, 
-                                size: 16,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: Text(
-                                  _formatWeight(workout.totalWeight), 
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[400],
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.timer_outlined,
+                                    size: 12,
+                                    color: AppConstants.TEXT_SECONDARY_COLOR,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _formatDuration(workout.completedAt != null
+                                        ? workout.completedAt!.difference(workout.startedAt ?? DateTime.now())
+                                        : Duration.zero),
+                                    style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Sets
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.1).round()),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.layers_outlined,
+                                    size: 12,
+                                    color: AppConstants.TEXT_SECONDARY_COLOR,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${workout.totalSets}',
+                                    style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Weight (if available)
+                            if (workout.exercises.fold(0.0, (sum, exercise) =>
+                                    sum +
+                                    exercise.sets.fold(
+                                        0.0, (setSum, set) => setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0))) >
+                                0) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppConstants.ACCENT_COLOR.withAlpha((255 * 0.1).round()),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.fitness_center_outlined,
+                                      size: 12,
+                                      color: AppConstants.ACCENT_COLOR,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Flexible(
+                                      child: Text(
+                                        _formatWeight(workout.exercises.fold(
+                                            0.0,
+                                            (sum, exercise) =>
+                                                sum +
+                                                exercise.sets.fold(
+                                                    0.0,
+                                                    (setSum, set) =>
+                                                        setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0)))),
+                                        style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppConstants.ACCENT_COLOR,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ],
                         ),
-                        if (workout.notes.isNotEmpty) ...[
+                        if ((workout.notes ?? '').isNotEmpty) ...[
                           const SizedBox(height: 8),
-                          Text(
-                            workout.notes,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[300],
-                              fontStyle: FontStyle.italic,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.08).round()),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppConstants.CARD_STROKE_COLOR,
+                                width: 0.5,
+                              ),
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.note_outlined,
+                                  size: 14,
+                                  color: AppConstants.TEXT_SECONDARY_COLOR,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    workout.notes ?? '',
+                                    style: AppConstants.IOS_SUBTEXT_STYLE.copyWith(
+                                      fontStyle: FontStyle.italic,
+                                      fontSize: 13,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ],
                     ),
                   ),
-                  // Chevron icon to indicate it's tappable
+                  // Chevron icon without background
                   Icon(
                     Icons.chevron_right,
-                    color: Colors.grey[600], 
-                    size: 24, 
+                    color: AppConstants.TEXT_SECONDARY_COLOR,
+                    size: 20,
                   ),
                 ],
               ),

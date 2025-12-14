@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../../services/insights_service.dart';
 import '../../widgets/workout_chart.dart';
 import '../../utils/unit_converter.dart';
+import '../../constants/app_constants.dart';
 
 class ExerciseStatsSection extends StatelessWidget {
   final ExerciseInsights? exerciseInsights;
@@ -40,10 +42,10 @@ class ExerciseStatsSection extends StatelessWidget {
 
   Widget _buildStatCard(BuildContext context, String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppConstants.CARD_PADDING),
       decoration: BoxDecoration(
         color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
         border: Border.all(color: color.withAlpha((255 * 0.3).round())),
       ),
       child: Column(
@@ -112,14 +114,14 @@ class ExerciseStatsSection extends StatelessWidget {
 
         if (isLoading) ...[
           const Center(
-            child: CircularProgressIndicator(color: Colors.blue),
+            child: CupertinoActivityIndicator(),
           ),
         ] else if (exerciseInsights == null) ...[
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppConstants.CARD_PADDING),
             decoration: BoxDecoration(
               color: Colors.grey[900],
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
             ),
             child: Row(
               children: [
@@ -134,10 +136,10 @@ class ExerciseStatsSection extends StatelessWidget {
           ),
         ] else if (exerciseInsights!.totalSessions == 0) ...[
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppConstants.CARD_PADDING),
             decoration: BoxDecoration(
               color: Colors.grey[900],
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
             ),
             child: Row(
               children: [
@@ -158,8 +160,8 @@ class ExerciseStatsSection extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
+            crossAxisSpacing: AppConstants.SECTION_VERTICAL_GAP,
+            mainAxisSpacing: AppConstants.SECTION_VERTICAL_GAP,
             childAspectRatio: 1.2,
             children: [
               _buildStatCard(
@@ -234,10 +236,10 @@ class ExerciseStatsSection extends StatelessWidget {
 
           // Additional stats
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppConstants.CARD_PADDING),
             decoration: BoxDecoration(
               color: Colors.grey[900],
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

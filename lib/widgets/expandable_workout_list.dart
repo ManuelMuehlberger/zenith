@@ -3,7 +3,7 @@ import '../screens/insights_screen.dart';
 
 class ExpandableWorkoutList extends StatefulWidget {
   final DateTime selectedDate;
-  final List<WorkoutHistoryDisplayItem> workoutDisplayItems; 
+  final List<WorkoutDisplayItem> workoutDisplayItems; 
   final bool isExpanded;
   final VoidCallback onToggleExpansion;
 
@@ -118,7 +118,7 @@ class _ExpandableWorkoutListState extends State<ExpandableWorkoutList> {
                     itemCount: widget.workoutDisplayItems.length,
                     itemBuilder: (context, index) {
                       final displayItem = widget.workoutDisplayItems[index];
-                      final workoutHistory = displayItem.history;
+                      final workout = displayItem.workout;
                       final workoutDetails = displayItem.workoutDetails;
 
                       final IconData iconData = workoutDetails?.icon ?? Icons.fitness_center;
@@ -152,7 +152,7 @@ class _ExpandableWorkoutListState extends State<ExpandableWorkoutList> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
-                                      workoutHistory.workoutName,
+                                      workout.name,
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.w600,
@@ -173,7 +173,9 @@ class _ExpandableWorkoutListState extends State<ExpandableWorkoutList> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    _formatDuration(workoutHistory.duration),
+                                    _formatDuration(workout.completedAt != null && workout.startedAt != null 
+                                        ? workout.completedAt!.difference(workout.startedAt!) 
+                                        : Duration.zero),
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.grey[400],
@@ -187,7 +189,7 @@ class _ExpandableWorkoutListState extends State<ExpandableWorkoutList> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '${workoutHistory.exercises.length} exercise${workoutHistory.exercises.length != 1 ? 's' : ''}',
+                                    '${workout.exercises.length} exercise${workout.exercises.length != 1 ? 's' : ''}',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.grey[400],
@@ -201,7 +203,7 @@ class _ExpandableWorkoutListState extends State<ExpandableWorkoutList> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '${workoutHistory.totalSets} sets',
+                                    '${workout.totalSets} sets',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: Colors.grey[400],

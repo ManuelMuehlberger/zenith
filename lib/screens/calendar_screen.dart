@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
-import '../models/workout_history.dart';
+import '../models/workout.dart';
 import '../widgets/shared_calendar_view.dart';
 import '../widgets/dated_workout_list_view.dart';
 
@@ -15,7 +15,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _selectedDate = DateTime.now();
   DateTime _focusedDate = DateTime.now();
   List<DateTime> _workoutDates = [];
-  List<WorkoutHistory> _selectedDateWorkouts = [];
+  List<Workout> _selectedDateWorkouts = [];
   bool _isLoading = true;
   bool _isLoadingWorkouts = false; // For loading workouts specifically
 
@@ -31,7 +31,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       _isLoading = true; // Overall loading for initial setup
     });
     try {
-      await DatabaseService.instance.migrateWorkoutHistoryIcons(); 
+      await DatabaseService.instance.migrateWorkoutIcons(); 
       final dates = await DatabaseService.instance.getDatesWithWorkouts();
       if (mounted) {
         setState(() {
@@ -61,7 +61,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       _isLoadingWorkouts = true; // Specific loading for workouts
     });
     try {
-      final workouts = await DatabaseService.instance.getWorkoutHistoryForDate(date);
+      final workouts = await DatabaseService.instance.getWorkoutsForDate(date);
       if (mounted) {
         setState(() {
           _selectedDateWorkouts = workouts;

@@ -5,11 +5,14 @@ import 'dart:io';
 import '../services/database_service.dart';
 import '../services/user_service.dart';
 import '../services/workout_service.dart';
-import '../models/user_profile.dart';
+import '../services/workout_template_service.dart';
+import '../services/debug_data_service.dart';
+import '../models/user_data.dart';
 import '../widgets/settings/settings_timeline_section.dart';
 import '../widgets/settings/settings_profile_section.dart';
 import '../widgets/settings/settings_units_section.dart';
 import '../widgets/settings/settings_data_section.dart';
+import '../constants/app_constants.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -19,8 +22,10 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  UserProfile? _userProfile;
+  UserData? _userProfile;
   bool _isLoading = true;
+  bool _showDebugMenu = true;
+  int _versionTapCount = 0;
 
   @override
   void initState() {
@@ -49,18 +54,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _updateUnits(String newUnits) async {
+  Future<void> _updateUnits(Units newUnits) async {
     if (_userProfile == null) return;
 
     try {
-      final updatedProfile = UserProfile(
-        name: _userProfile!.name,
-        age: _userProfile!.age,
-        units: newUnits,
-        weight: _userProfile!.weight,
-        createdAt: _userProfile!.createdAt,
-      );
-
+      final updatedProfile = _userProfile!.copyWith(units: newUnits);
       await UserService.instance.saveUserProfile(updatedProfile);
       setState(() {
         _userProfile = updatedProfile;
@@ -210,7 +208,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirmed == true) {
       await DatabaseService.instance.clearAllData();
       await UserService.instance.clearUserData();
-      await WorkoutService.instance.clearUserWorkoutsAndFolders();
+      await WorkoutService.instance.clearUserWorkouts();
+      await WorkoutTemplateService.instance.clearUserTemplatesAndFolders();
       if (mounted) {
         _showCupertinoToast('All data cleared');
         await Future.delayed(const Duration(seconds: 1));
@@ -237,10 +236,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             right: 0,
             child: ClipRRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                 child: Container(
                   height: headerHeight,
-                  color: Colors.black54,
+                  color: AppConstants.HEADER_BG_COLOR_MEDIUM,
                   child: SafeArea(
                     bottom: false,
                     child: _buildHeaderContent(),
@@ -337,6 +336,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 16),
                 const SettingsDataSection(),
                 const SizedBox(height: 16),
+                if (_showDebugMenu) ...[
+                  _buildDebugSection(),
+                  const SizedBox(height: 16),
+                ],
                 _buildAboutSection(),
                 const SizedBox(height: 16),
                 _buildDataManagementSection(),
@@ -346,6 +349,88 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ],
     );
+  }
+
+  Widget _buildDebugSection() {
+    return Card(
+      color: Colors.grey[900],
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 4.0),
+              child: Text(
+                'Debug Menu',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(CupertinoIcons.hammer_fill, color: Colors.orange, size: 22),
+              title: const Text(
+                'Generate History Data',
+                style: TextStyle(color: Colors.white),
+              ),
+              subtitle: const Text(
+                'Fill last 2 years with random workouts',
+                style: TextStyle(color: Colors.grey),
+              ),
+              trailing: Icon(
+                CupertinoIcons.chevron_right,
+                color: Colors.grey[400],
+                size: 16,
+              ),
+              onTap: _generateDebugData,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _generateDebugData() async {
+    final confirmed = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Generate Data'),
+        content: const Text('This will add ~300-400 workouts to your history over the last 2 years. This operation cannot be easily undone.'),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          CupertinoDialogAction(
+            child: const Text('Generate'),
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() => _isLoading = true);
+      try {
+        await DebugDataService.instance.generateDebugData();
+        if (mounted) {
+          _showCupertinoToast('Debug data generated');
+        }
+      } catch (e) {
+        if (mounted) {
+          _showErrorDialog('Failed to generate data: $e');
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
+    }
   }
 
   Widget _buildDataManagementSection() {
@@ -431,26 +516,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Icon(CupertinoIcons.info_circle_fill, color: Colors.blue, size: 22),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Workout Tracker',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                      Text(
-                        'Version 1.0.0\nTrack your fitness journey',
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                    ],
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _versionTapCount++;
+                  if (_versionTapCount >= 5) {
+                    _showDebugMenu = !_showDebugMenu;
+                    _versionTapCount = 0;
+                    _showCupertinoToast(_showDebugMenu ? 'Debug menu enabled' : 'Debug menu disabled');
+                  }
+                });
+              },
+              child: Row(
+                children: [
+                  Icon(CupertinoIcons.info_circle_fill, color: Colors.blue, size: 22),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Workout Tracker',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                        Text(
+                          'Version 1.0.0\nTrack your fitness journey',
+                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             Row(

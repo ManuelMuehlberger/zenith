@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import '../../models/user_profile.dart';
+import '../../models/user_data.dart';
 import '../../screens/edit_profile_screen.dart';
 
 class SettingsProfileSection extends StatelessWidget {
-  final UserProfile? userProfile;
+  final UserData? userProfile;
   final VoidCallback onProfileUpdated;
 
   const SettingsProfileSection({
@@ -66,9 +66,9 @@ class SettingsProfileSection extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    userProfile?.name ?? 'Not set',
-                    style: const TextStyle(
+  Text(
+    userProfile?.age.toString() ?? 'Not set',
+    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
                       color: Colors.white,
@@ -100,8 +100,8 @@ class SettingsProfileSection extends StatelessWidget {
             _buildDetailItem(
               icon: CupertinoIcons.gauge,
               label: 'Weight',
-              value: userProfile != null 
-                  ? '${userProfile!.weight.toStringAsFixed(1)} ${userProfile!.units == 'metric' ? 'kg' : 'lbs'}'
+              value: userProfile != null && userProfile!.weightHistory.isNotEmpty
+                  ? '${userProfile!.weightHistory.last.value.toStringAsFixed(1)} ${userProfile!.weightUnit}'
                   : 'Not set',
             ),
           ],

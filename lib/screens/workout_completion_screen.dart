@@ -1,15 +1,18 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import '../models/workout_session.dart';
+import '../models/workout.dart';
 import '../services/workout_session_service.dart';
 import '../services/user_service.dart';
 import '../utils/navigation_helper.dart';
 import '../main.dart';
 import 'package:confetti/confetti.dart';
+import '../constants/app_constants.dart';
+import 'package:logging/logging.dart';
 
 class WorkoutCompletionScreen extends StatefulWidget {
-  final WorkoutSession session;
+  final Workout session;
 
   const WorkoutCompletionScreen({
     super.key,
@@ -22,7 +25,9 @@ class WorkoutCompletionScreen extends StatefulWidget {
 
 class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
   final _notesController = TextEditingController();
-  WorkoutMood? _selectedMood;
+  int? _selectedMood; // Using int for mood (1-5 scale)
+  Duration? _editedDuration;
+  final Logger _logger = Logger('WorkoutCompletionScreen');
   late ConfettiController _confettiController;
   final GlobalKey _finishButtonKey = GlobalKey();
   Offset? _confettiPosition;
@@ -38,23 +43,6 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
     _confettiController.dispose();
     _notesController.dispose();
     super.dispose();
-  }
-
-  void _triggerConfetti() {
-    if (_finishButtonKey.currentContext != null) {
-      final RenderBox renderBox = _finishButtonKey.currentContext!.findRenderObject() as RenderBox;
-      final Offset buttonCenterGlobal = renderBox.localToGlobal(renderBox.size.center(Offset.zero));
-      
-      setState(() {
-        _confettiPosition = buttonCenterGlobal;
-      });
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _confettiController.play();
-        }
-      });
-    }
   }
 
   @override
@@ -115,7 +103,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      widget.session.workout.name,
+                                      widget.session.name,
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 20,
@@ -140,10 +128,21 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              _buildSummaryItem(
-                                WorkoutSessionService.instance.formatDuration(widget.session.duration),
-                                'Duration',
-                                Icons.timer_outlined,
+                              GestureDetector(
+                                key: const Key('duration_summary'),
+                                onTap: _showDurationPicker,
+                                child: _buildSummaryItem(
+                                  _formatDurationNoSeconds(
+                                    _stripSeconds(
+                                      _editedDuration ??
+                                          (widget.session.completedAt != null
+                                              ? widget.session.completedAt!.difference(widget.session.startedAt ?? DateTime.now())
+                                              : DateTime.now().difference(widget.session.startedAt ?? DateTime.now()))
+                                    )
+                                  ),
+                                  'Duration',
+                                  Icons.timer_outlined,
+                                ),
                               ),
                               Container(
                                 width: 1,
@@ -151,7 +150,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                                 color: Colors.grey[800],
                               ),
                               _buildSummaryItem(
-                                widget.session.completedSets.toString(),
+                                '${widget.session.completedSets}/${widget.session.totalSets}',
                                 'Sets',
                                 Icons.fitness_center_outlined,
                               ),
@@ -161,7 +160,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                                 color: Colors.grey[800],
                               ),
                               _buildSummaryItem(
-                                '${WorkoutSessionService.instance.formatWeight(widget.session.totalWeight)} ${(UserService.instance.currentProfile?.units == 'imperial') ? 'lbs' : 'kg'}',
+                                '${WorkoutSessionService.instance.formatWeight(widget.session.totalWeight)} ${(UserService.instance.currentProfile?.units == Units.imperial) ? 'lbs' : 'kg'}',
                                 'Weight',
                                 Icons.monitor_weight_outlined,
                               ),
@@ -218,18 +217,20 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: WorkoutMood.values.map((mood) {
-                        final isSelected = _selectedMood == mood;
+                      children: List.generate(5, (index) {
+                        final moodValue = 5 - index;
+                        final isSelected = _selectedMood == moodValue;
                         return GestureDetector(
                           onTap: () {
                             HapticFeedback.lightImpact();
                             setState(() {
-                              _selectedMood = mood;
+                              _selectedMood = moodValue;
                             });
                           },
                           child: Container(
+                            key: Key('mood_$moodValue'),
                             width: 60,
-                            height: 70,
+                            height: 60,
                             decoration: BoxDecoration(
                               color: isSelected ? Colors.blue.withAlpha((255 * 0.2).round()) : Colors.grey[900],
                               borderRadius: BorderRadius.circular(12),
@@ -242,23 +243,14 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  mood.emoji,
-                                  style: const TextStyle(fontSize: 24),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  mood.displayName.split(' ').first,
-                                  style: TextStyle(
-                                    color: isSelected ? Colors.blue : Colors.grey[400],
-                                    fontSize: 10,
-                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                  ),
+                                  _getMoodEmoji(moodValue),
+                                  style: const TextStyle(fontSize: 28),
                                 ),
                               ],
                             ),
                           ),
                         );
-                      }).toList(),
+                      }),
                     ),
                     const SizedBox(height: 40),
                     Row(
@@ -267,7 +259,20 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                           child: SizedBox( 
                             height: 50,
                             child: TextButton(
-                              onPressed: () => Navigator.pop(context),
+                              key: const Key('back_to_workout_btn'),
+                              onPressed: () {
+                                _logger.fine('Back to Workout tapped');
+                                if (Navigator.of(context).canPop()) {
+                                  Navigator.of(context).pop();
+                                } else {
+                                  _logger.warning('Navigator cannot pop. Routing to MainScreen.');
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(builder: (_) => const MainScreen()),
+                                    (route) => false,
+                                  );
+                                  NavigationHelper.goToHomeTab();
+                                }
+                              },
                               style: TextButton.styleFrom(
                                 backgroundColor: Colors.grey[800],
                                 shape: RoundedRectangleBorder(
@@ -371,11 +376,127 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
     );
   }
 
+  // Helper method to get emoji for mood (1-5 scale)
+  String _getMoodEmoji(int mood) {
+    switch (mood) {
+      case 1:
+        return '😢';
+      case 2:
+        return '😔';
+      case 3:
+        return '😐';
+      case 4:
+        return '😊';
+      case 5:
+        return '😄';
+      default:
+        return '😊';
+    }
+  }
+
+  // Helper method to get display name for mood (1-5 scale)
+  String _getMoodDisplayName(int mood) {
+    switch (mood) {
+      case 1:
+        return 'Very Sad';
+      case 2:
+        return 'Sad';
+      case 3:
+        return 'Neutral';
+      case 4:
+        return 'Happy';
+      case 5:
+        return 'Very Happy';
+      default:
+        return 'Happy';
+    }
+  }
+
+  Duration _stripSeconds(Duration d) => Duration(minutes: d.inMinutes);
+
+  String _formatDurationNoSeconds(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    if (h > 0) {
+      return '${h}h ${m}m';
+    }
+    return '${d.inMinutes}m';
+  }
+
+  void _showDurationPicker() {
+    final start = widget.session.startedAt ?? DateTime.now();
+    final initial = _editedDuration ??
+        (widget.session.completedAt != null
+            ? widget.session.completedAt!.difference(start)
+            : DateTime.now().difference(start));
+
+    showCupertinoModalPopup(
+      context: context,
+      builder: (ctx) {
+        Duration temp = initial;
+        return Container(
+          height: 320,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            border: Border.all(color: Colors.grey[900]!, width: 0.5),
+          ),
+          child: Column(
+            children: [
+              // Header with Cancel / Done
+              Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  border: Border(bottom: BorderSide(color: Colors.grey[800]!, width: 0.5)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CupertinoButton(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      onPressed: () { _logger.fine('Duration picker canceled'); Navigator.of(ctx).pop(); },
+                      child: const Text('Cancel'),
+                    ),
+                    CupertinoButton(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      onPressed: () {
+                        setState(() {
+                          _editedDuration = _stripSeconds(temp);
+                        });
+                        _logger.fine('Duration set to: ${_editedDuration != null ? _formatDurationNoSeconds(_editedDuration!) : 'null'}');
+                        Navigator.of(ctx).pop();
+                      },
+                      child: const Text(
+                        'Done',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: CupertinoTimerPicker(
+                  mode: CupertinoTimerPickerMode.hm,
+                  initialTimerDuration: _stripSeconds(initial),
+                  onTimerDurationChanged: (d) {
+                    temp = d;
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _completeWorkout() async { 
     try {
       await WorkoutSessionService.instance.completeWorkout(
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         mood: _selectedMood,
+        durationOverride: _editedDuration,
       );
       
       HapticFeedback.mediumImpact();
@@ -434,7 +555,7 @@ class CircleRevealPageRoute<T> extends PageRoute<T> {
   });
 
   final Widget page;
-  final Offset? centerOffset; // Center of the circle reveal
+  final Offset? centerOffset;
 
   @override
   final Duration transitionDuration;

@@ -1,182 +1,232 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'dart:developer' as developer; // Add debug logging
+import 'package:pull_down_button/pull_down_button.dart';
 import '../models/workout_folder.dart';
 import '../services/workout_service.dart';
+import '../constants/app_constants.dart';
 
 class FolderCard extends StatelessWidget {
   final WorkoutFolder folder;
   final VoidCallback onTap;
-  final VoidCallback onMorePressed;
+  final VoidCallback onRenamePressed;
+  final VoidCallback onDeletePressed;
   final Function(String) onWorkoutDropped;
+  final int? itemCount;
+  final bool isDragging;
 
   const FolderCard({
     super.key,
     required this.folder,
     required this.onTap,
-    required this.onMorePressed,
+    required this.onRenamePressed,
+    required this.onDeletePressed,
     required this.onWorkoutDropped,
+    this.itemCount,
+    this.isDragging = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final workoutCount = WorkoutService.instance.getWorkoutsInFolder(folder.id).length;
+    final workoutCount = itemCount ?? WorkoutService.instance.getWorkoutsInFolder(folder.id).length;
     
     return DragTarget<Map<String, dynamic>>(
       onAcceptWithDetails: (details) async {
         final data = details.data;
+        developer.log('FolderCard onAcceptWithDetails: $data');
         if (data['type'] == 'workout') {
           onWorkoutDropped(data['workoutId']);
+        } else if (data['type'] == 'template') {
+          onWorkoutDropped(data['templateId']);
         }
       },
       onWillAcceptWithDetails: (details) {
         final data = details.data;
-        return data['type'] == 'workout';
+        developer.log('FolderCard onWillAcceptWithDetails: $data');
+        return data['type'] == 'workout' || data['type'] == 'template';
       },
       builder: (context, candidateData, rejectedData) {
         final isHovering = candidateData.isNotEmpty;
+        final showDropHint = isHovering || isDragging;
+
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          transform: Matrix4.identity()..scale(isHovering ? 1.05 : 1.0),
-          margin: EdgeInsets.only(
-            bottom: isHovering ? 12.0 : 8.0,
-            left: isHovering ? 4.0 : 0.0,
-            right: isHovering ? 4.0 : 0.0,
-          ),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: isHovering ? Colors.blue.withAlpha((255 * 0.3).round()) : Colors.grey[900],
-              borderRadius: BorderRadius.circular(isHovering ? 20.0 : 12.0),
-              border: Border.all(
-                color: isHovering 
-                    ? Colors.blue.withAlpha((255 * 0.8).round())
-                    : Colors.grey[800]!,
-                width: isHovering ? 2.0 : 1.0,
-              ),
-              boxShadow: isHovering ? [
-                BoxShadow(
-                  color: Colors.blue.withAlpha((255 * 0.4).round()),
-                  blurRadius: 12.0,
-                  spreadRadius: 2.0,
-                  offset: const Offset(0, 4),
-                ),
-              ] : [
-                BoxShadow(
-                  color: Colors.black.withAlpha((255 * 0.3).round()),
-                  blurRadius: 4.0,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+          duration: AppConstants.DRAG_ANIMATION_DURATION,
+          curve: AppConstants.DRAG_ANIMATION_CURVE,
+          transform: Matrix4.identity()..scale(showDropHint ? 1.02 : 1.0),
+          margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
+          decoration: BoxDecoration(
+            color: showDropHint
+                ? AppConstants.ACCENT_COLOR.withAlpha((255 * 0.25).round())
+                : AppConstants.CARD_BG_COLOR,
+            borderRadius: BorderRadius.circular(showDropHint ? 16.0 : AppConstants.CARD_RADIUS),
+            border: Border.all(
+              color: showDropHint
+                  ? AppConstants.ACCENT_COLOR.withAlpha((255 * 0.8).round())
+                  : AppConstants.CARD_STROKE_COLOR,
+              width: showDropHint ? 1.5 : AppConstants.CARD_STROKE_WIDTH,
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(isHovering ? 20.0 : 12.0),
-                onTap: onTap,
-                child: Padding(
-                  padding: EdgeInsets.all(isHovering ? 20.0 : 16.0),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: isHovering 
-                              ? Colors.blue.withAlpha((255 * 0.4).round()) 
-                              : Colors.blue.withAlpha((255 * 0.2).round()),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: AnimatedRotation(
-                          duration: const Duration(milliseconds: 200),
-                          turns: isHovering ? 0.05 : 0.0,
-                          child: Icon(
-                            Icons.folder_rounded,
-                            color: isHovering ? Colors.white : Colors.blue,
-                            size: 32,
-                          ),
+            boxShadow: showDropHint
+                ? [
+                    BoxShadow(
+                      color: AppConstants.ACCENT_COLOR.withAlpha((255 * 0.3).round()),
+                      blurRadius: 12.0,
+                      spreadRadius: 2.0,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : [
+                    BoxShadow(
+                      color: Colors.black.withAlpha((255 * 0.15).round()),
+                      blurRadius: 8.0,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(showDropHint ? 16.0 : AppConstants.CARD_RADIUS),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.all(AppConstants.CARD_PADDING),
+                child: Row(
+                  children: [
+                    // Folder icon with rounded modern styling
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: showDropHint 
+                            ? Colors.white.withAlpha((255 * 0.2).round())
+                            : AppConstants.ACCENT_COLOR.withAlpha((255 * 0.15).round()),
+                        borderRadius: BorderRadius.circular(26), // Fully rounded
+                        border: Border.all(
+                          color: showDropHint 
+                              ? Colors.white.withAlpha((255 * 0.3).round())
+                              : AppConstants.ACCENT_COLOR.withAlpha((255 * 0.3).round()),
+                          width: 0.5,
                         ),
                       ),
-                      SizedBox(width: isHovering ? 20 : 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AnimatedDefaultTextStyle(
-                              duration: const Duration(milliseconds: 200),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                              child: Text(folder.name),
+                      child: Icon(
+                        Icons.folder_rounded,
+                        color: showDropHint ? Colors.white : AppConstants.ACCENT_COLOR,
+                        size: 26,
+                      ),
+                    ),
+                    const SizedBox(width: AppConstants.ITEM_HORIZONTAL_GAP),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            folder.name,
+                            style: AppConstants.CARD_TITLE_TEXT_STYLE,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          // Workout count with modern pill styling
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: showDropHint 
+                                  ? Colors.white.withAlpha((255 * 0.15).round())
+                                  : AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.1).round()),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                            const SizedBox(height: 4),
-                            AnimatedDefaultTextStyle(
-                              duration: const Duration(milliseconds: 200),
-                              style: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 14,
-                              ),
-                              child: Text('$workoutCount workout${workoutCount != 1 ? 's' : ''}'),
-                            ),
-                            if (isHovering) ...[
-                              const SizedBox(height: 8),
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withAlpha((255 * 0.2).round()),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Colors.white.withAlpha((255 * 0.3).round()),
-                                    width: 1,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.fitness_center_outlined,
+                                  size: 12,
+                                  color: showDropHint 
+                                      ? Colors.white.withAlpha((255 * 0.8).round())
+                                      : AppConstants.TEXT_SECONDARY_COLOR,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$workoutCount',
+                                  style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: showDropHint 
+                                        ? Colors.white.withAlpha((255 * 0.9).round())
+                                        : AppConstants.TEXT_SECONDARY_COLOR,
                                   ),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.move_down_outlined,
-                                      color: Colors.white,
-                                      size: 14,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    const Text(
-                                      'Drop workout here',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (showDropHint)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha((255 * 0.2).round()),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withAlpha((255 * 0.3).round()),
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.move_down_outlined,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Drop here',
+                              style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
                               ),
-                            ],
+                            ),
                           ],
                         ),
-                      ),
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: isHovering ? 48 : 40,
-                        height: isHovering ? 48 : 40,
-                        decoration: BoxDecoration(
-                          color: isHovering 
-                              ? Colors.white.withAlpha((255 * 0.1).round())
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(isHovering ? 12 : 8),
-                        ),
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.more_vert, 
-                            color: isHovering ? Colors.white : Colors.grey,
-                            size: isHovering ? 24 : 24,
+                      )
+                    else
+                      // Menu button with consistent styling
+                      PullDownButton(
+                        itemBuilder: (context) => [
+                          PullDownMenuItem(
+                            onTap: onRenamePressed,
+                            title: 'Rename Folder',
+                            icon: CupertinoIcons.pencil,
                           ),
-                          onPressed: onMorePressed,
+                          PullDownMenuItem(
+                            onTap: onDeletePressed,
+                            title: 'Delete Folder',
+                            isDestructive: true,
+                            icon: CupertinoIcons.delete,
+                          ),
+                        ],
+                        buttonBuilder: (context, showMenu) => Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.1).round()),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: CupertinoButton(
+                            onPressed: showMenu,
+                            padding: EdgeInsets.zero,
+                            child: Icon(
+                              CupertinoIcons.ellipsis,
+                              color: AppConstants.TEXT_SECONDARY_COLOR,
+                              size: 16,
+                            ),
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
               ),
             ),

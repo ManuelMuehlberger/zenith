@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/exercise.dart';
+import '../../constants/app_constants.dart';
 
 class ExerciseMuscleGroupsSection extends StatelessWidget {
   final Exercise exercise;
@@ -37,17 +38,17 @@ class ExerciseMuscleGroupsSection extends StatelessWidget {
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12.0),
+        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Muscle Groups',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
+Text(
+  exercise.primaryMuscleGroup.name,
+  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: Colors.grey[400],
+      ),
+),
           const SizedBox(height: 16),
           // Single row with Primary and Secondary side by side
           Row(
@@ -66,11 +67,11 @@ class ExerciseMuscleGroupsSection extends StatelessWidget {
                           ),
                     ),
                     const SizedBox(height: 8),
-                    _buildMuscleGroupChip(context, exercise.primaryMuscleGroup, true),
+                    _buildMuscleGroupChip(context, exercise.primaryMuscleGroup.name, true),
                   ],
                 ),
               ),
-              const SizedBox(width: 16), // Space between columns
+              SizedBox(width: AppConstants.ITEM_HORIZONTAL_GAP), // Space between columns
               // Secondary section
               Expanded(
                 flex: 1,
@@ -86,12 +87,12 @@ class ExerciseMuscleGroupsSection extends StatelessWidget {
                     const SizedBox(height: 8),
                     if (exercise.secondaryMuscleGroups.isNotEmpty) ...[
                       // List secondary muscles vertically
-                      ...exercise.secondaryMuscleGroups
-                          .map((muscle) => Padding(
-                                padding: const EdgeInsets.only(bottom: 8.0),
-                                child: _buildMuscleGroupChip(context, muscle, false),
-                              ))
-                          .toList(),
+...exercise.secondaryMuscleGroups
+    .map((muscle) => Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: _buildMuscleGroupChip(context, muscle.name, false),
+        ))
+    ,
                     ] else ...[
                       Text(
                         'None',

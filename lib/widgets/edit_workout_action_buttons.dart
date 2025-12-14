@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../constants/app_constants.dart';
 
 class EditWorkoutActionButtons extends StatelessWidget {
   final VoidCallback onAddExercise;
@@ -38,13 +39,9 @@ class EditWorkoutActionButtons extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Add Exercise',
-                style: TextStyle(
-                  color: Colors.green,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppConstants.HEADER_BUTTON_TEXT_STYLE.copyWith(color: Colors.green),
               ),
             ],
           ),

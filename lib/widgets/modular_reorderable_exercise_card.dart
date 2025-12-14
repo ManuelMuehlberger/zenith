@@ -1,10 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import '../models/workout_session.dart';
+import '../models/workout_exercise.dart';
 
 class ModularReorderableExerciseCard extends StatefulWidget {
-  final SessionExercise exercise;
+  final WorkoutExercise exercise;
   final int itemIndex;
   final Function(String exerciseId) onAddSet;
   final Function(String exerciseId, String setId) onRemoveSet;
@@ -217,7 +217,7 @@ class _ModularReorderableExerciseCardState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.exercise.workoutExercise.exercise.name,
+                  widget.exercise.exerciseDetail?.name ?? widget.exercise.exerciseSlug,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -227,7 +227,7 @@ class _ModularReorderableExerciseCardState
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  widget.exercise.workoutExercise.exercise.primaryMuscleGroup,
+                  widget.exercise.exerciseDetail?.primaryMuscleGroup.name ?? "N/A",
                   style: TextStyle(
                     color: Colors.blue[300],
                     fontSize: 14,
@@ -264,7 +264,7 @@ class _ModularReorderableExerciseCardState
                       ),
                       Expanded(
                         child: Text(
-                          '${set.reps} reps, ${set.weight.toStringAsFixed(1)} ${widget.weightUnit}',
+                          '${set.actualReps ?? set.targetReps ?? 0} reps, ${(set.actualWeight ?? set.targetWeight ?? 0.0).toStringAsFixed(1)} ${widget.weightUnit}',
                           style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14,
@@ -273,11 +273,10 @@ class _ModularReorderableExerciseCardState
                       ),
                       CupertinoButton(
                         padding: EdgeInsets.zero,
-                        minSize: 30,
+                        onPressed: () =>
+                            widget.onRemoveSet(widget.exercise.id, set.id), minimumSize: Size(30, 30),
                         child: Icon(CupertinoIcons.minus_circle_fill,
                             color: Colors.redAccent[100], size: 22),
-                        onPressed: () =>
-                            widget.onRemoveSet(widget.exercise.id, set.id),
                       ),
                     ],
                   ),

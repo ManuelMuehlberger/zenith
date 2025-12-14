@@ -1,39 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
+import '../constants/app_constants.dart';
 import 'workout_exercise.dart';
+import 'typedefs.dart';
+
+enum WorkoutStatus { template, inProgress, completed }
 
 class Workout {
-  final String id;
-  final String name;
-  final List<WorkoutExercise> exercises;
-  final String? folderId;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final int iconCodePoint;
-  final int colorValue;
+  final WorkoutId id;
+  String name;
+  String? description;
+  int? iconCodePoint;
+  int? colorValue;
+  WorkoutFolderId? folderId;
+  String? notes;
+  String? lastUsed; // ISO8601 string
+  int? orderIndex;
+  List<WorkoutExercise> exercises;
+
+  // New fields for sessions and history
+  final WorkoutStatus status;
+  final WorkoutId? templateId; // Links a session to its template
+  DateTime? startedAt;
+  DateTime? completedAt;
 
   Workout({
-    required this.id,
+    WorkoutId? id,
     required this.name,
-    required this.exercises,
+    this.description,
+    this.iconCodePoint,
+    this.colorValue,
     this.folderId,
-    required this.createdAt,
-    required this.updatedAt,
-    this.iconCodePoint = 0xe1a3, // Icons.fitness_center.codePoint, better for storing
-    this.colorValue = 0xFF2196F3, // Colors.blue.value
-  });
+    this.notes,
+    this.lastUsed,
+    this.orderIndex,
+    this.exercises = const [],
+    this.status = WorkoutStatus.template,
+    this.templateId,
+    this.startedAt,
+    this.completedAt,
+  }) : id = id ?? const Uuid().v4();
 
   factory Workout.fromMap(Map<String, dynamic> map) {
     return Workout(
-      id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      exercises: (map['exercises'] as List<dynamic>?)
-          ?.map((e) => WorkoutExercise.fromMap(e as Map<String, dynamic>))
-          .toList() ?? [],
-      folderId: map['folderId'],
-      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(map['updatedAt'] ?? DateTime.now().toIso8601String()),
-      iconCodePoint: map['iconCodePoint'] ?? 0xe1a3,
-      colorValue: map['colorValue'] ?? 0xFF2196F3,
+      id: map['id'] as String,
+      name: map['name'] as String,
+      description: map['description'] as String?,
+      iconCodePoint: map['iconCodePoint'] as int?,
+      colorValue: map['colorValue'] as int?,
+      folderId: map['folderId'] as String?,
+      notes: map['notes'] as String?,
+      lastUsed: map['lastUsed'] as String?,
+      orderIndex: map['orderIndex'] as int?,
+      status: WorkoutStatus.values[map['status'] as int],
+      templateId: map['templateId'] as String?,
+      startedAt: map['startedAt'] != null ? DateTime.parse(map['startedAt'] as String) : null,
+      completedAt: map['completedAt'] != null ? DateTime.parse(map['completedAt'] as String) : null,
+      exercises: [], // To be loaded separately
     );
   }
 
@@ -41,34 +64,51 @@ class Workout {
     return {
       'id': id,
       'name': name,
-      'exercises': exercises.map((e) => e.toMap()).toList(),
-      'folderId': folderId,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'description': description,
       'iconCodePoint': iconCodePoint,
       'colorValue': colorValue,
+      'folderId': folderId,
+      'notes': notes,
+      'lastUsed': lastUsed,
+      'orderIndex': orderIndex,
+      'status': status.index,
+      'templateId': templateId,
+      'startedAt': startedAt?.toIso8601String(),
+      'completedAt': completedAt?.toIso8601String(),
     };
   }
 
   Workout copyWith({
-    String? id,
+    WorkoutId? id,
     String? name,
-    List<WorkoutExercise>? exercises,
-    Object? folderId = _undefined,
-    DateTime? createdAt,
-    DateTime? updatedAt,
+    String? description,
     int? iconCodePoint,
     int? colorValue,
+    Object? folderId = _undefined,
+    String? notes,
+    Object? lastUsed = _undefined,
+    int? orderIndex,
+    List<WorkoutExercise>? exercises,
+    WorkoutStatus? status,
+    WorkoutId? templateId,
+    DateTime? startedAt,
+    DateTime? completedAt,
   }) {
     return Workout(
       id: id ?? this.id,
       name: name ?? this.name,
-      exercises: exercises ?? this.exercises,
-      folderId: folderId == _undefined ? this.folderId : folderId as String?,
-      createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      description: description ?? this.description,
       iconCodePoint: iconCodePoint ?? this.iconCodePoint,
       colorValue: colorValue ?? this.colorValue,
+      folderId: folderId == _undefined ? this.folderId : folderId as String?,
+      notes: notes ?? this.notes,
+      lastUsed: lastUsed == _undefined ? this.lastUsed : lastUsed as String?,
+      orderIndex: orderIndex ?? this.orderIndex,
+      exercises: exercises ?? this.exercises,
+      status: status ?? this.status,
+      templateId: templateId ?? this.templateId,
+      startedAt: startedAt ?? this.startedAt,
+      completedAt: completedAt ?? this.completedAt,
     );
   }
 
@@ -76,16 +116,27 @@ class Workout {
     return exercises.fold(0, (sum, exercise) => sum + exercise.totalSets);
   }
 
+  int get completedSets {
+    return exercises.fold(0, (sum, exercise) => sum + exercise.sets.where((set) => set.isCompleted).length);
+  }
+
   double get totalWeight {
-    return exercises.fold(0.0, (sum, exercise) => sum + exercise.totalWeight);
+    return exercises.fold(0.0, (sum, exercise) {
+      return sum + exercise.sets.fold(0.0, (setSum, set) {
+        if (set.isCompleted && set.actualReps != null && set.actualWeight != null) {
+          return setSum + (set.actualReps! * set.actualWeight!);
+        }
+        return setSum;
+      });
+    });
   }
 
   IconData get icon {
-    return IconData(iconCodePoint, fontFamily: 'MaterialIcons');
+    return WorkoutIcons.getIconDataFromCodePoint(iconCodePoint);
   }
 
   Color get color {
-    return Color(colorValue);
+    return Color(colorValue ?? 0xFF2196F3);
   }
 }
 

@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 import '../services/user_service.dart';
-import '../models/user_profile.dart';
+import '../models/user_data.dart';
+import '../constants/app_constants.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -13,7 +14,7 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  UserProfile? _userProfile;
+  UserData? _userProfile;
   bool _isLoading = true;
   bool _hasChanges = false;
 
@@ -46,7 +47,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _userProfile = profile;
           _nameController.text = profile.name;
           _ageController.text = profile.age.toString();
-          _weightController.text = profile.weight.toStringAsFixed(1);
+          if (profile.weightHistory.isNotEmpty) {
+            _weightController.text = profile.weightHistory.last.value.toStringAsFixed(1);
+          }
           _isLoading = false;
         });
       } else {
@@ -74,12 +77,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (_userProfile == null) return;
 
     try {
-      final updatedProfile = UserProfile(
+      final currentWeight = double.tryParse(_weightController.text) ?? _userProfile!.weightHistory.last.value;
+      final weightHistory = List<WeightEntry>.from(_userProfile!.weightHistory);
+      weightHistory.add(WeightEntry(
+        timestamp: DateTime.now(),
+        value: currentWeight,
+      ));
+      
+      final updatedProfile = UserData(
         name: _nameController.text.trim(),
-        age: int.tryParse(_ageController.text) ?? _userProfile!.age,
+        birthdate: _calculateBirthdate(int.tryParse(_ageController.text) ?? _userProfile!.age),
         units: _userProfile!.units,
-        weight: double.tryParse(_weightController.text) ?? _userProfile!.weight,
+        weightHistory: weightHistory,
         createdAt: _userProfile!.createdAt,
+        theme: _userProfile!.theme,
+
       );
 
       await UserService.instance.saveUserProfile(updatedProfile);
@@ -190,10 +202,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               right: 0,
               child: ClipRRect(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                  filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                   child: Container(
                     height: headerHeight,
-                    color: Colors.black54,
+                    color: AppConstants.HEADER_BG_COLOR_MEDIUM,
                     child: SafeArea(
                       bottom: false,
                       child: _buildHeaderContent(),
@@ -348,7 +360,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             _buildEditableTextField(
               controller: _weightController,
               placeholder: 'Enter your weight',
-              label: 'Weight (${_userProfile?.units == 'metric' ? 'kg' : 'lbs'})',
+              label: 'Weight (${_userProfile?.weightUnit})',
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
               prefixIcon: CupertinoIcons.gauge,
@@ -390,23 +402,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     color: Colors.grey[800],
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: CupertinoSlidingSegmentedControl<String>(
+                  child: CupertinoSlidingSegmentedControl<Units>(
                     backgroundColor: Colors.grey[800]!,
                     thumbColor: Colors.blue,
-                    groupValue: _userProfile?.units ?? 'metric',
-                    children: const {
-                      'metric': Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    groupValue: _userProfile?.units ?? Units.metric,
+                    children: {
+                      Units.metric: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         child: Text(
-                          'kg',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                          Units.metric.weightUnit,
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                         ),
                       ),
-                      'imperial': Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      Units.imperial: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         child: Text(
-                          'lbs',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                          Units.imperial.weightUnit,
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                         ),
                       ),
                     },
@@ -425,22 +437,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Future<void> _updateUnits(String newUnits) async {
+  Future<void> _updateUnits(Units newUnits) async {
     if (_userProfile == null) return;
 
     try {
-      final updatedProfile = UserProfile(
-        name: _userProfile!.name,
-        age: _userProfile!.age,
-        units: newUnits,
-        weight: _userProfile!.weight,
-        createdAt: _userProfile!.createdAt,
-      );
-
+      final updatedProfile = _userProfile!.copyWith(units: newUnits);
       await UserService.instance.saveUserProfile(updatedProfile);
       setState(() {
         _userProfile = updatedProfile;
-        _weightController.text = _userProfile!.weight.toStringAsFixed(1);
+        _weightController.text = _userProfile!.weightHistory.last.value.toStringAsFixed(1);
         _hasChanges = true;
       });
 
@@ -534,5 +539,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       indent: 16,
       endIndent: 16,
     );
+  }
+  
+  DateTime _calculateBirthdate(int age) {
+    final now = DateTime.now();
+    return DateTime(now.year - age, now.month, now.day);
   }
 }

@@ -1,25 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'dart:ui';
+import 'package:pull_down_button/pull_down_button.dart';
 import '../services/database_service.dart';
 import '../services/insights_service.dart';
-import '../models/workout_history.dart';
 import '../models/workout.dart';
 import '../services/workout_service.dart';
 import '../screens/exercise_browser_screen.dart';
-import '../widgets/workout_chart.dart';
 import '../widgets/shared_calendar_view.dart';
 import '../widgets/dated_workout_list_view.dart';
-import '../widgets/insights_stat_card.dart';
 import '../utils/unit_converter.dart';
 import '../services/user_service.dart';
-import 'package:intl/intl.dart';
+import '../constants/app_constants.dart';
+import '../widgets/profile_icon_button.dart';
+import '../widgets/insights/small_bar_card.dart';
+import '../widgets/workout_stats_card.dart';
+import '../widgets/insights/large_trend_card.dart';
+import '../services/insights/workout_trend_provider.dart';
+import '../services/insights/workout_insights_provider.dart';
 
-// Helper class to combine WorkoutHistory with its original Workout details
-class WorkoutHistoryDisplayItem {
-  final WorkoutHistory history;
-  final Workout? workoutDetails; // Nullable if workout is somehow not found
+// Helper class to combine Workout with its original Workout details
+class WorkoutDisplayItem {
+  final Workout workout;
+  final Workout? workoutDetails;
 
-  WorkoutHistoryDisplayItem({required this.history, this.workoutDetails});
+  WorkoutDisplayItem({required this.workout, this.workoutDetails});
 }
 
 class InsightsScreen extends StatefulWidget {
@@ -29,70 +34,93 @@ class InsightsScreen extends StatefulWidget {
   State<InsightsScreen> createState() => _InsightsScreenState();
 }
 
-class _InsightsScreenState extends State<InsightsScreen> { 
-  WorkoutInsights? _insights;
-  bool _isLoading = true;
+class _InsightsScreenState extends State<InsightsScreen> with SingleTickerProviderStateMixin {
   bool _showCalendar = false;
   int _selectedMonthsBack = 6;
-  String _selectedTimeframe = '6 months';
+  String _selectedTimeframe = '6M';
+  
+  // Filters
+  String? _selectedWorkoutName;
+  String? _selectedMuscleGroup;
+  String? _selectedEquipment;
+  bool? _selectedBodyWeight;
+  List<String> _availableWorkoutNames = [];
+  bool _hasWorkouts = true;
+  bool _isCheckingWorkouts = true;
   
   DateTime _selectedDate = DateTime.now();
   DateTime _focusedDate = DateTime.now();
   List<DateTime> _workoutDates = [];
-  List<WorkoutHistoryDisplayItem> _selectedDateWorkoutItems = []; 
+  List<WorkoutDisplayItem> _selectedDateWorkoutItems = [];
   bool _isLoadingCalendar = false;
   
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
-  final List<String> _timeframeOptions = [
-    '3 months',
-    '6 months',
-    '12 months',
-    '24 months',
+  final List<Map<String, dynamic>> _timeframeOptions = [
+    {'label': '1W', 'months': 0}, // Special case for 1 week
+    {'label': '1M', 'months': 1},
+    {'label': '3M', 'months': 3},
+    {'label': '6M', 'months': 6},
+    {'label': '1Y', 'months': 12},
+    {'label': '2Y', 'months': 24},
+    {'label': 'All', 'months': 999},
   ];
 
   @override
   void initState() {
     super.initState();
-    _loadInsights();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+    _loadAvailableWorkouts();
+    _checkWorkouts();
     InsightsService.instance.initialize();
+    _animationController.forward();
+  }
+
+  Future<void> _loadAvailableWorkouts() async {
+    final names = await InsightsService.instance.getAvailableWorkoutNames();
+    if (mounted) {
+      setState(() {
+        _availableWorkoutNames = names;
+      });
+    }
+  }
+
+  Future<void> _checkWorkouts() async {
+    final workouts = await InsightsService.instance.getWorkouts();
+    if (mounted) {
+      setState(() {
+        _hasWorkouts = workouts.isNotEmpty;
+        _isCheckingWorkouts = false;
+      });
+    }
   }
 
   @override
   void dispose() {
+    _animationController.dispose();
     super.dispose();
   }
 
-
-  Future<void> _loadInsights({bool forceRefresh = false}) async {
-    setState(() { _isLoading = true; });
-    try {
-      final insights = await InsightsService.instance.getWorkoutInsights(
-        monthsBack: _selectedMonthsBack,
-        forceRefresh: forceRefresh,
-      );
-      setState(() {
-        _insights = insights;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() { _isLoading = false; });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading insights: $e'), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
-
-  void _fetchWorkoutDetailsForHistorySync(List<WorkoutHistory> histories) {
-    List<WorkoutHistoryDisplayItem> displayItems = [];
-    for (var history in histories) {
+  void _fetchWorkoutDetailsForHistorySync(List<Workout> workouts) {
+    List<WorkoutDisplayItem> displayItems = [];
+    for (var workout in workouts) {
       Workout? details;
       try {
-        details = WorkoutService.instance.getWorkoutById(history.workoutId);
+        if (workout.templateId != null) {
+          details = WorkoutService.instance.getWorkoutById(workout.templateId!);
+        }
       } catch (e) {
+        // Silently handle error
       }
-      displayItems.add(WorkoutHistoryDisplayItem(history: history, workoutDetails: details));
+      displayItems.add(WorkoutDisplayItem(workout: workout, workoutDetails: details));
     }
     setState(() {
       _selectedDateWorkoutItems = displayItems;
@@ -103,8 +131,8 @@ class _InsightsScreenState extends State<InsightsScreen> {
     setState(() { _isLoadingCalendar = true; });
     try {
       final dates = await DatabaseService.instance.getDatesWithWorkouts();
-      final histories = await DatabaseService.instance.getWorkoutHistoryForDate(_selectedDate);
-      _fetchWorkoutDetailsForHistorySync(histories); 
+      final histories = await DatabaseService.instance.getWorkoutsForDate(_selectedDate);
+      _fetchWorkoutDetailsForHistorySync(histories);
       
       if (mounted) {
         setState(() {
@@ -123,94 +151,59 @@ class _InsightsScreenState extends State<InsightsScreen> {
     }
   }
 
-
-  void _showTimeframePicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20), topRight: Radius.circular(20),
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40, height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[600], borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Text('Select Time Period', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              ..._timeframeOptions.map((option) => ListTile(
-                title: Text(option, style: Theme.of(context).textTheme.titleMedium),
-                trailing: _selectedTimeframe == option ? const Icon(Icons.check, color: Colors.blue) : null,
-                onTap: () {
-                  Navigator.pop(context);
-                  _onTimeframeChanged(option);
-                },
-              )),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
+  void _onTimeframeChanged(String label, int months) {
+    setState(() {
+      _selectedTimeframe = label;
+      _selectedMonthsBack = months;
+    });
   }
 
-  void _onTimeframeChanged(String? newValue) {
-    if (newValue != null) {
-      setState(() {
-        _selectedTimeframe = newValue;
-        _selectedMonthsBack = _getMonthsFromTimeframe(newValue);
-      });
-      _loadInsights(forceRefresh: true);
-    }
+  void _onWorkoutFilterChanged(String? workoutName) {
+    setState(() {
+      _selectedWorkoutName = workoutName;
+    });
   }
 
-  int _getMonthsFromTimeframe(String timeframe) {
-    switch (timeframe) {
-      case '3 months': return 3;
-      case '6 months': return 6;
-      case '12 months': return 12;
-      case '24 months': return 24;
-      default: return 6;
-    }
+  void _onMuscleFilterChanged(String? muscleGroup) {
+    setState(() {
+      _selectedMuscleGroup = muscleGroup;
+    });
   }
 
-  String _formatWeight(double weight) {
-    final units = UserService.instance.currentProfile?.units ?? 'metric';
-    final unitLabel = UnitConverter.getWeightUnit(units);
-    final kUnitLabel = units == 'imperial' ? 'k lbs' : 'k kg';
-
-    if (weight > 999) {
-      return '${(weight / 1000).toStringAsFixed(1)}$kUnitLabel';
-    }
-    return '${weight.toStringAsFixed(1)} $unitLabel';
+  void _onEquipmentFilterChanged(String? equipment) {
+    setState(() {
+      _selectedEquipment = equipment;
+    });
   }
 
-  String _getWeightUnitLabel() {
-    final units = UserService.instance.currentProfile?.units ?? 'metric';
-    return UnitConverter.getWeightUnit(units);
+  void _onBodyWeightFilterChanged() {
+    setState(() {
+      _selectedBodyWeight = _selectedBodyWeight == true ? null : true;
+    });
   }
+
+  void _clearAllFilters() {
+    setState(() {
+      _selectedWorkoutName = null;
+      _selectedMuscleGroup = null;
+      _selectedEquipment = null;
+      _selectedBodyWeight = null;
+    });
+  }
+
 
   Future<void> _showExercisePicker() async {
     Navigator.push(
-      context, MaterialPageRoute(builder: (context) => const ExerciseBrowserScreen()),
+      context,
+      MaterialPageRoute(builder: (context) => const ExerciseBrowserScreen()),
     );
   }
 
-  Future<void> _loadWorkoutsForSelectedDate() async { 
-    setState(() { _isLoadingCalendar = true; }); 
+  Future<void> _loadWorkoutsForSelectedDate() async {
+    setState(() { _isLoadingCalendar = true; });
     try {
-      final histories = await DatabaseService.instance.getWorkoutHistoryForDate(_selectedDate);
-      _fetchWorkoutDetailsForHistorySync(histories); // Use sync version
+      final histories = await DatabaseService.instance.getWorkoutsForDate(_selectedDate);
+      _fetchWorkoutDetailsForHistorySync(histories);
       if (mounted) {
         setState(() { _isLoadingCalendar = false; });
       }
@@ -226,7 +219,7 @@ class _InsightsScreenState extends State<InsightsScreen> {
 
   void _onDateSelected(DateTime date) {
     setState(() { _selectedDate = date; });
-    _loadWorkoutsForSelectedDate(); 
+    _loadWorkoutsForSelectedDate();
   }
 
   void _onMonthChanged(DateTime newFocusedDate) {
@@ -236,43 +229,122 @@ class _InsightsScreenState extends State<InsightsScreen> {
         _selectedDate = DateTime(_focusedDate.year, _focusedDate.month, 1);
       }
     });
-    _loadWorkoutsForSelectedDate(); 
+    _loadWorkoutsForSelectedDate();
   }
 
   @override
   Widget build(BuildContext context) {
-    final double topPadding = MediaQuery.of(context).padding.top;
-    final double headerHeight = topPadding + kToolbarHeight;
+    final TextStyle smallTitleStyle = AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE.copyWith(fontSize: 20.0);
+
+    // The small title widget, used in the collapsed app bar
+    final Widget smallTitle = AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: _showCalendar
+          ? Text(
+              'Calendar',
+              key: const ValueKey('calendar_title'),
+              textAlign: TextAlign.center,
+              style: smallTitleStyle,
+            )
+          : Text(
+              'Insights',
+              key: const ValueKey('insights_title'),
+              textAlign: TextAlign.center,
+              style: smallTitleStyle,
+            ),
+    );
 
     return AnimatedBuilder(
       animation: UserService.instance,
       builder: (context, _) {
         return Scaffold(
           backgroundColor: Colors.black,
-          body: Stack(
-            children: [
-              Positioned.fill(
-                child: _buildMainContent(headerHeight),
-              ),
-              // Glass header overlay
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: ClipRRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                    child: Container(
-                      height: headerHeight,
-                      color: Colors.black54,
-                      child: SafeArea(
-                        bottom: false,
-                        child: _buildHeaderContent(),
+          body: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                pinned: true,
+                stretch: true,
+                centerTitle: true,
+                automaticallyImplyLeading: false,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                expandedHeight: AppConstants.HEADER_EXTRA_HEIGHT + kToolbarHeight,
+                leading: _showCalendar
+                    ? IconButton(
+                        icon: const Icon(CupertinoIcons.chevron_back, color: Colors.white, size: 24),
+                        onPressed: () {
+                          setState(() {
+                            _showCalendar = false;
+                          });
+                        },
+                      )
+                    : GestureDetector(
+                        onTap: () {
+                          setState(() { _showCalendar = true; });
+                          _loadCalendarData();
+                        },
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          margin: const EdgeInsets.only(left: 16),
+                          decoration: BoxDecoration(
+                            color: AppConstants.ACCENT_COLOR.withAlpha((255 * 0.2).round()),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            CupertinoIcons.calendar,
+                            color: AppConstants.ACCENT_COLOR,
+                            size: 20,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                actions: [
+                  if (!_showCalendar)
+                    const ProfileIconButton()
+                  else
+                    const SizedBox(width: 48), // Match the leading width when showing back button
+                ],
+                flexibleSpace: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // Persistent glass effect layer
+                        ClipRRect(
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(
+                              sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+                              sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                            ),
+                            child: Container(color: AppConstants.HEADER_BG_COLOR_STRONG),
+                          ),
+                        ),
+                        // FlexibleSpaceBar handles title positioning and parallax of the large title
+                        FlexibleSpaceBar(
+                          centerTitle: true,
+                          title: smallTitle,
+                          background: Container(), // We are not using a background title
+                          collapseMode: CollapseMode.parallax,
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
+              // Timeframe selector and filters (only show when not in calendar view)
+              if (!_showCalendar)
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _TimeframeSelectorDelegate(
+                    timeframeOptions: _timeframeOptions,
+                    selectedTimeframe: _selectedTimeframe,
+                    onTimeframeChanged: _onTimeframeChanged,
+                    filters: _buildFilterWidgets(),
+                  ),
+                ),
+
+              // Main content
+              ..._buildMainContent(),
             ],
           ),
         );
@@ -280,227 +352,467 @@ class _InsightsScreenState extends State<InsightsScreen> {
     );
   }
 
-  Widget _buildHeaderContent() {
-    return _showCalendar 
-        ? SizedBox(
-            height: kToolbarHeight,
-            child: Row(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                    onPressed: () {
-                      setState(() {
-                        _showCalendar = false;
-                      });
-                    },
-                  ),
-                ),
-              ],
+  List<Widget> _buildFilterWidgets() {
+    final muscleGroups = AppMuscleGroup.values
+        .where((group) => group != AppMuscleGroup.na)
+        .map((group) => group.displayName)
+        .toList();
+    
+    final equipmentList = EquipmentType.values
+        .map((equipment) => equipment.displayName)
+        .toList();
+
+    final bool hasAnyFilter = _selectedWorkoutName != null ||
+        _selectedMuscleGroup != null ||
+        _selectedEquipment != null ||
+        _selectedBodyWeight != null;
+
+    final filters = [
+      // Workout Filter
+      _buildFilterTag(
+        context: context,
+        title: 'Workout',
+        isSelected: _selectedWorkoutName != null,
+        items: _availableWorkoutNames,
+        onItemSelected: (val) => _onWorkoutFilterChanged(val == _selectedWorkoutName ? null : val),
+        selectedItem: _selectedWorkoutName,
+      ),
+      const SizedBox(width: 8),
+      // Muscle Filter
+      _buildFilterTag(
+        context: context,
+        title: 'Muscle',
+        isSelected: _selectedMuscleGroup != null,
+        items: muscleGroups,
+        onItemSelected: (val) => _onMuscleFilterChanged(val == _selectedMuscleGroup ? null : val),
+        selectedItem: _selectedMuscleGroup,
+      ),
+      const SizedBox(width: 8),
+      // Equipment Filter
+      _buildFilterTag(
+        context: context,
+        title: 'Equipment',
+        isSelected: _selectedEquipment != null,
+        items: equipmentList,
+        onItemSelected: (val) => _onEquipmentFilterChanged(val == _selectedEquipment ? null : val),
+        selectedItem: _selectedEquipment,
+      ),
+      const SizedBox(width: 8),
+      // Bodyweight Filter
+      _buildBodyweightTag(
+        context: context,
+        isSelected: _selectedBodyWeight == true,
+      ),
+    ];
+
+    if (hasAnyFilter) {
+      return [
+        CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: _clearAllFilters,
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppConstants.WORKOUT_BUTTON_BG_COLOR,
+              shape: BoxShape.circle,
+              border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
             ),
-          )
-        : SizedBox(
-            height: kToolbarHeight,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Insights',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: _showTimeframePicker,
-                    style: TextButton.styleFrom(
-                      backgroundColor: Colors.grey[900],
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_selectedTimeframe, style: Theme.of(context).textTheme.labelLarge),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 16),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            child: const Icon(
+              CupertinoIcons.xmark,
+              size: 16,
+              color: AppConstants.TEXT_SECONDARY_COLOR,
             ),
-          );
+          ),
+        ),
+        const SizedBox(width: 8),
+        ...filters,
+      ];
+    }
+
+    return filters;
   }
 
-  Widget _buildMainContent(double headerHeight) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      child: _showCalendar ? _buildCalendarView(headerHeight) : _buildInsightsView(headerHeight),
+  Widget _buildFilterTag({
+    required BuildContext context,
+    required String title,
+    required bool isSelected,
+    required List<String> items,
+    required Function(String) onItemSelected,
+    required String? selectedItem,
+  }) {
+    return PullDownButton(
+      itemBuilder: (context) => items
+          .map((item) => PullDownMenuItem.selectable(
+                title: item,
+                selected: selectedItem == item,
+                onTap: () => onItemSelected(item),
+              ))
+          .toList(),
+      buttonBuilder: (context, showMenu) => CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: showMenu,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? AppConstants.ACCENT_COLOR : AppConstants.WORKOUT_BUTTON_BG_COLOR,
+            borderRadius: BorderRadius.circular(16.0),
+            border: Border.all(
+              color: isSelected ? AppConstants.ACCENT_COLOR : AppConstants.DIVIDER_COLOR,
+              width: 0.5,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isSelected ? selectedItem! : title,
+                style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
+                  color: isSelected ? Colors.white : AppConstants.TEXT_SECONDARY_COLOR,
+                  fontWeight: isSelected ? FontWeight.w600 : null,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                CupertinoIcons.chevron_down,
+                size: 12,
+                color: isSelected ? Colors.white : AppConstants.TEXT_SECONDARY_COLOR,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildInsightsView(double headerHeight) {
-    if (_isLoading) {
-      return Column(
-        children: [
-          SizedBox(height: headerHeight),
-          const Expanded(
+  Widget _buildBodyweightTag({
+    required BuildContext context,
+    required bool isSelected,
+  }) {
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      onPressed: _onBodyWeightFilterChanged,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppConstants.ACCENT_COLOR : AppConstants.WORKOUT_BUTTON_BG_COLOR,
+          borderRadius: BorderRadius.circular(16.0),
+          border: Border.all(
+            color: isSelected ? AppConstants.ACCENT_COLOR : AppConstants.DIVIDER_COLOR,
+            width: 0.5,
+          ),
+        ),
+        child: Text(
+          'Bodyweight',
+          style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
+            color: isSelected ? Colors.white : AppConstants.TEXT_SECONDARY_COLOR,
+            fontWeight: isSelected ? FontWeight.w600 : null,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildMainContent() {
+    return _showCalendar ? _buildCalendarSlivers() : _buildInsightsSlivers();
+  }
+
+  List<Widget> _buildInsightsSlivers() {
+    if (_isCheckingWorkouts) {
+      return [
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 32.0),
             child: Center(
-              child: CircularProgressIndicator(color: Colors.blue),
+              child: CupertinoActivityIndicator(radius: 14),
             ),
           ),
-        ],
-      );
+        ),
+      ];
     }
 
-    if (_insights == null) {
-      return Column(
-        children: [
-          SizedBox(height: headerHeight),
-          Expanded(
+    if (!_hasWorkouts) {
+      return [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32.0),
             child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.analytics_outlined, size: 64, color: Colors.grey[600]),
-                  const SizedBox(height: 16),
-                  Text('No workout data available', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey[600])),
-                  const SizedBox(height: 8),
-                  Text('Complete some workouts to see your insights', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[700])),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: () => _loadInsights(forceRefresh: true),
-      color: Colors.blue,
-      backgroundColor: Colors.grey[900],
-      child: CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          // Space for header
-          SliverToBoxAdapter(
-            child: SizedBox(height: headerHeight),
-          ),
-          // Content
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            setState(() { _showCalendar = true; });
-                            _loadCalendarData(); 
-                          },
-                          icon: const Icon(Icons.calendar_today),
-                          label: Text('Calendar', style: Theme.of(context).textTheme.labelLarge),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)),
-                        ),
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: AppConstants.WORKOUT_BUTTON_BG_COLOR,
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _showExercisePicker,
-                          icon: const Icon(Icons.fitness_center),
-                          label: Text('Exercises', style: Theme.of(context).textTheme.labelLarge),
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)),
-                        ),
+                      child: const Icon(
+                        CupertinoIcons.chart_bar_fill,
+                        size: 40,
+                        color: AppConstants.TEXT_TERTIARY_COLOR,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(child: InsightsStatCard(title: 'Total Workouts', value: _insights!.totalWorkouts.toString(), icon: Icons.fitness_center, color: Colors.blue)),
-                      const SizedBox(width: 12),
-                      Expanded(child: InsightsStatCard(title: 'Total Hours', value: _insights!.totalHours.toStringAsFixed(1), icon: Icons.timer, color: Colors.green)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  InsightsStatCard(title: 'Total Weight Lifted', value: _formatWeight(_insights!.totalWeight), icon: Icons.monitor_weight, color: Colors.orange),
-                  const SizedBox(height: 24),
-                  Text('Trends over $_selectedTimeframe', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  WorkoutChart(title: 'Workouts per Month', data: _insights!.monthlyWorkouts, color: Colors.blue, unit: 'workouts'),
-                  const SizedBox(height: 16),
-                  WorkoutChart(title: 'Hours per Month', data: _insights!.monthlyHours, color: Colors.green, unit: 'hours'),
-                  const SizedBox(height: 16),
-                  WorkoutChart(title: 'Weight Lifted per Month (${_getWeightUnitLabel()})', data: _insights!.monthlyWeight, color: Colors.orange, unit: _getWeightUnitLabel()),
-                  const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: Colors.grey[900], borderRadius: BorderRadius.circular(16)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Averages', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text('Workout Duration', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[400])),
-                                const SizedBox(height: 4),
-                                FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('${_insights!.averageWorkoutDuration.toStringAsFixed(1)}h', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))),
-                              ]),
-                            ),
-                            Expanded(
-                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text('Weight per Workout', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[400])),
-                                const SizedBox(height: 4),
-                                FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(_formatWeight(_insights!.averageWeightPerWorkout), style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold))),
-                              ]),
-                            ),
-                          ],
-                        ),
-                      ],
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Center(child: Text('Last updated: ${DateFormat('dd/MM/yyyy HH:mm').format(_insights!.lastUpdated)}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[600]))),
-                ],
+                    const SizedBox(height: 24),
+                    const Text(
+                      'No Activity Data',
+                      style: AppConstants.IOS_TITLE_TEXT_STYLE,
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Complete workouts to see your insights',
+                      style: AppConstants.IOS_SUBTITLE_TEXT_STYLE,
+                    ),
+                  ],
+                ),
               ),
             ),
+          ),
+        ),
+      ];
+    }
+
+    return [
+      // Graph Cards Grid
+      SliverToBoxAdapter(
+        child: _buildGraphCardsGrid(),
+      ),
+      
+      // Quick Actions
+      SliverToBoxAdapter(
+        child: _buildQuickActions(),
+      ),
+
+      // Trends Section
+      SliverToBoxAdapter(
+        child: _buildTrendsSection(),
+      ),
+
+      // Bottom spacer
+      SliverToBoxAdapter(
+        child: SizedBox(
+          height: MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight + 20,
+        ),
+      ),
+    ];
+  }
+
+  Widget _buildGraphCardsGrid() {
+    final filters = {
+      'workoutName': _selectedWorkoutName,
+      'muscleGroup': _selectedMuscleGroup,
+      'equipment': _selectedEquipment,
+      'isBodyWeight': _selectedBodyWeight,
+      'timeframe': _selectedTimeframe,
+    };
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+      child: GridView.count(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12.0,
+        crossAxisSpacing: 12.0,
+        childAspectRatio: 1.0,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          WeeklyTrendCard(
+            title: 'Workouts',
+            icon: CupertinoIcons.flame_fill,
+            color: AppConstants.ACCENT_COLOR_ORANGE,
+            unit: 'workouts',
+            provider: WorkoutTrendProvider(WorkoutTrendType.count),
+            filters: filters,
+            mainValueBuilder: (data) {
+               if (data.isEmpty) return "0.0";
+               final total = data.fold(0.0, (sum, e) => sum + e.value);
+               return (total / data.length).toStringAsFixed(1);
+            },
+            subLabelBuilder: (data) => 'Avg / Week',
+          ),
+          WeeklyTrendCard(
+            title: 'Duration',
+            icon: CupertinoIcons.clock_fill,
+            color: AppConstants.ACCENT_COLOR,
+            unit: 'min',
+            provider: WorkoutTrendProvider(WorkoutTrendType.duration),
+            filters: filters,
+            mainValueBuilder: (data) {
+               if (data.isEmpty) return "0m";
+               double totalDurationMins = 0;
+               int totalWorkouts = 0;
+               for (var d in data) {
+                 totalDurationMins += d.value * 60;
+                 totalWorkouts += d.count ?? 0;
+               }
+               if (totalWorkouts == 0) return "0m";
+               return '${(totalDurationMins / totalWorkouts).toStringAsFixed(0)}m';
+            },
+            subLabelBuilder: (data) => 'Avg / Workout',
+          ),
+          WeeklyTrendCard(
+            title: 'Volume',
+            icon: CupertinoIcons.layers_fill,
+            color: AppConstants.ACCENT_COLOR_GREEN,
+            unit: 'sets',
+            provider: WorkoutTrendProvider(WorkoutTrendType.sets),
+            filters: filters,
+            mainValueBuilder: (data) {
+               if (data.isEmpty) return "0";
+               double totalSets = 0;
+               int totalWorkouts = 0;
+               for (var d in data) {
+                 totalSets += d.value;
+                 totalWorkouts += d.count ?? 0;
+               }
+               if (totalWorkouts == 0) return "0";
+               return (totalSets / totalWorkouts).toStringAsFixed(0);
+            },
+            subLabelBuilder: (data) => 'Avg Sets / Workout',
+          ),
+          WorkoutStatsCard(
+            provider: WorkoutInsightsProvider(),
+            filters: filters,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCalendarView(double headerHeight) {
-    if (_isLoadingCalendar) {
-      return Column(
+
+  Widget _buildQuickActions() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
+      child: GestureDetector(
+        onTap: _showExercisePicker,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1C1C1E),
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppConstants.ACCENT_COLOR_GREEN.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  CupertinoIcons.search,
+                  color: AppConstants.ACCENT_COLOR_GREEN,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Text(
+                'Browse Exercises',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              const Icon(
+                CupertinoIcons.chevron_right,
+                color: AppConstants.TEXT_TERTIARY_COLOR,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTrendsSection() {
+    final filters = {
+      'workoutName': _selectedWorkoutName,
+      'muscleGroup': _selectedMuscleGroup,
+      'equipment': _selectedEquipment,
+      'isBodyWeight': _selectedBodyWeight,
+      'timeframe': _selectedTimeframe,
+    };
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: headerHeight),
-          const Expanded(
-            child: Center(
-              child: CircularProgressIndicator(color: Colors.blue),
+          Text(
+            'Trends',
+            style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+              color: AppConstants.TEXT_TERTIARY_COLOR,
+              letterSpacing: 0.5,
             ),
           ),
+          const SizedBox(height: 12),
+          TrendInsightCard(
+            title: 'Workouts',
+            color: AppConstants.ACCENT_COLOR_ORANGE,
+            unit: 'workouts',
+            icon: CupertinoIcons.flame_fill,
+            filters: filters,
+            provider: WorkoutTrendProvider(WorkoutTrendType.count),
+          ),
+          const SizedBox(height: 12),
+          TrendInsightCard(
+            title: 'Hours',
+            color: AppConstants.ACCENT_COLOR,
+            unit: 'hours',
+            icon: CupertinoIcons.clock_fill,
+            filters: filters,
+            provider: WorkoutTrendProvider(WorkoutTrendType.duration),
+          ),
+          const SizedBox(height: 12),
+          TrendInsightCard(
+            title: 'Weight Lifted',
+            color: AppConstants.ACCENT_COLOR_GREEN,
+            unit: _getWeightUnitLabel(),
+            icon: CupertinoIcons.chart_bar_square_fill,
+            filters: filters,
+            provider: WorkoutTrendProvider(WorkoutTrendType.volume),
+          ),
         ],
-      );
+      ),
+    );
+  }
+
+  String _getWeightUnitLabel() {
+    final units = UserService.instance.currentProfile?.units ?? Units.metric;
+    return UnitConverter.getWeightUnit(units.name);
+  }
+
+  List<Widget> _buildCalendarSlivers() {
+    if (_isLoadingCalendar) {
+      return [
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 32.0),
+            child: Center(
+              child: CupertinoActivityIndicator(radius: 14),
+            ),
+          ),
+        ),
+      ];
     }
 
-    return Column(
-      children: [
-        // Space for header
-        SizedBox(height: headerHeight),
-        Container(
+    return [
+      SliverToBoxAdapter(
+        child: Container(
           margin: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
           decoration: BoxDecoration(
-            color: Colors.grey[900],
-            borderRadius: BorderRadius.circular(20),
+            color: AppConstants.CARD_BG_COLOR,
+            borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+            border: Border.all(
+              color: AppConstants.DIVIDER_COLOR,
+              width: 0.5,
+            ),
           ),
           child: SharedCalendarView(
             selectedDate: _selectedDate,
@@ -510,18 +822,122 @@ class _InsightsScreenState extends State<InsightsScreen> {
             onMonthChanged: _onMonthChanged,
           ),
         ),
-        // Workout list section
-        Expanded(
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: DatedWorkoutListView(
-              selectedDate: _selectedDate,
-              workouts: _selectedDateWorkoutItems.map((item) => item.history).toList(), 
-              isLoading: _isLoadingCalendar,
-            ),
+      ),
+      SliverFillRemaining(
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: DatedWorkoutListView(
+            selectedDate: _selectedDate,
+            workouts: _selectedDateWorkoutItems.map((item) => item.workout).toList(),
+            isLoading: _isLoadingCalendar,
           ),
         ),
-      ],
+      ),
+    ];
+  }
+}
+
+// Custom delegate for the timeframe selector header
+class _TimeframeSelectorDelegate extends SliverPersistentHeaderDelegate {
+  final List<Map<String, dynamic>> timeframeOptions;
+  final String selectedTimeframe;
+  final Function(String, int) onTimeframeChanged;
+  final List<Widget> filters;
+
+  _TimeframeSelectorDelegate({
+    required this.timeframeOptions,
+    required this.selectedTimeframe,
+    required this.onTimeframeChanged,
+    required this.filters,
+  });
+
+  @override
+  double get minExtent => 52.0; // 36 (selector) + 16 (padding)
+
+  @override
+  double get maxExtent => 52.0;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(
+          sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+          sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppConstants.HEADER_BG_COLOR_STRONG,
+            border: Border(
+              bottom: BorderSide(
+                color: AppConstants.DIVIDER_COLOR,
+                width: 0.5,
+              ),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: filters,
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildTimeframeDropdown(context),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return true; // Important for state changes to reflect in the UI
+  }
+
+  Widget _buildTimeframeDropdown(BuildContext context) {
+    return PullDownButton(
+      itemBuilder: (context) => timeframeOptions
+          .map((option) => PullDownMenuItem.selectable(
+                title: option['label'],
+                selected: selectedTimeframe == option['label'],
+                onTap: () => onTimeframeChanged(option['label'], option['months']),
+              ))
+          .toList(),
+      buttonBuilder: (context, showMenu) => CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: showMenu,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+          decoration: BoxDecoration(
+            color: AppConstants.WORKOUT_BUTTON_BG_COLOR,
+            borderRadius: BorderRadius.circular(8.0),
+            border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                selectedTimeframe,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(
+                CupertinoIcons.chevron_down,
+                size: 16,
+                color: AppConstants.TEXT_SECONDARY_COLOR,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

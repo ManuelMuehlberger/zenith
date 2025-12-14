@@ -4,25 +4,25 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:ui';
 
-import '../models/workout_session.dart';
+import '../models/workout.dart';
+import '../models/workout_template.dart';
 import '../models/exercise.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../services/workout_session_service.dart';
 import '../services/user_service.dart';
-import '../services/workout_service.dart';
+import '../services/workout_template_service.dart';
 import '../services/reorder_service.dart';
 import '../widgets/active_workout_app_bar.dart';
-import '../widgets/active_exercise_card.dart';
-import '../widgets/modular_reorderable_exercise_card.dart';
-import '../widgets/custom_reorderable_exercise_list.dart';
+import '../widgets/reorderable_active_exercise_card.dart';
 import '../widgets/active_workout_action_buttons.dart';
 import 'exercise_picker_screen.dart';
 import 'workout_completion_screen.dart';
 import '../utils/navigation_helper.dart';
+import '../constants/app_constants.dart';
 
 class ActiveWorkoutScreen extends StatefulWidget {
-  final WorkoutSession session;
+  final Workout session;
 
   const ActiveWorkoutScreen({
     super.key,
@@ -36,7 +36,8 @@ class ActiveWorkoutScreen extends StatefulWidget {
 class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   Timer? _timer;
   final Set<int> _expandedNotes = {};
-  late WorkoutSession _currentSession;
+  late Workout _currentSession;
+  int? _draggingIndex;
 
   @override
   void initState() {
@@ -90,7 +91,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   Widget build(BuildContext context) {
     final double topPadding = MediaQuery.of(context).padding.top;
     final double headerHeight = topPadding + ActiveWorkoutAppBar.getContentHeight();
-    final String weightUnit = (UserService.instance.currentProfile?.units == 'imperial') ? 'lbs' : 'kg';
+    final String weightUnit = (UserService.instance.currentProfile?.units == Units.imperial) ? 'lbs' : 'kg';
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -98,7 +99,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         children: [
           // Main content - allow scrolling behind header
           Positioned.fill(
-            child: _buildExercisesList(headerHeight, weightUnit),
+            child: _buildUnifiedExercisesList(headerHeight, weightUnit),
           ),
           // Glass header overlay
           Positioned(
@@ -107,10 +108,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             right: 0,
             child: ClipRRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
                 child: Container(
                   height: headerHeight,
-                  color: Colors.black54,
+                  color: AppConstants.HEADER_BG_COLOR_MEDIUM,
                   child: SafeArea(
                     bottom: false,
                     child: _buildHeaderContent(weightUnit),
@@ -125,9 +126,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   }
 
   Widget _buildHeaderContent(String weightUnit) {
-    final progress = _currentSession.progress;
-    final duration = _currentSession.duration;
-    
+    final totalSets = _currentSession.totalSets;
+    final progress = totalSets > 0 ? _currentSession.completedSets / totalSets : 0.0;
+    final isCompleted = progress >= 1.0;
+    final duration = _currentSession.completedAt != null
+        ? _currentSession.completedAt!.difference(_currentSession.startedAt ?? DateTime.now())
+        : DateTime.now().difference(_currentSession.startedAt ?? DateTime.now());
+    final workoutColor = _currentSession.color;
+    final mutedWorkoutColor = workoutColor.withAlpha((255 * 0.15).round());
+    final semiTransparentWorkoutColor = workoutColor.withAlpha((255 * 0.6).round());
+
     return Column(
       children: [
         // Top row
@@ -137,14 +145,29 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12.0),
             child: Row(
               children: [
+                // Workout icon container
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: mutedWorkoutColor,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: workoutColor.withAlpha((255 * 0.3).round()),
+                      width: 0.5,
+                    ),
+                  ),
+                  child: Icon(
+                    _currentSession.icon,
+                    color: workoutColor,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    _currentSession.workout.name,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
+                    _currentSession.name,
+                    style: AppConstants.HEADER_TITLE_TEXT_STYLE,
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -159,13 +182,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                         HapticFeedback.lightImpact();
                       },
                       style: IconButton.styleFrom(
-                        backgroundColor: const Color(0xFF222222),
+                        backgroundColor: AppConstants.WORKOUT_BUTTON_BG_COLOR,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
                           side: BorderSide(
                             color: ReorderService.instance.isReorderMode
-                                ? Colors.orange.withAlpha((255 * 0.3).round())
-                                : Colors.grey.withAlpha((255 * 0.3).round()),
+                                ? workoutColor.withAlpha((255 * 0.3).round())
+                                : AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.3).round()),
                             width: 1,
                           ),
                         ),
@@ -174,7 +197,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                       ),
                       icon: Icon(
                         Icons.reorder,
-                        color: ReorderService.instance.isReorderMode ? Colors.orange : Colors.grey[400],
+                        color: ReorderService.instance.isReorderMode ? workoutColor : AppConstants.TEXT_TERTIARY_COLOR,
                         size: 22,
                       ),
                       tooltip: ReorderService.instance.isReorderMode ? 'Exit reorder mode' : 'Reorder exercises',
@@ -183,23 +206,24 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                     TextButton(
                       onPressed: _showFinishWorkoutDialog,
                       style: TextButton.styleFrom(
-                        backgroundColor: const Color.fromARGB(255, 10, 18, 9),
+                        backgroundColor: isCompleted ? AppConstants.ACCENT_COLOR_GREEN : AppConstants.FINISH_BUTTON_BG_COLOR,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
-                          side: BorderSide(
-                            color: Colors.green.withAlpha((255 * 0.3).round()),
-                            width: 1,
-                          ),
+                          side: isCompleted
+                              ? BorderSide.none
+                              : BorderSide(
+                                  color: AppConstants.ACCENT_COLOR_GREEN.withAlpha((255 * 0.3).round()),
+                                  width: 1,
+                                ),
                         ),
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         minimumSize: Size.zero,
                       ),
-                      child: const Text(
+                      child: Text(
                         'Finish',
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                        style: AppConstants.HEADER_BUTTON_TEXT_STYLE.copyWith(
+                          color: isCompleted ? Colors.white : AppConstants.ACCENT_COLOR_GREEN,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
@@ -221,40 +245,45 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                 _buildInlineStatCard(
                   WorkoutSessionService.instance.formatDuration(duration),
                   Icons.timer_outlined,
+                  workoutColor,
                 ),
                 Container(
-                  width: 1, height: 20, color: Colors.grey[800],
+                  width: 1, height: 20, color: AppConstants.DIVIDER_COLOR,
                   margin: const EdgeInsets.symmetric(horizontal: 8),
                 ),
                 _buildInlineStatCard(
                   '${_currentSession.completedSets}/${_currentSession.totalSets}',
                   Icons.fitness_center_outlined,
+                  workoutColor,
                 ),
                 Container(
-                  width: 1, height: 20, color: Colors.grey[800],
+                  width: 1, height: 20, color: AppConstants.DIVIDER_COLOR,
                   margin: const EdgeInsets.symmetric(horizontal: 8),
                 ),
                 _buildInlineStatCard(
                   '${WorkoutSessionService.instance.formatWeight(_currentSession.totalWeight)}$weightUnit',
                   Icons.monitor_weight_outlined,
+                  workoutColor,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(1),
+                    borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: progress,
-                      backgroundColor: Colors.grey[800],
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
-                      minHeight: 2,
+                      backgroundColor: AppConstants.DIVIDER_COLOR,
+                      valueColor: AlwaysStoppedAnimation<Color>(semiTransparentWorkoutColor),
+                      minHeight: 5,
                     ),
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Text(
                   '${(progress * 100).toInt()}%',
-                  style: const TextStyle(
-                    color: Colors.blue, fontSize: 11, fontWeight: FontWeight.w600,
+                  style: TextStyle(
+                    fontSize: AppConstants.IOS_SUBTITLE_FONT_SIZE,
+                    fontWeight: FontWeight.bold,
+                    color: semiTransparentWorkoutColor,
                   ),
                 ),
               ],
@@ -265,157 +294,125 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     );
   }
 
-  Widget _buildInlineStatCard(String value, IconData icon) {
+  Widget _buildInlineStatCard(String value, IconData icon, Color color) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: Colors.blue, size: 16),
+        Icon(icon, color: color, size: 16),
         const SizedBox(width: 4),
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
+          style: AppConstants.IOS_SUBTITLE_TEXT_STYLE.copyWith(
             fontWeight: FontWeight.bold,
+            color: AppConstants.TEXT_PRIMARY_COLOR,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildExercisesList(double headerHeight, String weightUnit) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      transitionBuilder: (Widget child, Animation<double> animation) {
-        return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0.0, 0.05),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
-            child: child,
-          ),
-        );
-      },
-      child: ReorderService.instance.isReorderMode
-          ? _buildReorderModeList(headerHeight, weightUnit)
-          : _buildNormalModeList(headerHeight, weightUnit),
-    );
-  }
+  Widget _buildUnifiedExercisesList(double headerHeight, String weightUnit) {
+    final isReorderMode = ReorderService.instance.isReorderMode;
+    final double bottomPadding = MediaQuery.of(context).padding.bottom;
 
-  Widget _buildReorderModeList(double headerHeight, String weightUnit) {
-    return Column(
-      key: const ValueKey('reorder_mode'),
-      children: [
-        // Space for header
-        SizedBox(height: headerHeight),
-        // Reorder mode indicator
-        TweenAnimationBuilder<double>(
-          duration: const Duration(milliseconds: 300),
-          tween: Tween(begin: 0.0, end: 1.0),
-          curve: Curves.easeOutBack,
-          builder: (context, value, child) {
-            final clampedValue = value.clamp(0.0, 1.0);
-            return Transform.translate(
-              offset: Offset(0, -20 * (1 - clampedValue)),
-              child: Opacity(
-                opacity: clampedValue,
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                  padding: const EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withAlpha((255 * 0.1).round()),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.withAlpha((255 * 0.3).round()), width: 1),
-                  ),
-                  child: Row(children: [
-                    Icon(Icons.info_outline, color: Colors.orange, size: 16),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text('Drag exercises to reorder them',
-                          style: TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.w500)),
-                    ),
-                  ]),
-                ),
-              ),
-            );
-          },
-        ),
-        Expanded(
-          child: CustomReorderableExerciseList(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            exercises: _currentSession.exercises,
-            onReorder: _onReorderExercises,
-            itemExtent: 180.0,
-            itemBuilder: (context, index, isDragging, draggingIndex) {
-              final exercise = _currentSession.exercises[index];
-              return ModularReorderableExerciseCard(
-                key: ValueKey(exercise.id),
-                exercise: exercise,
-                itemIndex: index,
-                onAddSet: _addSet,
-                onRemoveSet: _removeSet,
-                weightUnit: weightUnit,
-                isDragging: isDragging,
-                draggingIndex: draggingIndex,
-              );
-            },
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-          child: ActiveWorkoutActionButtons(
-            onAddExercise: _addExercise,
-            onAbortWorkout: _showAbortWorkoutDialog,
-            showAbortButton: false,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNormalModeList(double headerHeight, String weightUnit) {
     return CustomScrollView(
-      key: const ValueKey('normal_mode'),
       slivers: [
-        // Space for header
-        SliverToBoxAdapter(
-          child: SizedBox(height: headerHeight),
-        ),
-        // Exercise list
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              if (index == _currentSession.exercises.length) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-                  child: ActiveWorkoutActionButtons(
-                    onAddExercise: _addExercise,
-                    onAbortWorkout: _showAbortWorkoutDialog,
-                    showAbortButton: true,
-                  ),
-                );
-              }
-              final exercise = _currentSession.exercises[index];
-              return Container(
+        SliverToBoxAdapter(child: SizedBox(height: headerHeight)),
+        SliverReorderableList(
+          itemBuilder: (context, index) {
+            final exercise = _currentSession.exercises[index];
+            final isDragging = _draggingIndex == index;
+            final isOtherDragging = _draggingIndex != null && _draggingIndex != index;
+
+            return ReorderableDelayedDragStartListener(
+              key: ValueKey(exercise.id),
+              index: index,
+              child: Container(
                 margin: const EdgeInsets.fromLTRB(20.0, 0, 20.0, 20.0),
-                child: ActiveExerciseCard(
+                child: ReorderableActiveExerciseCard(
                   exercise: exercise,
                   weightUnit: weightUnit,
                   expandedNotes: _expandedNotes,
                   exerciseIndex: index,
+                  isReorderMode: isReorderMode,
+                  isDragging: isDragging,
+                  isOtherDragging: isOtherDragging,
                   onToggleNotes: _toggleNotesExpansion,
                   onUpdateSet: _updateSet,
                   onToggleSetCompletion: _toggleSetCompletion,
+                  onAddSet: () => _addSet(exercise.id),
+                  onRemoveSet: (setId) => _removeSet(exercise.id, setId),
+                  workoutColor: _currentSession.color,
+                  workoutStartedAt: _currentSession.startedAt,
                 ),
-              );
-            },
-            childCount: _currentSession.exercises.length + 1,
+              ),
+            );
+          },
+          itemCount: _currentSession.exercises.length,
+          onReorder: (oldIndex, newIndex) {
+            setState(() {
+              _draggingIndex = null;
+            });
+            _onReorderExercises(oldIndex, newIndex);
+          },
+          onReorderStart: (index) {
+            setState(() {
+              _draggingIndex = index;
+            });
+          },
+          onReorderEnd: (index) {
+            setState(() {
+              _draggingIndex = null;
+            });
+          },
+          proxyDecorator: (child, index, animation) {
+            final exercise = _currentSession.exercises[index];
+            final proxyCard = ReorderableActiveExerciseCard(
+              key: ValueKey('proxy_${exercise.id}'),
+              exercise: exercise,
+              weightUnit: weightUnit,
+              expandedNotes: _expandedNotes,
+              exerciseIndex: index,
+              isReorderMode: true,
+              isDragging: true,
+              isOtherDragging: false,
+              onToggleNotes: (_) {},
+              onUpdateSet: (_, __, {reps, weight, isCompleted}) {},
+              onToggleSetCompletion: (_, __) {},
+              onAddSet: () {},
+              onRemoveSet: (_) {},
+              workoutColor: _currentSession.color,
+              workoutStartedAt: _currentSession.startedAt,
+            );
+
+            return Material(
+              color: Colors.transparent,
+              child: AnimatedBuilder(
+                animation: animation,
+                builder: (context, child) {
+                  final double animValue = Curves.easeInOut.transform(animation.value);
+                  final double scale = lerpDouble(1, 1.05, animValue)!;
+                  return Transform.scale(
+                    scale: scale,
+                    child: child,
+                  );
+                },
+                child: proxyCard,
+              ),
+            );
+          },
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+            child: ActiveWorkoutActionButtons(
+              onAddExercise: _addExercise,
+              onAbortWorkout: _showAbortWorkoutDialog,
+            ),
           ),
+        ),
+        SliverPadding(
+          padding: EdgeInsets.only(bottom: bottomPadding + 40),
         ),
       ],
     );
@@ -425,8 +422,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     await WorkoutSessionService.instance.updateSet(
       exerciseId,
       setId,
-      reps: reps,
-      weight: weight,
+      actualReps: reps,
+      actualWeight: weight,
       isCompleted: isCompleted,
     );
     final updatedSession = WorkoutSessionService.instance.currentSession;
@@ -449,16 +446,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
     final exercise = _currentSession.exercises[exerciseIndex];
     final lastSet = exercise.sets.isNotEmpty ? exercise.sets.last : null;
-    final newSet = SessionSet(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      reps: lastSet?.reps ?? 10,
-      weight: lastSet?.weight ?? 0.0,
+    final newSet = WorkoutSet(
+      workoutExerciseId: exerciseId,
+      setIndex: exercise.sets.length,
+      actualReps: lastSet?.actualReps ?? 10,
+      actualWeight: lastSet?.actualWeight ?? 0.0,
       isCompleted: false,
     );
 
-    final updatedSets = List<SessionSet>.from(exercise.sets)..add(newSet);
+    final updatedSets = List<WorkoutSet>.from(exercise.sets)..add(newSet);
     final updatedExercise = exercise.copyWith(sets: updatedSets);
-    final updatedExercises = List<SessionExercise>.from(_currentSession.exercises)
+    final updatedExercises = List<WorkoutExercise>.from(_currentSession.exercises)
       ..[exerciseIndex] = updatedExercise;
     final updatedSession = _currentSession.copyWith(exercises: updatedExercises);
 
@@ -476,7 +474,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     
     // If this is the last set, remove the entire exercise instead
     if (exercise.sets.length <= 1) {
-      final updatedExercises = List<SessionExercise>.from(_currentSession.exercises)
+      final updatedExercises = List<WorkoutExercise>.from(_currentSession.exercises)
         ..removeAt(exerciseIndex);
       final updatedSession = _currentSession.copyWith(exercises: updatedExercises);
 
@@ -488,9 +486,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     }
 
     // Remove the specific set
-    final updatedSets = List<SessionSet>.from(exercise.sets)..removeWhere((s) => s.id == setId);
+    final updatedSets = List<WorkoutSet>.from(exercise.sets)..removeWhere((s) => s.id == setId);
     final updatedExercise = exercise.copyWith(sets: updatedSets);
-    final updatedExercises = List<SessionExercise>.from(_currentSession.exercises)
+    final updatedExercises = List<WorkoutExercise>.from(_currentSession.exercises)
       ..[exerciseIndex] = updatedExercise;
     final updatedSession = _currentSession.copyWith(exercises: updatedExercises);
 
@@ -504,7 +502,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     if (newIndex > oldIndex) {
       newIndex -= 1;
     }
-    final exercises = List<SessionExercise>.from(_currentSession.exercises);
+    final exercises = List<WorkoutExercise>.from(_currentSession.exercises);
     final exercise = exercises.removeAt(oldIndex);
     exercises.insert(newIndex, exercise);
 
@@ -519,24 +517,33 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   }
 
   void _addExercise() async {
-    final selectedExercise = await Navigator.push<Exercise>(
+    final selectedExercises = await Navigator.push<List<Exercise>>(
       context,
-      MaterialPageRoute(builder: (context) => const ExercisePickerScreen()),
+      MaterialPageRoute(builder: (context) => const ExercisePickerScreen(multiSelect: true)),
     );
 
-    if (selectedExercise != null) {
-      final workoutExercise = WorkoutExercise(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        exercise: selectedExercise,
-        sets: [WorkoutSet(id: DateTime.now().millisecondsSinceEpoch.toString(), reps: 10, weight: 0.0)],
-        notes: '',
-      );
-      final sessionExercise = SessionExercise(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        workoutExercise: workoutExercise,
-        sets: [SessionSet(id: DateTime.now().millisecondsSinceEpoch.toString(), reps: 10, weight: 0.0, isCompleted: false)],
-      );
-      final updatedExercises = List<SessionExercise>.from(_currentSession.exercises)..add(sessionExercise);
+    if (selectedExercises != null && selectedExercises.isNotEmpty) {
+      final newWorkoutExercises = selectedExercises.map((selectedExercise) {
+        final newWorkoutExerciseId = "${DateTime.now().millisecondsSinceEpoch}_${selectedExercise.slug}_wex";
+        
+        final templateSet = WorkoutSet(
+          workoutExerciseId: newWorkoutExerciseId,
+          setIndex: 0,
+          targetReps: 10,
+          targetWeight: 0.0,
+        );
+
+        return WorkoutExercise(
+          id: newWorkoutExerciseId,
+          workoutId: _currentSession.id,
+          exerciseSlug: selectedExercise.slug,
+          exerciseDetail: selectedExercise,
+          sets: [templateSet],
+          notes: '',
+        );
+      }).toList();
+      
+      final updatedExercises = List<WorkoutExercise>.from(_currentSession.exercises)..addAll(newWorkoutExercises);
       final updatedSession = _currentSession.copyWith(exercises: updatedExercises);
       
       await WorkoutSessionService.instance.updateSession(updatedSession);
@@ -580,7 +587,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
             child: const Text('Abort'),
             onPressed: () async {
               Navigator.pop(context);
-              await WorkoutSessionService.instance.clearActiveSession();
+              await WorkoutSessionService.instance.clearActiveSession(deleteFromDb: true);
               if (mounted) {
                 // Navigate back to home and clear the entire navigation stack
                 Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
@@ -595,82 +602,22 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   }
 
   Future<void> _checkForRoutineUpdatesAndFinish() async {
-    final originalWorkout = _currentSession.workout;
-    final sessionExercises = _currentSession.exercises;
-    bool hasChanges = sessionExercises.length != originalWorkout.exercises.length;
-
-    if (!hasChanges) {
-      for (int i = 0; i < sessionExercises.length; i++) {
-        final sEx = sessionExercises[i];
-        final oEx = originalWorkout.exercises[i];
-        if (sEx.workoutExercise.exercise.slug != oEx.exercise.slug || sEx.sets.length != oEx.sets.length) {
-          hasChanges = true;
-          break;
-        }
-      }
+    WorkoutTemplate? originalTemplate;
+    
+    if (_currentSession.templateId != null) {
+      originalTemplate = await WorkoutTemplateService.instance.getWorkoutTemplateById(_currentSession.templateId!);
     }
-    if (!mounted) return;
-    if (hasChanges) {
-      _showUpdateRoutineDialog();
-    } else {
+    
+    if (originalTemplate == null) {
       _finishWorkout();
+      return;
     }
-  }
-
-  void _showUpdateRoutineDialog() {
-    showCupertinoDialog<void>(
-      context: context,
-      builder: (BuildContext context) => CupertinoAlertDialog(
-        title: const Text('Update Routine?'),
-        content: const Text('Changes detected. Update the original routine?'),
-        actions: <CupertinoDialogAction>[
-          CupertinoDialogAction(
-            child: const Text('No, Keep Original'),
-            onPressed: () {
-              Navigator.of(context).pop();
-              _finishWorkout();
-            },
-          ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            child: const Text('Yes, Update Routine'),
-            onPressed: () {
-              Navigator.of(context).pop();
-              _updateRoutineAndFinish();
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _updateRoutineAndFinish() async {
-    try {
-      final updatedWorkoutExercises = _currentSession.exercises.map((sEx) {
-        final originalExercise = _currentSession.workout.exercises
-            .firstWhere((oEx) => oEx.exercise.slug == sEx.workoutExercise.exercise.slug, orElse: () => sEx.workoutExercise);
-        
-        final updatedSets = sEx.sets.asMap().entries.map((entry) {
-          int idx = entry.key;
-          SessionSet sSet = entry.value;
-          double weight = (originalExercise.sets.length > idx) ? originalExercise.sets[idx].weight : sSet.weight;
-          return WorkoutSet(
-            id: '${DateTime.now().millisecondsSinceEpoch}_${sEx.id}_$idx',
-            reps: sSet.reps,
-            weight: weight,
-          );
-        }).toList();
-        return sEx.workoutExercise.copyWith(sets: updatedSets);
-      }).toList();
-
-      final updatedWorkout = _currentSession.workout.copyWith(exercises: updatedWorkoutExercises);
-      await WorkoutService.instance.updateWorkout(updatedWorkout);
-    } catch (e) {
-      // Log error or show a message
-    } finally {
-      if (!mounted) return;
-      _finishWorkout();
-    }
+    
+    // TODO: Implement template comparison logic
+    // This would require loading the template's exercises from WorkoutExerciseDao
+    // and comparing them with the current session's exercises
+    // For now, we'll just finish the workout without the update dialog
+    _finishWorkout();
   }
 
   void _finishWorkout() async {
@@ -679,7 +626,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       ReorderService.instance.toggleReorderMode();
     }
     if (!mounted) return;
-    await Navigator.pushReplacement(
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => WorkoutCompletionScreen(session: _currentSession)),
     );
