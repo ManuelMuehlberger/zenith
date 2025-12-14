@@ -482,17 +482,13 @@ class WorkoutSessionService {
     final seconds = duration.inSeconds.remainder(60);
     
     if (hours > 0) {
-      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+      return '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     } else {
-      return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+      return '$minutes:${seconds.toString().padLeft(2, '0')}';
     }
   }
 
   String formatWeight(double weight) {
-    if (weight == weight.toInt()) {
-      return weight.toInt().toString();
-    } else {
-      return weight.toStringAsFixed(1);
-    }
+    return weight.toStringAsFixed(1);
   }
 }

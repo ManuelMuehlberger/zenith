@@ -6,8 +6,8 @@ import '../constants/app_constants.dart';
 import '../models/workout.dart';
 import '../services/workout_service.dart';
 import '../services/user_service.dart';
-import 'settings_screen.dart';
 import '../widgets/past_workout_list_item.dart';
+import '../widgets/profile_icon_button.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -101,8 +101,8 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final TextStyle smallTitleStyle = AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE;
-    final TextStyle largeTitleStyle = AppConstants.HEADER_LARGE_TITLE_TEXT_STYLE;
+    final TextStyle smallTitleStyle = AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE.copyWith(fontSize: 20.0);
+    final TextStyle largeTitleStyle = AppConstants.HEADER_EXTRA_LARGE_TITLE_TEXT_STYLE;
 
     // The small title widget, used in the collapsed app bar
     final Widget smallTitle = AnimatedSwitcher(
@@ -147,7 +147,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               'Recent Workouts',
               key: const ValueKey('large_recent_title'),
               textAlign: TextAlign.center,
-              style: largeTitleStyle,
+              style: AppConstants.HEADER_EXTRA_LARGE_TITLE_TEXT_STYLE.copyWith(
+                color: Colors.white,
+              ),
             ),
     );
 
@@ -165,18 +167,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             elevation: 0,
             expandedHeight: AppConstants.HEADER_EXTRA_HEIGHT + kToolbarHeight,
             actions: [
-              SizedBox(
-                width: kToolbarHeight,
-                child: IconButton(
-                  icon: const Icon(Icons.settings, color: Colors.white, size: 28),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                    );
-                  },
-                ),
-              ),
+              const ProfileIconButton(),
             ],
             flexibleSpace: LayoutBuilder(
               builder: (context, constraints) {

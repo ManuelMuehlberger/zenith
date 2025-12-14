@@ -183,7 +183,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Add a second set
-      await tester.tap(find.text('Add Set'));
+      await tester.tap(find.text('Add'));
       await tester.pumpAndSettle();
 
       // Now we should have 4 TextFormField widgets (2 sets × 2 fields each)

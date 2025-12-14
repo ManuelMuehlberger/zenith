@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart'; // Import for kDebugMode
+import 'package:pull_down_button/pull_down_button.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
-import '../models/exercise.dart';
+import '../services/user_service.dart';
+import '../services/workout_session_service.dart';
 import '../screens/exercise_info_screen.dart';
-import 'set_edit_options_sheet.dart';
+import '../constants/app_constants.dart';
 
 class EditExerciseCard extends StatefulWidget {
   final WorkoutExercise exercise;
@@ -17,7 +19,7 @@ class EditExerciseCard extends StatefulWidget {
   final Function(int, int) onRemoveSet;
   final Function(int, int, {int? targetReps, double? targetWeight, String? type, int? targetRestSeconds}) onUpdateSet;
   final Function(int, String) onUpdateNotes;
-  final Function(int, int) onToggleRepRange; // This will likely need to be removed or changed
+  final Function(int, int) onToggleRepRange;
   final String weightUnit;
 
   const EditExerciseCard({
@@ -39,37 +41,39 @@ class EditExerciseCard extends StatefulWidget {
   State<EditExerciseCard> createState() => _EditExerciseCardState();
 }
 
-class _EditExerciseCardState extends State<EditExerciseCard> {
-  late Map<String, TextEditingController> _repsControllers;
-  late Map<String, TextEditingController> _weightControllers;
-  late Map<String, FocusNode> _repsFocusNodes;
-  late Map<String, FocusNode> _weightFocusNodes;
+class _EditExerciseCardState extends State<EditExerciseCard> with TickerProviderStateMixin {
+  late Map<String, TextEditingController> _controllers;
   late TextEditingController _notesController;
+  late AnimationController _reorderModeController;
+  late Animation<Color?> _borderColorAnimation;
 
   @override
   void initState() {
     super.initState();
     _initializeControllers();
+    _reorderModeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _borderColorAnimation = ColorTween(
+      begin: AppConstants.CARD_STROKE_COLOR,
+      end: AppConstants.ACCENT_COLOR_ORANGE.withAlpha((255 * 0.6).round()),
+    ).animate(_reorderModeController);
   }
 
   void _initializeControllers() {
-    _repsControllers = {};
-    _weightControllers = {};
-    _repsFocusNodes = {};
-    _weightFocusNodes = {};
+    _controllers = {};
     
     for (final set in widget.exercise.sets) {
       final repsKey = 'reps_${widget.exercise.id}_${set.id}';
       final weightKey = 'weight_${widget.exercise.id}_${set.id}';
       
-      _repsControllers[repsKey] = TextEditingController(
+      _controllers[repsKey] = TextEditingController(
         text: set.targetReps?.toString() ?? '',
       );
-      _weightControllers[weightKey] = TextEditingController(
-        text: set.targetWeight?.toString() ?? '',
+      _controllers[weightKey] = TextEditingController(
+        text: set.targetWeight != null ? WorkoutSessionService.instance.formatWeight(set.targetWeight!) : '',
       );
-      _repsFocusNodes[repsKey] = FocusNode();
-      _weightFocusNodes[weightKey] = FocusNode();
     }
     
     _notesController = TextEditingController(text: widget.exercise.notes ?? '');
@@ -85,362 +89,360 @@ class _EditExerciseCardState extends State<EditExerciseCard> {
       return;
     }
 
-    final oldSetIds = oldWidget.exercise.sets.map((s) => s.id).toSet();
-    final newSets = widget.exercise.sets;
-
-    // Dispose controllers for removed sets
-    final newSetIds = newSets.map((s) => s.id).toSet();
-    final removedSetIds = oldSetIds.difference(newSetIds);
-    for (final setId in removedSetIds) {
-      final repsKey = 'reps_${oldWidget.exercise.id}_$setId';
-      _repsControllers.remove(repsKey)?.dispose();
-      _repsFocusNodes.remove(repsKey)?.dispose();
-
-      final weightKey = 'weight_${oldWidget.exercise.id}_$setId';
-      _weightControllers.remove(weightKey)?.dispose();
-      _weightFocusNodes.remove(weightKey)?.dispose();
+    // Update controllers for current sets
+    final currentSetIds = widget.exercise.sets.map((s) => s.id).toSet();
+    final existingKeys = _controllers.keys.toSet();
+    
+    // Remove controllers for sets that no longer exist
+    final keysToRemove = existingKeys.where((key) {
+      final setId = key.split('_').last;
+      return !currentSetIds.contains(setId);
+    }).toList();
+    
+    for (final key in keysToRemove) {
+      _controllers.remove(key)?.dispose();
     }
 
     // Add or update controllers for all current sets
-    for (final set in newSets) {
+    for (final set in widget.exercise.sets) {
       final repsKey = 'reps_${widget.exercise.id}_${set.id}';
-      if (_repsControllers.containsKey(repsKey)) {
-        // Update existing controller if text differs and field not focused
-        final controller = _repsControllers[repsKey]!;
-        final newText = set.targetReps?.toString() ?? '';
-        final focus = _repsFocusNodes[repsKey];
-        if ((focus?.hasFocus ?? false) == false && controller.text != newText) {
-          controller.text = newText;
-        }
-      } else {
-        // Add new controller and focus node
-        _repsControllers[repsKey] = TextEditingController(text: set.targetReps?.toString() ?? '');
-        _repsFocusNodes.putIfAbsent(repsKey, () => FocusNode());
-      }
-
       final weightKey = 'weight_${widget.exercise.id}_${set.id}';
-      if (_weightControllers.containsKey(weightKey)) {
-        // Update existing controller if text differs and field not focused
-        final controller = _weightControllers[weightKey]!;
-        final newText = set.targetWeight?.toString() ?? '';
-        final focus = _weightFocusNodes[weightKey];
-        if ((focus?.hasFocus ?? false) == false && controller.text != newText) {
+      
+      if (!_controllers.containsKey(repsKey)) {
+        _controllers[repsKey] = TextEditingController(
+          text: set.targetReps?.toString() ?? '',
+        );
+      } else {
+        // Update existing controller with new value
+        final controller = _controllers[repsKey]!;
+        final newText = set.targetReps?.toString() ?? '';
+        if (controller.text != newText) {
           controller.text = newText;
         }
+      }
+      
+      if (!_controllers.containsKey(weightKey)) {
+        _controllers[weightKey] = TextEditingController(
+          text: set.targetWeight != null ? WorkoutSessionService.instance.formatWeight(set.targetWeight!) : '',
+        );
       } else {
-        // Add new controller and focus node
-        _weightControllers[weightKey] = TextEditingController(text: set.targetWeight?.toString() ?? '');
-        _weightFocusNodes.putIfAbsent(weightKey, () => FocusNode());
+        // Update existing controller with new value
+        final controller = _controllers[weightKey]!;
+        final newText = set.targetWeight != null ? WorkoutSessionService.instance.formatWeight(set.targetWeight!) : '';
+        if (controller.text != newText) {
+          controller.text = newText;
+        }
       }
     }
     
     // Update notes controller if needed
     if (_notesController.text != (widget.exercise.notes ?? '')) {
-        _notesController.text = widget.exercise.notes ?? '';
+      _notesController.text = widget.exercise.notes ?? '';
     }
   }
 
   void _disposeControllers() {
-    for (final controller in _repsControllers.values) {
+    for (final controller in _controllers.values) {
       controller.dispose();
     }
-    for (final controller in _weightControllers.values) {
-      controller.dispose();
-    }
-    for (final node in _repsFocusNodes.values) {
-      node.dispose();
-    }
-    for (final node in _weightFocusNodes.values) {
-      node.dispose();
-    }
+    _controllers.clear();
     _notesController.dispose();
   }
 
   @override
   void dispose() {
     _disposeControllers();
+    _reorderModeController.dispose();
     super.dispose();
   }
 
-  void _showExerciseInfo(BuildContext context, Exercise? exerciseDetail) {
-    if (exerciseDetail == null) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => ExerciseInfoScreen(exercise: exerciseDetail),
-      ),
-    );
+  TextEditingController _getController(String controllerKey, String textToInitializeWith) {
+    if (!_controllers.containsKey(controllerKey)) {
+      _controllers[controllerKey] = TextEditingController(text: textToInitializeWith);
+    }
+    return _controllers[controllerKey]!;
   }
 
-  void _showSetEditOptions(BuildContext context, int setIndex) {
-    final set = widget.exercise.sets[setIndex];
-    
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => SetEditOptionsSheet(
-        set: set,
-        setIndex: setIndex,
-        canRemoveSet: widget.exercise.sets.length > 1,
-        onToggleRepRange: () => widget.onToggleRepRange(widget.exerciseIndex, setIndex),
-        onRemoveSet: widget.exercise.sets.length > 1 
-          ? () => widget.onRemoveSet(widget.exerciseIndex, setIndex)
-          : null,
-      ),
-    );
+  String get _weightUnit {
+    return UserService.instance.currentProfile?.units == Units.imperial ? 'lbs' : 'kg';
   }
 
-  void _showDeleteConfirmation(BuildContext context) {
-    showCupertinoDialog<void>(
-      context: context,
-      builder: (BuildContext context) => CupertinoAlertDialog(
-        title: const Text('Remove Exercise'),
-        content: Text('Are you sure you want to remove "${widget.exercise.exerciseDetail?.name ?? widget.exercise.exerciseSlug}" from this workout?'),
-        actions: <CupertinoDialogAction>[
-          CupertinoDialogAction(
-            child: const Text('Cancel'),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
+  void _showExerciseInfo(BuildContext context) {
+    if (widget.exercise.exerciseDetail != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ExerciseInfoScreen(
+            exercise: widget.exercise.exerciseDetail!,
           ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            child: const Text('Remove'),
-            onPressed: () {
-              Navigator.of(context).pop();
-              widget.onRemoveExercise(widget.exerciseIndex);
-            },
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Exercise details not available for ${widget.exercise.exerciseSlug}',
+            style: AppConstants.IOS_BODY_TEXT_STYLE,
           ),
-        ],
-      ),
-    );
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       key: ValueKey(widget.exercise.id),
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey[800]!,
-          width: 1,
+      margin: const EdgeInsets.only(bottom: 20.0),
+      child: AnimatedBuilder(
+        animation: _borderColorAnimation,
+        builder: (context, child) {
+          return Container(
+            decoration: BoxDecoration(
+              color: AppConstants.CARD_BG_COLOR,
+              borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+              border: Border.all(
+                color: _borderColorAnimation.value!,
+                width: AppConstants.CARD_STROKE_WIDTH,
+                strokeAlign: BorderSide.strokeAlignInside,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha((255 * 0.15).round()),
+                  blurRadius: 8.0,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: child,
+          );
+        },
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Column(
+              children: [
+                _buildHeader(),
+                _buildSetsList(),
+              ],
+            ),
+            Positioned(
+              bottom: -15,
+              right: 15,
+              child: _buildAddSetButton(),
+            ),
+          ],
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildExerciseHeader(context),
-          if (widget.isNotesExpanded) _buildNotesSection(),
-          _buildSetsSection(),
-          _buildAddSetButton(),
-        ],
       ),
     );
   }
 
-  Widget _buildExerciseHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[850],
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(12),
-          topRight: Radius.circular(12),
+  Widget _buildAddSetButton() {
+    return GestureDetector(
+      onTap: () {
+        widget.onAddSet(widget.exerciseIndex);
+        HapticFeedback.lightImpact();
+      },
+      child: Container(
+        width: 110,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppConstants.ACCENT_COLOR_ORANGE,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.black, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.add, color: Colors.white, size: 18),
+            const SizedBox(width: 2),
+            Text(
+              'Add',
+              style: AppConstants.HEADER_BUTTON_TEXT_STYLE.copyWith(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+            ),
+          ],
         ),
       ),
-      child: Row(
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
+      child: Column(
         children: [
-          // Drag handle
-            Icon(
-              Icons.drag_handle,
-              color: Colors.grey[600],
-              size: 24,
-            ),
-            const SizedBox(width: 12),
-            
-            // Exercise info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.exercise.exerciseDetail?.name ?? widget.exercise.exerciseSlug,
+                      style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
+                        color: AppConstants.ACCENT_COLOR,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    widget.exercise.exerciseDetail?.name ?? widget.exercise.exerciseSlug, // Use exerciseDetail or fallback to slug
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                  IconButton(
+                    onPressed: () => widget.onToggleNotes(widget.exerciseIndex),
+                    icon: Icon(
+                      widget.isNotesExpanded
+                        ? Icons.sticky_note_2
+                        : Icons.sticky_note_2_outlined,
+                      color: widget.isNotesExpanded
+                        ? Colors.amber
+                        : (widget.exercise.notes?.isNotEmpty ?? false)
+                          ? Colors.amber.withAlpha(150)
+                          : Colors.grey[500],
+                      size: 24,
+                    ),
+                    tooltip: widget.isNotesExpanded ? 'Hide notes' : 'Show notes',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  ),
+                  const SizedBox(width: 8),
+                  PullDownButton(
+                    itemBuilder: (context) => [
+                      PullDownMenuItem(
+                        onTap: () => _showExerciseInfo(context),
+                        title: 'Exercise Info',
+                        icon: Icons.info_outline,
+                      ),
+                      PullDownMenuItem(
+                        onTap: () => widget.onRemoveExercise(widget.exerciseIndex),
+                        title: 'Remove Exercise',
+                        icon: Icons.delete_outline,
+                        isDestructive: true,
+                      ),
+                    ],
+                    buttonBuilder: (context, showMenu) => IconButton(
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                      onPressed: showMenu,
+                      icon: Icon(
+                        Icons.more_horiz,
+                        color: AppConstants.TEXT_SECONDARY_COLOR,
+                        size: 28,
+                      ),
+                      tooltip: 'Exercise Options',
                     ),
                   ),
-                  const SizedBox(height: 2),
-Text(
-  widget.exercise.exerciseDetail?.primaryMuscleGroup.name ?? 'N/A', // Use exerciseDetail
-  style: TextStyle(
-    fontSize: 13,
-    color: Colors.grey[400],
-    fontWeight: FontWeight.w400,
-  ),
-),
+                  const SizedBox(width: 8),
+                  ReorderableDragStartListener(
+                    index: widget.exerciseIndex,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppConstants.ACCENT_COLOR_ORANGE.withAlpha((255 * 0.2).round()),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.drag_handle,
+                        color: AppConstants.ACCENT_COLOR_ORANGE,
+                        size: 24,
+                      ),
+                    ),
+                  ),
                 ],
-              ),
-            ),
-          
-          // Action buttons
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Notes toggle
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: () => widget.onToggleNotes(widget.exerciseIndex),
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: widget.isNotesExpanded 
-                        ? Colors.amber.withAlpha((255 * 0.2).round())
-                        : Colors.grey.withAlpha((255 * 0.1).round()),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Icon(
-                    widget.isNotesExpanded 
-                        ? Icons.sticky_note_2 
-                        : Icons.sticky_note_2_outlined,
-                    color: widget.isNotesExpanded 
-                        ? Colors.amber 
-                        : Colors.grey[500],
-                    size: 24,
-                  ),
-                ),
-              ),
-              
-              const SizedBox(width: 8),
-              
-              // Info button
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: () => _showExerciseInfo(context, widget.exercise.exerciseDetail), // Pass exerciseDetail
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withAlpha((255 * 0.1).round()),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Icon(
-                    Icons.info_outline,
-                    color: Colors.blue,
-                    size: 24,
-                  ),
-                ),
-              ),
-              
-              const SizedBox(width: 8),
-              
-              // Delete button
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: () => _showDeleteConfirmation(context),
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: Colors.red.withAlpha((255 * 0.1).round()),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.red,
-                    size: 24,
-                  ),
-                ),
               ),
             ],
           ),
+          if (widget.isNotesExpanded)
+            Padding(
+              padding: const EdgeInsets.only(top: 12.0),
+              child: TextFormField(
+                controller: _notesController,
+                style: AppConstants.IOS_BODY_TEXT_STYLE,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.grey[800],
+                  hintText: 'Add notes for this exercise...',
+                  hintStyle: AppConstants.IOS_HINT_TEXT_STYLE,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(
+                      color: Colors.blue.withAlpha((255 * 0.5).round()),
+                      width: 1,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+                onChanged: (value) => widget.onUpdateNotes(widget.exerciseIndex, value),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildNotesSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[850],
-        border: Border(
-          top: BorderSide(color: Colors.grey[800]!, width: 1),
-        ),
-      ),
-      child: TextFormField(
-        controller: _notesController,
-        style: const TextStyle(color: Colors.white, fontSize: 14),
-        maxLines: 3,
-        decoration: InputDecoration(
-          isDense: true,
-          contentPadding: const EdgeInsets.all(12),
-          hintText: 'Add notes for this exercise...',
-          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-          filled: true,
-          fillColor: Colors.grey[800],
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
-          ),
-        ),
-        onChanged: (value) => widget.onUpdateNotes(widget.exerciseIndex, value),
-      ),
-    );
-  }
-
-  Widget _buildSetsSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
+  Widget _buildSetsList() {
+    final isBodyWeight = widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Sets header
-          Row(
-            children: [
-              const SizedBox(width: 32),
-              const Expanded(
-                flex: 3,
-                child: Text(
-                  'Reps',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    fontSize: 14,
+          // Header row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
+            child: Row(
+              children: [
+                const SizedBox(width: 28), // Set number space
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    'Reps',
+                    textAlign: TextAlign.center,
+                    style: AppConstants.IOS_SUBTEXT_STYLE,
                   ),
                 ),
-              ),
-              const Expanded(
-                flex: 3,
-                child: Text(
-                  'Weight',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                    fontSize: 14,
+                if (!isBodyWeight) ...[
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      'Weight',
+                      textAlign: TextAlign.center,
+                      style: AppConstants.IOS_SUBTEXT_STYLE,
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 32),
-            ],
+                ],
+                const SizedBox(width: 16),
+                const SizedBox(width: 32), // Action button space
+              ],
+            ),
           ),
-          
-          const SizedBox(height: 12),
-          
-          // Sets list
+          // Sets
           ...widget.exercise.sets.asMap().entries.map((entry) {
             final setIndex = entry.key;
             final set = entry.value;
-            
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Builder(
-                builder: (context) => _buildSetRow(setIndex, set, context),
-              ),
+            return Container(
+              margin: const EdgeInsets.only(bottom: 4.0),
+              child: _buildSetRow(set, setIndex),
             );
           }),
         ],
@@ -448,203 +450,146 @@ Text(
     );
   }
 
-  Widget _buildSetRow(int setIndex, WorkoutSet set, BuildContext context) {
-    return Row(
-      children: [
-        // Set number
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: Colors.grey[700],
-            shape: BoxShape.circle,
-          ),
-          child: Center(
-            child: Text(
-              '${setIndex + 1}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        
-        // Reps field(s)
-        Expanded(
-          flex: 3,
-          child: _buildTargetRepsField(setIndex, set),
-        ),
-        const SizedBox(width: 8),
-        
-        // Weight field
-        Expanded(
-          flex: 3,
-          child: _buildTargetWeightField(setIndex, set),
-        ),
-        const SizedBox(width: 8),
-        
-        // Options button
-        SizedBox(
-          width: 32,
-          height: 32,
-          child: CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () => _showSetEditOptions(context, setIndex),
-            child: Icon(
-              Icons.more_horiz,
-              color: Colors.grey[400],
-              size: 24,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _buildSetRow(WorkoutSet set, int setIndex) {
+    final isBodyWeight = widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
 
-  Widget _buildTargetRepsField(int setIndex, WorkoutSet set) {
-    final key = 'reps_${widget.exercise.id}_${set.id}';
-    final controller = _repsControllers[key];
-    
-    if (controller == null) return const SizedBox.shrink();
-    
-    return SizedBox(
-      height: 36,
-      child: TextFormField(
-        controller: controller,
-        focusNode: _repsFocusNodes[key],
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        style: const TextStyle(color: Colors.white, fontSize: 15),
-        textAlign: TextAlign.center,
-        decoration: InputDecoration(
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          filled: true,
-          fillColor: Colors.grey[800],
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Colors.blue, width: 1),
-          ),
-        ),
-        onTap: () {
-          if (controller.text.isNotEmpty) {
-            controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length);
-          }
-        },
-        onChanged: (value) {
-          final reps = int.tryParse(value);
-          if (value.isEmpty || (reps != null && reps >= 0)) {
-            widget.onUpdateSet(widget.exerciseIndex, setIndex, targetReps: value.isEmpty ? null : reps);
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _buildTargetWeightField(int setIndex, WorkoutSet set) {
-    final key = 'weight_${widget.exercise.id}_${set.id}';
-    final controller = _weightControllers[key];
-    
-    if (controller == null) return const SizedBox.shrink();
-    
-    return SizedBox(
-      height: 36,
-      child: Focus(
-        focusNode: _weightFocusNodes[key],
-        onFocusChange: (hasFocus) {
-          if (!hasFocus) {
-            final txt = controller.text.trim();
-            final weight = double.tryParse(txt);
-            widget.onUpdateSet(
-              widget.exerciseIndex,
-              setIndex,
-              targetWeight: txt.isEmpty ? null : weight,
-            );
-          }
-        },
-        child: TextFormField(
-          controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'))],
-          style: const TextStyle(color: Colors.white, fontSize: 15),
-          textAlign: TextAlign.center,
-          decoration: InputDecoration(
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            filled: true,
-            fillColor: Colors.grey[800],
-            suffixText: widget.weightUnit,
-            suffixStyle: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 15,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.blue, width: 1),
-            ),
-          ),
-          onTap: () {
-            if (controller.text.isNotEmpty) {
-              controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length);
-            }
-          },
-          onFieldSubmitted: (value) {
-            final txt = value.trim();
-            final weight = double.tryParse(txt);
-            widget.onUpdateSet(
-              widget.exerciseIndex,
-              setIndex,
-              targetWeight: txt.isEmpty ? null : weight,
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddSetButton() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      child: SizedBox(
-        width: double.infinity,
-        height: 44,
-        child: CupertinoButton(
-          color: Colors.blue.withAlpha((255 * 0.1).round()),
-          borderRadius: BorderRadius.circular(8),
-          padding: EdgeInsets.zero,
-                onPressed: () => widget.onAddSet(widget.exerciseIndex),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.add,
-                color: Colors.blue,
-              
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Add Set',
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Set number
+          Container(
+            width: 28,
+            height: 42,
+            decoration: BoxDecoration(
+              color: Colors.grey[700],
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                '${setIndex + 1}',
+                style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
+                  color: AppConstants.TEXT_PRIMARY_COLOR,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Reps input
+          Flexible(
+            child: _buildSetInput(
+              controllerKey: 'reps_${widget.exercise.id}_${set.id}',
+              initialText: set.targetReps?.toString() ?? "",
+              onChanged: (value) {
+                final reps = int.tryParse(value);
+                widget.onUpdateSet(widget.exerciseIndex, setIndex, targetReps: reps ?? (value.isEmpty ? 0 : null));
+              },
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Weight input (if not bodyweight)
+          if (!isBodyWeight) ...[
+            Flexible(
+              child: _buildSetInput(
+                controllerKey: 'weight_${widget.exercise.id}_${set.id}',
+                initialText: set.targetWeight != null 
+                    ? WorkoutSessionService.instance.formatWeight(set.targetWeight!) 
+                    : "",
+                onChanged: (value) {
+                  final weight = double.tryParse(value);
+                  widget.onUpdateSet(widget.exerciseIndex, setIndex, targetWeight: weight ?? (value.isEmpty ? 0.0 : null));
+                },
+                showWeightSuffix: true,
+              ),
+            ),
+            const SizedBox(width: 16),
+          ],
+          // Remove set button
+          SizedBox(
+            width: 32,
+            height: 32,
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 24),
+              onPressed: () {
+                if (widget.exercise.sets.length > 1) {
+                  widget.onRemoveSet(widget.exerciseIndex, setIndex);
+                } else {
+                  widget.onRemoveExercise(widget.exerciseIndex);
+                }
+                HapticFeedback.lightImpact();
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSetInput({
+    required String controllerKey,
+    required String initialText,
+    required Function(String) onChanged,
+    bool showWeightSuffix = false,
+  }) {
+    return TextFormField(
+      controller: _getController(controllerKey, initialText),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(
+          showWeightSuffix ? RegExp(r'^\d*\.?\d{0,2}') : RegExp(r'^\d*')
+        )
+      ],
+      textAlign: TextAlign.center,
+      style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
+        color: AppConstants.TEXT_PRIMARY_COLOR,
+      ),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.grey[800]!.withAlpha((255 * 0.5).round()),
+        suffixText: showWeightSuffix ? _weightUnit : null,
+        suffixStyle: AppConstants.IOS_SUBTEXT_STYLE,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(
+            color: Colors.blue.withAlpha((255 * 0.5).round()),
+            width: 1,
           ),
         ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       ),
+      onChanged: onChanged,
+      onTap: () {
+        if (_controllers.containsKey(controllerKey)) {
+          final controller = _controllers[controllerKey]!;
+          if (controller.text.isNotEmpty) {
+            // Store the future and cancel any previous one to prevent "Timer is still pending" errors in tests
+            // This ensures that if a new tap occurs before the previous Future.delayed completes,
+            // the previous one is effectively cancelled, preventing the test framework from
+            // complaining about pending timers.
+            // Removed Future.delayed to prevent "Timer is still pending" errors in tests.
+            // The text selection on tap is not critical for test logic and can be handled synchronously.
+            controller.selection = TextSelection(
+              baseOffset: 0,
+              extentOffset: controller.text.length,
+            );
+          }
+        }
+      },
     );
   }
 }

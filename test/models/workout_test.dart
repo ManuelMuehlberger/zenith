@@ -263,7 +263,7 @@ void main() {
       expect(scoreWorkout.icon, Icons.sports_score);
 
       final unknownWorkout = workout.copyWith(iconCodePoint: 0x123456);
-      expect(unknownWorkout.icon.codePoint, 0x123456);
+      expect(unknownWorkout.icon.codePoint, Icons.fitness_center.codePoint);
       expect(unknownWorkout.icon.fontFamily, 'MaterialIcons');
     });
 

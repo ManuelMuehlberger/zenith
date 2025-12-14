@@ -152,7 +152,6 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
             MaterialPageRoute(
               builder: (context) => ExerciseInfoScreen(
                 exercise: exerciseToPass, // Use the non-nullable variable
-                initialTabIndex: 1, // Open Stats tab
               ),
             ),
           );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import '../constants/app_constants.dart';
 import 'workout_exercise.dart';
 import 'typedefs.dart';
 
@@ -131,36 +132,7 @@ class Workout {
   }
 
   IconData get icon {
-    // Use a default icon if iconCodePoint is null
-    if (iconCodePoint == null) {
-      return Icons.fitness_center; // Default icon
-    }
-    // Prefer constant mappings (helps tree shaking for common icons)
-    switch (iconCodePoint) {
-      case 0xe1a3: // fitness_center
-        return Icons.fitness_center;
-      case 0xe02f: // directions_run
-        return Icons.directions_run;
-      case 0xe047: // pool
-        return Icons.pool;
-      case 0xe52f: // sports
-        return Icons.sports;
-      case 0xe531: // sports_gymnastics
-        return Icons.sports_gymnastics;
-      case 0xe532: // sports_handball
-        return Icons.sports_handball;
-      case 0xe533: // sports_martial_arts
-        return Icons.sports_martial_arts;
-      case 0xe534: // sports_mma
-        return Icons.sports_mma;
-      case 0xe535: // sports_motorsports
-        return Icons.sports_motorsports;
-      case 0xe536: // sports_score
-        return Icons.sports_score;
-      default:
-        // Fallback: dynamically construct IconData from code point so arbitrary Material icons render
-        return IconData(iconCodePoint!, fontFamily: 'MaterialIcons');
-    }
+    return WorkoutIcons.getIconDataFromCodePoint(iconCodePoint);
   }
 
   Color get color {

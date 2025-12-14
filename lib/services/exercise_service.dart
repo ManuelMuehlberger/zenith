@@ -3,6 +3,7 @@ import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import '../models/exercise.dart';
 import 'dao/exercise_dao.dart';
 import 'dao/muscle_group_dao.dart';
+import 'dao/workout_exercise_dao.dart';
 
 class ExerciseService {
   static final ExerciseService _instance = ExerciseService._internal();
@@ -16,6 +17,7 @@ class ExerciseService {
   // Inject DAOs - now can be overridden for testing
   ExerciseDao _exerciseDao = ExerciseDao();
   MuscleGroupDao _muscleGroupDao = MuscleGroupDao();
+  WorkoutExerciseDao _workoutExerciseDao = WorkoutExerciseDao();
 
   // Cache for exercises
   List<Exercise> _exercises = [];
@@ -24,12 +26,17 @@ class ExerciseService {
   // Cache for muscle groups
   List<String> _muscleGroups = [];
 
+  // Cache for exercise frequency
+  Map<String, int> _exerciseFrequency = {};
+
   // Constructor for testing with dependency injection
   ExerciseService.withDependencies({
     required ExerciseDao exerciseDao,
     required MuscleGroupDao muscleGroupDao,
+    WorkoutExerciseDao? workoutExerciseDao,
   }) : _exerciseDao = exerciseDao,
-       _muscleGroupDao = muscleGroupDao;
+       _muscleGroupDao = muscleGroupDao,
+       _workoutExerciseDao = workoutExerciseDao ?? WorkoutExerciseDao();
 
   Future<void> loadExercises() async {
     _logger.info('Loading exercises and muscle groups');
@@ -48,6 +55,19 @@ class ExerciseService {
     } catch (e) {
       _logger.severe('Failed to load muscle groups: $e');
       _muscleGroups = [];
+    }
+
+    await loadExerciseFrequency();
+  }
+
+  Future<void> loadExerciseFrequency() async {
+    _logger.info('Loading exercise frequency');
+    try {
+      _exerciseFrequency = await _workoutExerciseDao.getExerciseFrequency();
+      _logger.info('Successfully loaded frequency for ${_exerciseFrequency.length} exercises');
+    } catch (e) {
+      _logger.severe('Failed to load exercise frequency: $e');
+      _exerciseFrequency = {};
     }
   }
 
@@ -134,11 +154,18 @@ class ExerciseService {
       }
     }
 
-    // Sort by score desc then by name asc for stability
+    // Sort by score desc, then by frequency desc, then by name asc for stability
     final sorted = scored.entries.toList()
       ..sort((a, b) {
-        final cmp = b.value.compareTo(a.value);
-        if (cmp != 0) return cmp;
+        final scoreCmp = b.value.compareTo(a.value);
+        if (scoreCmp != 0) return scoreCmp;
+        
+        // If scores are equal, prioritize by frequency
+        final freqA = _exerciseFrequency[a.key.slug] ?? 0;
+        final freqB = _exerciseFrequency[b.key.slug] ?? 0;
+        final freqCmp = freqB.compareTo(freqA);
+        if (freqCmp != 0) return freqCmp;
+        
         return a.key.name.compareTo(b.key.name);
       });
 

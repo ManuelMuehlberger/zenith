@@ -12,6 +12,7 @@ import '../widgets/edit_workout_name_section.dart';
 import '../widgets/edit_exercise_card.dart';
 import '../widgets/edit_workout_action_buttons.dart';
 import '../widgets/workout_customization_sheet.dart';
+import '../widgets/workout_metrics_widget.dart';
 import 'exercise_picker_screen.dart';
 import '../constants/app_constants.dart';
 import '../services/exercise_service.dart';
@@ -52,25 +53,6 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     Colors.pink,
     Colors.amber,
   ];
-  
-  final List<IconData> _availableIcons = [
-    Icons.fitness_center,
-    Icons.sports_gymnastics,
-    Icons.sports_handball,
-    Icons.sports_martial_arts,
-    Icons.sports_tennis,
-    Icons.sports_basketball,
-    Icons.sports_soccer,
-    Icons.sports_football,
-    Icons.sports_volleyball,
-    Icons.sports_baseball,
-    Icons.sports_hockey,
-    Icons.sports_rugby,
-    Icons.sports_cricket,
-    Icons.sports_golf,
-    Icons.sports_mma,
-    Icons.sports_kabaddi,
-  ];
 
   @override
   void initState() {
@@ -83,9 +65,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       _selectedColor = widget.workoutTemplate!.colorValue != null 
           ? Color(widget.workoutTemplate!.colorValue!) 
           : Colors.blue;
-      _selectedIcon = widget.workoutTemplate!.iconCodePoint != null 
-          ? IconData(widget.workoutTemplate!.iconCodePoint!, fontFamily: 'MaterialIcons')
-          : Icons.fitness_center;
+      _selectedIcon = WorkoutIcons.getIconDataFromCodePoint(widget.workoutTemplate!.iconCodePoint);
 
       // Load template exercises and attach details
       _loadTemplateExercises();
@@ -101,7 +81,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   @override
   Widget build(BuildContext context) {
     final double topPadding = MediaQuery.of(context).padding.top;
-    final double headerHeight = topPadding + kToolbarHeight + 24.0; // Increased header height by 24.0
+    final double headerHeight = topPadding + kToolbarHeight + 24.0;
 
     return AnimatedBuilder(
       animation: UserService.instance,
@@ -111,11 +91,9 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           backgroundColor: Colors.black,
           body: Stack(
             children: [
-              // Main content - allow scrolling behind header
               Positioned.fill(
                 child: _buildMainContent(headerHeight, weightUnit),
               ),
-              // Glass header overlay
               Positioned(
                 top: 0,
                 left: 0,
@@ -140,13 +118,13 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 right: 0,
                 child: Container(
                   decoration: const BoxDecoration(
-                    color: Colors.black, // Match scaffold background
-                    border: Border(top: BorderSide(color: Color(0xFF222222))), // Subtle top border
+                    color: Colors.black,
+                    border: Border(top: BorderSide(color: Color(0xFF222222))),
                   ),
-                  child: SafeArea( 
-                    top: false, // We only care about bottom SafeArea
+                  child: SafeArea(
+                    top: false,
                     child: Padding(
-                      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 5.0, bottom: 5.0), // Reduced top/bottom padding
+                      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 5.0, bottom: 5.0),
                       child: EditWorkoutActionButtons(
                         onAddExercise: _addExercise,
                       ),
@@ -170,71 +148,53 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Row(
           children: [
-            // Close button
             IconButton(
               onPressed: () => Navigator.of(context).pop(),
               icon: const Icon(Icons.close, color: Colors.white, size: 28),
             ),
-            
-            // Title section
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     isEditing ? 'Edit Workout' : 'Create Workout',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE,
                   ),
                   if (_exercises.isNotEmpty)
                   Text(
                     '${_exercises.length} ${_exercises.length == 1 ? 'exercise' : 'exercises'}',
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 12,
-                    ),
+                    style: AppConstants.IOS_SUBTEXT_STYLE,
                   ),
                 ],
               ),
             ),
-            
-            // Action buttons
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Save button
-                TextButton(
-                  onPressed: _isLoading ? null : _saveWorkout,
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.blue.withAlpha((255 * 0.1).round()),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    minimumSize: Size.zero,
+            TextButton(
+              onPressed: _isLoading ? null : _saveWorkout,
+              style: TextButton.styleFrom(
+                backgroundColor: AppConstants.FINISH_BUTTON_BG_COLOR,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                  side: BorderSide(
+                    color: AppConstants.ACCENT_COLOR_GREEN.withAlpha((255 * 0.3).round()),
+                    width: 1,
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.blue,
-                          ),
-                        )
-                      : const Text(
-                          'Save',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                          ),
-                        ),
                 ),
-              ],
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                minimumSize: Size.zero,
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppConstants.ACCENT_COLOR_GREEN,
+                      ),
+                    )
+                  : Text(
+                      'Save',
+                      style: AppConstants.HEADER_BUTTON_TEXT_STYLE.copyWith(color: AppConstants.ACCENT_COLOR_GREEN),
+                    ),
             ),
           ],
         ),
@@ -260,13 +220,20 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           ),
         ),
         
+        // Workout metrics
+        SliverToBoxAdapter(
+          child: WorkoutMetricsWidget(
+            exercises: _exercises,
+          ),
+        ),
+        
         // Exercises content
         SliverToBoxAdapter(
           child: _buildExercisesContent(weightUnit),
         ),
         // Add padding at the bottom for the action button
         SliverToBoxAdapter(
-          child: SizedBox(height:100.0),
+          child: SizedBox(height: 150.0),
         ),
       ],
     );
@@ -651,7 +618,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
         selectedColor: _selectedColor,
         selectedIcon: _selectedIcon,
         availableColors: _availableColors,
-        availableIcons: _availableIcons,
+        availableIcons: WorkoutIcons.items.where((item) => item.isIcon).map((item) => item.icon!).toList(),
         onColorChanged: (color) {
           setState(() {
             _selectedColor = color;
@@ -675,31 +642,24 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: Colors.grey[800],
+              color: AppConstants.WORKOUT_BUTTON_BG_COLOR,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.fitness_center,
               size: 40,
-              color: Colors.grey[600],
+              color: AppConstants.TEXT_TERTIARY_COLOR,
             ),
           ),
           const SizedBox(height: 24),
-          Text(
+          const Text(
             'No exercises added yet',
-            style: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
+            style: AppConstants.IOS_TITLE_TEXT_STYLE,
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Add exercises to build your workout',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
-            ),
+            style: AppConstants.IOS_SUBTITLE_TEXT_STYLE,
             textAlign: TextAlign.center,
           ),
         ],

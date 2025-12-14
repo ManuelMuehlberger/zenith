@@ -52,23 +52,23 @@ class FolderCard extends StatelessWidget {
         return AnimatedContainer(
           duration: AppConstants.DRAG_ANIMATION_DURATION,
           curve: AppConstants.DRAG_ANIMATION_CURVE,
-          transform: Matrix4.identity()..scale(showDropHint ? 1.03 : 1.0),
+          transform: Matrix4.identity()..scale(showDropHint ? 1.02 : 1.0),
           margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
           decoration: BoxDecoration(
             color: showDropHint
-                ? Colors.blue.withAlpha((255 * 0.3).round())
-                : Colors.grey[900],
-            borderRadius: BorderRadius.circular(showDropHint ? 20.0 : 12.0),
+                ? AppConstants.ACCENT_COLOR.withAlpha((255 * 0.25).round())
+                : AppConstants.CARD_BG_COLOR,
+            borderRadius: BorderRadius.circular(showDropHint ? 16.0 : AppConstants.CARD_RADIUS),
             border: Border.all(
               color: showDropHint
-                  ? Colors.blue.withAlpha((255 * 0.8).round())
-                  : Colors.grey[800]!,
-              width: showDropHint ? 2.0 : 1.0,
+                  ? AppConstants.ACCENT_COLOR.withAlpha((255 * 0.8).round())
+                  : AppConstants.CARD_STROKE_COLOR,
+              width: showDropHint ? 1.5 : AppConstants.CARD_STROKE_WIDTH,
             ),
             boxShadow: showDropHint
                 ? [
                     BoxShadow(
-                      color: Colors.blue.withAlpha((255 * 0.4).round()),
+                      color: AppConstants.ACCENT_COLOR.withAlpha((255 * 0.3).round()),
                       blurRadius: 12.0,
                       spreadRadius: 2.0,
                       offset: const Offset(0, 4),
@@ -76,8 +76,8 @@ class FolderCard extends StatelessWidget {
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withAlpha((255 * 0.3).round()),
-                      blurRadius: 4.0,
+                      color: Colors.black.withAlpha((255 * 0.15).round()),
+                      blurRadius: 8.0,
                       offset: const Offset(0, 2),
                     ),
                   ],
@@ -85,36 +85,77 @@ class FolderCard extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(showDropHint ? 20.0 : 12.0),
+              borderRadius: BorderRadius.circular(showDropHint ? 16.0 : AppConstants.CARD_RADIUS),
               onTap: onTap,
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(AppConstants.CARD_PADDING),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.folder_rounded,
-                      color: showDropHint ? Colors.white : Colors.blue,
-                      size: 32,
+                    // Folder icon with rounded modern styling
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: showDropHint 
+                            ? Colors.white.withAlpha((255 * 0.2).round())
+                            : AppConstants.ACCENT_COLOR.withAlpha((255 * 0.15).round()),
+                        borderRadius: BorderRadius.circular(26), // Fully rounded
+                        border: Border.all(
+                          color: showDropHint 
+                              ? Colors.white.withAlpha((255 * 0.3).round())
+                              : AppConstants.ACCENT_COLOR.withAlpha((255 * 0.3).round()),
+                          width: 0.5,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.folder_rounded,
+                        color: showDropHint ? Colors.white : AppConstants.ACCENT_COLOR,
+                        size: 26,
+                      ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: AppConstants.ITEM_HORIZONTAL_GAP),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             folder.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
+                            style: AppConstants.CARD_TITLE_TEXT_STYLE,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '$workoutCount workout${workoutCount != 1 ? 's' : ''}',
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: 14,
+                          const SizedBox(height: 6),
+                          // Workout count with modern pill styling
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: showDropHint 
+                                  ? Colors.white.withAlpha((255 * 0.15).round())
+                                  : AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.1).round()),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.fitness_center_outlined,
+                                  size: 12,
+                                  color: showDropHint 
+                                      ? Colors.white.withAlpha((255 * 0.8).round())
+                                      : AppConstants.TEXT_SECONDARY_COLOR,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$workoutCount',
+                                  style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: showDropHint 
+                                        ? Colors.white.withAlpha((255 * 0.9).round())
+                                        : AppConstants.TEXT_SECONDARY_COLOR,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -122,33 +163,37 @@ class FolderCard extends StatelessWidget {
                     ),
                     if (showDropHint)
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12.0, vertical: 6.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                         decoration: BoxDecoration(
                           color: Colors.white.withAlpha((255 * 0.2).round()),
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withAlpha((255 * 0.3).round()),
+                            width: 0.5,
+                          ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               Icons.move_down_outlined,
                               color: Colors.white,
-                              size: 14,
+                              size: 16,
                             ),
-                            SizedBox(width: 6),
+                            const SizedBox(width: 6),
                             Text(
-                              'Drop to move',
-                              style: TextStyle(
-                                color: Colors.white,
+                              'Drop here',
+                              style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
+                                color: Colors.white,
                               ),
                             ),
                           ],
                         ),
                       )
                     else
+                      // Menu button with consistent styling
                       PullDownButton(
                         itemBuilder: (context) => [
                           PullDownMenuItem(
@@ -163,12 +208,21 @@ class FolderCard extends StatelessWidget {
                             icon: CupertinoIcons.delete,
                           ),
                         ],
-                        buttonBuilder: (context, showMenu) => CupertinoButton(
-                          onPressed: showMenu,
-                          padding: EdgeInsets.zero,
-                          child: const Icon(
-                            CupertinoIcons.ellipsis_circle,
-                            color: Colors.grey,
+                        buttonBuilder: (context, showMenu) => Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.1).round()),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: CupertinoButton(
+                            onPressed: showMenu,
+                            padding: EdgeInsets.zero,
+                            child: Icon(
+                              CupertinoIcons.ellipsis,
+                              color: AppConstants.TEXT_SECONDARY_COLOR,
+                              size: 16,
+                            ),
                           ),
                         ),
                       ),

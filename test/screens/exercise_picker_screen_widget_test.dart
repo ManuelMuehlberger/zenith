@@ -62,6 +62,8 @@ void main() {
         MuscleGroup.chest,
         MuscleGroup.triceps,
       ]),
+      seedExercises: exercises,
+      seedMuscleGroups: ['Chest', 'Triceps'],
     );
 
     await tester.pumpWidget(const MaterialApp(home: ExercisePickerScreen()));
@@ -111,6 +113,8 @@ void main() {
     ExerciseService.instance.setDependenciesForTesting(
       exerciseDao: _FakeExerciseDao(exercises),
       muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.chest]),
+      seedExercises: exercises,
+      seedMuscleGroups: ['Chest'],
     );
 
     await tester.pumpWidget(const MaterialApp(home: ExercisePickerScreen()));
@@ -155,6 +159,8 @@ void main() {
     ExerciseService.instance.setDependenciesForTesting(
       exerciseDao: _FakeExerciseDao(exercises),
       muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.chest, MuscleGroup.triceps]),
+      seedExercises: exercises,
+      seedMuscleGroups: ['Chest', 'Triceps'],
     );
 
     Exercise? selectedExercise;
@@ -219,6 +225,8 @@ void main() {
     ExerciseService.instance.setDependenciesForTesting(
       exerciseDao: _FakeExerciseDao(exercises),
       muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.chest, MuscleGroup.triceps]),
+      seedExercises: exercises,
+      seedMuscleGroups: ['Chest', 'Triceps'],
     );
 
     List<Exercise>? selectedExercises;
@@ -290,6 +298,8 @@ void main() {
     ExerciseService.instance.setDependenciesForTesting(
       exerciseDao: _FakeExerciseDao(exercises),
       muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.chest, MuscleGroup.triceps]),
+      seedExercises: exercises,
+      seedMuscleGroups: ['Chest', 'Triceps'],
     );
 
     await tester.pumpWidget(const MaterialApp(home: ExercisePickerScreen(multiSelect: true)));
@@ -327,6 +337,8 @@ void main() {
     ExerciseService.instance.setDependenciesForTesting(
       exerciseDao: _FakeExerciseDao(exercises),
       muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.chest, MuscleGroup.triceps]),
+      seedExercises: exercises,
+      seedMuscleGroups: ['Chest', 'Triceps'],
     );
 
     await tester.pumpWidget(const MaterialApp(home: ExercisePickerScreen(multiSelect: true)));
@@ -353,6 +365,8 @@ void main() {
     ExerciseService.instance.setDependenciesForTesting(
       exerciseDao: _FakeExerciseDao(exercises),
       muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.chest, MuscleGroup.triceps]),
+      seedExercises: exercises,
+      seedMuscleGroups: ['Chest', 'Triceps'],
     );
 
     await tester.pumpWidget(const MaterialApp(home: ExercisePickerScreen()));

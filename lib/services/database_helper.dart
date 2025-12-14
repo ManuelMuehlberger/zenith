@@ -23,6 +23,11 @@ class DatabaseHelper {
   static const String _dbName = 'workout_tracker.db';
   static const int _dbVersion = 6; // Added Exercise.equipment column and TOML bodyweight mapping
 
+  Future<String> get databasePath async {
+    final documentsDirectory = await getApplicationDocumentsDirectory();
+    return p.join(documentsDirectory.path, _dbName);
+  }
+
   Future<Database> get database async {
     if (_database != null) {
       _logger.fine('Database already initialized, returning existing instance');

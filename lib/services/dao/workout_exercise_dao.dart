@@ -157,4 +157,30 @@ class WorkoutExerciseDao extends BaseDao<WorkoutExercise> {
       rethrow;
     }
   }
+
+  /// Get exercise frequency count from completed workouts
+  Future<Map<String, int>> getExerciseFrequency() async {
+    final db = await database;
+    logger.fine('Getting exercise frequency');
+    try {
+      final List<Map<String, dynamic>> results = await db.rawQuery('''
+        SELECT we.exerciseSlug, COUNT(*) as count
+        FROM WorkoutExercise we
+        JOIN Workout w ON we.workoutId = w.id
+        WHERE w.status = 2
+        GROUP BY we.exerciseSlug
+      ''');
+      
+      final Map<String, int> frequencyMap = {};
+      for (final row in results) {
+        frequencyMap[row['exerciseSlug'] as String] = row['count'] as int;
+      }
+      
+      logger.fine('Calculated frequency for ${frequencyMap.length} exercises');
+      return frequencyMap;
+    } catch (e) {
+      logger.severe('Failed to get exercise frequency: $e');
+      return {};
+    }
+  }
 }

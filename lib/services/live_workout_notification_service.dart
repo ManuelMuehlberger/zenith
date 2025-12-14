@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logging/logging.dart';
 
@@ -23,7 +22,7 @@ const String notificationChannelId = 'workout_progress_channel';
 const String notificationChannelName = 'Workout Progress';
 const String notificationChannelDescription = 'Notifications for active workout progress';
 const int notificationId = 888;
-const String appIcon = 'ic_workout_notification';
+const String appIcon = '@mipmap/ic_launcher';
 
 class LiveWorkoutNotificationService implements NotificationServiceAPI {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();

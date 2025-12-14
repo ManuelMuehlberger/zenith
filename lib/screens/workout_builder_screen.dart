@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:developer' as developer; // Add debug logging
@@ -15,6 +14,7 @@ import '../widgets/reorderable_workout_template_list.dart';
 import 'create_workout_screen.dart';
 import 'active_workout_screen.dart';
 import '../constants/app_constants.dart';
+import '../widgets/profile_icon_button.dart';
 
 class WorkoutBuilderScreen extends StatefulWidget {
   const WorkoutBuilderScreen({super.key});
@@ -155,28 +155,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
               elevation: 0,
               expandedHeight: AppConstants.HEADER_EXTRA_HEIGHT + kToolbarHeight,
               actions: [
-                SizedBox(
-                  width: kToolbarHeight,
-                  child: PullDownButton(
-                    itemBuilder: (context) => [
-                      if (_selectedFolderId == null)
-                        PullDownMenuItem(
-                          onTap: () => _showCreateFolderDialog(),
-                          title: 'Create Folder',
-                          icon: Icons.create_new_folder,
-                        ),
-                      PullDownMenuItem(
-                        onTap: () => _createWorkout(),
-                        title: 'Create Workout',
-                        icon: Icons.fitness_center,
-                      ),
-                    ],
-                    buttonBuilder: (context, showMenu) => IconButton(
-                      icon: const Icon(Icons.add, color: Colors.white, size: 28),
-                      onPressed: showMenu,
-                    ),
-                  ),
-                ),
+                const ProfileIconButton(),
               ],
               flexibleSpace: LayoutBuilder(
                 builder: (context, constraints) {
@@ -250,7 +229,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       child: Text(
         title,
         key: ValueKey('small_$title'),
-        style: AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE,
+        style: AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE.copyWith(fontSize: 20.0),
         textAlign: TextAlign.center,
       ),
     );
@@ -270,7 +249,9 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       child: Text(
         title,
         key: ValueKey('large_$title'),
-        style: AppConstants.HEADER_LARGE_TITLE_TEXT_STYLE,
+        style: AppConstants.HEADER_SUPER_LARGE_TITLE_TEXT_STYLE.copyWith(
+          color: Colors.white,
+        ),
         textAlign: TextAlign.center,
       ),
     );

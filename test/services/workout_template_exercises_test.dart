@@ -6,7 +6,7 @@ import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/services/workout_template_service.dart';
 
 // Reuse existing generated mocks from other test suites to avoid regenerating
-import 'export_import_service_test.mocks.dart' as m1; // Provides MockWorkoutExerciseDao, MockWorkoutSetDao
+import 'workout_service_test.mocks.dart' as m1; // Provides MockWorkoutExerciseDao, MockWorkoutSetDao
 import 'workout_template_service_test.mocks.dart' as m2; // Provides MockWorkoutTemplateDao, MockWorkoutFolderDao
 
 void main() {

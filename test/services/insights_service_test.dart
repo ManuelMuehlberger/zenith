@@ -4,8 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zenith/models/workout.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
+import 'package:zenith/models/exercise.dart';
+import 'package:zenith/models/muscle_group.dart';
 import 'package:zenith/services/database_service.dart';
 import 'package:zenith/services/insights_service.dart';
+import 'package:zenith/services/exercise_service.dart';
 
 // Generate mocks
 @GenerateMocks([DatabaseService])
@@ -28,6 +31,43 @@ void main() {
       
       // Initialize the insights service
       insightsService = InsightsService.instance;
+
+      // Seed ExerciseService with test data
+      ExerciseService.instance.setDependenciesForTesting(
+        seedExercises: [
+          Exercise(
+            slug: 'bench-press',
+            name: 'Bench Press',
+            primaryMuscleGroup: MuscleGroup.chest,
+            secondaryMuscleGroups: [MuscleGroup.triceps],
+            instructions: [],
+            equipment: 'Barbell',
+            image: '',
+            animation: '',
+          ),
+          Exercise(
+            slug: 'squat',
+            name: 'Squat',
+            primaryMuscleGroup: MuscleGroup.legs,
+            secondaryMuscleGroups: [MuscleGroup.glutes],
+            instructions: [],
+            equipment: 'Barbell',
+            image: '',
+            animation: '',
+          ),
+          Exercise(
+            slug: 'push-up',
+            name: 'Push Up',
+            primaryMuscleGroup: MuscleGroup.chest,
+            secondaryMuscleGroups: [MuscleGroup.triceps],
+            instructions: [],
+            equipment: 'None',
+            image: '',
+            animation: '',
+            isBodyWeightExercise: true,
+          ),
+        ],
+      );
     });
 
     test('should initialize insights service', () {
@@ -142,9 +182,9 @@ void main() {
         expect(insights.totalWeight, 3680.0); // (10*100 + 8*110) + (12*150)
         expect(insights.averageWorkoutDuration, 1.25); // 2.5 / 2
         expect(insights.averageWeightPerWorkout, 1840.0); // 2680 / 2
-        expect(insights.monthlyWorkouts, isNotEmpty);
-        expect(insights.monthlyHours, isNotEmpty);
-        expect(insights.monthlyWeight, isNotEmpty);
+        expect(insights.trendWorkouts, isNotEmpty);
+        expect(insights.trendHours, isNotEmpty);
+        expect(insights.trendWeight, isNotEmpty);
       });
 
       test('should handle empty workout list', () async {
@@ -160,9 +200,9 @@ void main() {
         expect(insights.totalWeight, 0.0);
         expect(insights.averageWorkoutDuration, 0.0);
         expect(insights.averageWeightPerWorkout, 0.0);
-        expect(insights.monthlyWorkouts, isNotEmpty); // Should have empty monthly data points
-        expect(insights.monthlyHours, isNotEmpty);
-        expect(insights.monthlyWeight, isNotEmpty);
+        expect(insights.trendWorkouts, isNotEmpty); // Should have empty trend data points
+        expect(insights.trendHours, isNotEmpty);
+        expect(insights.trendWeight, isNotEmpty);
       });
 
       test('should handle workouts with null weights and reps', () async {
@@ -350,7 +390,7 @@ void main() {
         // Test with zero months
         final insights1 = await service.getWorkoutInsights(monthsBack: 0);
         expect(insights1, isNotNull);
-        expect(insights1.monthlyWorkouts, isEmpty);
+        expect(insights1.trendWorkouts, isEmpty);
         
         // Test with negative months (should still work due to loop logic)
         final insights2 = await service.getWorkoutInsights(monthsBack: -1);
@@ -359,7 +399,7 @@ void main() {
 
       test('should handle month boundary calculations correctly', () async {
         final service = InsightsService();
-        
+
         // Create workouts spanning multiple months
         final crossMonthWorkouts = [
           Workout(
@@ -379,14 +419,100 @@ void main() {
             exercises: [],
           ),
         ];
-        
+
         service.setWorkoutsProvider(() async => crossMonthWorkouts);
-        
-        final insights = await service.getWorkoutInsights(monthsBack: 3);
-        
+
+        final insights = await service.getWorkoutInsights(monthsBack: 3, grouping: InsightsGrouping.month);
+
         expect(insights, isNotNull);
-        expect(insights.monthlyWorkouts.length, 3);
+        expect(insights.trendWorkouts.length, 3);
         // Should have data points for each month even if some are zero
+      });
+
+      group('Filtering', () {
+        test('should filter by workout name', () async {
+          final service = InsightsService();
+          service.setWorkoutsProvider(() async => mockWorkouts);
+          
+          final insights = await service.getWorkoutInsights(
+            monthsBack: 1,
+            workoutName: 'Chest Day',
+          );
+          
+          expect(insights.totalWorkouts, 1);
+          expect(insights.totalWeight, 1880.0); // Only Chest Day weight
+        });
+
+        test('should filter by muscle group', () async {
+          final service = InsightsService();
+          service.setWorkoutsProvider(() async => mockWorkouts);
+          
+          // Chest Day has Bench Press (Chest)
+          // Leg Day has Squat (Legs)
+          
+          final insights = await service.getWorkoutInsights(
+            monthsBack: 1,
+            muscleGroup: 'Chest',
+          );
+          
+          expect(insights.totalWorkouts, 1); // Only Chest Day
+          expect(insights.totalWeight, 1880.0); // Only Bench Press weight
+        });
+
+        test('should filter by equipment', () async {
+          final service = InsightsService();
+          service.setWorkoutsProvider(() async => mockWorkouts);
+          
+          // Both have Barbell exercises
+          final insights = await service.getWorkoutInsights(
+            monthsBack: 1,
+            equipment: 'Barbell',
+          );
+          
+          expect(insights.totalWorkouts, 2);
+          expect(insights.totalWeight, 3680.0);
+        });
+
+        test('should filter by bodyweight', () async {
+          final service = InsightsService();
+          
+          final bodyweightWorkout = Workout(
+            id: 'bw-workout',
+            name: 'BW Workout',
+            status: WorkoutStatus.completed,
+            startedAt: DateTime(2023, 6, 14),
+            completedAt: DateTime(2023, 6, 14, 1),
+            exercises: [
+              WorkoutExercise(
+                id: 'ex-bw',
+                workoutId: 'bw-workout',
+                exerciseSlug: 'push-up',
+                sets: [
+                  WorkoutSet(
+                    id: 's1',
+                    workoutExerciseId: 'ex-bw',
+                    setIndex: 0,
+                    actualReps: 20,
+                    actualWeight: 0,
+                    isCompleted: true,
+                  ),
+                ],
+              ),
+            ],
+          );
+          
+          final allWorkouts = [...mockWorkouts, bodyweightWorkout];
+          service.setWorkoutsProvider(() async => allWorkouts);
+          
+          final insights = await service.getWorkoutInsights(
+            monthsBack: 1,
+            isBodyWeight: true,
+          );
+          
+          expect(insights.totalWorkouts, 1); // Only BW Workout
+          // Weight for bodyweight exercises is usually 0 unless weighted
+          expect(insights.totalWeight, 0.0); 
+        });
       });
     });
 
@@ -691,21 +817,21 @@ void main() {
             totalWorkouts: 10,
             totalHours: 15.5,
             totalWeight: 5000.0,
-            monthlyWorkouts: [
-              MonthlyDataPoint(
-                month: DateTime(2023, 1, 1),
+            trendWorkouts: [
+              InsightDataPoint(
+                date: DateTime(2023, 1, 1),
                 value: 5.0,
               ),
             ],
-            monthlyHours: [
-              MonthlyDataPoint(
-                month: DateTime(2023, 1, 1),
+            trendHours: [
+              InsightDataPoint(
+                date: DateTime(2023, 1, 1),
                 value: 7.5,
               ),
             ],
-            monthlyWeight: [
-              MonthlyDataPoint(
-                month: DateTime(2023, 1, 1),
+            trendWeight: [
+              InsightDataPoint(
+                date: DateTime(2023, 1, 1),
                 value: 2500.0,
               ),
             ],
@@ -720,22 +846,22 @@ void main() {
           expect(restored.totalWorkouts, insights.totalWorkouts);
           expect(restored.totalHours, insights.totalHours);
           expect(restored.totalWeight, insights.totalWeight);
-          expect(restored.monthlyWorkouts.length, insights.monthlyWorkouts.length);
-          expect(restored.monthlyHours.length, insights.monthlyHours.length);
-          expect(restored.monthlyWeight.length, insights.monthlyWeight.length);
+          expect(restored.trendWorkouts.length, insights.trendWorkouts.length);
+          expect(restored.trendHours.length, insights.trendHours.length);
+          expect(restored.trendWeight.length, insights.trendWeight.length);
           expect(restored.averageWorkoutDuration, insights.averageWorkoutDuration);
           expect(restored.averageWeightPerWorkout, insights.averageWeightPerWorkout);
           expect(restored.lastUpdated, insights.lastUpdated);
         });
 
-        test('should handle empty monthly data', () {
+        test('should handle empty trend data', () {
           final insights = WorkoutInsights(
             totalWorkouts: 0,
             totalHours: 0.0,
             totalWeight: 0.0,
-            monthlyWorkouts: [],
-            monthlyHours: [],
-            monthlyWeight: [],
+            trendWorkouts: [],
+            trendHours: [],
+            trendWeight: [],
             averageWorkoutDuration: 0.0,
             averageWeightPerWorkout: 0.0,
             lastUpdated: DateTime(2023, 1, 1),
@@ -744,16 +870,16 @@ void main() {
           final map = insights.toMap();
           final restored = WorkoutInsights.fromMap(map);
 
-          expect(restored.monthlyWorkouts, isEmpty);
-          expect(restored.monthlyHours, isEmpty);
-          expect(restored.monthlyWeight, isEmpty);
+          expect(restored.trendWorkouts, isEmpty);
+          expect(restored.trendHours, isEmpty);
+          expect(restored.trendWeight, isEmpty);
         });
 
         test('should handle malformed map data gracefully', () {
           final malformedMap = <String, dynamic>{
             'totalWorkouts': 'invalid', // Wrong type
             'totalHours': null,
-            'monthlyWorkouts': 'not a list',
+            'trendWorkouts': 'not a list',
             // Missing required fields
           };
 
@@ -761,7 +887,7 @@ void main() {
 
           expect(restored.totalWorkouts, 0); // Should use default
           expect(restored.totalHours, 0.0);
-          expect(restored.monthlyWorkouts, isEmpty);
+          expect(restored.trendWorkouts, isEmpty);
         });
       });
 
@@ -778,20 +904,20 @@ void main() {
             averageReps: 10.0,
             averageSets: 3.0,
             monthlyVolume: [
-              MonthlyDataPoint(
-                month: DateTime(2023, 1, 1),
+              InsightDataPoint(
+                date: DateTime(2023, 1, 1),
                 value: 2500.0,
               ),
             ],
             monthlyMaxWeight: [
-              MonthlyDataPoint(
-                month: DateTime(2023, 1, 1),
+              InsightDataPoint(
+                date: DateTime(2023, 1, 1),
                 value: 110.0,
               ),
             ],
             monthlyFrequency: [
-              MonthlyDataPoint(
-                month: DateTime(2023, 1, 1),
+              InsightDataPoint(
+                date: DateTime(2023, 1, 1),
                 value: 2.0,
               ),
             ],
@@ -842,40 +968,40 @@ void main() {
         });
       });
 
-      group('MonthlyDataPoint', () {
+      group('InsightDataPoint', () {
         test('should convert to and from map correctly', () {
-          final dataPoint = MonthlyDataPoint(
-            month: DateTime(2023, 1, 1),
+          final dataPoint = InsightDataPoint(
+            date: DateTime(2023, 1, 1),
             value: 100.5,
           );
 
           final map = dataPoint.toMap();
-          final restored = MonthlyDataPoint.fromMap(map);
+          final restored = InsightDataPoint.fromMap(map);
 
-          expect(restored.month, dataPoint.month);
+          expect(restored.date, dataPoint.date);
           expect(restored.value, dataPoint.value);
         });
 
         test('should handle zero value', () {
-          final dataPoint = MonthlyDataPoint(
-            month: DateTime(2023, 1, 1),
+          final dataPoint = InsightDataPoint(
+            date: DateTime(2023, 1, 1),
             value: 0.0,
           );
 
           final map = dataPoint.toMap();
-          final restored = MonthlyDataPoint.fromMap(map);
+          final restored = InsightDataPoint.fromMap(map);
 
           expect(restored.value, 0.0);
         });
 
         test('should handle negative values', () {
-          final dataPoint = MonthlyDataPoint(
-            month: DateTime(2023, 1, 1),
+          final dataPoint = InsightDataPoint(
+            date: DateTime(2023, 1, 1),
             value: -50.0,
           );
 
           final map = dataPoint.toMap();
-          final restored = MonthlyDataPoint.fromMap(map);
+          final restored = InsightDataPoint.fromMap(map);
 
           expect(restored.value, -50.0);
         });

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import '../constants/app_constants.dart';
 
 class EditWorkoutNameSection extends StatelessWidget {
   final TextEditingController nameController;
@@ -18,11 +19,14 @@ class EditWorkoutNameSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[800]!, width: 1),
+        color: selectedColor.withAlpha((255 * 0.2).round()),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: selectedColor.withAlpha((255 * 0.4).round()),
+          width: 1,
         ),
       ),
       child: Row(
@@ -31,20 +35,16 @@ class EditWorkoutNameSection extends StatelessWidget {
           GestureDetector(
             onTap: onIconTap,
             child: Container(
-              width: 48,
-              height: 48,
+              width: 60,
+              height: 60,
               decoration: BoxDecoration(
-                color: selectedColor.withAlpha((255 * 0.2).round()),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: selectedColor.withAlpha((255 * 0.3).round()),
-                  width: 1,
-                ),
+                color: selectedColor,
+                borderRadius: BorderRadius.circular(30), // Fully rounded
               ),
               child: Icon(
                 selectedIcon,
-                color: selectedColor,
-                size: 24,
+                color: Colors.white,
+                size: 32,
               ),
             ),
           ),
@@ -55,26 +55,17 @@ class EditWorkoutNameSection extends StatelessWidget {
           Expanded(
             child: CupertinoTextField(
               controller: nameController,
-              style: const TextStyle(
+              style: AppConstants.HEADER_EXTRA_LARGE_TITLE_TEXT_STYLE.copyWith(
                 color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
               ),
-              placeholder: 'Workout name',
-              placeholderStyle: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 18,
-                fontWeight: FontWeight.w400,
+              placeholder: 'Workout Name',
+              placeholderStyle: AppConstants.HEADER_EXTRA_LARGE_TITLE_TEXT_STYLE.copyWith(
+                color: Colors.white.withAlpha((255 * 0.6).round()),
               ),
-              decoration: BoxDecoration(
-                color: Colors.grey[800],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.grey[700]!,
-                  width: 1,
-                ),
+              decoration: const BoxDecoration(
+                color: Colors.transparent,
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 12),
               maxLines: 1,
             ),
           ),

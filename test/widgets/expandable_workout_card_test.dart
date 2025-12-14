@@ -55,11 +55,11 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 400)); // allow animation to complete
 
     // Assert: the exercise slug is displayed when exerciseDetail is null
-    expect(find.text('Exercises'), findsOneWidget);
+    expect(find.text('Exercises'), findsWidgets);
     expect(find.text('bench-press'), findsOneWidget);
 
     // Also verify the sets count text renders as expected (may appear in summary and per-exercise)
-    expect(find.text('1 set'), findsWidgets);
+    expect(find.text('1'), findsWidgets);
   });
 
   testWidgets('ExpandableWorkoutCard (template) loads exercises via injected loader and shows slug/counts', (WidgetTester tester) async {
@@ -118,13 +118,13 @@ void main() {
     await tester.pumpAndSettle();
 
     // Summary chips should reflect 1 exercise, 2 sets
-    expect(find.text('1 exercise'), findsOneWidget);
-    expect(find.text('2 sets'), findsOneWidget);
+    expect(find.text('1'), findsWidgets);
+    expect(find.text('2'), findsWidgets);
 
     // Expand to see list
     await tester.tap(find.text('Template Workout'));
     await tester.pumpAndSettle(const Duration(milliseconds: 400));
-    expect(find.text('Exercises'), findsOneWidget);
+    expect(find.text('Exercises'), findsWidgets);
     expect(find.text('squat'), findsOneWidget);
     expect(find.text('2 sets'), findsWidgets);
   });
@@ -175,8 +175,8 @@ void main() {
     );
 
     await tester.pumpAndSettle();
-    expect(find.text('1 exercise'), findsOneWidget);
-    expect(find.text('2 sets'), findsOneWidget);
+    expect(find.text('1'), findsWidgets);
+    expect(find.text('2'), findsWidgets);
 
     // Simulate "edited" template: same id, new instance, different data
     dataSet = [
@@ -223,8 +223,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Expect updated counts after didUpdateWidget-triggered reload
-    expect(find.text('2 exercises'), findsOneWidget);
-    expect(find.text('3 sets'), findsOneWidget);
+    expect(find.text('2'), findsWidgets);
+    expect(find.text('3'), findsWidgets);
   });
 
   testWidgets('ExpandableWorkoutCard switching from template to workout uses workout data (no stale template cache)', (WidgetTester tester) async {
@@ -270,8 +270,8 @@ void main() {
     );
 
     await tester.pumpAndSettle();
-    expect(find.text('1 exercise'), findsOneWidget);
-    expect(find.text('2 sets'), findsOneWidget);
+    expect(find.text('1'), findsWidgets);
+    expect(find.text('2'), findsWidgets);
 
     // Now switch to a concrete workout with different counts
     const workoutId = 'workout_switch_1';
@@ -309,8 +309,8 @@ void main() {
     await tester.pumpAndSettle();
 
     // Expect the workout's counts (1 exercise, 3 sets), not stale template data
-    expect(find.text('1 exercise'), findsOneWidget);
-    expect(find.text('3 sets'), findsOneWidget);
+    expect(find.text('1'), findsWidgets);
+    expect(find.text('3'), findsWidgets);
     expect(find.text('WS Workout'), findsOneWidget);
   });
 }

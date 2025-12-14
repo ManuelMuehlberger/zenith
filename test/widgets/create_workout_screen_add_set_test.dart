@@ -57,7 +57,7 @@ void main() {
     expect(updatedWeightWidget.controller?.text, '25.5');
 
     // Add a new set
-    await tester.tap(find.text('Add Set'));
+    await tester.tap(find.text('Add'));
     await tester.pumpAndSettle();
 
     // Now we should have 4 TextFormField widgets (2 sets × 2 fields each)

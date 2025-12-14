@@ -20,7 +20,7 @@ void main() {
 
     test('Card color constants are defined and correct', () {
       // Existing card color
-      expect(AppConstants.CARD_BG_COLOR, const Color(0xCC101010));
+      expect(AppConstants.CARD_BG_COLOR, const Color(0xFF212121));
       // New exercise card background color should match design (home cards)
       expect(AppConstants.EXERCISE_CARD_BG_COLOR, const Color(0xFF1A1A1A));
       // Stroke constants remain consistent

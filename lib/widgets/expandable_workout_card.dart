@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 import '../models/workout.dart';
 import '../models/workout_template.dart';
@@ -8,6 +9,7 @@ import '../models/workout_exercise.dart';
 import '../services/workout_session_service.dart';
 import '../services/workout_template_service.dart';
 import '../utils/navigation_helper.dart';
+import '../utils/workout_metrics.dart';
 import '../constants/app_constants.dart';
 
 class ExpandableWorkoutCard extends StatefulWidget {
@@ -53,7 +55,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
       _isTemplate ? widget.template!.name : widget.workout!.name;
 
   IconData get _displayIcon =>
-      _isTemplate ? _iconFromCodePoint(widget.template!.iconCodePoint) : widget.workout!.icon;
+      _isTemplate ? WorkoutIcons.getIconDataFromCodePoint(widget.template!.iconCodePoint) : widget.workout!.icon;
 
   Color get _displayColor => _isTemplate
       ? Color(widget.template!.colorValue ?? 0xFF2196F3)
@@ -170,33 +172,6 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
     HapticFeedback.lightImpact();
   }
 
-  int _estimateWorkoutDuration(int sets, int exerciseCount) {
-    // Estimate 2-3 minutes per set plus 1 minute per exercise for setup
-    return (sets * 3 + exerciseCount * 1).round();
-  }
-
-  Widget _buildWorkoutStat(String value, String label) {
-    return Row(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.blue,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
-        ),
-        const SizedBox(width: 2),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey[400],
-            fontSize: 14,
-          ),
-        ),
-      ],
-    );
-  }
 
   Future<void> _startWorkout() async {
     try {
@@ -256,329 +231,412 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
     final totalSets = _totalSets;
 
     return Container(
-        margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
-        decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _isExpanded
-                ? Colors.blue.withAlpha((255 * 0.5).round())
-                : Colors.grey[800]!,
-            width: _isExpanded ? 2 : 1,
-          ),
+      margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
+      decoration: BoxDecoration(
+        color: AppConstants.CARD_BG_COLOR,
+        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+        border: Border.all(
+          color: _isExpanded
+              ? AppConstants.ACCENT_COLOR.withAlpha((255 * 0.6).round())
+              : AppConstants.CARD_STROKE_COLOR,
+          width: _isExpanded ? 1.5 : AppConstants.CARD_STROKE_WIDTH,
         ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: _toggleExpansion,
-            child: Column(
-              children: [
-                // Main card content
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: _displayColor.withAlpha((255 * 0.2).round()),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          _displayIcon,
-                          color: _displayColor,
-                          size: 24,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha((255 * 0.15).round()),
+            blurRadius: 8.0,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+          onTap: _toggleExpansion,
+          child: Column(
+            children: [
+              // Main card content
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppConstants.CARD_PADDING,
+                  AppConstants.CARD_PADDING,
+                  AppConstants.CARD_PADDING,
+                  0,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Icon container with rounded modern iOS styling
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: _displayColor.withAlpha((255 * 0.15).round()),
+                        borderRadius: BorderRadius.circular(26), // Fully rounded
+                        border: Border.all(
+                          color: _displayColor.withAlpha((255 * 0.3).round()),
+                          width: 0.5,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    _displayName,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
+                      child: Icon(
+                        _displayIcon,
+                        color: _displayColor,
+                        size: 26,
+                      ),
+                    ),
+                    const SizedBox(width: AppConstants.ITEM_HORIZONTAL_GAP),
+                    Expanded(
+                      child: Text(
+                        _displayName,
+                        style: AppConstants.CARD_TITLE_TEXT_STYLE,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // Action buttons
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Expand/collapse button without background
+                        AnimatedRotation(
+                          turns: _isExpanded ? 0.5 : 0,
+                          duration: const Duration(milliseconds: 300),
+                          child: Icon(
+                            Icons.keyboard_arrow_down,
+                            color: AppConstants.TEXT_SECONDARY_COLOR,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Menu button without background
+                        PullDownButton(
+                          itemBuilder: (context) => [
+                            PullDownMenuItem(
+                              onTap: widget.onEditPressed,
+                              title: 'Edit Workout',
+                              icon: CupertinoIcons.pencil,
                             ),
-                            const SizedBox(height: 6),
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.fitness_center_outlined,
-                                    size: 16,
-                                    color: Colors.grey[400],
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '$exerciseCount ${exerciseCount == 1 ? "exercise" : "exercises"}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Icon(
-                                    Icons.layers_outlined,
-                                    size: 16,
-                                    color: Colors.grey[400],
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '$totalSets ${totalSets == 1 ? "set" : "sets"}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[400],
-                                    ),
-                                  ),
-                                ],
+                            PullDownMenuItem(
+                              onTap: widget.onDeletePressed,
+                              title: 'Delete Workout',
+                              isDestructive: true,
+                              icon: CupertinoIcons.delete,
+                            ),
+                          ],
+                          buttonBuilder: (context, showMenu) => CupertinoButton(
+                            onPressed: showMenu,
+                            padding: EdgeInsets.zero,
+                            child: Icon(
+                              CupertinoIcons.ellipsis,
+                              color: AppConstants.TEXT_SECONDARY_COLOR,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Indicators Section (Transitions between collapsed and expanded states)
+              AnimatedPadding(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                padding: _isExpanded
+                    ? const EdgeInsets.fromLTRB(20, 20, 20, 10)
+                    : const EdgeInsets.fromLTRB(
+                        AppConstants.CARD_PADDING + 52 + AppConstants.ITEM_HORIZONTAL_GAP,
+                        4,
+                        AppConstants.CARD_PADDING,
+                        AppConstants.CARD_PADDING,
+                      ),
+                child: AnimatedCrossFade(
+                  duration: const Duration(milliseconds: 300),
+                  firstCurve: Curves.easeInOut,
+                  secondCurve: Curves.easeInOut,
+                  crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                  firstChild: Row(
+                    children: [
+                      // Exercise count with icon
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.1).round()),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.fitness_center_outlined,
+                              size: 12,
+                              color: AppConstants.TEXT_SECONDARY_COLOR,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$exerciseCount',
+                              style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AnimatedRotation(
-                            turns: _isExpanded ? 0.5 : 0,
-                            duration: const Duration(milliseconds: 300),
-                            child: Icon(
-                              Icons.keyboard_arrow_down,
-                              color: Colors.grey[400],
-                              size: 24,
+                      const SizedBox(width: 8),
+                      // Sets count with icon
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.1).round()),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.layers_outlined,
+                              size: 12,
+                              color: AppConstants.TEXT_SECONDARY_COLOR,
                             ),
-                          ),
-                          PullDownButton(
-                            itemBuilder: (context) => [
-                              PullDownMenuItem(
-                                onTap: widget.onEditPressed,
-                                title: 'Edit Workout',
-                                icon: CupertinoIcons.pencil,
-                              ),
-                              PullDownMenuItem(
-                                onTap: widget.onDeletePressed,
-                                title: 'Delete Workout',
-                                isDestructive: true,
-                                icon: CupertinoIcons.delete,
-                              ),
-                            ],
-                            buttonBuilder: (context, showMenu) => CupertinoButton(
-                              onPressed: showMenu,
-                              padding: EdgeInsets.zero,
-                              child: const Icon(
-                                CupertinoIcons.ellipsis_circle,
-                                color: Colors.grey,
+                            const SizedBox(width: 4),
+                            Text(
+                              '$totalSets',
+                              style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Duration estimate
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppConstants.ACCENT_COLOR.withAlpha((255 * 0.1).round()),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.schedule_outlined,
+                              size: 12,
+                              color: AppConstants.ACCENT_COLOR,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              WorkoutMetrics.getFormattedDuration(_effectiveExercises),
+                              style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppConstants.ACCENT_COLOR,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  secondChild: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildExpandedStatItem(
+                        icon: Icons.fitness_center_outlined,
+                        value: '$exerciseCount',
+                        label: 'Exercises',
+                      ),
+                      _buildExpandedStatItem(
+                        icon: Icons.layers_outlined,
+                        value: '$totalSets',
+                        label: 'Sets',
+                      ),
+                      _buildExpandedStatItem(
+                        icon: Icons.schedule_outlined,
+                        value: WorkoutMetrics.getFormattedDuration(_effectiveExercises).replaceAll('~', ''),
+                        label: 'Minutes',
                       ),
                     ],
                   ),
                 ),
+              ),
 
-                // Expandable content
-                SizeTransition(
-                  sizeFactor: _expandAnimation,
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[850],
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(16),
-                        bottomRight: Radius.circular(16),
-                      ),
+              // Expandable content
+              SizeTransition(
+                sizeFactor: _expandAnimation,
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.transparent, // Transparent to blend with card
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(AppConstants.CARD_RADIUS),
+                      bottomRight: Radius.circular(AppConstants.CARD_RADIUS),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Workout stats
-                          Text(
-                            'Workout Details',
-                            style: TextStyle(
-                              color: Colors.grey[300],
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_isExpanded) ...[
+                          // Last performed date
+                          if (_isTemplate && widget.template?.lastUsed != null)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: Text(
+                                  'Last performed: ${DateFormat.yMMMd().format(DateTime.parse(widget.template!.lastUsed!))}',
+                                  style: AppConstants.IOS_SUBTEXT_STYLE.copyWith(
+                                    fontSize: 12,
+                                    color: AppConstants.TEXT_TERTIARY_COLOR,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildWorkoutStat(
-                                  '$exerciseCount',
-                                  exerciseCount == 1 ? 'exercise' : 'exercises',
-                                ),
-                              ),
-                              Expanded(
-                                child: _buildWorkoutStat(
-                                  '$totalSets',
-                                  totalSets == 1 ? 'set' : 'sets',
-                                ),
-                              ),
-                              Expanded(
-                                child: _buildWorkoutStat(
-                                  '~${_estimateWorkoutDuration(totalSets, exerciseCount)}',
-                                  'min',
-                                ),
-                              ),
-                            ],
-                          ),
 
-                          // Exercise list preview (only build when expanded to avoid offstage duplicates in tests)
-                          if (_isExpanded && _effectiveExercises.isNotEmpty) ...[
-                            const SizedBox(height: 20),
+                          // Exercise list
+                          if (_effectiveExercises.isNotEmpty) ...[
                             Text(
                               'Exercises',
-                              style: TextStyle(
-                                color: Colors.grey[300],
+                              style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
                                 fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                                color: AppConstants.TEXT_PRIMARY_COLOR,
                               ),
                             ),
                             const SizedBox(height: 8),
-                            ..._effectiveExercises.take(3).map((exercise) => 
+                            ..._effectiveExercises.map((exercise) => 
                               Padding(
-                                padding: const EdgeInsets.only(bottom: 4.0),
+                                padding: const EdgeInsets.symmetric(vertical: 6),
                                 child: Row(
                                   children: [
                                     Container(
-                                      width: 4,
-                                      height: 4,
+                                      width: 6,
+                                      height: 6,
                                       decoration: BoxDecoration(
-                                        color: Colors.blue,
-                                        borderRadius: BorderRadius.circular(2),
+                                        color: _displayColor,
+                                        borderRadius: BorderRadius.circular(3),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
                                         exercise.exerciseDetail?.name ?? exercise.exerciseSlug,
-                                        style: TextStyle(
-                                          color: Colors.grey[400],
+                                        style: AppConstants.IOS_BODY_TEXT_STYLE.copyWith(
                                           fontSize: 14,
+                                          color: AppConstants.TEXT_PRIMARY_COLOR,
                                         ),
                                       ),
                                     ),
-                                    Text(
-                                      '${exercise.sets.length} ${exercise.sets.length == 1 ? "set" : "sets"}',
-                                      style: TextStyle(
-                                        color: Colors.grey[500],
-                                        fontSize: 12,
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppConstants.TEXT_SECONDARY_COLOR.withAlpha((255 * 0.15).round()),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        '${exercise.sets.length} sets',
+                                        style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppConstants.TEXT_SECONDARY_COLOR,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
                             ),
-                            if (_effectiveExercises.length > 3)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4.0),
-                                child: Text(
-                                  '+${_effectiveExercises.length - 3} more ${_effectiveExercises.length - 3 == 1 ? "exercise" : "exercises"}',
-                                  style: TextStyle(
-                                    color: Colors.grey[500],
-                                    fontSize: 12,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-                              ),
+                            const SizedBox(height: 20),
                           ],
+                        ],
 
-                          const SizedBox(height: 24),
-
-                          // Start workout button
-                          SizedBox(
-                            width: double.infinity,
-                            height: 56,
-                            child: ElevatedButton(
-                              onPressed: _startWorkout,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(
-                                    Icons.play_arrow_rounded,
-                                    size: 28,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Start Workout',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
+                        // Start workout button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton(
+                            onPressed: _startWorkout,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppConstants.ACCENT_COLOR,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.play_arrow_rounded,
+                                  size: 24,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Start Workout',
+                                  style: AppConstants.IOS_BODY_TEXT_STYLE.copyWith(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
+      ),
     );
   }
 
-  // Map code point to a constant IconData when known, otherwise fallback to dynamic IconData
-  IconData _iconFromCodePoint(int? codePoint) {
-    if (codePoint == null) return Icons.fitness_center;
-    switch (codePoint) {
-      case 0xe1a3: // fitness_center
-        return Icons.fitness_center;
-      case 0xe02f: // directions_run
-        return Icons.directions_run;
-      case 0xe047: // pool
-        return Icons.pool;
-      case 0xe52f: // sports
-        return Icons.sports;
-      case 0xe531: // sports_gymnastics
-        return Icons.sports_gymnastics;
-      case 0xe532: // sports_handball
-        return Icons.sports_handball;
-      case 0xe533: // sports_martial_arts
-        return Icons.sports_martial_arts;
-      case 0xe534: // sports_mma
-        return Icons.sports_mma;
-      case 0xe535: // sports_motorsports
-        return Icons.sports_motorsports;
-      case 0xe536: // sports_score
-        return Icons.sports_score;
-      default:
-        // Fallback so arbitrary Material icons render correctly for templates
-        return IconData(codePoint, fontFamily: 'MaterialIcons');
-    }
+  Widget _buildExpandedStatItem({
+    required IconData icon,
+    required String value,
+    required String label,
+  }) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppConstants.ACCENT_COLOR.withAlpha((255 * 0.1).round()),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: AppConstants.ACCENT_COLOR,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
+            fontSize: 18,
+            color: AppConstants.TEXT_PRIMARY_COLOR,
+          ),
+        ),
+        Text(
+          label,
+          style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+            fontSize: 12,
+            color: AppConstants.TEXT_SECONDARY_COLOR,
+          ),
+        ),
+      ],
+    );
   }
+
 }

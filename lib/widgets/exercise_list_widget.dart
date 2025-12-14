@@ -6,7 +6,6 @@ import '../models/exercise.dart';
 import '../services/exercise_service.dart';
 import '../constants/app_constants.dart';
 import '../screens/exercise_info_screen.dart';
-import 'package:flutter/rendering.dart' show ScrollDirection;
 
 class ExerciseListWidget extends StatefulWidget {
   final Function(Exercise) onExerciseSelected;
@@ -50,6 +49,15 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
   }
 
   Future<void> _loadExercises() async {
+    // If exercises are already loaded, use them directly
+    if (ExerciseService.instance.exercises.isNotEmpty) {
+      setState(() {
+        _filteredExercises = ExerciseService.instance.exercises;
+      });
+      return;
+    }
+    
+    // Otherwise, load them from the service
     await ExerciseService.instance.loadExercises();
     setState(() {
       _filteredExercises = ExerciseService.instance.exercises;
@@ -454,13 +462,14 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                           ),
                           // Info button (always visible in multi-select mode, or when not selected in single-select mode)
                           if (isMultiSelectMode)
-                            CupertinoButton(
-                              padding: const EdgeInsets.all(12.0),
-                              onPressed: () => _navigateToExerciseInfo(context, exercise),
-                              child: Icon(
-                                CupertinoIcons.info_circle,
-                                color: AppConstants.TEXT_SECONDARY_COLOR,
-                                size: 20,
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                padding: const EdgeInsets.all(8),
+                                constraints: const BoxConstraints(),
+                                onPressed: () => _navigateToExerciseInfo(context, exercise),
+                                icon: Icon(CupertinoIcons.info_circle, color: AppConstants.TEXT_SECONDARY_COLOR, size: 28),
+                                tooltip: 'Exercise Info',
                               ),
                             ),
                         ],
