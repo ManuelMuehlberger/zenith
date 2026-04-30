@@ -7,14 +7,14 @@ class WorkoutSet {
   final int setIndex;
 
   // --- Template Fields ---
-  int? targetReps;
-  double? targetWeight;
-  int? targetRestSeconds;
+  final int? targetReps;
+  final double? targetWeight;
+  final int? targetRestSeconds;
 
   // --- Logged Fields ---
-  int? actualReps;
-  double? actualWeight;
-  bool isCompleted;
+  final int? actualReps;
+  final double? actualWeight;
+  final bool isCompleted;
 
   WorkoutSet({
     WorkoutSetId? id,
@@ -44,15 +44,15 @@ class WorkoutSet {
 
   factory WorkoutSet.fromMap(Map<String, dynamic> map) {
     return WorkoutSet(
-      id: map['id'] as String,
-      workoutExerciseId: map['workoutExerciseId'] as String,
-      setIndex: map['setIndex'] as int,
-      targetReps: map['targetReps'] as int?,
-      targetWeight: (map['targetWeight'] as num?)?.toDouble(),
-      targetRestSeconds: map['targetRestSeconds'] as int?,
-      actualReps: map['actualReps'] as int?,
-      actualWeight: (map['actualWeight'] as num?)?.toDouble(),
-      isCompleted: (map['isCompleted'] as int? ?? 0) == 1,
+      id: _readRequiredString(map, 'id'),
+      workoutExerciseId: _readRequiredString(map, 'workoutExerciseId'),
+      setIndex: _readRequiredInt(map, 'setIndex'),
+      targetReps: _readNullableInt(map, 'targetReps'),
+      targetWeight: _readNullableDouble(map, 'targetWeight'),
+      targetRestSeconds: _readNullableInt(map, 'targetRestSeconds'),
+      actualReps: _readNullableInt(map, 'actualReps'),
+      actualWeight: _readNullableDouble(map, 'actualWeight'),
+      isCompleted: _readBool(map, 'isCompleted'),
     );
   }
 
@@ -71,15 +71,79 @@ class WorkoutSet {
       id: id ?? this.id,
       workoutExerciseId: workoutExerciseId ?? this.workoutExerciseId,
       setIndex: setIndex ?? this.setIndex,
-      targetReps: targetReps == _undefined ? this.targetReps : targetReps as int?,
-      targetWeight: targetWeight == _undefined ? this.targetWeight : targetWeight as double?,
-      targetRestSeconds: targetRestSeconds == _undefined ? this.targetRestSeconds : targetRestSeconds as int?,
-      actualReps: actualReps == _undefined ? this.actualReps : actualReps as int?,
-      actualWeight: actualWeight == _undefined ? this.actualWeight : actualWeight as double?,
-      isCompleted: isCompleted == _undefined ? this.isCompleted : (isCompleted as bool?) ?? this.isCompleted,
+      targetReps: targetReps == _undefined
+          ? this.targetReps
+          : targetReps as int?,
+      targetWeight: targetWeight == _undefined
+          ? this.targetWeight
+          : targetWeight as double?,
+      targetRestSeconds: targetRestSeconds == _undefined
+          ? this.targetRestSeconds
+          : targetRestSeconds as int?,
+      actualReps: actualReps == _undefined
+          ? this.actualReps
+          : actualReps as int?,
+      actualWeight: actualWeight == _undefined
+          ? this.actualWeight
+          : actualWeight as double?,
+      isCompleted: isCompleted == _undefined
+          ? this.isCompleted
+          : (isCompleted as bool?) ?? this.isCompleted,
     );
   }
 }
 
 // Sentinel object to distinguish between null and undefined
 const Object _undefined = Object();
+
+String _readRequiredString(Map<String, dynamic> map, String key) {
+  final value = map[key];
+  if (value is String && value.isNotEmpty) {
+    return value;
+  }
+  throw FormatException('Missing or invalid "$key" for WorkoutSet');
+}
+
+int _readRequiredInt(Map<String, dynamic> map, String key) {
+  final value = map[key];
+  if (value is int) {
+    return value;
+  }
+  throw FormatException('Missing or invalid "$key" for WorkoutSet');
+}
+
+int? _readNullableInt(Map<String, dynamic> map, String key) {
+  final value = map[key];
+  if (value == null) {
+    return null;
+  }
+  if (value is int) {
+    return value;
+  }
+  throw FormatException('Invalid "$key" for WorkoutSet: expected int');
+}
+
+double? _readNullableDouble(Map<String, dynamic> map, String key) {
+  final value = map[key];
+  if (value == null) {
+    return null;
+  }
+  if (value is num) {
+    return value.toDouble();
+  }
+  throw FormatException('Invalid "$key" for WorkoutSet: expected num');
+}
+
+bool _readBool(Map<String, dynamic> map, String key) {
+  final value = map[key];
+  if (value == null) {
+    return false;
+  }
+  if (value is bool) {
+    return value;
+  }
+  if (value is int) {
+    return value == 1;
+  }
+  throw FormatException('Invalid "$key" for WorkoutSet: expected bool or int');
+}

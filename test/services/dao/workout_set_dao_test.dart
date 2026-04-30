@@ -103,5 +103,18 @@ void main() {
       final workoutSet = dao.fromMap(map);
       expect(workoutSet.isCompleted, false);
     });
+
+    test('should preserve explicit false completion on copyWith', () {
+      final workoutSet = WorkoutSet(
+        workoutExerciseId: 'exercise999',
+        setIndex: 1,
+        isCompleted: true,
+      );
+
+      final copied = workoutSet.copyWith(isCompleted: false);
+
+      expect(copied.isCompleted, isFalse);
+      expect(workoutSet.isCompleted, isTrue);
+    });
   });
 }

@@ -9,11 +9,13 @@ const Object _undefined = Object();
 // Represents an exercise within a Workout template or session
 class WorkoutExercise {
   final WorkoutExerciseId id;
-  final WorkoutTemplateId? workoutTemplateId; // Foreign key to WorkoutTemplate table (for template exercises)
-  final WorkoutId? workoutId; // Foreign key to Workout table (for session exercises)
+  final WorkoutTemplateId?
+  workoutTemplateId; // Foreign key to WorkoutTemplate table (for template exercises)
+  final WorkoutId?
+  workoutId; // Foreign key to Workout table (for session exercises)
   final ExerciseSlug exerciseSlug; // Identifier for the Exercise
-  String? notes;
-  int? orderIndex;
+  final String? notes;
+  final int? orderIndex;
 
   // Exercise object, loaded from ExerciseService using exerciseSlug
   // This is for in-memory use after fetching, not stored in WorkoutExercises table directly
@@ -21,7 +23,7 @@ class WorkoutExercise {
 
   // Sets are not part of the 'WorkoutExercises' table directly.
   // They will be loaded separately from 'WorkoutSets' table and associated in memory.
-  List<WorkoutSet> sets;
+  final List<WorkoutSet> sets;
 
   WorkoutExercise({
     WorkoutExerciseId? id,
@@ -31,8 +33,10 @@ class WorkoutExercise {
     this.notes,
     this.orderIndex,
     this.exerciseDetail, // Can be loaded post-initialization
-    this.sets = const [], // Default to empty list, to be populated after fetching from DB
-  }) : id = id ?? const Uuid().v4() {
+    List<WorkoutSet> sets =
+        const [], // Default to empty list, to be populated after fetching from DB
+  }) : id = id ?? const Uuid().v4(),
+       sets = List.unmodifiable(sets) {
     // Ensure exactly one of workoutTemplateId or workoutId is set
     assert(
       (workoutTemplateId != null) != (workoutId != null),
@@ -46,15 +50,13 @@ class WorkoutExercise {
   // For a template, totalWeight might not be as meaningful if target weights vary.
 
   factory WorkoutExercise.fromMap(Map<String, dynamic> map) {
-    // Note: 'sets' and 'exerciseDetail' are not in the map from the 'WorkoutExercises' table.
-    // They need to be fetched/populated separately.
     return WorkoutExercise(
-      id: map['id'] as String,
-      workoutTemplateId: map['workoutTemplateId'] as String?,
-      workoutId: map['workoutId'] as String?,
-      exerciseSlug: map['exerciseSlug'] as String,
-      notes: map['notes'] as String?,
-      orderIndex: map['orderIndex'] as int?,
+      id: _readRequiredString(map, 'id'),
+      workoutTemplateId: _readNullableString(map, 'workoutTemplateId'),
+      workoutId: _readNullableString(map, 'workoutId'),
+      exerciseSlug: _readRequiredString(map, 'exerciseSlug'),
+      notes: _readNullableString(map, 'notes'),
+      orderIndex: _readNullableInt(map, 'orderIndex'),
       sets: [], // Initialize as empty, to be loaded by service layer
       // exerciseDetail will be loaded by service layer using exerciseSlug
     );
@@ -78,25 +80,36 @@ class WorkoutExercise {
     Object? workoutId = _undefined,
     ExerciseSlug? exerciseSlug,
     Object? notes = _undefined,
-    int? orderIndex,
-    Exercise? exerciseDetail, // Allow exerciseDetail to be explicitly nulled
-    bool setExerciseDetailNull = false,
+    Object? orderIndex = _undefined,
+    Object? exerciseDetail = _undefined,
     List<WorkoutSet>? sets,
   }) {
     return WorkoutExercise(
       id: id ?? this.id,
-      workoutTemplateId: workoutTemplateId == _undefined ? this.workoutTemplateId : workoutTemplateId as WorkoutTemplateId?,
-      workoutId: workoutId == _undefined ? this.workoutId : workoutId as WorkoutId?,
+      workoutTemplateId: workoutTemplateId == _undefined
+          ? this.workoutTemplateId
+          : workoutTemplateId as WorkoutTemplateId?,
+      workoutId: workoutId == _undefined
+          ? this.workoutId
+          : workoutId as WorkoutId?,
       exerciseSlug: exerciseSlug ?? this.exerciseSlug,
       notes: notes == _undefined ? this.notes : notes as String?,
-      orderIndex: orderIndex ?? this.orderIndex,
-      exerciseDetail: setExerciseDetailNull ? null : (exerciseDetail ?? this.exerciseDetail),
+      orderIndex: orderIndex == _undefined
+          ? this.orderIndex
+          : orderIndex as int?,
+      exerciseDetail: exerciseDetail == _undefined
+          ? this.exerciseDetail
+          : exerciseDetail as Exercise?,
       sets: sets ?? this.sets,
     );
   }
 
   // Helper method to add a new set (for in-memory manipulation)
-  WorkoutExercise addSet({int? targetReps, double? targetWeight, int? targetRestSeconds}) {
+  WorkoutExercise addSet({
+    int? targetReps,
+    double? targetWeight,
+    int? targetRestSeconds,
+  }) {
     final newSet = WorkoutSet(
       workoutExerciseId: id, // Link to this WorkoutExercise instance
       setIndex: sets.length, // Simple index for now
@@ -113,7 +126,13 @@ class WorkoutExercise {
   }
 
   // Helper method to update a set (for in-memory manipulation)
-  WorkoutExercise updateSet(String setId, {int? targetReps, double? targetWeight, int? targetRestSeconds, int? setIndex}) {
+  WorkoutExercise updateSet(
+    String setId, {
+    int? targetReps,
+    double? targetWeight,
+    int? targetRestSeconds,
+    int? setIndex,
+  }) {
     final updatedSets = sets.map((set) {
       if (set.id == setId) {
         return set.copyWith(
@@ -125,7 +144,37 @@ class WorkoutExercise {
       }
       return set;
     }).toList();
-    
+
     return copyWith(sets: updatedSets);
   }
+}
+
+String _readRequiredString(Map<String, dynamic> map, String key) {
+  final value = map[key];
+  if (value is String && value.isNotEmpty) {
+    return value;
+  }
+  throw FormatException('Missing or invalid "$key" for WorkoutExercise');
+}
+
+String? _readNullableString(Map<String, dynamic> map, String key) {
+  final value = map[key];
+  if (value == null) {
+    return null;
+  }
+  if (value is String) {
+    return value;
+  }
+  throw FormatException('Invalid "$key" for WorkoutExercise: expected String');
+}
+
+int? _readNullableInt(Map<String, dynamic> map, String key) {
+  final value = map[key];
+  if (value == null) {
+    return null;
+  }
+  if (value is int) {
+    return value;
+  }
+  throw FormatException('Invalid "$key" for WorkoutExercise: expected int');
 }

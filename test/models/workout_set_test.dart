@@ -93,5 +93,27 @@ void main() {
       expect(updatedSet.actualReps, isNull);
       expect(updatedSet.actualWeight, isNull);
     });
+
+    test('copyWith creates a new immutable value object', () {
+      final workoutSet = WorkoutSet(
+        workoutExerciseId: 'w_ex1',
+        setIndex: 0,
+        targetReps: 8,
+        targetWeight: 42.5,
+      );
+
+      final updatedSet = workoutSet.copyWith(
+        targetReps: 12,
+        targetWeight: 45.0,
+        isCompleted: true,
+      );
+
+      expect(workoutSet.targetReps, 8);
+      expect(workoutSet.targetWeight, 42.5);
+      expect(workoutSet.isCompleted, isFalse);
+      expect(updatedSet.targetReps, 12);
+      expect(updatedSet.targetWeight, 45.0);
+      expect(updatedSet.isCompleted, isTrue);
+    });
   });
 }
