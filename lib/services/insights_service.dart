@@ -4,7 +4,7 @@ import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/workout.dart';
 import '../models/insights.dart';
-import 'database_service.dart';
+import 'workout_service.dart';
 import 'insights/workout_insights_provider.dart';
 import 'insights/workout_trend_provider.dart';
 import 'insights/exercise_insights_provider.dart';
@@ -54,7 +54,7 @@ class InsightsService {
         _logger.fine('Using custom workouts provider');
         return await _workoutsProvider!();
       }
-      return await DatabaseService.instance.getWorkouts();
+      return await WorkoutService.instance.getWorkoutsSortedByStartedAt();
     } catch (e) {
       _logger.severe('Failed to get workouts: $e');
       return [];

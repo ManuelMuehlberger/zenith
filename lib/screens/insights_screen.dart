@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:ui';
 import 'package:pull_down_button/pull_down_button.dart';
-import '../services/database_service.dart';
 import '../services/insights_service.dart';
 import '../models/workout.dart';
 import '../services/workout_service.dart';
@@ -36,7 +35,6 @@ class InsightsScreen extends StatefulWidget {
 
 class _InsightsScreenState extends State<InsightsScreen> with SingleTickerProviderStateMixin {
   bool _showCalendar = false;
-  int _selectedMonthsBack = 6;
   String _selectedTimeframe = '6M';
   
   // Filters
@@ -130,8 +128,8 @@ class _InsightsScreenState extends State<InsightsScreen> with SingleTickerProvid
   Future<void> _loadCalendarData() async {
     setState(() { _isLoadingCalendar = true; });
     try {
-      final dates = await DatabaseService.instance.getDatesWithWorkouts();
-      final histories = await DatabaseService.instance.getWorkoutsForDate(_selectedDate);
+      final dates = await WorkoutService.instance.getDatesWithWorkouts();
+      final histories = await WorkoutService.instance.getWorkoutsForDate(_selectedDate);
       _fetchWorkoutDetailsForHistorySync(histories);
       
       if (mounted) {
@@ -154,7 +152,6 @@ class _InsightsScreenState extends State<InsightsScreen> with SingleTickerProvid
   void _onTimeframeChanged(String label, int months) {
     setState(() {
       _selectedTimeframe = label;
-      _selectedMonthsBack = months;
     });
   }
 
@@ -202,7 +199,7 @@ class _InsightsScreenState extends State<InsightsScreen> with SingleTickerProvid
   Future<void> _loadWorkoutsForSelectedDate() async {
     setState(() { _isLoadingCalendar = true; });
     try {
-      final histories = await DatabaseService.instance.getWorkoutsForDate(_selectedDate);
+      final histories = await WorkoutService.instance.getWorkoutsForDate(_selectedDate);
       _fetchWorkoutDetailsForHistorySync(histories);
       if (mounted) {
         setState(() { _isLoadingCalendar = false; });

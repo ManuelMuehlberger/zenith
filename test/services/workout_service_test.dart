@@ -103,6 +103,148 @@ void main() {
         expect(workoutService.workouts.first.exercises.first.sets.length, 1);
       });
 
+      test('should return workouts sorted by startedAt desc', () async {
+        final past = Workout(
+          id: 'past',
+          name: 'Past',
+          exercises: const [],
+          status: WorkoutStatus.completed,
+          startedAt: DateTime(2020, 1, 1),
+        );
+        final future = Workout(
+          id: 'future',
+          name: 'Future',
+          exercises: const [],
+          status: WorkoutStatus.completed,
+          startedAt: DateTime(2030, 1, 1),
+        );
+        final noDate = Workout(
+          id: 'no-date',
+          name: 'No Date',
+          exercises: const [],
+          status: WorkoutStatus.completed,
+        );
+
+        when(mockWorkoutDao.getAllWorkouts())
+            .thenAnswer((_) async => [past, noDate, future]);
+        when(mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutId(any))
+            .thenAnswer((_) async => []);
+
+        final workouts = await workoutService.getWorkoutsSortedByStartedAt();
+
+        expect(workouts.map((w) => w.id).toList(), ['future', 'past', 'no-date']);
+      });
+
+      test('should filter workouts for a date', () async {
+        final w1 = Workout(
+          id: 'a',
+          name: 'A',
+          exercises: const [],
+          status: WorkoutStatus.completed,
+          startedAt: DateTime(2023, 5, 10, 8),
+        );
+        final w2 = Workout(
+          id: 'b',
+          name: 'B',
+          exercises: const [],
+          status: WorkoutStatus.completed,
+          startedAt: DateTime(2023, 5, 10, 18),
+        );
+        final w3 = Workout(
+          id: 'c',
+          name: 'C',
+          exercises: const [],
+          status: WorkoutStatus.completed,
+          startedAt: DateTime(2023, 5, 11),
+        );
+
+        when(mockWorkoutDao.getAllWorkouts())
+            .thenAnswer((_) async => [w1, w2, w3]);
+        when(mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutId(any))
+            .thenAnswer((_) async => []);
+
+        final workouts = await workoutService.getWorkoutsForDate(DateTime(2023, 5, 10));
+
+        expect(workouts.map((w) => w.id).toList(), ['b', 'a']);
+      });
+
+      test('should return sorted unique workout dates', () async {
+        final d1a = Workout(
+          id: 'd1a',
+          name: 'D1 Morning',
+          exercises: const [],
+          status: WorkoutStatus.completed,
+          startedAt: DateTime(2024, 1, 1, 8, 30),
+        );
+        final d1b = Workout(
+          id: 'd1b',
+          name: 'D1 Evening',
+          exercises: const [],
+          status: WorkoutStatus.completed,
+          startedAt: DateTime(2024, 1, 1, 20),
+        );
+        final d2 = Workout(
+          id: 'd2',
+          name: 'D2',
+          exercises: const [],
+          status: WorkoutStatus.completed,
+          startedAt: DateTime(2024, 1, 2),
+        );
+
+        when(mockWorkoutDao.getAllWorkouts())
+            .thenAnswer((_) async => [d1a, d1b, d2]);
+        when(mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutId(any))
+            .thenAnswer((_) async => []);
+
+        final dates = await workoutService.getDatesWithWorkouts();
+
+        expect(dates, [DateTime(2024, 1, 1), DateTime(2024, 1, 2)]);
+      });
+
+      test('should return most recent workout containing an exercise slug', () async {
+        final older = Workout(
+          id: 'old',
+          name: 'Old',
+          exercises: const [],
+          status: WorkoutStatus.completed,
+          startedAt: DateTime(2023, 1, 1),
+        );
+        final newer = Workout(
+          id: 'new',
+          name: 'New',
+          exercises: const [],
+          status: WorkoutStatus.completed,
+          startedAt: DateTime(2023, 2, 1),
+        );
+
+        when(mockWorkoutDao.getAllWorkouts())
+            .thenAnswer((_) async => [older, newer]);
+        when(mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutId('old'))
+            .thenAnswer((_) async => [
+                  WorkoutExercise(
+                    id: 'old-exercise',
+                    workoutId: 'old',
+                    exerciseSlug: 'squat',
+                    sets: const [],
+                  ),
+                ]);
+        when(mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutId('new'))
+            .thenAnswer((_) async => [
+                  WorkoutExercise(
+                    id: 'new-exercise',
+                    workoutId: 'new',
+                    exerciseSlug: 'bench-press',
+                    sets: const [],
+                  ),
+                ]);
+        when(mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseId(any))
+            .thenAnswer((_) async => []);
+
+        final workout = await workoutService.getLastWorkoutForExercise('bench-press');
+
+        expect(workout?.id, 'new');
+      });
+
       test('should handle load data errors gracefully', () async {
         // Arrange
         when(mockWorkoutDao.getAllWorkouts())

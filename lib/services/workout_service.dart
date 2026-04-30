@@ -62,6 +62,65 @@ class WorkoutService {
     }
   }
 
+  Future<List<Workout>> getWorkoutsSortedByStartedAt() async {
+    _logger.fine('Getting workouts sorted by startedAt descending');
+    await loadData();
+
+    final workouts = List<Workout>.from(_workouts)
+      ..sort(
+        (a, b) => (b.startedAt ?? DateTime.fromMillisecondsSinceEpoch(0))
+            .compareTo(a.startedAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
+      );
+
+    return workouts;
+  }
+
+  Future<List<Workout>> getWorkoutsForDate(DateTime date) async {
+    _logger.fine('Getting workouts for date: ${date.toIso8601String()}');
+    final allWorkouts = await getWorkoutsSortedByStartedAt();
+    final targetDate = DateTime(date.year, date.month, date.day);
+
+    return allWorkouts.where((workout) {
+      final startedAt = workout.startedAt;
+      if (startedAt == null) {
+        return false;
+      }
+
+      final workoutDate = DateTime(startedAt.year, startedAt.month, startedAt.day);
+      return workoutDate == targetDate;
+    }).toList();
+  }
+
+  Future<List<DateTime>> getDatesWithWorkouts() async {
+    _logger.fine('Getting dates with workouts');
+    final workouts = await getWorkoutsSortedByStartedAt();
+    final dates = <DateTime>{};
+
+    for (final workout in workouts) {
+      final startedAt = workout.startedAt;
+      if (startedAt != null) {
+        dates.add(DateTime(startedAt.year, startedAt.month, startedAt.day));
+      }
+    }
+
+    return dates.toList()..sort();
+  }
+
+  Future<Workout?> getLastWorkoutForExercise(String exerciseSlug) async {
+    _logger.fine('Getting last workout for exercise slug: $exerciseSlug');
+    final workouts = await getWorkoutsSortedByStartedAt();
+
+    for (final workout in workouts) {
+      for (final exercise in workout.exercises) {
+        if (exercise.exerciseSlug == exerciseSlug) {
+          return workout;
+        }
+      }
+    }
+
+    return null;
+  }
+
   Future<void> saveData() async {
     // Data is saved directly to the database through DAO operations
     // This method is kept for compatibility but doesn't need to do anything

@@ -6,8 +6,8 @@ import 'dao/workout_dao.dart';
 import 'dao/workout_exercise_dao.dart';
 import 'dao/workout_set_dao.dart';
 import 'live_workout_notification_service.dart';
-import 'database_service.dart';
 import 'exercise_service.dart';
+import 'workout_service.dart';
 import 'package:meta/meta.dart';
 
 class WorkoutSessionService {
@@ -168,7 +168,7 @@ class WorkoutSessionService {
       final exerciseSlug = templateExercise.exerciseSlug;
 
       // Fetch the last workout for this specific exercise
-      final Workout? lastWorkout = await DatabaseService.instance.getLastWorkoutForExercise(exerciseSlug);
+      final Workout? lastWorkout = await WorkoutService.instance.getLastWorkoutForExercise(exerciseSlug);
 
       // For now, we preserve template target values; history can be used to prefill actuals in the future
       final sourceExercise = lastWorkout != null
