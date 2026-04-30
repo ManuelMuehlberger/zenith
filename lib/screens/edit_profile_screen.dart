@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
+import 'package:logging/logging.dart';
 import '../services/user_service.dart';
 import '../models/user_data.dart';
 import '../constants/app_constants.dart';
@@ -14,6 +15,7 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
+  static final Logger _logger = Logger('EditProfileScreen');
   UserData? _userProfile;
   bool _isLoading = true;
   bool _hasChanges = false;
@@ -40,24 +42,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _loadUserProfile() async {
+    _logger.info('Loading profile for edit screen');
     try {
       final profile = UserService.instance.currentProfile;
       if (profile != null) {
+        _logger.fine('Loaded profile for ${profile.name}');
         setState(() {
           _userProfile = profile;
           _nameController.text = profile.name;
           _ageController.text = profile.age.toString();
           if (profile.weightHistory.isNotEmpty) {
-            _weightController.text = profile.weightHistory.last.value.toStringAsFixed(1);
+            _weightController.text = profile.weightHistory.last.value
+                .toStringAsFixed(1);
           }
           _isLoading = false;
         });
       } else {
+        _logger.warning('No profile available to edit');
         setState(() {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _logger.severe('Failed to load profile for edit screen', e, stackTrace);
       setState(() {
         _isLoading = false;
       });
@@ -74,27 +81,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _saveUserProfile() async {
-    if (_userProfile == null) return;
+    if (_userProfile == null) {
+      _logger.warning('Skipping profile save because no profile is loaded');
+      return;
+    }
 
     try {
-      final currentWeight = double.tryParse(_weightController.text) ?? _userProfile!.weightHistory.last.value;
+      _logger.info('Saving edited profile for ${_userProfile!.name}');
+      final currentWeight =
+          double.tryParse(_weightController.text) ??
+          _userProfile!.weightHistory.last.value;
       final weightHistory = List<WeightEntry>.from(_userProfile!.weightHistory);
-      weightHistory.add(WeightEntry(
-        timestamp: DateTime.now(),
-        value: currentWeight,
-      ));
-      
+      weightHistory.add(
+        WeightEntry(timestamp: DateTime.now(), value: currentWeight),
+      );
+
       final updatedProfile = UserData(
         name: _nameController.text.trim(),
-        birthdate: _calculateBirthdate(int.tryParse(_ageController.text) ?? _userProfile!.age),
+        birthdate: _calculateBirthdate(
+          int.tryParse(_ageController.text) ?? _userProfile!.age,
+        ),
         units: _userProfile!.units,
         weightHistory: weightHistory,
         createdAt: _userProfile!.createdAt,
         theme: _userProfile!.theme,
-
       );
 
       await UserService.instance.saveUserProfile(updatedProfile);
+      _logger.info('Profile saved successfully for ${updatedProfile.name}');
       setState(() {
         _userProfile = updatedProfile;
         _hasChanges = false;
@@ -102,9 +116,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       if (mounted) {
         _showCupertinoToast('Profile updated');
-        Navigator.of(context).pop(true); // Return true to indicate changes were saved
+        Navigator.of(
+          context,
+        ).pop(true); // Return true to indicate changes were saved
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _logger.severe('Failed to save edited profile', e, stackTrace);
       if (mounted) {
         _showErrorDialog('Failed to update profile: ${e.toString()}');
       }
@@ -120,14 +137,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         right: MediaQuery.of(context).size.width * 0.15,
         child: IgnorePointer(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 12.0,
+            ),
             decoration: BoxDecoration(
               color: CupertinoColors.black.withOpacity(0.7),
               borderRadius: BorderRadius.circular(20.0),
             ),
             child: Text(
               message,
-              style: const TextStyle(color: CupertinoColors.white, fontSize: 14),
+              style: const TextStyle(
+                color: CupertinoColors.white,
+                fontSize: 14,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -164,7 +187,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: const Text('Discard Changes?'),
-        content: const Text('You have unsaved changes. Are you sure you want to go back?'),
+        content: const Text(
+          'You have unsaved changes. Are you sure you want to go back?',
+        ),
         actions: [
           CupertinoDialogAction(
             child: const Text('Cancel'),
@@ -193,16 +218,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         backgroundColor: Colors.black,
         body: Stack(
           children: [
-            Positioned.fill(
-              child: _buildMainContent(headerHeight),
-            ),
+            Positioned.fill(child: _buildMainContent(headerHeight)),
             Positioned(
               top: 0,
               left: 0,
               right: 0,
               child: ClipRRect(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+                  filter: ImageFilter.blur(
+                    sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+                    sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                  ),
                   child: Container(
                     height: headerHeight,
                     color: AppConstants.HEADER_BG_COLOR_MEDIUM,
@@ -235,7 +261,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Navigator.of(context).pop();
                 }
               },
-              child: const Icon(CupertinoIcons.back, color: Colors.white, size: 28),
+              child: const Icon(
+                CupertinoIcons.back,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
             const SizedBox(width: 8),
             const Expanded(
@@ -273,9 +303,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         children: [
           SizedBox(height: headerHeight),
           const Expanded(
-            child: Center(
-              child: CupertinoActivityIndicator(radius: 15),
-            ),
+            child: Center(child: CupertinoActivityIndicator(radius: 15)),
           ),
         ],
       );
@@ -299,9 +327,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(
-          child: SizedBox(height: headerHeight + 16),
-        ),
+        SliverToBoxAdapter(child: SizedBox(height: headerHeight + 16)),
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -361,8 +387,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               controller: _weightController,
               placeholder: 'Enter your weight',
               label: 'Weight (${_userProfile?.weightUnit})',
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+              ],
               prefixIcon: CupertinoIcons.gauge,
             ),
           ],
@@ -395,8 +425,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             Material(
               color: Colors.transparent,
               child: ListTile(
-                leading: Icon(CupertinoIcons.gauge, color: Colors.grey[400], size: 24),
-                title: const Text('Weight Units', style: TextStyle(color: Colors.white, fontSize: 16)),
+                leading: Icon(
+                  CupertinoIcons.gauge,
+                  color: Colors.grey[400],
+                  size: 24,
+                ),
+                title: const Text(
+                  'Weight Units',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
                 trailing: Container(
                   decoration: BoxDecoration(
                     color: Colors.grey[800],
@@ -408,17 +445,29 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     groupValue: _userProfile?.units ?? Units.metric,
                     children: {
                       Units.metric: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         child: Text(
                           Units.metric.weightUnit,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                       Units.imperial: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         child: Text(
                           Units.imperial.weightUnit,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     },
@@ -445,7 +494,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       await UserService.instance.saveUserProfile(updatedProfile);
       setState(() {
         _userProfile = updatedProfile;
-        _weightController.text = _userProfile!.weightHistory.last.value.toStringAsFixed(1);
+        _weightController.text = _userProfile!.weightHistory.last.value
+            .toStringAsFixed(1);
         _hasChanges = true;
       });
 
@@ -454,7 +504,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-         _showErrorDialog('Failed to update units: ${e.toString()}');
+        _showErrorDialog('Failed to update units: ${e.toString()}');
       }
     }
   }
@@ -540,7 +590,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       endIndent: 16,
     );
   }
-  
+
   DateTime _calculateBirthdate(int age) {
     final now = DateTime.now();
     return DateTime(now.year - age, now.month, now.day);

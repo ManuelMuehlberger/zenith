@@ -31,9 +31,10 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
   final TextEditingController _searchController = TextEditingController();
   String? _selectedMuscleGroup;
   String? _selectedEquipment;
-  bool? _selectedBodyweight; // null = all, true = bodyweight only, false = non-bodyweight only
+  bool?
+  _selectedBodyweight; // null = all, true = bodyweight only, false = non-bodyweight only
   List<Exercise> _filteredExercises = [];
-  
+
   // Scroll controller to detect scroll direction
   final ScrollController _scrollController = ScrollController();
   bool _showSearchBar = true;
@@ -56,7 +57,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
       });
       return;
     }
-    
+
     // Otherwise, load them from the service
     await ExerciseService.instance.loadExercises();
     setState(() {
@@ -109,11 +110,17 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
     super.dispose();
   }
 
-  Widget _buildMuscleGroupChip(BuildContext context, String muscleGroup, bool isPrimary) {
+  Widget _buildMuscleGroupChip(
+    BuildContext context,
+    String muscleGroup,
+    bool isPrimary,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: isPrimary ? AppConstants.ACCENT_COLOR.withAlpha((255 * 0.2).round()) : Colors.grey[800],
+        color: isPrimary
+            ? AppConstants.ACCENT_COLOR.withAlpha((255 * 0.2).round())
+            : Colors.grey[800],
         border: Border.all(
           color: isPrimary ? AppConstants.ACCENT_COLOR : Colors.grey[600]!,
           width: 1,
@@ -123,9 +130,13 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
       child: Text(
         muscleGroup,
         style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
-              color: isPrimary ? AppConstants.ACCENT_COLOR : AppConstants.TEXT_SECONDARY_COLOR,
-              fontWeight: isPrimary ? FontWeight.w600 : AppConstants.IOS_LABEL_FONT_WEIGHT,
-            ),
+          color: isPrimary
+              ? AppConstants.ACCENT_COLOR
+              : AppConstants.TEXT_SECONDARY_COLOR,
+          fontWeight: isPrimary
+              ? FontWeight.w600
+              : AppConstants.IOS_LABEL_FONT_WEIGHT,
+        ),
       ),
     );
   }
@@ -133,50 +144,45 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
   void _filterExercises() {
     setState(() {
       final query = _searchController.text;
-      debugPrint('ExerciseListWidget: _filterExercises called with query="$query"');
       List<Exercise> exercises = ExerciseService.instance.exercises;
-      
+
       if (query.isNotEmpty) {
-        debugPrint('ExerciseListWidget: Calling searchExercises with query="$query"');
         exercises = ExerciseService.instance.searchExercises(query);
-        debugPrint('ExerciseListWidget: searchExercises returned ${exercises.length} results');
       }
-      
+
       // Filter by muscle group (single selection)
       if (_selectedMuscleGroup != null) {
-        debugPrint('ExerciseListWidget: Filtering by muscle group: $_selectedMuscleGroup');
-        final before = exercises.length;
-        exercises = exercises.where((exercise) =>
-            exercise.primaryMuscleGroup.name == _selectedMuscleGroup
-        ).toList();
-        debugPrint('ExerciseListWidget: Muscle group filter reduced results from $before to ${exercises.length}');
+        exercises = exercises
+            .where(
+              (exercise) =>
+                  exercise.primaryMuscleGroup.name == _selectedMuscleGroup,
+            )
+            .toList();
       }
-      
+
       // Filter by equipment (single selection)
       if (_selectedEquipment != null) {
-        debugPrint('ExerciseListWidget: Filtering by equipment: $_selectedEquipment');
-        final before = exercises.length;
         exercises = exercises.where((exercise) {
           // Handle the spelling variation in the data ("Dumbell" vs "Dumbbell")
           final exerciseEquipment = exercise.equipment;
-          final normalizedExerciseEquipment = exerciseEquipment == 'Dumbell' ? 'Dumbbell' : exerciseEquipment;
+          final normalizedExerciseEquipment = exerciseEquipment == 'Dumbell'
+              ? 'Dumbbell'
+              : exerciseEquipment;
           return normalizedExerciseEquipment == _selectedEquipment;
         }).toList();
-        debugPrint('ExerciseListWidget: Equipment filter reduced results from $before to ${exercises.length}');
       }
-      
+
       // Filter by bodyweight
       if (_selectedBodyweight != null) {
-        debugPrint('ExerciseListWidget: Filtering by bodyweight: $_selectedBodyweight');
-        final before = exercises.length;
-        exercises = exercises.where((exercise) =>
-            exercise.isBodyWeightExercise == _selectedBodyweight
-        ).toList();
-        debugPrint('ExerciseListWidget: Bodyweight filter reduced results from $before to ${exercises.length}');
+        exercises = exercises
+            .where(
+              (exercise) =>
+                  exercise.isBodyWeightExercise == _selectedBodyweight,
+            )
+            .toList();
       }
-      
+
       _filteredExercises = exercises;
-      debugPrint('ExerciseListWidget: _filterExercises completed with ${_filteredExercises.length} final results');
     });
   }
 
@@ -184,10 +190,8 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
     setState(() {
       if (_selectedMuscleGroup == muscleGroup) {
         _selectedMuscleGroup = null;
-        debugPrint('ExerciseListWidget: Deselecting muscle group "$muscleGroup"');
       } else {
         _selectedMuscleGroup = muscleGroup;
-        debugPrint('ExerciseListWidget: Selecting muscle group "$muscleGroup"');
       }
       _filterExercises();
     });
@@ -197,10 +201,8 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
     setState(() {
       if (_selectedEquipment == equipment) {
         _selectedEquipment = null;
-        debugPrint('ExerciseListWidget: Deselecting equipment "$equipment"');
       } else {
         _selectedEquipment = equipment;
-        debugPrint('ExerciseListWidget: Selecting equipment "$equipment"');
       }
       _filterExercises();
     });
@@ -209,14 +211,12 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
   void _toggleBodyweight() {
     setState(() {
       _selectedBodyweight = _selectedBodyweight == true ? null : true;
-      debugPrint('ExerciseListWidget: Bodyweight filter toggled to $_selectedBodyweight');
       _filterExercises();
     });
   }
 
   void _clearAllFilters() {
     setState(() {
-      debugPrint('ExerciseListWidget: Clearing all filters');
       _selectedMuscleGroup = null;
       _selectedEquipment = null;
       _selectedBodyweight = null;
@@ -242,11 +242,13 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
   }) {
     return PullDownButton(
       itemBuilder: (context) => items
-          .map((item) => PullDownMenuItem.selectable(
-                title: item,
-                selected: selectedItem == item,
-                onTap: () => onItemSelected(item),
-              ))
+          .map(
+            (item) => PullDownMenuItem.selectable(
+              title: item,
+              selected: selectedItem == item,
+              onTap: () => onItemSelected(item),
+            ),
+          )
           .toList(),
       buttonBuilder: (context, showMenu) => CupertinoButton(
         padding: EdgeInsets.zero,
@@ -254,7 +256,9 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected ? AppConstants.ACCENT_COLOR : Colors.grey[800]?.withAlpha(178),
+            color: isSelected
+                ? AppConstants.ACCENT_COLOR
+                : Colors.grey[800]?.withAlpha(178),
             borderRadius: BorderRadius.circular(10.0),
             border: Border.all(
               color: isSelected ? AppConstants.ACCENT_COLOR : Colors.grey[600]!,
@@ -267,7 +271,9 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
               Text(
                 isSelected ? selectedItem! : title,
                 style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
-                  color: isSelected ? Colors.white : AppConstants.TEXT_SECONDARY_COLOR,
+                  color: isSelected
+                      ? Colors.white
+                      : AppConstants.TEXT_SECONDARY_COLOR,
                   fontWeight: isSelected ? FontWeight.w600 : null,
                 ),
               ),
@@ -275,7 +281,9 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
               Icon(
                 CupertinoIcons.chevron_down,
                 size: 14,
-                color: isSelected ? Colors.white : AppConstants.TEXT_SECONDARY_COLOR,
+                color: isSelected
+                    ? Colors.white
+                    : AppConstants.TEXT_SECONDARY_COLOR,
               ),
             ],
           ),
@@ -295,7 +303,9 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppConstants.ACCENT_COLOR : Colors.grey[800]?.withAlpha(178),
+          color: isSelected
+              ? AppConstants.ACCENT_COLOR
+              : Colors.grey[800]?.withAlpha(178),
           borderRadius: BorderRadius.circular(10.0),
           border: Border.all(
             color: isSelected ? AppConstants.ACCENT_COLOR : Colors.grey[600]!,
@@ -305,7 +315,9 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
         child: Text(
           'Bodyweight',
           style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
-            color: isSelected ? Colors.white : AppConstants.TEXT_SECONDARY_COLOR,
+            color: isSelected
+                ? Colors.white
+                : AppConstants.TEXT_SECONDARY_COLOR,
             fontWeight: isSelected ? FontWeight.w600 : null,
           ),
         ),
@@ -320,14 +332,15 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
         .where((group) => group != AppMuscleGroup.na)
         .map((group) => group.displayName)
         .toList();
-    
+
     // Use predefined equipment types from EquipmentType enum
     final equipmentList = EquipmentType.values
         .map((equipment) => equipment.displayName)
         .toList();
 
     // Determine if any filter is active to enable/disable Clear All
-    final bool hasAnyFilter = _selectedMuscleGroup != null ||
+    final bool hasAnyFilter =
+        _selectedMuscleGroup != null ||
         _selectedEquipment != null ||
         _selectedBodyweight != null;
 
@@ -336,7 +349,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
     if (widget.title != null || widget.trailing != null) {
       // This title/trailing is for the ExerciseListWidget itself, if provided.
       // Currently, ExercisePickerScreen doesn't pass these, so this might be 0.
-      internalHeaderHeight += 48; 
+      internalHeaderHeight += 48;
     }
     if (_showSearchBar) {
       internalHeaderHeight += _searchBarHeight; // Search bar height
@@ -381,23 +394,33 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                   left: AppConstants.PAGE_HORIZONTAL_PADDING,
                   right: AppConstants.PAGE_HORIZONTAL_PADDING,
                   // Add space for ExerciseListWidget's own headers AND any additional top padding from parent
-                  top: internalHeaderHeight + widget.additionalTopPadding + 20, 
+                  top: internalHeaderHeight + widget.additionalTopPadding + 20,
                   bottom: AppConstants.PAGE_HORIZONTAL_PADDING,
                 ),
                 itemCount: _filteredExercises.length,
                 itemBuilder: (context, index) {
                   final exercise = _filteredExercises[index];
-                  final bool isSelected = widget.selectedExercises?.contains(exercise) ?? false;
-                  final bool isMultiSelectMode = widget.selectedExercises != null;
-                  
+                  final bool isSelected =
+                      widget.selectedExercises?.contains(exercise) ?? false;
+                  final bool isMultiSelectMode =
+                      widget.selectedExercises != null;
+
                   return Padding(
-                    padding: EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
+                    padding: EdgeInsets.only(
+                      bottom: AppConstants.CARD_VERTICAL_GAP,
+                    ),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isSelected ? AppConstants.ACCENT_COLOR.withOpacity(0.3) : AppConstants.EXERCISE_CARD_BG_COLOR,
-                        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+                        color: isSelected
+                            ? AppConstants.ACCENT_COLOR.withOpacity(0.3)
+                            : AppConstants.EXERCISE_CARD_BG_COLOR,
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.CARD_RADIUS,
+                        ),
                         border: Border.all(
-                          color: isSelected ? AppConstants.ACCENT_COLOR : AppConstants.CARD_STROKE_COLOR,
+                          color: isSelected
+                              ? AppConstants.ACCENT_COLOR
+                              : AppConstants.CARD_STROKE_COLOR,
                           width: AppConstants.CARD_STROKE_WIDTH,
                         ),
                       ),
@@ -407,29 +430,44 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                           Expanded(
                             child: CupertinoButton(
                               padding: EdgeInsets.zero,
-                              onPressed: () => widget.onExerciseSelected(exercise),
+                              onPressed: () =>
+                                  widget.onExerciseSelected(exercise),
                               child: Padding(
-                                padding: EdgeInsets.all(AppConstants.CARD_PADDING),
+                                padding: EdgeInsets.all(
+                                  AppConstants.CARD_PADDING,
+                                ),
                                 child: Row(
                                   children: [
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             exercise.name,
-                                            style: AppConstants.IOS_TITLE_TEXT_STYLE,
+                                            style: AppConstants
+                                                .IOS_TITLE_TEXT_STYLE,
                                           ),
                                           const SizedBox(height: 6),
                                           Wrap(
                                             spacing: 6,
                                             runSpacing: 6,
                                             children: [
-                                              _buildMuscleGroupChip(context, exercise.primaryMuscleGroup.name, true),
-                                              if (exercise.secondaryMuscleGroups.isNotEmpty)
+                                              _buildMuscleGroupChip(
+                                                context,
+                                                exercise
+                                                    .primaryMuscleGroup
+                                                    .name,
+                                                true,
+                                              ),
+                                              if (exercise
+                                                  .secondaryMuscleGroups
+                                                  .isNotEmpty)
                                                 _buildMuscleGroupChip(
                                                   context,
-                                                  exercise.secondaryMuscleGroups.map((g) => g.name).join(', '),
+                                                  exercise.secondaryMuscleGroups
+                                                      .map((g) => g.name)
+                                                      .join(', '),
                                                   false,
                                                 ),
                                             ],
@@ -439,19 +477,25 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                                     ),
                                     if (isSelected)
                                       Padding(
-                                        padding: const EdgeInsets.only(left: 12.0),
+                                        padding: const EdgeInsets.only(
+                                          left: 12.0,
+                                        ),
                                         child: Icon(
-                                          CupertinoIcons.check_mark_circled_solid,
+                                          CupertinoIcons
+                                              .check_mark_circled_solid,
                                           color: AppConstants.ACCENT_COLOR,
                                           size: 24,
                                         ),
                                       )
                                     else if (!isMultiSelectMode)
                                       Padding(
-                                        padding: const EdgeInsets.only(left: 12.0),
+                                        padding: const EdgeInsets.only(
+                                          left: 12.0,
+                                        ),
                                         child: Icon(
                                           CupertinoIcons.chevron_right,
-                                          color: AppConstants.TEXT_SECONDARY_COLOR,
+                                          color:
+                                              AppConstants.TEXT_SECONDARY_COLOR,
                                           size: 16,
                                         ),
                                       ),
@@ -467,8 +511,13 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                               child: IconButton(
                                 padding: const EdgeInsets.all(8),
                                 constraints: const BoxConstraints(),
-                                onPressed: () => _navigateToExerciseInfo(context, exercise),
-                                icon: Icon(CupertinoIcons.info_circle, color: AppConstants.TEXT_SECONDARY_COLOR, size: 28),
+                                onPressed: () =>
+                                    _navigateToExerciseInfo(context, exercise),
+                                icon: Icon(
+                                  CupertinoIcons.info_circle,
+                                  color: AppConstants.TEXT_SECONDARY_COLOR,
+                                  size: 28,
+                                ),
                                 tooltip: 'Exercise Info',
                               ),
                             ),
@@ -493,10 +542,16 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
               if (widget.title != null || widget.trailing != null)
                 ClipRRect(
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+                    filter: ImageFilter.blur(
+                      sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+                      sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                    ),
                     child: Container(
                       color: AppConstants.HEADER_BG_COLOR_MEDIUM,
-                      padding: EdgeInsets.symmetric(horizontal: AppConstants.PAGE_HORIZONTAL_PADDING, vertical: 8.0),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppConstants.PAGE_HORIZONTAL_PADDING,
+                        vertical: 8.0,
+                      ),
                       child: Row(
                         children: [
                           if (widget.title != null)
@@ -521,15 +576,25 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                 height: _showSearchBar ? _searchBarHeight : 0,
                 child: ClipRRect(
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+                    filter: ImageFilter.blur(
+                      sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+                      sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                    ),
                     child: Container(
-                      color: AppConstants.HEADER_BG_COLOR_STRONG, // Changed to fully opaque
-                      padding: EdgeInsets.symmetric(horizontal: AppConstants.PAGE_HORIZONTAL_PADDING, vertical: 12.0),
+                      color: AppConstants
+                          .HEADER_BG_COLOR_STRONG, // Changed to fully opaque
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppConstants.PAGE_HORIZONTAL_PADDING,
+                        vertical: 12.0,
+                      ),
                       child: CupertinoSearchTextField(
                         controller: _searchController,
                         placeholder: 'Search exercises...',
-                        placeholderStyle: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(color: AppConstants.TEXT_SECONDARY_COLOR),
-                        style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(color: AppConstants.TEXT_PRIMARY_COLOR),
+                        placeholderStyle: AppConstants.IOS_NORMAL_TEXT_STYLE
+                            .copyWith(color: AppConstants.TEXT_SECONDARY_COLOR),
+                        style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
+                          color: AppConstants.TEXT_PRIMARY_COLOR,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.grey[900]?.withAlpha(153),
                           borderRadius: BorderRadius.circular(10.0),
@@ -543,11 +608,16 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
               // iOS-style tag filters with dropdown functionality
               ClipRRect(
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+                  filter: ImageFilter.blur(
+                    sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+                    sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                  ),
                   child: Container(
                     height: 60,
                     color: AppConstants.HEADER_BG_COLOR_MEDIUM,
-                    padding: EdgeInsets.symmetric(horizontal: AppConstants.PAGE_HORIZONTAL_PADDING),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppConstants.PAGE_HORIZONTAL_PADDING,
+                    ),
                     child: Row(
                       children: [
                         // Scrollable tags section
@@ -596,7 +666,9 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                           child: Icon(
                             CupertinoIcons.xmark_circle_fill,
                             size: 24,
-                            color: hasAnyFilter ? AppConstants.ACCENT_COLOR : AppConstants.TEXT_TERTIARY_COLOR,
+                            color: hasAnyFilter
+                                ? AppConstants.ACCENT_COLOR
+                                : AppConstants.TEXT_TERTIARY_COLOR,
                           ),
                         ),
                         const SizedBox(width: 16),

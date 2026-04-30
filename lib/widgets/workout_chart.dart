@@ -34,31 +34,16 @@ class WorkoutChart extends StatelessWidget {
     this.timeframe,
   });
 
-  String _formatYAxisLabel(double value) {
-    if (value > 999) {
-      return '${(value / 1000).toStringAsFixed(0)}k';
-    }
-    return value.toStringAsFixed(0);
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Debug logging for chart data
-    debugPrint('WorkoutChart: Building chart "$title"');
-    debugPrint('WorkoutChart: Data points count: ${data.length}');
-    
     if (data.isEmpty) {
-      debugPrint('WorkoutChart: No data available for "$title"');
       return Container(
         height: height,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppConstants.CARD_BG_COLOR,
           borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-          border: Border.all(
-            color: AppConstants.DIVIDER_COLOR,
-            width: 0.5,
-          ),
+          border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
         ),
         child: Center(
           child: Column(
@@ -70,10 +55,7 @@ class WorkoutChart extends StatelessWidget {
                 color: AppConstants.TEXT_TERTIARY_COLOR,
               ),
               const SizedBox(height: 8),
-              Text(
-                'No data available',
-                style: AppConstants.IOS_SUBTEXT_STYLE,
-              ),
+              Text('No data available', style: AppConstants.IOS_SUBTEXT_STYLE),
             ],
           ),
         ),
@@ -86,23 +68,19 @@ class WorkoutChart extends StatelessWidget {
 
     // Calculate min and max for better chart scaling
     final values = data.map((d) => d.value).toList();
-    debugPrint('WorkoutChart: Raw values for "$title": $values');
-    
+
     final rawMinY = values.reduce((a, b) => a < b ? a : b);
     final rawMaxY = values.reduce((a, b) => a > b ? a : b);
-    debugPrint('WorkoutChart: Raw min=$rawMinY, max=$rawMaxY');
-    
+
     // Apply scaling factors
     double minY = rawMinY * 0.8;
     double maxY = rawMaxY * 1.2;
-    
+
     // Handle edge case: if all values are the same or very close
     final range = maxY - minY;
-    debugPrint('WorkoutChart: Initial range (maxY - minY) = $range');
-    
+
     if (range < 0.001) {
       // All values are essentially the same, create artificial range
-      debugPrint('WorkoutChart: Range too small, creating artificial range around value $rawMaxY');
       if (rawMaxY.abs() < 0.001) {
         // Values are near zero
         minY = -1.0;
@@ -113,212 +91,258 @@ class WorkoutChart extends StatelessWidget {
         minY = rawMaxY - padding;
         maxY = rawMaxY + padding;
       }
-      debugPrint('WorkoutChart: Adjusted to minY=$minY, maxY=$maxY');
     }
-    
+
     final finalRange = maxY - minY;
-    debugPrint('WorkoutChart: Final range = $finalRange');
 
     Widget chart = LineChart(
       LineChartData(
         minY: minY,
         maxY: maxY,
         gridData: FlGridData(
-                  show: showGrid,
-                  drawVerticalLine: false,
-                  horizontalInterval: finalRange / 4,
-                  getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: AppConstants.DIVIDER_COLOR,
-                      strokeWidth: 0.5,
-                      dashArray: [5, 5],
-                    );
-                  },
-                ),
-                titlesData: FlTitlesData(
-                  show: showTitles,
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: showTitles,
-                      reservedSize: 24,
-                      interval: 1,
-                      getTitlesWidget: (double value, TitleMeta meta) {
-                        if (value.toInt() >= 0 && value.toInt() < data.length) {
-                          final date = data[value.toInt()].date;
-                          
-                          String label = '';
-                          bool isHighlight = false;
+          show: showGrid,
+          drawVerticalLine: false,
+          horizontalInterval: finalRange / 4,
+          getDrawingHorizontalLine: (value) {
+            return FlLine(
+              color: AppConstants.DIVIDER_COLOR,
+              strokeWidth: 0.5,
+              dashArray: [5, 5],
+            );
+          },
+        ),
+        titlesData: FlTitlesData(
+          show: showTitles,
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: showTitles,
+              reservedSize: 24,
+              interval: 1,
+              getTitlesWidget: (double value, TitleMeta meta) {
+                if (value.toInt() >= 0 && value.toInt() < data.length) {
+                  final date = data[value.toInt()].date;
 
-                          if (timeframe == '1W' || timeframe == '1M') {
-                            // Show days
-                            label = '${date.day}';
-                            // Highlight Mondays or 1st of month
-                            if (date.weekday == 1 || date.day == 1) {
-                              isHighlight = true;
-                              // Maybe show month name for 1st?
-                              if (date.day == 1) {
-                                final monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                                             'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                                label = monthNames[date.month - 1];
-                              }
-                            }
-                          } else if (timeframe == '3M' || timeframe == '6M') {
-                            // Show weeks (maybe date of Monday)
-                            // Or just month names when month changes
-                            if (date.day <= 7) { // First week of month
-                               final monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                                             'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                               label = monthNames[date.month - 1];
-                               isHighlight = true;
-                            } else {
-                              label = '${date.day}';
-                            }
-                          } else {
-                            // Monthly view (default)
-                            final monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                            label = monthNames[date.month - 1];
-                            if (date.month == 1) {
-                              label = "'${date.year.toString().substring(2)}";
-                              isHighlight = true;
-                            }
-                          }
-                          
-                          return SideTitleWidget(
-                            meta: meta,
-                            child: Text(
-                              label,
-                              style: TextStyle(
-                                color: isHighlight ? AppConstants.TEXT_SECONDARY_COLOR : AppConstants.TEXT_TERTIARY_COLOR,
-                                fontSize: 10,
-                                fontWeight: isHighlight ? FontWeight.bold : FontWeight.w500,
-                              ),
-                            ),
-                          );
-                        }
-                        return const Text('');
-                      },
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: false, // Hide Y-axis labels for cleaner look
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: spots,
-                    isCurved: true,
-                    curveSmoothness: 0.3,
-                    color: color,
-                    barWidth: barWidth,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        return FlDotCirclePainter(
-                          radius: dotRadius,
-                          color: color,
-                          strokeWidth: 1.5,
-                          strokeColor: AppConstants.CARD_BG_COLOR,
-                        );
-                      },
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          color.withAlpha((255 * 0.25).round()),
-                          color.withAlpha((255 * 0.05).round()),
-                        ],
+                  String label = '';
+                  bool isHighlight = false;
+
+                  if (timeframe == '1W' || timeframe == '1M') {
+                    // Show days
+                    label = '${date.day}';
+                    // Highlight Mondays or 1st of month
+                    if (date.weekday == 1 || date.day == 1) {
+                      isHighlight = true;
+                      // Maybe show month name for 1st?
+                      if (date.day == 1) {
+                        final monthNames = [
+                          'Jan',
+                          'Feb',
+                          'Mar',
+                          'Apr',
+                          'May',
+                          'Jun',
+                          'Jul',
+                          'Aug',
+                          'Sep',
+                          'Oct',
+                          'Nov',
+                          'Dec',
+                        ];
+                        label = monthNames[date.month - 1];
+                      }
+                    }
+                  } else if (timeframe == '3M' || timeframe == '6M') {
+                    // Show weeks (maybe date of Monday)
+                    // Or just month names when month changes
+                    if (date.day <= 7) {
+                      // First week of month
+                      final monthNames = [
+                        'Jan',
+                        'Feb',
+                        'Mar',
+                        'Apr',
+                        'May',
+                        'Jun',
+                        'Jul',
+                        'Aug',
+                        'Sep',
+                        'Oct',
+                        'Nov',
+                        'Dec',
+                      ];
+                      label = monthNames[date.month - 1];
+                      isHighlight = true;
+                    } else {
+                      label = '${date.day}';
+                    }
+                  } else {
+                    // Monthly view (default)
+                    final monthNames = [
+                      'Jan',
+                      'Feb',
+                      'Mar',
+                      'Apr',
+                      'May',
+                      'Jun',
+                      'Jul',
+                      'Aug',
+                      'Sep',
+                      'Oct',
+                      'Nov',
+                      'Dec',
+                    ];
+                    label = monthNames[date.month - 1];
+                    if (date.month == 1) {
+                      label = "'${date.year.toString().substring(2)}";
+                      isHighlight = true;
+                    }
+                  }
+
+                  return SideTitleWidget(
+                    meta: meta,
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: isHighlight
+                            ? AppConstants.TEXT_SECONDARY_COLOR
+                            : AppConstants.TEXT_TERTIARY_COLOR,
+                        fontSize: 10,
+                        fontWeight: isHighlight
+                            ? FontWeight.bold
+                            : FontWeight.w500,
                       ),
                     ),
-                  ),
+                  );
+                }
+                return const Text('');
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: false, // Hide Y-axis labels for cleaner look
+            ),
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            curveSmoothness: 0.3,
+            color: color,
+            barWidth: barWidth,
+            isStrokeCapRound: true,
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) {
+                return FlDotCirclePainter(
+                  radius: dotRadius,
+                  color: color,
+                  strokeWidth: 1.5,
+                  strokeColor: AppConstants.CARD_BG_COLOR,
+                );
+              },
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  color.withAlpha((255 * 0.25).round()),
+                  color.withAlpha((255 * 0.05).round()),
                 ],
-                lineTouchData: LineTouchData(
-                  enabled: true,
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (touchedSpot) => AppConstants.WORKOUT_BUTTON_BG_COLOR,
-                    tooltipPadding: const EdgeInsets.all(8),
-                    tooltipMargin: 8,
-                    getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
-                      return touchedBarSpots.map((barSpot) {
-                        final dataPoint = data[barSpot.x.toInt()];
-                        final date = dataPoint.date;
-                        
-                        String dateLabel;
-                        if (timeframe == '1W' || timeframe == '1M') {
-                           dateLabel = '${date.day}/${date.month}';
-                        } else if (timeframe == '3M' || timeframe == '6M') {
-                           dateLabel = 'Week of ${date.day}/${date.month}';
-                        } else {
-                           final monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                                           'July', 'August', 'September', 'October', 'November', 'December'];
-                           dateLabel = monthNames[date.month - 1];
-                        }
+              ),
+            ),
+          ),
+        ],
+        lineTouchData: LineTouchData(
+          enabled: true,
+          touchTooltipData: LineTouchTooltipData(
+            getTooltipColor: (touchedSpot) =>
+                AppConstants.WORKOUT_BUTTON_BG_COLOR,
+            tooltipPadding: const EdgeInsets.all(8),
+            tooltipMargin: 8,
+            getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+              return touchedBarSpots.map((barSpot) {
+                final dataPoint = data[barSpot.x.toInt()];
+                final date = dataPoint.date;
 
-                        return LineTooltipItem(
-                          '$dateLabel\n',
-                          TextStyle(
-                            color: AppConstants.TEXT_SECONDARY_COLOR,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: '${barSpot.y.toStringAsFixed(1)} $unit',
-                              style: TextStyle(
-                                color: color,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList();
-                    },
+                String dateLabel;
+                if (timeframe == '1W' || timeframe == '1M') {
+                  dateLabel = '${date.day}/${date.month}';
+                } else if (timeframe == '3M' || timeframe == '6M') {
+                  dateLabel = 'Week of ${date.day}/${date.month}';
+                } else {
+                  final monthNames = [
+                    'January',
+                    'February',
+                    'March',
+                    'April',
+                    'May',
+                    'June',
+                    'July',
+                    'August',
+                    'September',
+                    'October',
+                    'November',
+                    'December',
+                  ];
+                  dateLabel = monthNames[date.month - 1];
+                }
+
+                return LineTooltipItem(
+                  '$dateLabel\n',
+                  TextStyle(
+                    color: AppConstants.TEXT_SECONDARY_COLOR,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
-                  handleBuiltInTouches: true,
-                  getTouchedSpotIndicator: (LineChartBarData barData, List<int> spotIndexes) {
-                    return spotIndexes.map((spotIndex) {
-                      return TouchedSpotIndicatorData(
-                        FlLine(
-                          color: color.withAlpha((255 * 0.3).round()),
-                          strokeWidth: 1,
-                          dashArray: [3, 3],
-                        ),
-                        FlDotData(
-                          getDotPainter: (spot, percent, barData, index) {
-                            return FlDotCirclePainter(
-                              radius: 5,
-                              color: color,
-                              strokeWidth: 2,
-                              strokeColor: Colors.white,
-                            );
-                          },
-                        ),
-                      );
-                    }).toList();
-                  },
-                ),
+                  children: [
+                    TextSpan(
+                      text: '${barSpot.y.toStringAsFixed(1)} $unit',
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList();
+            },
+          ),
+          handleBuiltInTouches: true,
+          getTouchedSpotIndicator:
+              (LineChartBarData barData, List<int> spotIndexes) {
+                return spotIndexes.map((spotIndex) {
+                  return TouchedSpotIndicatorData(
+                    FlLine(
+                      color: color.withAlpha((255 * 0.3).round()),
+                      strokeWidth: 1,
+                      dashArray: [3, 3],
+                    ),
+                    FlDotData(
+                      getDotPainter: (spot, percent, barData, index) {
+                        return FlDotCirclePainter(
+                          radius: 5,
+                          color: color,
+                          strokeWidth: 2,
+                          strokeColor: Colors.white,
+                        );
+                      },
+                    ),
+                  );
+                }).toList();
+              },
+        ),
       ),
     );
 
     if (!showContainer) {
-      return SizedBox(
-        height: height,
-        child: chart,
-      );
+      return SizedBox(height: height, child: chart);
     }
 
     return Container(
@@ -327,10 +351,7 @@ class WorkoutChart extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppConstants.CARD_BG_COLOR,
         borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-        border: Border.all(
-          color: AppConstants.DIVIDER_COLOR,
-          width: 0.5,
-        ),
+        border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,7 +378,10 @@ class WorkoutChart extends StatelessWidget {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: color.withAlpha((255 * 0.15).round()),
                     borderRadius: BorderRadius.circular(6),
@@ -375,9 +399,7 @@ class WorkoutChart extends StatelessWidget {
             ),
             const SizedBox(height: 16),
           ],
-          Expanded(
-            child: chart,
-          ),
+          Expanded(child: chart),
         ],
       ),
     );
@@ -467,10 +489,7 @@ class WorkoutBarChart extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppConstants.CARD_BG_COLOR,
           borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-          border: Border.all(
-            color: AppConstants.DIVIDER_COLOR,
-            width: 0.5,
-          ),
+          border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
         ),
         child: Center(
           child: Column(
@@ -482,10 +501,7 @@ class WorkoutBarChart extends StatelessWidget {
                 color: AppConstants.TEXT_TERTIARY_COLOR,
               ),
               const SizedBox(height: 8),
-              Text(
-                'No data available',
-                style: AppConstants.IOS_SUBTEXT_STYLE,
-              ),
+              Text('No data available', style: AppConstants.IOS_SUBTEXT_STYLE),
             ],
           ),
         ),
@@ -500,10 +516,7 @@ class WorkoutBarChart extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppConstants.CARD_BG_COLOR,
         borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-        border: Border.all(
-          color: AppConstants.DIVIDER_COLOR,
-          width: 0.5,
-        ),
+        border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

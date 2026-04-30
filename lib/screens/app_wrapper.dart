@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'onboarding_screen.dart';
 import '../services/user_service.dart';
 import '../services/app_startup_service.dart';
 import '../main.dart';
 
 class AppWrapper extends StatefulWidget {
-  const AppWrapper({
-    super.key,
-    this.onboardingStatusLoader,
-    this.bootstrapApp,
-  });
+  const AppWrapper({super.key, this.onboardingStatusLoader, this.bootstrapApp});
 
   final Future<bool> Function()? onboardingStatusLoader;
   final Future<void> Function()? bootstrapApp;
@@ -27,6 +24,7 @@ enum _AppWrapperStatePhase {
 }
 
 class _AppWrapperState extends State<AppWrapper> {
+  static final Logger _logger = Logger('AppWrapper');
   _AppWrapperStatePhase _phase = _AppWrapperStatePhase.checkingOnboarding;
   Object? _startupError;
 
@@ -37,16 +35,23 @@ class _AppWrapperState extends State<AppWrapper> {
   }
 
   Future<void> _initializeApp() async {
+    _logger.info('Initializing app wrapper');
+
     try {
       final onboardingStatusLoader =
-          widget.onboardingStatusLoader ?? UserService.instance.isOnboardingComplete;
+          widget.onboardingStatusLoader ??
+          UserService.instance.isOnboardingComplete;
       final isComplete = await onboardingStatusLoader();
 
+      _logger.info('Onboarding status resolved: complete=$isComplete');
+
       if (!mounted) {
+        _logger.fine('App wrapper unmounted before onboarding resolution');
         return;
       }
 
       if (!isComplete) {
+        _logger.info('Routing user to onboarding flow');
         setState(() {
           _phase = _AppWrapperStatePhase.onboarding;
           _startupError = null;
@@ -59,18 +64,25 @@ class _AppWrapperState extends State<AppWrapper> {
         _startupError = null;
       });
 
+      _logger.info('Bootstrapping main application services');
+
       final bootstrapApp =
           widget.bootstrapApp ?? AppStartupService.instance.initializeMainApp;
       await bootstrapApp();
 
       if (!mounted) {
+        _logger.fine('App wrapper unmounted before bootstrap completion');
         return;
       }
 
       setState(() {
         _phase = _AppWrapperStatePhase.ready;
       });
-    } catch (error) {
+
+      _logger.info('App wrapper initialization completed successfully');
+    } catch (error, stackTrace) {
+      _logger.severe('App wrapper initialization failed', error, stackTrace);
+
       if (!mounted) {
         return;
       }
@@ -86,9 +98,7 @@ class _AppWrapperState extends State<AppWrapper> {
   Widget build(BuildContext context) {
     switch (_phase) {
       case _AppWrapperStatePhase.checkingOnboarding:
-        return const _AppLoadingScreen(
-          message: 'Checking your setup...',
-        );
+        return const _AppLoadingScreen(message: 'Checking your setup...');
       case _AppWrapperStatePhase.bootstrapping:
         return const _AppLoadingScreen(
           message: 'Preparing your workout data...',
@@ -119,14 +129,9 @@ class _AppLoadingScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(
-              color: Colors.blue,
-            ),
+            const CircularProgressIndicator(color: Colors.blue),
             const SizedBox(height: 16),
-            Text(
-              message,
-              style: const TextStyle(color: Colors.white70),
-            ),
+            Text(message, style: const TextStyle(color: Colors.white70)),
           ],
         ),
       ),
@@ -135,10 +140,7 @@ class _AppLoadingScreen extends StatelessWidget {
 }
 
 class _AppStartupErrorScreen extends StatelessWidget {
-  const _AppStartupErrorScreen({
-    required this.error,
-    required this.onRetry,
-  });
+  const _AppStartupErrorScreen({required this.error, required this.onRetry});
 
   final Object? error;
   final Future<void> Function() onRetry;
@@ -169,10 +171,7 @@ class _AppStartupErrorScreen extends StatelessWidget {
                 style: const TextStyle(color: Colors.white70),
               ),
               const SizedBox(height: 20),
-              FilledButton(
-                onPressed: onRetry,
-                child: const Text('Retry'),
-              ),
+              FilledButton(onPressed: onRetry, child: const Text('Retry')),
             ],
           ),
         ),

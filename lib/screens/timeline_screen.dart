@@ -1,23 +1,41 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:logging/logging.dart';
 import '../constants/app_constants.dart';
 
-class TimelineScreen extends StatelessWidget {
+class TimelineScreen extends StatefulWidget {
   const TimelineScreen({super.key});
+
+  @override
+  State<TimelineScreen> createState() => _TimelineScreenState();
+}
+
+class _TimelineScreenState extends State<TimelineScreen> {
+  static final Logger _logger = Logger('TimelineScreen');
+
+  @override
+  void initState() {
+    super.initState();
+    _logger.info('Opening development timeline screen');
+  }
+
+  @override
+  void dispose() {
+    _logger.fine('Disposing development timeline screen');
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final double topPadding = MediaQuery.of(context).padding.top;
     final double headerHeight = topPadding + kToolbarHeight;
-    
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Positioned.fill(
-            child: _buildMainContent(headerHeight),
-          ),
+          Positioned.fill(child: _buildMainContent(headerHeight)),
           // Glass header overlay
           Positioned(
             top: 0,
@@ -25,14 +43,14 @@ class TimelineScreen extends StatelessWidget {
             right: 0,
             child: ClipRRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+                filter: ImageFilter.blur(
+                  sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+                  sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                ),
                 child: Container(
                   height: headerHeight,
                   color: AppConstants.HEADER_BG_COLOR_MEDIUM,
-                  child: SafeArea(
-                    bottom: false,
-                    child: _buildHeaderContent(),
-                  ),
+                  child: SafeArea(bottom: false, child: _buildHeaderContent()),
                 ),
               ),
             ),
@@ -52,11 +70,18 @@ class TimelineScreen extends StatelessWidget {
             // Back button
             Builder(
               builder: (context) => IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(CupertinoIcons.back, color: Colors.white, size: 28),
+                onPressed: () {
+                  _logger.fine('Closing development timeline screen');
+                  Navigator.of(context).pop();
+                },
+                icon: const Icon(
+                  CupertinoIcons.back,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
             ),
-            
+
             // Title
             const Expanded(
               child: Text(
@@ -78,10 +103,8 @@ class TimelineScreen extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         // Space for header
-        SliverToBoxAdapter(
-          child: SizedBox(height: headerHeight),
-        ),
-        
+        SliverToBoxAdapter(child: SizedBox(height: headerHeight)),
+
         // Content
         SliverToBoxAdapter(
           child: Padding(
@@ -93,7 +116,10 @@ class TimelineScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.blue.withOpacity(0.2), Colors.purple.withOpacity(0.2)],
+                      colors: [
+                        Colors.blue.withOpacity(0.2),
+                        Colors.purple.withOpacity(0.2),
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -110,7 +136,11 @@ class TimelineScreen extends StatelessWidget {
                               color: Colors.blue.withOpacity(0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(CupertinoIcons.rocket_fill, color: Colors.blue, size: 24),
+                            child: const Icon(
+                              CupertinoIcons.rocket_fill,
+                              color: Colors.blue,
+                              size: 24,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           const Text(
@@ -126,10 +156,7 @@ class TimelineScreen extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         'Track the evolution of your workout companion',
-                        style: TextStyle(
-                          color: Colors.grey[300],
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(color: Colors.grey[300], fontSize: 16),
                       ),
                     ],
                   ),
@@ -243,7 +270,11 @@ class TimelineScreen extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      const Icon(CupertinoIcons.heart_fill, color: Colors.red, size: 24),
+                      const Icon(
+                        CupertinoIcons.heart_fill,
+                        color: Colors.red,
+                        size: 24,
+                      ),
                       const SizedBox(height: 8),
                       const Text(
                         'Built with passion for fitness',
@@ -256,10 +287,7 @@ class TimelineScreen extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         'Your feedback shapes our roadmap',
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
                       ),
                     ],
                   ),
@@ -292,41 +320,37 @@ class TimelineScreen extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: status == TimelineStatus.completed 
-                      ? color 
+                  color: status == TimelineStatus.completed
+                      ? color
                       : status == TimelineStatus.inProgress
-                          ? color.withOpacity(0.7)
-                          : Colors.grey[700],
+                      ? color.withOpacity(0.7)
+                      : Colors.grey[700],
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: status == TimelineStatus.completed 
-                        ? color 
+                    color: status == TimelineStatus.completed
+                        ? color
                         : status == TimelineStatus.inProgress
-                            ? color
-                            : Colors.grey[600]!,
+                        ? color
+                        : Colors.grey[600]!,
                     width: 2,
                   ),
                 ),
                 child: Icon(
                   icon,
-                  color: status == TimelineStatus.completed 
-                      ? Colors.white 
+                  color: status == TimelineStatus.completed
+                      ? Colors.white
                       : status == TimelineStatus.inProgress
-                          ? Colors.white
-                          : Colors.grey[400],
+                      ? Colors.white
+                      : Colors.grey[400],
                   size: 20,
                 ),
               ),
               if (version != '1.0.0+')
-                Container(
-                  width: 2,
-                  height: 60,
-                  color: Colors.grey[700],
-                ),
+                Container(width: 2, height: 60, color: Colors.grey[700]),
             ],
           ),
           const SizedBox(width: 16),
-          
+
           // Content
           Expanded(
             child: Container(
@@ -335,8 +359,8 @@ class TimelineScreen extends StatelessWidget {
                 color: Colors.grey[900],
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: status == TimelineStatus.inProgress 
-                      ? color.withOpacity(0.5) 
+                  color: status == TimelineStatus.inProgress
+                      ? color.withOpacity(0.5)
                       : Colors.transparent,
                   width: 1,
                 ),
@@ -348,7 +372,10 @@ class TimelineScreen extends StatelessWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: color.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(6),
@@ -367,7 +394,7 @@ class TimelineScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  
+
                   Text(
                     title,
                     style: const TextStyle(
@@ -377,39 +404,38 @@ class TimelineScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  
+
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey[400], fontSize: 14),
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Features
-                  ...features.map((feature) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      children: [
-                        Icon(
-                          CupertinoIcons.circle_fill,
-                          size: 6,
-                          color: Colors.grey[500],
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            feature,
-                            style: TextStyle(
-                              color: Colors.grey[300],
-                              fontSize: 13,
+                  ...features.map(
+                    (feature) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.circle_fill,
+                            size: 6,
+                            color: Colors.grey[500],
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              feature,
+                              style: TextStyle(
+                                color: Colors.grey[300],
+                                fontSize: 13,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  )),
+                  ),
                 ],
               ),
             ),
@@ -472,9 +498,4 @@ class TimelineScreen extends StatelessWidget {
   }
 }
 
-enum TimelineStatus {
-  completed,
-  inProgress,
-  planned,
-  future,
-}
+enum TimelineStatus { completed, inProgress, planned, future }

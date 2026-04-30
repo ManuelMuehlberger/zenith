@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import '../services/user_service.dart';
 import '../services/export_import_service.dart';
 import '../models/user_data.dart';
@@ -17,6 +18,7 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
+  static final Logger _logger = Logger('OnboardingScreen');
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -30,12 +32,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   void initState() {
     super.initState();
+    _logger.info('Starting onboarding flow');
     _nameController = TextEditingController();
     _nameFocusNode = FocusNode();
   }
 
   @override
   void dispose() {
+    _logger.fine('Disposing onboarding flow at page $_currentPage');
     _pageController.dispose();
     _nameController.dispose();
     _nameFocusNode.dispose();
@@ -51,6 +55,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           controller: _pageController,
           physics: const NeverScrollableScrollPhysics(),
           onPageChanged: (index) {
+            _logger.fine(
+              'Onboarding page changed from $_currentPage to $index',
+            );
             setState(() {
               _currentPage = index;
             });
@@ -98,6 +105,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _nextPage() {
     if (_currentPage < 5) {
+      _logger.fine(
+        'Advancing onboarding from page $_currentPage to ${_currentPage + 1}',
+      );
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -107,6 +117,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _previousPage() {
     if (_currentPage > 0) {
+      _logger.fine(
+        'Returning onboarding from page $_currentPage to ${_currentPage - 1}',
+      );
       _pageController.previousPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -115,6 +128,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _handleRestoreBackup() async {
+    _logger.info('Starting onboarding backup restore flow');
     //full-screen loading indicator
     showCupertinoModalPopup(
       context: context,
@@ -132,16 +146,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     try {
       final success = await ExportImportService.instance.importData();
-      
+
       // Pop the loading dialog
       if (mounted) Navigator.of(context).pop();
 
       if (success) {
+        _logger.info('Backup restore completed successfully during onboarding');
         // Load the user profile to ensure it's available in UserService
-        await UserService.instance.loadUserProfile(); 
+        await UserService.instance.loadUserProfile();
         // UserService's saveUserProfile (called by import) already marks onboarding complete.
         // If a profile exists, isOnboardingComplete will be true.
-        
+
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const AppWrapper()),
@@ -149,21 +164,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           );
         }
       } else {
+        _logger.warning(
+          'Backup restore was cancelled or returned unsuccessful result',
+        );
         // Import was cancelled or failed (e.g., user cancelled file picker)
         if (mounted) {
-          _showErrorDialog('Restore Cancelled', 'Backup restore was cancelled or no file was selected.');
+          _showErrorDialog(
+            'Restore Cancelled',
+            'Backup restore was cancelled or no file was selected.',
+          );
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _logger.severe('Backup restore failed during onboarding', e, stackTrace);
       // Pop the loading dialog if it's still there
       if (mounted) Navigator.of(context).pop();
       if (mounted) {
-        _showErrorDialog('Restore Failed', 'Could not restore from backup: ${e.toString()}. Please ensure the file is a valid backup and try again.');
+        _showErrorDialog(
+          'Restore Failed',
+          'Could not restore from backup: ${e.toString()}. Please ensure the file is a valid backup and try again.',
+        );
       }
     }
   }
 
   Future<void> _completeOnboarding() async {
+    _logger.info(
+      'Completing onboarding with name=${_nameController.text.trim()} age=$_age units=$_units',
+    );
     showCupertinoModalPopup(
       context: context,
       barrierDismissible: false,
@@ -180,22 +208,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     try {
       final birthdate = DateTime(DateTime.now().year - _age, 1, 1);
-      final weightHistory = [WeightEntry(
-        timestamp: DateTime.now(),
-        value: _weight,
-      )];
-      
+      final weightHistory = [
+        WeightEntry(timestamp: DateTime.now(), value: _weight),
+      ];
+
       final profile = UserData(
         name: _nameController.text.trim(),
         birthdate: birthdate,
         units: _units,
         weightHistory: weightHistory,
         createdAt: DateTime.now(),
-        theme: 'dark'
+        theme: 'dark',
       );
-      
+
       await UserService.instance.saveUserProfile(profile);
-      
+
+      _logger.info('Onboarding completed successfully for ${profile.name}');
       if (mounted) {
         Navigator.of(context).pop();
         Navigator.of(context).pushAndRemoveUntil(
@@ -203,10 +231,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           (Route<dynamic> route) => false, // Remove all previous routes
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _logger.severe('Failed to complete onboarding', e, stackTrace);
       if (mounted) {
         Navigator.of(context).pop(); // Pop loading dialog
-        _showErrorDialog('Setup Failed', 'Failed to save profile: ${e.toString()}');
+        _showErrorDialog(
+          'Setup Failed',
+          'Failed to save profile: ${e.toString()}',
+        );
       }
     }
   }
