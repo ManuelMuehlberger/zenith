@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root"
+
+if git rev-parse --verify '@{upstream}' >/dev/null 2>&1; then
+  base_ref='@{upstream}'
+else
+  default_remote_ref=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null || true)
+  if [ -n "$default_remote_ref" ]; then
+    base_ref=$default_remote_ref
+  else
+    base_ref='HEAD~1'
+  fi
+fi
+
+"$repo_root/scripts/lint_changed_dart.sh" --range "$base_ref" HEAD
+"$repo_root/scripts/check_changed_dart_policy.sh" --range "$base_ref" HEAD

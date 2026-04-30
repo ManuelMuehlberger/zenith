@@ -26,7 +26,11 @@ linter:
   # producing the lint.
   rules:
     avoid_print: true
+    avoid_void_async: true
     directives_ordering: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_const_literals_to_create_immutables: true
     prefer_final_fields: true
     prefer_final_locals: true
     unawaited_futures: true

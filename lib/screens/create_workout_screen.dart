@@ -1,19 +1,20 @@
+import 'dart:async';
+import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/cupertino.dart';
-import 'dart:ui';
-import '../models/workout_template.dart';
+import 'package:logging/logging.dart';
+import '../constants/app_constants.dart';
+import '../models/exercise.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
-import '../models/exercise.dart';
-import '../services/workout_template_service.dart';
-import '../services/user_service.dart';
-import '../widgets/workout_customization_sheet.dart';
-import '../widgets/create_workout/create_workout_editor_sections.dart';
-import 'exercise_picker_screen.dart';
-import '../constants/app_constants.dart';
+import '../models/workout_template.dart';
 import '../services/exercise_service.dart';
-import 'package:logging/logging.dart';
+import '../services/user_service.dart';
+import '../services/workout_template_service.dart';
+import '../widgets/create_workout/create_workout_editor_sections.dart';
+import '../widgets/workout_customization_sheet.dart';
+import 'exercise_picker_screen.dart';
 
 class CreateWorkoutScreen extends StatefulWidget {
   final WorkoutTemplate? workoutTemplate;
@@ -50,20 +51,20 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.workoutTemplate != null) {
-      _nameController.text = widget.workoutTemplate!.name;
+    final template = widget.workoutTemplate;
+    if (template != null) {
+      _nameController.text = template.name;
       // WorkoutTemplate doesn't have exercises directly, we'll need to load them separately
       // For now, initialize as empty and load exercises in a separate method if needed
       _exercises = [];
-      _selectedColor = widget.workoutTemplate!.colorValue != null
-          ? Color(widget.workoutTemplate!.colorValue!)
-          : Colors.blue;
+      final colorValue = template.colorValue;
+      _selectedColor = colorValue != null ? Color(colorValue) : Colors.blue;
       _selectedIcon = WorkoutIcons.getIconDataFromCodePoint(
-        widget.workoutTemplate!.iconCodePoint,
+        template.iconCodePoint,
       );
 
       // Load template exercises and attach details
-      _loadTemplateExercises();
+      unawaited(_loadTemplateExercises());
     }
   }
 
@@ -165,9 +166,10 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     });
 
     try {
-      if (widget.workoutTemplate != null) {
+      final template = widget.workoutTemplate;
+      if (template != null) {
         // Update existing workout template metadata and exercises
-        final updatedTemplate = widget.workoutTemplate!.copyWith(
+        final updatedTemplate = template.copyWith(
           name: _nameController.text.trim(),
           iconCodePoint: _selectedIcon.codePoint,
           colorValue: _selectedColor.toARGB32(),
@@ -209,12 +211,13 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   Future<void> _loadTemplateExercises() async {
-    if (widget.workoutTemplate == null) return;
+    final template = widget.workoutTemplate;
+    if (template == null) return;
     setState(() {
       _isLoading = true;
     });
     try {
-      final templateId = widget.workoutTemplate!.id;
+      final templateId = template.id;
       final exercises = await WorkoutTemplateService.instance
           .getTemplateExercises(templateId);
 
@@ -288,7 +291,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
     if (result is List<Exercise>) {
       final newWorkoutExercises = result.map((selectedExercise) {
-        var workoutExercise = WorkoutExercise(
+        final workoutExercise = WorkoutExercise(
           workoutTemplateId:
               widget.workoutTemplate?.id ?? "PENDING_TEMPLATE_ID",
           exerciseSlug: selectedExercise.slug,
@@ -310,11 +313,11 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
         _exercises.addAll(newWorkoutExercises);
       });
 
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
     } else if (result is Exercise) {
       // Handle single exercise selection for backward compatibility
       final selectedExercise = result;
-      var workoutExercise = WorkoutExercise(
+      final workoutExercise = WorkoutExercise(
         workoutTemplateId: widget.workoutTemplate?.id ?? "PENDING_TEMPLATE_ID",
         exerciseSlug: selectedExercise.slug,
         exerciseDetail: selectedExercise,
@@ -328,13 +331,13 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
         targetWeight: 0.0,
       );
 
-      workoutExercise = workoutExercise.copyWith(sets: [defaultSet]);
+      final exerciseWithSet = workoutExercise.copyWith(sets: [defaultSet]);
 
       setState(() {
-        _exercises.add(workoutExercise);
+        _exercises.add(exerciseWithSet);
       });
 
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
     }
   }
 
@@ -354,7 +357,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       _expandedNotes.clear();
       _expandedNotes.addAll(newExpandedNotes);
     });
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
   }
 
   void _reorderExercises(int oldIndex, int newIndex) {
@@ -365,7 +368,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       final exercise = _exercises.removeAt(oldIndex);
       _exercises.insert(newIndex, exercise);
     });
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
   }
 
   void _addSetToExercise(int exerciseIndex) {
@@ -384,7 +387,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
         sets: [...exercise.sets, newSet],
       );
     });
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
   }
 
   void _removeSetFromExercise(int exerciseIndex, int setIndex) {
@@ -396,7 +399,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       setState(() {
         _exercises[exerciseIndex] = exercise.copyWith(sets: updatedSets);
       });
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
     }
   }
 
@@ -537,8 +540,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
         selectedIcon: _selectedIcon,
         availableColors: _availableColors,
         availableIcons: WorkoutIcons.items
-            .where((item) => item.isIcon)
-            .map((item) => item.icon!)
+            .map((item) => item.icon)
+            .whereType<IconData>()
             .toList(),
         onColorChanged: (color) {
           setState(() {
