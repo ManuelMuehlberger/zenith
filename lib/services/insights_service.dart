@@ -1,13 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:logging/logging.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/workout.dart';
 import '../models/insights.dart';
 import 'workout_service.dart';
+import 'insights/cache/insights_cache_store.dart';
 import 'insights/workout_insights_provider.dart';
 import 'insights/workout_trend_provider.dart';
 import 'insights/exercise_insights_provider.dart';
+import 'insights/insights_timeframe_resolver.dart';
 
 export '../models/insights.dart';
 
@@ -21,6 +21,10 @@ class InsightsService {
 
   static const String _cacheKey = 'insights_cache';
   static const Duration _cacheExpiry = Duration(hours: 1);
+
+  final InsightsCacheStore _cacheStore = const InsightsCacheStore(
+    cacheKey: _cacheKey,
+  );
 
   static InsightsGrouping getGroupingForTimeframe(String timeframe) {
     if (timeframe == '1W' || timeframe == '1M') {
@@ -115,8 +119,7 @@ class InsightsService {
     }
   }
 
-  T? _getCachedItem<T>(
-      String key, T Function(Map<String, dynamic>) fromMap) {
+  T? _getCachedItem<T>(String key, T Function(Map<String, dynamic>) fromMap) {
     if (_cache != null && _lastCacheUpdate != null) {
       final timeSinceUpdate = DateTime.now().difference(_lastCacheUpdate!);
       if (timeSinceUpdate < _cacheExpiry && _cache!.containsKey(key)) {
@@ -136,23 +139,21 @@ class InsightsService {
     bool forceRefresh = false,
     InsightsGrouping? grouping,
   }) {
-    // Determine grouping if not provided
-    final InsightsGrouping finalGrouping;
-    if (grouping != null) {
-      finalGrouping = grouping;
-    } else {
-      if (weeksBack == 1) {
-        finalGrouping = InsightsGrouping.day;
-      } else if (monthsBack == 1) {
-        finalGrouping = InsightsGrouping.day;
-      } else if (monthsBack <= 6) {
-        finalGrouping = InsightsGrouping.week;
-      } else {
-        finalGrouping = InsightsGrouping.month;
-      }
-    }
+    final finalGrouping = InsightsTimeframeResolver.resolveGrouping(
+      monthsBack: monthsBack,
+      weeksBack: weeksBack,
+      grouping: grouping,
+    );
 
-    final cacheKey = 'insights_${monthsBack}m_${weeksBack ?? 0}w_${finalGrouping.name}_${workoutName ?? "all"}_${muscleGroup ?? "all"}_${equipment ?? "all"}_${isBodyWeight ?? "all"}';
+    final cacheKey = InsightsTimeframeResolver.workoutInsightsCacheKey(
+      monthsBack: monthsBack,
+      weeksBack: weeksBack,
+      grouping: finalGrouping,
+      workoutName: workoutName,
+      muscleGroup: muscleGroup,
+      equipment: equipment,
+      isBodyWeight: isBodyWeight,
+    );
     return _withCache<WorkoutInsights>(
       key: cacheKey,
       calculator: () => WorkoutInsightsProvider().getData(
@@ -179,23 +180,18 @@ class InsightsService {
     InsightsGrouping? grouping,
     bool forceRefresh = false,
   }) {
-    // Determine grouping if not provided
-    final InsightsGrouping finalGrouping;
-    if (grouping != null) {
-      finalGrouping = grouping;
-    } else {
-      if (weeksBack == 1) {
-        finalGrouping = InsightsGrouping.day;
-      } else if (monthsBack == 1) {
-        finalGrouping = InsightsGrouping.day;
-      } else if (monthsBack <= 6) {
-        finalGrouping = InsightsGrouping.week;
-      } else {
-        finalGrouping = InsightsGrouping.month;
-      }
-    }
+    final finalGrouping = InsightsTimeframeResolver.resolveGrouping(
+      monthsBack: monthsBack,
+      weeksBack: weeksBack,
+      grouping: grouping,
+    );
 
-    final cacheKey = 'exercise_${exerciseName.trim().toLowerCase()}_${monthsBack}m_${weeksBack ?? 0}w_${finalGrouping.name}';
+    final cacheKey = InsightsTimeframeResolver.exerciseInsightsCacheKey(
+      exerciseName: exerciseName,
+      monthsBack: monthsBack,
+      weeksBack: weeksBack,
+      grouping: finalGrouping,
+    );
     return _withCache<ExerciseInsights>(
       key: cacheKey,
       calculator: () => ExerciseInsightsProvider().getData(
@@ -221,36 +217,26 @@ class InsightsService {
     InsightsGrouping? grouping,
   }) async {
     final int effectiveMonths = monthsBack ?? 6;
-    // Determine grouping based on weeksBack/monthsBack if not explicitly provided
-    final InsightsGrouping finalGrouping;
-    if (grouping != null) {
-      finalGrouping = grouping;
-    } else {
-      if (weeksBack == 1) {
-        finalGrouping = InsightsGrouping.day;
-      } else if (effectiveMonths == 1) {
-        finalGrouping = InsightsGrouping.day;
-      } else if (effectiveMonths <= 6) {
-        finalGrouping = InsightsGrouping.week;
-      } else {
-        finalGrouping = InsightsGrouping.month;
-      }
-    }
+    final finalGrouping = InsightsTimeframeResolver.resolveGrouping(
+      monthsBack: effectiveMonths,
+      weeksBack: weeksBack,
+      grouping: grouping,
+    );
+    final timeSlots = InsightsTimeframeResolver.weeklyTimeSlots(
+      grouping: finalGrouping,
+      effectiveMonths: effectiveMonths,
+      weeksBack: weeksBack,
+    );
 
-    int timeSlots;
-    if (finalGrouping == InsightsGrouping.day) {
-      if (weeksBack == 1) {
-        timeSlots = 7;
-      } else {
-        timeSlots = 30;
-      }
-    } else if (finalGrouping == InsightsGrouping.week) {
-      timeSlots = (effectiveMonths * 4.33).ceil();
-    } else {
-      timeSlots = effectiveMonths;
-    }
-    
-    final cacheKey = 'weekly_insights_${effectiveMonths}m_${timeSlots}_${finalGrouping.name}_${workoutName ?? "all"}_${muscleGroup ?? "all"}_${equipment ?? "all"}_${isBodyWeight ?? "all"}';
+    final cacheKey = InsightsTimeframeResolver.weeklyInsightsCacheKey(
+      effectiveMonths: effectiveMonths,
+      timeSlots: timeSlots,
+      grouping: finalGrouping,
+      workoutName: workoutName,
+      muscleGroup: muscleGroup,
+      equipment: equipment,
+      isBodyWeight: isBodyWeight,
+    );
     return _withCache<WeeklyInsights>(
       key: cacheKey,
       calculator: () async {
@@ -260,81 +246,96 @@ class InsightsService {
           'equipment': equipment,
           'isBodyWeight': isBodyWeight,
         };
-        
-        String timeframe = '6M';
-        if (weeksBack == 1) {
-          timeframe = '1W';
-        } else if (effectiveMonths == 1) timeframe = '1M';
-        else if (effectiveMonths > 6) timeframe = '1Y';
-        
+
+        final timeframe = InsightsTimeframeResolver.weeklyTimeframeLabel(
+          effectiveMonths: effectiveMonths,
+          weeksBack: weeksBack,
+        );
+
         final countProvider = WorkoutTrendProvider(WorkoutTrendType.count);
-        final durationProvider = WorkoutTrendProvider(WorkoutTrendType.duration);
+        final durationProvider = WorkoutTrendProvider(
+          WorkoutTrendType.duration,
+        );
         final volumeProvider = WorkoutTrendProvider(WorkoutTrendType.sets);
-        
+
         final countData = await countProvider.getData(
           timeframe: timeframe,
           monthsBack: effectiveMonths,
           filters: filters,
         );
-        
+
         final durationData = await durationProvider.getData(
           timeframe: timeframe,
           monthsBack: effectiveMonths,
           filters: filters,
         );
-        
+
         final volumeData = await volumeProvider.getData(
           timeframe: timeframe,
           monthsBack: effectiveMonths,
           filters: filters,
         );
-        
-        final weeklyWorkoutCounts = countData.map((e) => WeeklyDataPoint(
-          weekStart: e.date,
-          minValue: e.minValue ?? 0,
-          maxValue: e.maxValue ?? e.value,
-        )).toList();
-        
-        final weeklyDurations = durationData.map((e) => WeeklyDataPoint(
-          weekStart: e.date,
-          minValue: e.minValue ?? 0,
-          maxValue: e.maxValue ?? e.value,
-        )).toList();
-        
-        final weeklyVolumes = volumeData.map((e) => WeeklyDataPoint(
-          weekStart: e.date,
-          minValue: e.minValue ?? 0,
-          maxValue: e.maxValue ?? e.value,
-        )).toList();
-        
+
+        final weeklyWorkoutCounts = countData
+            .map(
+              (e) => WeeklyDataPoint(
+                weekStart: e.date,
+                minValue: e.minValue ?? 0,
+                maxValue: e.maxValue ?? e.value,
+              ),
+            )
+            .toList();
+
+        final weeklyDurations = durationData
+            .map(
+              (e) => WeeklyDataPoint(
+                weekStart: e.date,
+                minValue: e.minValue ?? 0,
+                maxValue: e.maxValue ?? e.value,
+              ),
+            )
+            .toList();
+
+        final weeklyVolumes = volumeData
+            .map(
+              (e) => WeeklyDataPoint(
+                weekStart: e.date,
+                minValue: e.minValue ?? 0,
+                maxValue: e.maxValue ?? e.value,
+              ),
+            )
+            .toList();
+
         double avgCount = 0;
         final activeWeeks = countData.where((e) => e.value > 0).toList();
         if (activeWeeks.isNotEmpty) {
-           avgCount = activeWeeks.fold(0.0, (sum, e) => sum + e.value) / activeWeeks.length;
+          avgCount =
+              activeWeeks.fold(0.0, (sum, e) => sum + e.value) /
+              activeWeeks.length;
         }
-        
+
         double avgDuration = 0;
         int totalWorkoutsDuration = 0;
         double totalDurationMins = 0;
         for (var d in durationData) {
-           totalDurationMins += d.value * 60;
-           totalWorkoutsDuration += d.count ?? 0;
+          totalDurationMins += d.value * 60;
+          totalWorkoutsDuration += d.count ?? 0;
         }
         if (totalWorkoutsDuration > 0) {
-           avgDuration = totalDurationMins / totalWorkoutsDuration;
+          avgDuration = totalDurationMins / totalWorkoutsDuration;
         }
-        
+
         double avgVolume = 0;
         int totalWorkoutsVolume = 0;
         double totalSets = 0;
         for (var d in volumeData) {
-           totalSets += d.value;
-           totalWorkoutsVolume += d.count ?? 0;
+          totalSets += d.value;
+          totalWorkoutsVolume += d.count ?? 0;
         }
         if (totalWorkoutsVolume > 0) {
-           avgVolume = totalSets / totalWorkoutsVolume;
+          avgVolume = totalSets / totalWorkoutsVolume;
         }
-        
+
         return WeeklyInsights(
           weeklyWorkoutCounts: weeklyWorkoutCounts,
           weeklyDurations: weeklyDurations,
@@ -351,19 +352,16 @@ class InsightsService {
     );
   }
 
-  Future<void> _updateCache(String key, Map<String, dynamic> insightsMap) async {
+  Future<void> _updateCache(
+    String key,
+    Map<String, dynamic> insightsMap,
+  ) async {
     _logger.fine('Updating cache for key: $key');
     try {
       _cache ??= {};
       _cache![key] = insightsMap;
       _lastCacheUpdate = DateTime.now();
-
-      final prefs = await SharedPreferences.getInstance();
-      final cacheData = {
-        'data': _cache,
-        'lastUpdate': _lastCacheUpdate!.toIso8601String(),
-      };
-      await prefs.setString(_cacheKey, jsonEncode(cacheData));
+      await _cacheStore.save(cache: _cache!, lastUpdate: _lastCacheUpdate!);
       _logger.fine('Cache updated successfully');
     } catch (e) {
       _logger.severe('Failed to update cache: $e');
@@ -373,13 +371,11 @@ class InsightsService {
   Future<void> _loadCache() async {
     _logger.info('Loading insights cache from SharedPreferences');
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final cacheJson = prefs.getString(_cacheKey);
+      final snapshot = await _cacheStore.load();
 
-      if (cacheJson != null) {
-        final cacheData = jsonDecode(cacheJson);
-        _cache = Map<String, dynamic>.from(cacheData['data']);
-        _lastCacheUpdate = DateTime.parse(cacheData['lastUpdate']);
+      if (snapshot != null) {
+        _cache = snapshot.cache;
+        _lastCacheUpdate = snapshot.lastUpdate;
         _logger.info('Insights cache loaded successfully');
       } else {
         _logger.info('No insights cache found');
@@ -397,9 +393,8 @@ class InsightsService {
     try {
       _cache = null;
       _lastCacheUpdate = null;
-      
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_cacheKey);
+
+      await _cacheStore.clear();
       _logger.info('Insights cache cleared successfully');
     } catch (e) {
       _logger.severe('Failed to clear insights cache: $e');

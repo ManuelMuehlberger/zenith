@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../screens/insights_screen.dart';
+import '../screens/insights/insights_view_data.dart';
 
 class ExpandableWorkoutList extends StatefulWidget {
   final DateTime selectedDate;
