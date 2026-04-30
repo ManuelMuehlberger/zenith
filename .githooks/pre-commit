@@ -4,3 +4,4 @@ set -euo pipefail
 
 repo_root=$(git rev-parse --show-toplevel)
 "$repo_root/scripts/lint_changed_dart.sh" --staged
+"$repo_root/scripts/check_changed_dart_policy.sh" --staged

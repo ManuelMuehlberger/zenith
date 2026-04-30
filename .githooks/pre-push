@@ -17,3 +17,4 @@ else
 fi
 
 "$repo_root/scripts/lint_changed_dart.sh" --range "$base_ref" HEAD
+"$repo_root/scripts/check_changed_dart_policy.sh" --range "$base_ref" HEAD
