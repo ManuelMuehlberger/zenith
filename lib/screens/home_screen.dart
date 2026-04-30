@@ -83,6 +83,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WorkoutService.instance.addListener(_handleWorkoutServiceChanged);
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -101,9 +102,18 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    WorkoutService.instance.removeListener(_handleWorkoutServiceChanged);
     _scrollController.dispose();
     _greetingTimer?.cancel();
     super.dispose();
+  }
+
+  void _handleWorkoutServiceChanged() {
+    if (!mounted) {
+      return;
+    }
+
+    _applyTimeline(WorkoutService.instance.workouts);
   }
 
   void _onScroll() {
@@ -326,17 +336,22 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     setState(() {
       _isLoading = true;
     });
+
+    await WorkoutService.instance.loadData();
+  }
+
+  void _applyTimeline(List<Workout> workouts) {
+    if (!mounted) {
+      return;
+    }
+
     try {
       _logger.info('Loading completed workouts for Home timeline');
 
-      // Load all data from DB into WorkoutService cache
-      await WorkoutService.instance.loadData();
-      _logger.fine(
-        'Loaded ${WorkoutService.instance.workouts.length} workouts from DB',
-      );
+      _logger.fine('Loaded ${workouts.length} workouts from WorkoutService cache');
 
       final buckets = WorkoutTimelineGroupingService.splitWorkouts(
-        WorkoutService.instance.workouts,
+        workouts,
       );
 
       // Keep list size consistent with previous Home behavior (tests expect 10)
@@ -388,7 +403,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       // But for metrics we want ALL workouts in that month.
       // So we should recalculate metrics from all workouts.
       
-      final allWorkouts = WorkoutService.instance.workouts.where((w) => w.status == WorkoutStatus.completed).toList();
+      final allWorkouts = workouts.where((w) => w.status == WorkoutStatus.completed).toList();
       
       int currentMonthCount = 0;
       double currentMonthVolume = 0;
@@ -585,7 +600,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final summaryIndex = _timelineItems.indexWhere(
       (it) =>
           it is TimelineMonthSummaryItem &&
-          (it as TimelineMonthSummaryItem).group.key == key,
+          it.group.key == key,
     );
 
     if (summaryIndex == -1) return;

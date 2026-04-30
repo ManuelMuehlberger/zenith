@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'dart:async';
 import 'dart:developer' as developer; // Add debug logging
 import 'dart:ui';
 import 'package:pull_down_button/pull_down_button.dart';
@@ -27,7 +26,6 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   final ScrollController _scrollController = ScrollController();
   String? _selectedFolderId;
   bool _isLoading = true;
-  Timer? _timer;
   bool _isDragging = false;
   bool _isPillMaximized = true;
   double _lastScrollOffset = 0.0;
@@ -39,7 +37,6 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   @override
   void initState() {
     super.initState();
-    _startTimer();
     _initialLoad();
     _scrollController.addListener(_onScroll);
   }
@@ -88,18 +85,9 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
 
   @override
   void dispose() {
-    _timer?.cancel();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (WorkoutSessionService.instance.hasActiveSession) {
-        setState(() {});
-      }
-    });
   }
 
   void _onDragStarted() {
@@ -123,92 +111,97 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sessionService = WorkoutSessionService.instance;
-    
-    if (sessionService.hasActiveSession) {
-      return ActiveWorkoutScreen(session: sessionService.currentSession!);
-    }
-    
-    return PopScope(
-      canPop: _selectedFolderId == null,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop && _selectedFolderId != null) {
-          setState(() {
-            _selectedFolderId = null;
-          });
-          // When navigating back to all workouts, refresh templates
-          _loadTemplates();
+    return AnimatedBuilder(
+      animation: WorkoutSessionService.instance,
+      builder: (context, _) {
+        final sessionService = WorkoutSessionService.instance;
+
+        if (sessionService.hasActiveSession) {
+          return ActiveWorkoutScreen(session: sessionService.currentSession!);
         }
-      },
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            SliverAppBar(
-              pinned: true,
-              stretch: true,
-              centerTitle: true,
-              automaticallyImplyLeading: false,
-              leading: const SizedBox(width: kToolbarHeight),
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              expandedHeight: AppConstants.HEADER_EXTRA_HEIGHT + kToolbarHeight,
-              actions: [
-                const ProfileIconButton(),
-              ],
-              flexibleSpace: LayoutBuilder(
-                builder: (context, constraints) {
-                  return Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Persistent glass effect layer (covers expanded and collapsed states)
-                      ClipRRect(
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(
-                            sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                            sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+
+        return PopScope(
+          canPop: _selectedFolderId == null,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop && _selectedFolderId != null) {
+              setState(() {
+                _selectedFolderId = null;
+              });
+              // When navigating back to all workouts, refresh templates
+              _loadTemplates();
+            }
+          },
+          child: Scaffold(
+            backgroundColor: Colors.black,
+            body: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  stretch: true,
+                  centerTitle: true,
+                  automaticallyImplyLeading: false,
+                  leading: const SizedBox(width: kToolbarHeight),
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  expandedHeight: AppConstants.HEADER_EXTRA_HEIGHT + kToolbarHeight,
+                  actions: [
+                    const ProfileIconButton(),
+                  ],
+                  flexibleSpace: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          // Persistent glass effect layer (covers expanded and collapsed states)
+                          ClipRRect(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(
+                                sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+                                sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                              ),
+                              child: Container(color: AppConstants.HEADER_BG_COLOR_STRONG),
+                            ),
                           ),
-                          child: Container(color: AppConstants.HEADER_BG_COLOR_STRONG),
-                        ),
-                      ),
-                      // FlexibleSpaceBar handles title positioning and parallax of the large title
-                      FlexibleSpaceBar(
-                        centerTitle: true,
-                        title: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [_buildSmallTitle()],
-                        ),
-                        background: Align(
-                          alignment: Alignment.center,
-                          child: _buildLargeTitle(),
-                        ),
-                        collapseMode: CollapseMode.parallax,
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            // Content
-            if (_isLoading)
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32.0),
-                  child: Center(
-                    child: CircularProgressIndicator(color: Colors.blue),
+                          // FlexibleSpaceBar handles title positioning and parallax of the large title
+                          FlexibleSpaceBar(
+                            centerTitle: true,
+                            title: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [_buildSmallTitle()],
+                            ),
+                            background: Align(
+                              alignment: Alignment.center,
+                              child: _buildLargeTitle(),
+                            ),
+                            collapseMode: CollapseMode.parallax,
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
-              )
-            else
-              SliverToBoxAdapter(
-                child: _buildMainContentWithoutHeader(),
-              ),
-          ],
-        ),
-        floatingActionButton: _buildPillFloatingActionButton(),
-        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      ),
+                // Content
+                if (_isLoading)
+                  const SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 32.0),
+                      child: Center(
+                        child: CircularProgressIndicator(color: Colors.blue),
+                      ),
+                    ),
+                  )
+                else
+                  SliverToBoxAdapter(
+                    child: _buildMainContentWithoutHeader(),
+                  ),
+              ],
+            ),
+            floatingActionButton: _buildPillFloatingActionButton(),
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+          ),
+        );
+      },
     );
   }
 
@@ -257,65 +250,6 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     );
   }
 
-  Widget _buildHeaderContent() {
-    final bool isInsideFolder = _selectedFolderId != null;
-    String title = 'Workouts';
-    if (isInsideFolder) {
-      title = _getFolderName(_selectedFolderId!);
-    }
-
-    return SizedBox(
-      height: kToolbarHeight,
-      child: Padding(
-        padding: EdgeInsets.only(left: isInsideFolder ? 0 : 16.0, right: 16.0),
-        child: Row(
-          children: [
-            if (isInsideFolder)
-              IconButton(
-                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                onPressed: () {
-                  setState(() {
-                    _selectedFolderId = null;
-                  });
-                  _loadTemplates();
-                },
-              ),
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: isInsideFolder ? TextAlign.center : TextAlign.start, 
-              ),
-            ),
-            PullDownButton(
-              itemBuilder: (context) => [
-                if (_selectedFolderId == null)
-                  PullDownMenuItem(
-                    onTap: () => _showCreateFolderDialog(),
-                    title: 'Create Folder',
-                    icon: Icons.create_new_folder,
-                  ),
-                PullDownMenuItem(
-                  onTap: () => _createWorkout(),
-                  title: 'Create Workout',
-                  icon: Icons.fitness_center,
-                ),
-              ],
-              buttonBuilder: (context, showMenu) => IconButton(
-                icon: const Icon(Icons.add, color: Colors.white, size: 28),
-                onPressed: showMenu,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildMainContentWithoutHeader() {
     if (_isLoading) {
       return const Center(
@@ -329,40 +263,6 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
           _buildBreadcrumbNavigation(),
         _buildContent(),
         SizedBox(height: MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight),
-      ],
-    );
-  }
-
-  Widget _buildMainContent(double headerHeight) {
-    if (_isLoading) {
-      return Column(
-        children: [
-          SizedBox(height: headerHeight),
-          const Expanded(
-            child: Center(
-              child: CircularProgressIndicator(color: Colors.blue),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return CustomScrollView(
-      controller: _scrollController,
-      slivers: [
-        SliverToBoxAdapter(
-          child: SizedBox(height: headerHeight),
-        ),
-        if (_selectedFolderId != null)
-          SliverToBoxAdapter(
-            child: _buildBreadcrumbNavigation(),
-          ),
-        SliverToBoxAdapter(
-          child: _buildContent(),
-        ),
-        SliverToBoxAdapter(
-          child: SizedBox(height: MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight),
-        ),
       ],
     );
   }
@@ -704,76 +604,8 @@ if (showAnimation) ...[
     return folder?.name ?? 'Unknown Folder';
   }
 
-  void _showCreateActionSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[900],
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[600],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              if (_selectedFolderId == null)
-                ListTile(
-                  leading: Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withAlpha((255 * 0.2).round()),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.create_new_folder, color: Colors.blue, size: 20),
-                  ),
-                  title: const Text('Create Folder', style: TextStyle(color: Colors.white)),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showCreateFolderDialog();
-                  },
-                ),
-              ListTile(
-                leading: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.green.withAlpha((255 * 0.2).round()),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.fitness_center, color: Colors.green, size: 20),
-                ),
-                title: const Text('Create Workout', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _createWorkout();
-                },
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-
   void _showCreateFolderDialog() {
     final controller = TextEditingController();
-    int currentLength = 0;
     showDialog(
       context: context,
       builder: (context) {
@@ -797,11 +629,7 @@ if (showAnimation) ...[
                             color: CupertinoColors.systemGrey6,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          onChanged: (value) {
-                            setState(() {
-                              currentLength = value.length;
-                            });
-                          },
+                          onChanged: (_) => setState(() {}),
                         ),
                         const SizedBox(height: 4),
                         Align(
@@ -862,11 +690,7 @@ if (showAnimation) ...[
                             ),
                             counterText: '${controller.text.length}/30',
                           ),
-                          onChanged: (value) {
-                            setState(() {
-                              currentLength = value.length;
-                            });
-                          },
+                          onChanged: (_) => setState(() {}),
                         ),
                       ],
                     ),
@@ -902,7 +726,6 @@ if (showAnimation) ...[
 
   void _showRenameFolderDialog(WorkoutFolder folder) {
     final controller = TextEditingController(text: folder.name);
-    int currentLength = folder.name.length;
     showDialog(
       context: context,
       builder: (context) {
@@ -926,11 +749,7 @@ if (showAnimation) ...[
                             color: CupertinoColors.systemGrey6,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          onChanged: (value) {
-                            setState(() {
-                              currentLength = value.length;
-                            });
-                          },
+                          onChanged: (_) => setState(() {}),
                         ),
                         const SizedBox(height: 4),
                         Align(
@@ -993,11 +812,7 @@ if (showAnimation) ...[
                             ),
                             counterText: '${controller.text.length}/30',
                           ),
-                          onChanged: (value) {
-                            setState(() {
-                              currentLength = value.length;
-                            });
-                          },
+                          onChanged: (_) => setState(() {}),
                         ),
                       ],
                     ),

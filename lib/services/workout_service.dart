@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import '../models/workout.dart';
 import '../models/workout_exercise.dart';
@@ -9,7 +10,7 @@ import 'dao/workout_set_dao.dart';
 import '../models/workout_folder.dart';
 import 'dao/workout_folder_dao.dart';
 
-class WorkoutService {
+class WorkoutService extends ChangeNotifier {
   static final WorkoutService _instance = WorkoutService._internal();
   final Logger _logger = Logger('WorkoutService');
 
@@ -59,6 +60,8 @@ class WorkoutService {
     } catch (e) {
       _logger.severe('Failed to load workout data: $e');
       _workouts = [];
+    } finally {
+      notifyListeners();
     }
   }
 
@@ -135,6 +138,8 @@ class WorkoutService {
     } catch (e) {
       _logger.severe('Failed to load folder data: $e');
       _folders = [];
+    } finally {
+      notifyListeners();
     }
   }
 
@@ -144,6 +149,7 @@ class WorkoutService {
     await _workoutFolderDao.insert(folder);
     _folders.add(folder);
     _logger.fine('Folder created with id: ${folder.id}');
+    notifyListeners();
     return folder;
   }
 
@@ -155,6 +161,7 @@ class WorkoutService {
       _folders[index] = folder;
       _logger.fine('Folder updated in cache');
     }
+    notifyListeners();
   }
 
   Future<void> deleteFolder(String folderId) async {
@@ -174,6 +181,7 @@ class WorkoutService {
     await _workoutFolderDao.deleteWorkoutFolder(folderId);
     _folders.removeWhere((f) => f.id == folderId);
     _logger.fine('Folder deleted from database and cache');
+    notifyListeners();
   }
 
   WorkoutFolder? getFolderById(String id) {
@@ -197,6 +205,7 @@ class WorkoutService {
     await _workoutDao.insert(workout);
     _workouts.add(workout);
     _logger.fine('Workout created with id: ${workout.id}');
+    notifyListeners();
     return workout;
   }
 
@@ -208,6 +217,7 @@ class WorkoutService {
       _workouts[index] = workout;
       _logger.fine('Workout updated in cache');
     }
+    notifyListeners();
   }
 
   Future<void> deleteWorkout(String workoutId) async {
@@ -222,6 +232,7 @@ class WorkoutService {
     await _workoutDao.deleteWorkout(workoutId);
     _workouts.removeWhere((w) => w.id == workoutId);
     _logger.fine('Workout deleted from database and cache');
+    notifyListeners();
   }
 
   Future<void> moveWorkoutToFolder(String workoutId, String? folderId) async {
@@ -232,6 +243,7 @@ class WorkoutService {
       await _workoutDao.updateWorkout(updatedWorkout);
       _workouts[index] = updatedWorkout;
       _logger.fine('Workout moved successfully');
+      notifyListeners();
     } else {
       _logger.warning('Workout with id $workoutId not found in cache');
     }
@@ -260,6 +272,7 @@ class WorkoutService {
         _workouts[index] = updatedWorkout;
       }
     }
+    notifyListeners();
   }
 
   Future<void> reorderExercisesInWorkout(String workoutId, int oldIndex, int newIndex) async {
@@ -296,6 +309,7 @@ class WorkoutService {
     final updatedWorkout = workout.copyWith(exercises: exercises);
     await _workoutDao.updateWorkout(updatedWorkout);
     _workouts[workoutIndex] = updatedWorkout;
+    notifyListeners();
   }
 
   // Exercise operations within workout
@@ -326,6 +340,7 @@ class WorkoutService {
       await _workoutDao.updateWorkout(updatedWorkout);
       _workouts[workoutIndex] = updatedWorkout;
       _logger.fine('Exercise added successfully');
+      notifyListeners();
     } else {
       _logger.warning('Workout with id $workoutId not found');
     }
@@ -344,6 +359,7 @@ class WorkoutService {
       await _workoutDao.updateWorkout(updatedWorkout);
       _workouts[workoutIndex] = updatedWorkout;
       _logger.fine('Exercise removed successfully');
+      notifyListeners();
     } else {
       _logger.warning('Workout with id $workoutId not found');
     }
@@ -360,6 +376,7 @@ class WorkoutService {
       final updatedWorkout = _workouts[workoutIndex].copyWith(exercises: updatedExercises);
       await _workoutDao.updateWorkout(updatedWorkout);
       _workouts[workoutIndex] = updatedWorkout;
+      notifyListeners();
     } else {
       _logger.warning('Workout with id $workoutId not found');
     }
@@ -486,5 +503,6 @@ class WorkoutService {
     
     _workouts = [];
     _logger.info('All user workouts cleared');
+    notifyListeners();
   }
 }

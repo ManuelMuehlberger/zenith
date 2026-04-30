@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/main.dart';
 import 'package:zenith/constants/app_constants.dart';
+import 'package:zenith/services/app_navigation_service.dart';
+import 'package:zenith/utils/navigation_helper.dart';
 
 void main() {
+  setUp(() {
+    AppNavigationService.instance.resetForTesting();
+  });
+
   testWidgets('MainScreen bottom bar is glass and transparent', (tester) async {
     // Pump MainScreen inside a MaterialApp
     await tester.pumpWidget(
@@ -36,5 +42,29 @@ void main() {
     expect(barFinder, findsOneWidget);
     final bar = tester.widget<BottomNavigationBar>(barFinder);
     expect(bar.backgroundColor, equals(Colors.transparent));
+  });
+
+  testWidgets('NavigationHelper switches tabs through AppNavigationService', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: MainScreen()),
+    );
+    await tester.pump();
+
+    BottomNavigationBar bar = tester.widget<BottomNavigationBar>(find.byType(BottomNavigationBar));
+    expect(bar.currentIndex, 0);
+
+    NavigationHelper.goToTab(1);
+    await tester.pump();
+
+    bar = tester.widget<BottomNavigationBar>(find.byType(BottomNavigationBar));
+    expect(bar.currentIndex, 1);
+    expect(AppNavigationService.instance.currentTabIndex, 1);
+
+    NavigationHelper.goToHomeTab();
+    await tester.pump();
+
+    bar = tester.widget<BottomNavigationBar>(find.byType(BottomNavigationBar));
+    expect(bar.currentIndex, 0);
+    expect(AppNavigationService.instance.currentTabIndex, 0);
   });
 }
