@@ -5,12 +5,12 @@ import 'screens/home_screen.dart';
 import 'screens/workout_builder_screen.dart';
 import 'screens/insights_screen.dart';
 import 'screens/app_wrapper.dart';
+import 'services/app_navigation_service.dart';
 import 'services/exercise_service.dart';
 import 'services/workout_service.dart';
 import 'services/workout_session_service.dart';
 import 'services/user_service.dart';
 import 'services/live_workout_notification_service.dart';
-import 'utils/navigation_helper.dart';
 import 'dart:ui';
 import 'constants/app_constants.dart';
 
@@ -97,11 +97,8 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
-  
-  final GlobalKey<HomeScreenState> _homeScreenKey = GlobalKey<HomeScreenState>();
-  List<Widget> get _screens => [
-    HomeScreen(key: _homeScreenKey),
+  List<Widget> get _screens => const [
+    HomeScreen(),
     const WorkoutBuilderScreen(),
     const InsightsScreen(),
   ];
@@ -109,48 +106,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    
-    NavigationHelper.registerHomeTabSwitcher(() {
-      if (!mounted) return;
-
-      if (_currentIndex != 0) {
-        setState(() {
-          _currentIndex = 0;
-        });
-      }
-      // Refresh home screen history when switching to home tab
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _homeScreenKey.currentState != null) {
-          _homeScreenKey.currentState!.loadWorkouts();
-        }
-      });
-    });
-
-    NavigationHelper.registerTabSwitcher((index) {
-      if (!mounted) return;
-
-      if (_currentIndex != index) {
-        setState(() {
-          _currentIndex = index;
-        });
-      }
-      // If switching to home tab (index 0), also refresh its history
-      if (index == 0) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && _homeScreenKey.currentState != null) {
-            _homeScreenKey.currentState!.loadWorkouts();
-          }
-        });
-      }
-    });
-    
     _checkForActiveWorkout();
-  }
-
-  @override
-  void dispose() {
-    NavigationHelper.unregisterSwitchers();
-    super.dispose();
   }
 
 
@@ -158,61 +114,61 @@ class _MainScreenState extends State<MainScreen> {
     // If there's an active workout session, navigate to the workouts tab
     if (WorkoutSessionService.instance.hasActiveSession) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        setState(() {
-          _currentIndex = 1; // Workouts tab
-        });
+        AppNavigationService.instance.goToTab(1);
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBody: true,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
-      bottomNavigationBar: ClipRRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppConstants.BOTTOM_BAR_BG_COLOR,
-              border: Border(
-                top: BorderSide(color: AppConstants.HEADER_STROKE_COLOR, width: AppConstants.HEADER_STROKE_WIDTH),
+    return AnimatedBuilder(
+      animation: AppNavigationService.instance,
+      builder: (context, _) {
+        final currentIndex = AppNavigationService.instance.currentTabIndex;
+
+        return Scaffold(
+          extendBody: true,
+          body: IndexedStack(
+            index: currentIndex,
+            children: _screens,
+          ),
+          bottomNavigationBar: ClipRRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppConstants.BOTTOM_BAR_BG_COLOR,
+                  border: Border(
+                    top: BorderSide(color: AppConstants.HEADER_STROKE_COLOR, width: AppConstants.HEADER_STROKE_WIDTH),
+                  ),
+                ),
+                child: BottomNavigationBar(
+                  backgroundColor: Colors.transparent,
+                  currentIndex: currentIndex,
+                  onTap: (index) {
+                    HapticFeedback.selectionClick();
+                    AppNavigationService.instance.goToTab(index);
+                  },
+                  items: const [
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.home),
+                      label: 'Home',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.fitness_center),
+                      label: 'Workouts',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.analytics),
+                      label: 'Insights',
+                    ),
+                  ],
+                ),
               ),
             ),
-            child: BottomNavigationBar(
-              backgroundColor: Colors.transparent,
-              currentIndex: _currentIndex,
-              onTap: (index) {
-                HapticFeedback.selectionClick();
-                setState(() {
-                  _currentIndex = index;
-                });
-                if (index == 0 && _homeScreenKey.currentState != null) {
-                  _homeScreenKey.currentState!.loadWorkouts();
-                }
-              },
-              items: const [
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.home),
-                  label: 'Home',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.fitness_center),
-                  label: 'Workouts',
-                ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.analytics),
-                  label: 'Insights',
-                ),
-              ],
-            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

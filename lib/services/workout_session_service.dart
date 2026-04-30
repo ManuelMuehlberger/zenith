@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import '../models/workout.dart';
 import '../models/workout_exercise.dart';
@@ -10,7 +11,7 @@ import 'exercise_service.dart';
 import 'workout_service.dart';
 import 'package:meta/meta.dart';
 
-class WorkoutSessionService {
+class WorkoutSessionService extends ChangeNotifier {
   static final WorkoutSessionService _instance = WorkoutSessionService._internal();
   final Logger _logger = Logger('WorkoutSessionService');
 
@@ -44,7 +45,10 @@ class WorkoutSessionService {
 
   Workout? _currentSession;
   @visibleForTesting
-  set currentSession(Workout? session) => _currentSession = session;
+  set currentSession(Workout? session) {
+    _currentSession = session;
+    notifyListeners();
+  }
   int _currentExerciseIndex = 0;
   int _currentSetIndex = 0;
 
@@ -146,11 +150,15 @@ class WorkoutSessionService {
         }
       } else {
         _logger.info('No active session found');
+        _currentSession = null;
       }
     } catch (e) {
       _logger.severe('Failed to load active session: $e');
       await clearActiveSession();
+      return;
     }
+
+    notifyListeners();
   }
 
   Future<Workout> startWorkout(Workout workout) async {
@@ -215,6 +223,8 @@ class WorkoutSessionService {
       _logger.info('Starting notification service for new session');
       _notificationService.startService(_currentSession!, _currentExerciseIndex, _currentSetIndex);
     }
+
+    notifyListeners();
     return _currentSession!;
   }
 
@@ -225,6 +235,7 @@ class WorkoutSessionService {
     if (hasActiveSession) {
       _notificationService.updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
     }
+    notifyListeners();
   }
 
   Future<void> selectExercise(int index) async {
@@ -239,6 +250,7 @@ class WorkoutSessionService {
     if (hasActiveSession) {
       _notificationService.updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
     }
+    notifyListeners();
   }
 
   Future<void> nextSet() async {
@@ -270,6 +282,7 @@ class WorkoutSessionService {
     }
     await _workoutDao.updateWorkout(_currentSession!);
     _notificationService.updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
+    notifyListeners();
   }
 
   // Added: Method to go to the previous set or exercise
@@ -290,6 +303,7 @@ class WorkoutSessionService {
     }
     await _workoutDao.updateWorkout(_currentSession!);
     _notificationService.updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
+    notifyListeners();
   }
 
 
@@ -348,6 +362,7 @@ class WorkoutSessionService {
     if (hasActiveSession) {
       _notificationService.updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
     }
+    notifyListeners();
   }
 
   Future<void> toggleSetCompletion(String exerciseId, String setId) async {
@@ -391,6 +406,7 @@ class WorkoutSessionService {
     if (hasActiveSession) {
       _notificationService.updateNotification(_currentSession!, _currentExerciseIndex, _currentSetIndex);
     }
+    notifyListeners();
   }
 
   Future<Workout> completeWorkout({
@@ -434,6 +450,7 @@ class WorkoutSessionService {
 
     await _workoutDao.updateWorkout(completedSession);
     _logger.fine('Saved completed session to database');
+    await WorkoutService.instance.loadData();
     
     await _notificationService.stopService();
     await clearActiveSession();
@@ -473,6 +490,7 @@ class WorkoutSessionService {
     _currentExerciseIndex = 0;
     _currentSetIndex = 0;
     await _notificationService.stopService();
+    notifyListeners();
   }
 
   // Helper methods for UI

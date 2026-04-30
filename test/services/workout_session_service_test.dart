@@ -197,6 +197,25 @@ void main() {
       expect(service, isNotNull);
     });
 
+    test('notifies listeners when session starts and clears', () async {
+      final notifications = <Workout?>[];
+      void listener() {
+        notifications.add(service.currentSession);
+      }
+
+      service.addListener(listener);
+
+      final template = buildTemplate();
+      await service.startWorkout(template);
+      await service.clearActiveSession();
+
+      service.removeListener(listener);
+
+      expect(notifications, isNotEmpty);
+      expect(notifications.any((session) => session != null), isTrue);
+      expect(notifications.last, isNull);
+    });
+
     group('startWorkout cloning behavior', () {
       test('clones template exercises and sets with new IDs and correct foreign keys', () async {
         final template = buildTemplate();
