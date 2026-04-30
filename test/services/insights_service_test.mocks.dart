@@ -6,8 +6,6 @@
 import 'dart:async' as _i3;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i5;
-import 'package:zenith/models/workout.dart' as _i4;
 import 'package:zenith/services/database_service.dart' as _i2;
 
 // ignore_for_file: type=lint
@@ -23,6 +21,7 @@ import 'package:zenith/services/database_service.dart' as _i2;
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 /// A class which mocks [DatabaseService].
 ///
@@ -31,48 +30,6 @@ class MockDatabaseService extends _i1.Mock implements _i2.DatabaseService {
   MockDatabaseService() {
     _i1.throwOnMissingStub(this);
   }
-
-  @override
-  _i3.Future<List<_i4.Workout>> getWorkouts() =>
-      (super.noSuchMethod(
-            Invocation.method(#getWorkouts, []),
-            returnValue: _i3.Future<List<_i4.Workout>>.value(<_i4.Workout>[]),
-          )
-          as _i3.Future<List<_i4.Workout>>);
-
-  @override
-  _i3.Future<void> saveWorkout(_i4.Workout? workout) =>
-      (super.noSuchMethod(
-            Invocation.method(#saveWorkout, [workout]),
-            returnValue: _i3.Future<void>.value(),
-            returnValueForMissingStub: _i3.Future<void>.value(),
-          )
-          as _i3.Future<void>);
-
-  @override
-  _i3.Future<void> deleteWorkout(String? workoutId) =>
-      (super.noSuchMethod(
-            Invocation.method(#deleteWorkout, [workoutId]),
-            returnValue: _i3.Future<void>.value(),
-            returnValueForMissingStub: _i3.Future<void>.value(),
-          )
-          as _i3.Future<void>);
-
-  @override
-  _i3.Future<List<_i4.Workout>> getWorkoutsForDate(DateTime? date) =>
-      (super.noSuchMethod(
-            Invocation.method(#getWorkoutsForDate, [date]),
-            returnValue: _i3.Future<List<_i4.Workout>>.value(<_i4.Workout>[]),
-          )
-          as _i3.Future<List<_i4.Workout>>);
-
-  @override
-  _i3.Future<List<DateTime>> getDatesWithWorkouts() =>
-      (super.noSuchMethod(
-            Invocation.method(#getDatesWithWorkouts, []),
-            returnValue: _i3.Future<List<DateTime>>.value(<DateTime>[]),
-          )
-          as _i3.Future<List<DateTime>>);
 
   @override
   _i3.Future<void> saveActiveWorkoutState(Map<String, dynamic>? workoutState) =>
@@ -120,47 +77,9 @@ class MockDatabaseService extends _i1.Mock implements _i2.DatabaseService {
           as _i3.Future<void>);
 
   @override
-  _i3.Future<_i4.Workout?> getLastWorkoutForExercise(String? exerciseSlug) =>
-      (super.noSuchMethod(
-            Invocation.method(#getLastWorkoutForExercise, [exerciseSlug]),
-            returnValue: _i3.Future<_i4.Workout?>.value(),
-          )
-          as _i3.Future<_i4.Workout?>);
-
-  @override
-  _i3.Future<String> exportWorkoutData() =>
-      (super.noSuchMethod(
-            Invocation.method(#exportWorkoutData, []),
-            returnValue: _i3.Future<String>.value(
-              _i5.dummyValue<String>(
-                this,
-                Invocation.method(#exportWorkoutData, []),
-              ),
-            ),
-          )
-          as _i3.Future<String>);
-
-  @override
-  _i3.Future<bool> importWorkoutData(String? jsonData) =>
-      (super.noSuchMethod(
-            Invocation.method(#importWorkoutData, [jsonData]),
-            returnValue: _i3.Future<bool>.value(false),
-          )
-          as _i3.Future<bool>);
-
-  @override
   _i3.Future<void> clearAllData() =>
       (super.noSuchMethod(
             Invocation.method(#clearAllData, []),
-            returnValue: _i3.Future<void>.value(),
-            returnValueForMissingStub: _i3.Future<void>.value(),
-          )
-          as _i3.Future<void>);
-
-  @override
-  _i3.Future<void> migrateWorkoutIcons() =>
-      (super.noSuchMethod(
-            Invocation.method(#migrateWorkoutIcons, []),
             returnValue: _i3.Future<void>.value(),
             returnValueForMissingStub: _i3.Future<void>.value(),
           )

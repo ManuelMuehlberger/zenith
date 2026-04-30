@@ -61,6 +61,39 @@ class WorkoutSetDao extends BaseDao<WorkoutSet> {
     }
   }
 
+  Future<List<WorkoutSet>> getWorkoutSetsByWorkoutExerciseIds(
+    List<WorkoutExerciseId> workoutExerciseIds,
+  ) async {
+    if (workoutExerciseIds.isEmpty) {
+      return [];
+    }
+
+    final db = await database;
+    final placeholders = List.filled(workoutExerciseIds.length, '?').join(', ');
+    logger.fine(
+      'Getting workout sets for ${workoutExerciseIds.length} workout exercises',
+    );
+
+    try {
+      final maps = await db.query(
+        tableName,
+        where: 'workoutExerciseId IN ($placeholders)',
+        whereArgs: workoutExerciseIds,
+        orderBy: 'workoutExerciseId ASC, setIndex ASC',
+      );
+      final sets = maps.map((map) => fromMap(map)).toList();
+      logger.fine(
+        'Found ${sets.length} sets across ${workoutExerciseIds.length} workout exercises',
+      );
+      return sets;
+    } catch (e) {
+      logger.severe(
+        'Failed to get sets for workoutExerciseIds $workoutExerciseIds: $e',
+      );
+      rethrow;
+    }
+  }
+
   /// Get completed workout sets by workout exercise ID
   Future<List<WorkoutSet>> getCompletedWorkoutSetsByWorkoutExerciseId(
     WorkoutExerciseId workoutExerciseId,

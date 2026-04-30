@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -18,7 +20,14 @@ class ActiveWorkoutScaffoldBody extends StatelessWidget {
   final int? draggingIndex;
   final String weightUnit;
   final void Function(int) onToggleNotes;
-  final void Function(String, String, {int? reps, double? weight, bool? isCompleted}) onUpdateSet;
+  final void Function(
+    String,
+    String, {
+    int? reps,
+    double? weight,
+    bool? isCompleted,
+  })
+  onUpdateSet;
   final void Function(String, String) onToggleSetCompletion;
   final void Function(String) onAddSet;
   final void Function(String, String) onRemoveSet;
@@ -129,12 +138,11 @@ class ActiveWorkoutHeader extends StatelessWidget {
     final totalSets = session.totalSets;
     final progress = totalSets > 0 ? session.completedSets / totalSets : 0.0;
     final isCompleted = progress >= 1.0;
-    final duration = session.completedAt != null
-        ? session.completedAt!.difference(session.startedAt ?? DateTime.now())
-        : DateTime.now().difference(session.startedAt ?? DateTime.now());
     final workoutColor = session.color;
     final mutedWorkoutColor = workoutColor.withAlpha((255 * 0.15).round());
-    final semiTransparentWorkoutColor = workoutColor.withAlpha((255 * 0.6).round());
+    final semiTransparentWorkoutColor = workoutColor.withAlpha(
+      (255 * 0.6).round(),
+    );
 
     return Column(
       children: [
@@ -155,11 +163,7 @@ class ActiveWorkoutHeader extends StatelessWidget {
                       width: 0.5,
                     ),
                   ),
-                  child: Icon(
-                    session.icon,
-                    color: workoutColor,
-                    size: 18,
-                  ),
+                  child: Icon(session.icon, color: workoutColor, size: 18),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -186,7 +190,9 @@ class ActiveWorkoutHeader extends StatelessWidget {
                           side: BorderSide(
                             color: isReorderMode
                                 ? workoutColor.withAlpha((255 * 0.3).round())
-                                : AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.3).round()),
+                                : AppConstants.TEXT_TERTIARY_COLOR.withAlpha(
+                                    (255 * 0.3).round(),
+                                  ),
                             width: 1,
                           ),
                         ),
@@ -195,10 +201,14 @@ class ActiveWorkoutHeader extends StatelessWidget {
                       ),
                       icon: Icon(
                         Icons.reorder,
-                        color: isReorderMode ? workoutColor : AppConstants.TEXT_TERTIARY_COLOR,
+                        color: isReorderMode
+                            ? workoutColor
+                            : AppConstants.TEXT_TERTIARY_COLOR,
                         size: 22,
                       ),
-                      tooltip: isReorderMode ? 'Exit reorder mode' : 'Reorder exercises',
+                      tooltip: isReorderMode
+                          ? 'Exit reorder mode'
+                          : 'Reorder exercises',
                     ),
                     const SizedBox(width: 8),
                     TextButton(
@@ -212,17 +222,23 @@ class ActiveWorkoutHeader extends StatelessWidget {
                           side: isCompleted
                               ? BorderSide.none
                               : BorderSide(
-                                  color: AppConstants.ACCENT_COLOR_GREEN.withAlpha((255 * 0.3).round()),
+                                  color: AppConstants.ACCENT_COLOR_GREEN
+                                      .withAlpha((255 * 0.3).round()),
                                   width: 1,
                                 ),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         minimumSize: Size.zero,
                       ),
                       child: Text(
                         'Finish',
                         style: AppConstants.HEADER_BUTTON_TEXT_STYLE.copyWith(
-                          color: isCompleted ? Colors.white : AppConstants.ACCENT_COLOR_GREEN,
+                          color: isCompleted
+                              ? Colors.white
+                              : AppConstants.ACCENT_COLOR_GREEN,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -240,11 +256,7 @@ class ActiveWorkoutHeader extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _InlineStat(
-                  value: WorkoutSessionService.instance.formatDuration(duration),
-                  icon: Icons.timer_outlined,
-                  color: workoutColor,
-                ),
+                _WorkoutDurationStat(session: session, color: workoutColor),
                 _buildDivider(),
                 _InlineStat(
                   value: '${session.completedSets}/${session.totalSets}',
@@ -253,7 +265,8 @@ class ActiveWorkoutHeader extends StatelessWidget {
                 ),
                 _buildDivider(),
                 _InlineStat(
-                  value: '${WorkoutSessionService.instance.formatWeight(session.totalWeight)}$weightUnit',
+                  value:
+                      '${WorkoutSessionService.instance.formatWeight(session.totalWeight)}$weightUnit',
                   icon: Icons.monitor_weight_outlined,
                   color: workoutColor,
                 ),
@@ -264,7 +277,9 @@ class ActiveWorkoutHeader extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: progress,
                       backgroundColor: AppConstants.DIVIDER_COLOR,
-                      valueColor: AlwaysStoppedAnimation<Color>(semiTransparentWorkoutColor),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        semiTransparentWorkoutColor,
+                      ),
                       minHeight: 5,
                     ),
                   ),
@@ -296,6 +311,43 @@ class ActiveWorkoutHeader extends StatelessWidget {
   }
 }
 
+class _WorkoutDurationStat extends StatelessWidget {
+  final Workout session;
+  final Color color;
+
+  const _WorkoutDurationStat({required this.session, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    if (session.completedAt != null) {
+      return _InlineStat(
+        value: WorkoutSessionService.instance.formatDuration(
+          session.completedAt!.difference(
+            session.startedAt ?? session.completedAt!,
+          ),
+        ),
+        icon: Icons.timer_outlined,
+        color: color,
+      );
+    }
+
+    return StreamBuilder<int>(
+      stream: Stream<int>.periodic(const Duration(seconds: 1), (tick) => tick),
+      initialData: 0,
+      builder: (context, snapshot) {
+        final duration = DateTime.now().difference(
+          session.startedAt ?? DateTime.now(),
+        );
+        return _InlineStat(
+          value: WorkoutSessionService.instance.formatDuration(duration),
+          icon: Icons.timer_outlined,
+          color: color,
+        );
+      },
+    );
+  }
+}
+
 class ActiveWorkoutExerciseList extends StatelessWidget {
   final Workout session;
   final double headerHeight;
@@ -303,7 +355,14 @@ class ActiveWorkoutExerciseList extends StatelessWidget {
   final int? draggingIndex;
   final String weightUnit;
   final void Function(int) onToggleNotes;
-  final void Function(String, String, {int? reps, double? weight, bool? isCompleted}) onUpdateSet;
+  final void Function(
+    String,
+    String, {
+    int? reps,
+    double? weight,
+    bool? isCompleted,
+  })
+  onUpdateSet;
   final void Function(String, String) onToggleSetCompletion;
   final void Function(String) onAddSet;
   final void Function(String, String) onRemoveSet;
@@ -344,7 +403,8 @@ class ActiveWorkoutExerciseList extends StatelessWidget {
           itemBuilder: (context, index) {
             final exercise = session.exercises[index];
             final isDragging = draggingIndex == index;
-            final isOtherDragging = draggingIndex != null && draggingIndex != index;
+            final isOtherDragging =
+                draggingIndex != null && draggingIndex != index;
 
             return ReorderableDelayedDragStartListener(
               key: ValueKey(exercise.id),
@@ -387,16 +447,17 @@ class ActiveWorkoutExerciseList extends StatelessWidget {
         ),
         SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 8.0,
+            ),
             child: ActiveWorkoutActionButtons(
               onAddExercise: onAddExercise,
               onAbortWorkout: onAbortWorkout,
             ),
           ),
         ),
-        SliverPadding(
-          padding: EdgeInsets.only(bottom: bottomPadding + 40),
-        ),
+        SliverPadding(padding: EdgeInsets.only(bottom: bottomPadding + 40)),
       ],
     );
   }
@@ -476,10 +537,7 @@ class _ActiveWorkoutProxyCard extends StatelessWidget {
         builder: (context, child) {
           final animValue = Curves.easeInOut.transform(animation.value);
           final scale = lerpDouble(1, 1.05, animValue)!;
-          return Transform.scale(
-            scale: scale,
-            child: child,
-          );
+          return Transform.scale(scale: scale, child: child);
         },
         child: proxyCard,
       ),

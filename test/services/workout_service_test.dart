@@ -12,11 +12,7 @@ import 'package:zenith/services/dao/workout_exercise_dao.dart';
 import 'package:zenith/services/dao/workout_set_dao.dart';
 
 // Generate mocks
-@GenerateMocks([
-  WorkoutDao,
-  WorkoutExerciseDao,
-  WorkoutSetDao,
-])
+@GenerateMocks([WorkoutDao, WorkoutExerciseDao, WorkoutSetDao])
 import 'workout_service_test.mocks.dart';
 
 void main() {
@@ -34,10 +30,10 @@ void main() {
 
       // Get the singleton instance
       workoutService = WorkoutService.instance;
-      
+
       // Reset the service state for each test
       workoutService.workouts.clear();
-      
+
       // Inject mocks by overriding the DAO instances in the service
       workoutService.workoutDao = mockWorkoutDao;
       workoutService.workoutExerciseDao = mockWorkoutExerciseDao;
@@ -87,12 +83,15 @@ void main() {
         ];
 
         // Mock DAO calls
-        when(mockWorkoutDao.getAllWorkouts())
-            .thenAnswer((_) async => mockWorkouts);
-        when(mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutId('workout1'))
-            .thenAnswer((_) async => mockExercises);
-        when(mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseId('exercise1'))
-            .thenAnswer((_) async => mockSets);
+        when(
+          mockWorkoutDao.getAllWorkouts(),
+        ).thenAnswer((_) async => mockWorkouts);
+        when(
+          mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutIds(['workout1']),
+        ).thenAnswer((_) async => mockExercises);
+        when(
+          mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseIds(['exercise1']),
+        ).thenAnswer((_) async => mockSets);
 
         // Act
         await workoutService.loadData();
@@ -125,14 +124,27 @@ void main() {
           status: WorkoutStatus.completed,
         );
 
-        when(mockWorkoutDao.getAllWorkouts())
-            .thenAnswer((_) async => [past, noDate, future]);
-        when(mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutId(any))
-            .thenAnswer((_) async => []);
+        when(
+          mockWorkoutDao.getAllWorkouts(),
+        ).thenAnswer((_) async => [past, noDate, future]);
+        when(
+          mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutIds([
+            'past',
+            'no-date',
+            'future',
+          ]),
+        ).thenAnswer((_) async => []);
+        when(
+          mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseIds([]),
+        ).thenAnswer((_) async => []);
 
         final workouts = await workoutService.getWorkoutsSortedByStartedAt();
 
-        expect(workouts.map((w) => w.id).toList(), ['future', 'past', 'no-date']);
+        expect(workouts.map((w) => w.id).toList(), [
+          'future',
+          'past',
+          'no-date',
+        ]);
       });
 
       test('should filter workouts for a date', () async {
@@ -158,12 +170,23 @@ void main() {
           startedAt: DateTime(2023, 5, 11),
         );
 
-        when(mockWorkoutDao.getAllWorkouts())
-            .thenAnswer((_) async => [w1, w2, w3]);
-        when(mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutId(any))
-            .thenAnswer((_) async => []);
+        when(
+          mockWorkoutDao.getAllWorkouts(),
+        ).thenAnswer((_) async => [w1, w2, w3]);
+        when(
+          mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutIds([
+            'a',
+            'b',
+            'c',
+          ]),
+        ).thenAnswer((_) async => []);
+        when(
+          mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseIds([]),
+        ).thenAnswer((_) async => []);
 
-        final workouts = await workoutService.getWorkoutsForDate(DateTime(2023, 5, 10));
+        final workouts = await workoutService.getWorkoutsForDate(
+          DateTime(2023, 5, 10),
+        );
 
         expect(workouts.map((w) => w.id).toList(), ['b', 'a']);
       });
@@ -191,64 +214,87 @@ void main() {
           startedAt: DateTime(2024, 1, 2),
         );
 
-        when(mockWorkoutDao.getAllWorkouts())
-            .thenAnswer((_) async => [d1a, d1b, d2]);
-        when(mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutId(any))
-            .thenAnswer((_) async => []);
+        when(
+          mockWorkoutDao.getAllWorkouts(),
+        ).thenAnswer((_) async => [d1a, d1b, d2]);
+        when(
+          mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutIds([
+            'd1a',
+            'd1b',
+            'd2',
+          ]),
+        ).thenAnswer((_) async => []);
+        when(
+          mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseIds([]),
+        ).thenAnswer((_) async => []);
 
         final dates = await workoutService.getDatesWithWorkouts();
 
         expect(dates, [DateTime(2024, 1, 1), DateTime(2024, 1, 2)]);
       });
 
-      test('should return most recent workout containing an exercise slug', () async {
-        final older = Workout(
-          id: 'old',
-          name: 'Old',
-          exercises: const [],
-          status: WorkoutStatus.completed,
-          startedAt: DateTime(2023, 1, 1),
-        );
-        final newer = Workout(
-          id: 'new',
-          name: 'New',
-          exercises: const [],
-          status: WorkoutStatus.completed,
-          startedAt: DateTime(2023, 2, 1),
-        );
+      test(
+        'should return most recent workout containing an exercise slug',
+        () async {
+          final older = Workout(
+            id: 'old',
+            name: 'Old',
+            exercises: const [],
+            status: WorkoutStatus.completed,
+            startedAt: DateTime(2023, 1, 1),
+          );
+          final newer = Workout(
+            id: 'new',
+            name: 'New',
+            exercises: const [],
+            status: WorkoutStatus.completed,
+            startedAt: DateTime(2023, 2, 1),
+          );
 
-        when(mockWorkoutDao.getAllWorkouts())
-            .thenAnswer((_) async => [older, newer]);
-        when(mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutId('old'))
-            .thenAnswer((_) async => [
-                  WorkoutExercise(
-                    id: 'old-exercise',
-                    workoutId: 'old',
-                    exerciseSlug: 'squat',
-                    sets: const [],
-                  ),
-                ]);
-        when(mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutId('new'))
-            .thenAnswer((_) async => [
-                  WorkoutExercise(
-                    id: 'new-exercise',
-                    workoutId: 'new',
-                    exerciseSlug: 'bench-press',
-                    sets: const [],
-                  ),
-                ]);
-        when(mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseId(any))
-            .thenAnswer((_) async => []);
+          when(
+            mockWorkoutDao.getAllWorkouts(),
+          ).thenAnswer((_) async => [older, newer]);
+          when(
+            mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutIds([
+              'old',
+              'new',
+            ]),
+          ).thenAnswer(
+            (_) async => [
+              WorkoutExercise(
+                id: 'old-exercise',
+                workoutId: 'old',
+                exerciseSlug: 'squat',
+                sets: const [],
+              ),
+              WorkoutExercise(
+                id: 'new-exercise',
+                workoutId: 'new',
+                exerciseSlug: 'bench-press',
+                sets: const [],
+              ),
+            ],
+          );
+          when(
+            mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseIds([
+              'old-exercise',
+              'new-exercise',
+            ]),
+          ).thenAnswer((_) async => []);
 
-        final workout = await workoutService.getLastWorkoutForExercise('bench-press');
+          final workout = await workoutService.getLastWorkoutForExercise(
+            'bench-press',
+          );
 
-        expect(workout?.id, 'new');
-      });
+          expect(workout?.id, 'new');
+        },
+      );
 
       test('should handle load data errors gracefully', () async {
         // Arrange
-        when(mockWorkoutDao.getAllWorkouts())
-            .thenThrow(Exception('Database error'));
+        when(
+          mockWorkoutDao.getAllWorkouts(),
+        ).thenThrow(Exception('Database error'));
 
         // Act
         await workoutService.loadData();
@@ -265,15 +311,13 @@ void main() {
       });
     });
 
-
     group('Workout Operations', () {
       group('createWorkout', () {
         test('should create workout successfully', () async {
           // Arrange
           const workoutName = 'New Workout';
-          
-          when(mockWorkoutDao.insert(any))
-              .thenAnswer((_) async => 1);
+
+          when(mockWorkoutDao.insert(any)).thenAnswer((_) async => 1);
 
           // Act
           final result = await workoutService.createWorkout(workoutName);
@@ -296,11 +340,12 @@ void main() {
             status: WorkoutStatus.template,
           );
           workoutService.workouts.add(workout);
-          
+
           final updatedWorkout = workout.copyWith(name: 'Updated Name');
-          
-          when(mockWorkoutDao.updateWorkout(updatedWorkout))
-              .thenAnswer((_) async => 1);
+
+          when(
+            mockWorkoutDao.updateWorkout(updatedWorkout),
+          ).thenAnswer((_) async => 1);
 
           // Act
           await workoutService.updateWorkout(updatedWorkout);
@@ -326,29 +371,40 @@ void main() {
             exerciseSlug: 'bench-press',
             sets: [],
           );
-          
+
           workoutService.workouts.add(workout);
-          
-          when(mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutId('workout1'))
-              .thenAnswer((_) async => [exercise]);
-          when(mockWorkoutSetDao.deleteWorkoutSetsByWorkoutExerciseId('exercise1'))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutExerciseDao.deleteWorkoutExercisesByWorkoutId('workout1'))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutDao.deleteWorkout('workout1'))
-              .thenAnswer((_) async => 1);
+
+          when(
+            mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutId('workout1'),
+          ).thenAnswer((_) async => [exercise]);
+          when(
+            mockWorkoutSetDao.deleteWorkoutSetsByWorkoutExerciseId('exercise1'),
+          ).thenAnswer((_) async => 1);
+          when(
+            mockWorkoutExerciseDao.deleteWorkoutExercisesByWorkoutId(
+              'workout1',
+            ),
+          ).thenAnswer((_) async => 1);
+          when(
+            mockWorkoutDao.deleteWorkout('workout1'),
+          ).thenAnswer((_) async => 1);
 
           // Act
           await workoutService.deleteWorkout('workout1');
 
           // Assert
           expect(workoutService.workouts, isEmpty);
-          verify(mockWorkoutSetDao.deleteWorkoutSetsByWorkoutExerciseId('exercise1')).called(1);
-          verify(mockWorkoutExerciseDao.deleteWorkoutExercisesByWorkoutId('workout1')).called(1);
+          verify(
+            mockWorkoutSetDao.deleteWorkoutSetsByWorkoutExerciseId('exercise1'),
+          ).called(1);
+          verify(
+            mockWorkoutExerciseDao.deleteWorkoutExercisesByWorkoutId(
+              'workout1',
+            ),
+          ).called(1);
           verify(mockWorkoutDao.deleteWorkout('workout1')).called(1);
         });
       });
-
 
       group('reorderExercisesInWorkout', () {
         test('should reorder exercises in workout successfully', () async {
@@ -367,27 +423,33 @@ void main() {
             sets: [],
             orderIndex: 1,
           );
-          
+
           final workout = Workout(
             id: 'workout1',
             name: 'Test Workout',
             exercises: [exercise1, exercise2],
             status: WorkoutStatus.template,
           );
-          
+
           workoutService.workouts.add(workout);
-          
-          when(mockWorkoutExerciseDao.updateWorkoutExercise(any))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutDao.updateWorkout(any))
-              .thenAnswer((_) async => 1);
+
+          when(
+            mockWorkoutExerciseDao.updateWorkoutExercise(any),
+          ).thenAnswer((_) async => 1);
+          when(mockWorkoutDao.updateWorkout(any)).thenAnswer((_) async => 1);
 
           // Act
           await workoutService.reorderExercisesInWorkout('workout1', 0, 1);
 
           // Assert
-          expect(workoutService.workouts.first.exercises.first.exerciseSlug, 'squat');
-          expect(workoutService.workouts.first.exercises.last.exerciseSlug, 'bench-press');
+          expect(
+            workoutService.workouts.first.exercises.first.exerciseSlug,
+            'squat',
+          );
+          expect(
+            workoutService.workouts.first.exercises.last.exerciseSlug,
+            'bench-press',
+          );
           verify(mockWorkoutExerciseDao.updateWorkoutExercise(any)).called(2);
           verify(mockWorkoutDao.updateWorkout(any)).called(1);
         });
@@ -414,7 +476,7 @@ void main() {
             status: WorkoutStatus.template,
           );
           workoutService.workouts.add(workout);
-          
+
           final exercise = Exercise(
             slug: 'bench-press',
             name: 'Bench Press',
@@ -424,20 +486,20 @@ void main() {
             image: 'bench-press.jpg',
             animation: 'bench-press.gif',
           );
-          
-          when(mockWorkoutExerciseDao.insert(any))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutSetDao.insert(any))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutDao.updateWorkout(any))
-              .thenAnswer((_) async => 1);
+
+          when(mockWorkoutExerciseDao.insert(any)).thenAnswer((_) async => 1);
+          when(mockWorkoutSetDao.insert(any)).thenAnswer((_) async => 1);
+          when(mockWorkoutDao.updateWorkout(any)).thenAnswer((_) async => 1);
 
           // Act
           await workoutService.addExerciseToWorkout('workout1', exercise);
 
           // Assert
           expect(workoutService.workouts.first.exercises.length, 1);
-          expect(workoutService.workouts.first.exercises.first.exerciseSlug, 'bench-press');
+          expect(
+            workoutService.workouts.first.exercises.first.exerciseSlug,
+            'bench-press',
+          );
           expect(workoutService.workouts.first.exercises.first.sets.length, 1);
           verify(mockWorkoutExerciseDao.insert(any)).called(1);
           verify(mockWorkoutSetDao.insert(any)).called(1);
@@ -482,21 +544,29 @@ void main() {
             status: WorkoutStatus.template,
           );
           workoutService.workouts.add(workout);
-          
-          when(mockWorkoutSetDao.deleteWorkoutSetsByWorkoutExerciseId('exercise1'))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutExerciseDao.deleteWorkoutExercise('exercise1'))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutDao.updateWorkout(any))
-              .thenAnswer((_) async => 1);
+
+          when(
+            mockWorkoutSetDao.deleteWorkoutSetsByWorkoutExerciseId('exercise1'),
+          ).thenAnswer((_) async => 1);
+          when(
+            mockWorkoutExerciseDao.deleteWorkoutExercise('exercise1'),
+          ).thenAnswer((_) async => 1);
+          when(mockWorkoutDao.updateWorkout(any)).thenAnswer((_) async => 1);
 
           // Act
-          await workoutService.removeExerciseFromWorkout('workout1', 'exercise1');
+          await workoutService.removeExerciseFromWorkout(
+            'workout1',
+            'exercise1',
+          );
 
           // Assert
           expect(workoutService.workouts.first.exercises, isEmpty);
-          verify(mockWorkoutSetDao.deleteWorkoutSetsByWorkoutExerciseId('exercise1')).called(1);
-          verify(mockWorkoutExerciseDao.deleteWorkoutExercise('exercise1')).called(1);
+          verify(
+            mockWorkoutSetDao.deleteWorkoutSetsByWorkoutExerciseId('exercise1'),
+          ).called(1);
+          verify(
+            mockWorkoutExerciseDao.deleteWorkoutExercise('exercise1'),
+          ).called(1);
           verify(mockWorkoutDao.updateWorkout(any)).called(1);
         });
       });
@@ -517,20 +587,30 @@ void main() {
             status: WorkoutStatus.template,
           );
           workoutService.workouts.add(workout);
-          
-          final updatedExercise = exercise.copyWith(exerciseSlug: 'incline-bench-press');
-          
-          when(mockWorkoutExerciseDao.updateWorkoutExercise(updatedExercise))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutDao.updateWorkout(any))
-              .thenAnswer((_) async => 1);
+
+          final updatedExercise = exercise.copyWith(
+            exerciseSlug: 'incline-bench-press',
+          );
+
+          when(
+            mockWorkoutExerciseDao.updateWorkoutExercise(updatedExercise),
+          ).thenAnswer((_) async => 1);
+          when(mockWorkoutDao.updateWorkout(any)).thenAnswer((_) async => 1);
 
           // Act
-          await workoutService.updateWorkoutExercise('workout1', updatedExercise);
+          await workoutService.updateWorkoutExercise(
+            'workout1',
+            updatedExercise,
+          );
 
           // Assert
-          expect(workoutService.workouts.first.exercises.first.exerciseSlug, 'incline-bench-press');
-          verify(mockWorkoutExerciseDao.updateWorkoutExercise(updatedExercise)).called(1);
+          expect(
+            workoutService.workouts.first.exercises.first.exerciseSlug,
+            'incline-bench-press',
+          );
+          verify(
+            mockWorkoutExerciseDao.updateWorkoutExercise(updatedExercise),
+          ).called(1);
           verify(mockWorkoutDao.updateWorkout(any)).called(1);
         });
       });
@@ -553,21 +633,38 @@ void main() {
             status: WorkoutStatus.template,
           );
           workoutService.workouts.add(workout);
-          
-          when(mockWorkoutSetDao.insert(any))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutExerciseDao.updateWorkoutExercise(any))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutDao.updateWorkout(any))
-              .thenAnswer((_) async => 1);
+
+          when(mockWorkoutSetDao.insert(any)).thenAnswer((_) async => 1);
+          when(
+            mockWorkoutExerciseDao.updateWorkoutExercise(any),
+          ).thenAnswer((_) async => 1);
+          when(mockWorkoutDao.updateWorkout(any)).thenAnswer((_) async => 1);
 
           // Act
-          await workoutService.addSetToExercise('workout1', 'exercise1', targetReps: 12, targetWeight: 50.0);
+          await workoutService.addSetToExercise(
+            'workout1',
+            'exercise1',
+            targetReps: 12,
+            targetWeight: 50.0,
+          );
 
           // Assert
           expect(workoutService.workouts.first.exercises.first.sets.length, 1);
-          expect(workoutService.workouts.first.exercises.first.sets.first.targetReps, 12);
-          expect(workoutService.workouts.first.exercises.first.sets.first.targetWeight, 50.0);
+          expect(
+            workoutService.workouts.first.exercises.first.sets.first.targetReps,
+            12,
+          );
+          expect(
+            workoutService
+                .workouts
+                .first
+                .exercises
+                .first
+                .sets
+                .first
+                .targetWeight,
+            50.0,
+          );
           verify(mockWorkoutSetDao.insert(any)).called(1);
         });
       });
@@ -595,16 +692,21 @@ void main() {
             status: WorkoutStatus.template,
           );
           workoutService.workouts.add(workout);
-          
-          when(mockWorkoutSetDao.deleteWorkoutSet('set1'))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutExerciseDao.updateWorkoutExercise(any))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutDao.updateWorkout(any))
-              .thenAnswer((_) async => 1);
+
+          when(
+            mockWorkoutSetDao.deleteWorkoutSet('set1'),
+          ).thenAnswer((_) async => 1);
+          when(
+            mockWorkoutExerciseDao.updateWorkoutExercise(any),
+          ).thenAnswer((_) async => 1);
+          when(mockWorkoutDao.updateWorkout(any)).thenAnswer((_) async => 1);
 
           // Act
-          await workoutService.removeSetFromExercise('workout1', 'exercise1', 'set1');
+          await workoutService.removeSetFromExercise(
+            'workout1',
+            'exercise1',
+            'set1',
+          );
 
           // Assert
           expect(workoutService.workouts.first.exercises.first.sets, isEmpty);
@@ -635,20 +737,28 @@ void main() {
             status: WorkoutStatus.template,
           );
           workoutService.workouts.add(workout);
-          
-          when(mockWorkoutSetDao.updateWorkoutSet(any))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutExerciseDao.updateWorkoutExercise(any))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutDao.updateWorkout(any))
-              .thenAnswer((_) async => 1);
+
+          when(
+            mockWorkoutSetDao.updateWorkoutSet(any),
+          ).thenAnswer((_) async => 1);
+          when(
+            mockWorkoutExerciseDao.updateWorkoutExercise(any),
+          ).thenAnswer((_) async => 1);
+          when(mockWorkoutDao.updateWorkout(any)).thenAnswer((_) async => 1);
 
           // Act
-          await workoutService.updateSet('workout1', 'exercise1', 'set1', 
-              targetReps: 12, targetWeight: 110.0, targetRestSeconds: 90);
+          await workoutService.updateSet(
+            'workout1',
+            'exercise1',
+            'set1',
+            targetReps: 12,
+            targetWeight: 110.0,
+            targetRestSeconds: 90,
+          );
 
           // Assert
-          final updatedSet = workoutService.workouts.first.exercises.first.sets.first;
+          final updatedSet =
+              workoutService.workouts.first.exercises.first.sets.first;
           expect(updatedSet.targetReps, 12);
           expect(updatedSet.targetWeight, 110.0);
           expect(updatedSet.targetRestSeconds, 90);
@@ -658,7 +768,6 @@ void main() {
     });
 
     group('Helper Methods', () {
-
       group('getWorkoutById', () {
         test('should return workout when found', () {
           // Arrange
@@ -696,15 +805,16 @@ void main() {
             exercises: [],
             status: WorkoutStatus.inProgress,
           );
-          
+
           workoutService.workouts.add(workout);
-          
-          when(mockWorkoutSetDao.deleteWorkoutSetsByWorkoutExerciseId(any))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutExerciseDao.deleteWorkoutExercisesByWorkoutId(any))
-              .thenAnswer((_) async => 1);
-          when(mockWorkoutDao.deleteWorkout(any))
-              .thenAnswer((_) async => 1);
+
+          when(
+            mockWorkoutSetDao.deleteWorkoutSetsByWorkoutExerciseId(any),
+          ).thenAnswer((_) async => 1);
+          when(
+            mockWorkoutExerciseDao.deleteWorkoutExercisesByWorkoutId(any),
+          ).thenAnswer((_) async => 1);
+          when(mockWorkoutDao.deleteWorkout(any)).thenAnswer((_) async => 1);
 
           // Act
           await workoutService.clearUserWorkouts();
