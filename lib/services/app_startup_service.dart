@@ -8,12 +8,34 @@ import 'workout_service.dart';
 import 'workout_session_service.dart';
 
 class AppStartupService {
-  AppStartupService._internal();
+  AppStartupService({
+    Future<void> Function()? initializeNotifications,
+    void Function()? initializeNotificationCallback,
+    Future<void> Function()? loadExercises,
+    Future<void> Function()? loadWorkoutData,
+    Future<void> Function()? loadUserProfile,
+    Future<void> Function()? loadActiveSession,
+  })  : _initializeNotifications =
+            initializeNotifications ?? (() => LiveWorkoutNotificationService().initialize()),
+        _initializeNotificationCallback =
+            initializeNotificationCallback ?? WorkoutSessionService.instance.initializeNotificationCallback,
+        _loadExercises = loadExercises ?? ExerciseService.instance.loadExercises,
+        _loadWorkoutData = loadWorkoutData ?? WorkoutService.instance.loadData,
+        _loadUserProfile = loadUserProfile ?? UserService.instance.loadUserProfile,
+        _loadActiveSession = loadActiveSession ?? WorkoutSessionService.instance.loadActiveSession;
+
+  AppStartupService._internal() : this();
 
   static final AppStartupService _instance = AppStartupService._internal();
   static AppStartupService get instance => _instance;
 
   final Logger _logger = Logger('AppStartupService');
+  final Future<void> Function() _initializeNotifications;
+  final void Function() _initializeNotificationCallback;
+  final Future<void> Function() _loadExercises;
+  final Future<void> Function() _loadWorkoutData;
+  final Future<void> Function() _loadUserProfile;
+  final Future<void> Function() _loadActiveSession;
 
   Future<void>? _initializationFuture;
 
@@ -37,16 +59,16 @@ class AppStartupService {
   Future<void> _initializeMainApp() async {
     _logger.info('Initializing main app services');
 
-    await LiveWorkoutNotificationService().initialize();
-    WorkoutSessionService.instance.initializeNotificationCallback();
+    await _initializeNotifications();
+    _initializeNotificationCallback();
 
     await Future.wait<void>([
-      ExerciseService.instance.loadExercises(),
-      WorkoutService.instance.loadData(),
-      UserService.instance.loadUserProfile(),
+      _loadExercises(),
+      _loadWorkoutData(),
+      _loadUserProfile(),
     ]);
 
-    await WorkoutSessionService.instance.loadActiveSession();
+    await _loadActiveSession();
     _logger.info('Main app services initialized');
   }
 
