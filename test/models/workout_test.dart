@@ -106,22 +106,49 @@ void main() {
       expect(copiedWorkout.notes, workout.notes);
     });
 
+    test(
+      'should keep exercises immutable and allow clearing nullable fields',
+      () {
+        final copiedWorkout = workout.copyWith(
+          notes: null,
+          startedAt: null,
+          completedAt: null,
+        );
+
+        expect(copiedWorkout.notes, isNull);
+        expect(copiedWorkout.startedAt, isNull);
+        expect(copiedWorkout.completedAt, isNull);
+        expect(
+          () => copiedWorkout.exercises.add(
+            WorkoutExercise(
+              workoutId: copiedWorkout.id,
+              exerciseSlug: 'test',
+              sets: const [],
+            ),
+          ),
+          throwsUnsupportedError,
+        );
+      },
+    );
+
     test('should calculate total sets', () {
       final exercise1 = WorkoutExercise(
         workoutId: workout.id,
         exerciseSlug: 'exercise1',
-        sets: List.generate(3, (index) => WorkoutSet(
-          workoutExerciseId: 'exercise1',
-          setIndex: index,
-        )),
+        sets: List.generate(
+          3,
+          (index) =>
+              WorkoutSet(workoutExerciseId: 'exercise1', setIndex: index),
+        ),
       );
       final exercise2 = WorkoutExercise(
         workoutId: workout.id,
         exerciseSlug: 'exercise2',
-        sets: List.generate(2, (index) => WorkoutSet(
-          workoutExerciseId: 'exercise2',
-          setIndex: index,
-        )),
+        sets: List.generate(
+          2,
+          (index) =>
+              WorkoutSet(workoutExerciseId: 'exercise2', setIndex: index),
+        ),
       );
 
       final workoutWithExercises = workout.copyWith(
@@ -148,9 +175,7 @@ void main() {
         sets: [completedSet, incompleteSet],
       );
 
-      final workoutWithExercises = workout.copyWith(
-        exercises: [exercise],
-      );
+      final workoutWithExercises = workout.copyWith(exercises: [exercise]);
 
       expect(workoutWithExercises.completedSets, 1);
     });
@@ -183,9 +208,7 @@ void main() {
         sets: [completedSet1, completedSet2, incompleteSet],
       );
 
-      final workoutWithExercises = workout.copyWith(
-        exercises: [exercise],
-      );
+      final workoutWithExercises = workout.copyWith(exercises: [exercise]);
 
       // Total weight = (10 * 50.0) + (8 * 60.0) = 500 + 480 = 980
       expect(workoutWithExercises.totalWeight, 980.0);
@@ -212,9 +235,7 @@ void main() {
         sets: [setWithNullReps, setWithNullWeight],
       );
 
-      final workoutWithExercises = workout.copyWith(
-        exercises: [exercise],
-      );
+      final workoutWithExercises = workout.copyWith(exercises: [exercise]);
 
       expect(workoutWithExercises.totalWeight, 0.0);
     });

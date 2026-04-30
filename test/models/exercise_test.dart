@@ -40,53 +40,77 @@ void main() {
       expect(exercise.isBodyWeightExercise, false);
     });
 
-    test('fromMap creates Exercise instance from valid map with string arrays', () {
-      final map = {
-        'slug': 'bench-press',
-        'name': 'Bench Press',
-        'primary_muscle_group': 'chest',
-        'secondary_muscle_groups': '["triceps"]',
-        'instructions': '["Lie on bench","Press bar up"]',
-        'image': 'bench_press.jpg',
-        'animation': 'bench_press.gif',
-        'is_bodyweight_exercise': false,
-      };
+    test('constructor wraps collection fields as immutable', () {
+      final exercise = Exercise(
+        slug: 'push-up',
+        name: 'Push Up',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: [MuscleGroup.triceps],
+        instructions: ['Step 1'],
+        image: 'pushup.jpg',
+        animation: 'pushup.gif',
+      );
 
-      final exercise = Exercise.fromMap(map);
-
-      expect(exercise.slug, 'bench-press');
-      expect(exercise.name, 'Bench Press');
-      expect(exercise.primaryMuscleGroup, MuscleGroup.chest);
-      expect(exercise.secondaryMuscleGroups, [MuscleGroup.triceps]);
-      expect(exercise.instructions, ['Lie on bench', 'Press bar up']);
-      expect(exercise.image, 'bench_press.jpg');
-      expect(exercise.animation, 'bench_press.gif');
-      expect(exercise.isBodyWeightExercise, false);
+      expect(
+        () => exercise.secondaryMuscleGroups.add(MuscleGroup.shoulders),
+        throwsUnsupportedError,
+      );
+      expect(() => exercise.instructions.add('Step 2'), throwsUnsupportedError);
     });
 
-    test('fromMap creates Exercise instance from valid map with list arrays', () {
-      final map = {
-        'slug': 'bench-press',
-        'name': 'Bench Press',
-        'primary_muscle_group': 'chest',
-        'secondary_muscle_groups': ['triceps'],
-        'instructions': ['Lie on bench', 'Press bar up'],
-        'image': 'bench_press.jpg',
-        'animation': 'bench_press.gif',
-        'is_bodyweight_exercise': false,
-      };
+    test(
+      'fromMap creates Exercise instance from valid map with string arrays',
+      () {
+        final map = {
+          'slug': 'bench-press',
+          'name': 'Bench Press',
+          'primary_muscle_group': 'chest',
+          'secondary_muscle_groups': '["triceps"]',
+          'instructions': '["Lie on bench","Press bar up"]',
+          'image': 'bench_press.jpg',
+          'animation': 'bench_press.gif',
+          'is_bodyweight_exercise': false,
+        };
 
-      final exercise = Exercise.fromMap(map);
+        final exercise = Exercise.fromMap(map);
 
-      expect(exercise.slug, 'bench-press');
-      expect(exercise.name, 'Bench Press');
-      expect(exercise.primaryMuscleGroup, MuscleGroup.chest);
-      expect(exercise.secondaryMuscleGroups, [MuscleGroup.triceps]);
-      expect(exercise.instructions, ['Lie on bench', 'Press bar up']);
-      expect(exercise.image, 'bench_press.jpg');
-      expect(exercise.animation, 'bench_press.gif');
-      expect(exercise.isBodyWeightExercise, false);
-    });
+        expect(exercise.slug, 'bench-press');
+        expect(exercise.name, 'Bench Press');
+        expect(exercise.primaryMuscleGroup, MuscleGroup.chest);
+        expect(exercise.secondaryMuscleGroups, [MuscleGroup.triceps]);
+        expect(exercise.instructions, ['Lie on bench', 'Press bar up']);
+        expect(exercise.image, 'bench_press.jpg');
+        expect(exercise.animation, 'bench_press.gif');
+        expect(exercise.isBodyWeightExercise, false);
+      },
+    );
+
+    test(
+      'fromMap creates Exercise instance from valid map with list arrays',
+      () {
+        final map = {
+          'slug': 'bench-press',
+          'name': 'Bench Press',
+          'primary_muscle_group': 'chest',
+          'secondary_muscle_groups': ['triceps'],
+          'instructions': ['Lie on bench', 'Press bar up'],
+          'image': 'bench_press.jpg',
+          'animation': 'bench_press.gif',
+          'is_bodyweight_exercise': false,
+        };
+
+        final exercise = Exercise.fromMap(map);
+
+        expect(exercise.slug, 'bench-press');
+        expect(exercise.name, 'Bench Press');
+        expect(exercise.primaryMuscleGroup, MuscleGroup.chest);
+        expect(exercise.secondaryMuscleGroups, [MuscleGroup.triceps]);
+        expect(exercise.instructions, ['Lie on bench', 'Press bar up']);
+        expect(exercise.image, 'bench_press.jpg');
+        expect(exercise.animation, 'bench_press.gif');
+        expect(exercise.isBodyWeightExercise, false);
+      },
+    );
 
     test('fromMap handles missing optional fields', () {
       final map = {
@@ -212,7 +236,10 @@ void main() {
 
       final exercise = Exercise.fromMap(map);
       expect(exercise.primaryMuscleGroup, MuscleGroup.chest);
-      expect(exercise.secondaryMuscleGroups, [MuscleGroup.triceps, MuscleGroup.shoulders]);
+      expect(exercise.secondaryMuscleGroups, [
+        MuscleGroup.triceps,
+        MuscleGroup.shoulders,
+      ]);
     });
 
     test('toMap converts Exercise instance to correct map', () {
@@ -293,7 +320,11 @@ void main() {
         slug: 'compound-exercise',
         name: 'Compound Exercise',
         primaryMuscleGroup: MuscleGroup.chest,
-        secondaryMuscleGroups: [MuscleGroup.triceps, MuscleGroup.shoulders, MuscleGroup.frontDeltoids],
+        secondaryMuscleGroups: [
+          MuscleGroup.triceps,
+          MuscleGroup.shoulders,
+          MuscleGroup.frontDeltoids,
+        ],
         instructions: ['Perform compound movement'],
         image: 'compound.jpg',
         animation: 'compound.gif',
@@ -301,7 +332,10 @@ void main() {
 
       final map = exercise.toMap();
 
-      expect(map['secondary_muscle_groups'], '["Triceps","Shoulders","Front Deltoids"]');
+      expect(
+        map['secondary_muscle_groups'],
+        '["Triceps","Shoulders","Front Deltoids"]',
+      );
     });
 
     test('toMap handles multiple instructions', () {
@@ -310,14 +344,21 @@ void main() {
         name: 'Complex Exercise',
         primaryMuscleGroup: MuscleGroup.chest,
         secondaryMuscleGroups: [MuscleGroup.triceps],
-        instructions: ['Step 1: Prepare', 'Step 2: Execute', 'Step 3: Complete'],
+        instructions: [
+          'Step 1: Prepare',
+          'Step 2: Execute',
+          'Step 3: Complete',
+        ],
         image: 'complex.jpg',
         animation: 'complex.gif',
       );
 
       final map = exercise.toMap();
 
-      expect(map['instructions'], '["Step 1: Prepare","Step 2: Execute","Step 3: Complete"]');
+      expect(
+        map['instructions'],
+        '["Step 1: Prepare","Step 2: Execute","Step 3: Complete"]',
+      );
     });
 
     test('Exercise instances with same data are equal', () {

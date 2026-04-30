@@ -5,14 +5,11 @@ import 'package:zenith/constants/app_constants.dart';
 void main() {
   group('WeightEntry', () {
     test('toMap and fromMap should be consistent', () {
-      final entry = WeightEntry(
-        timestamp: DateTime(2023, 1, 15),
-        value: 75.5,
-      );
-      
+      final entry = WeightEntry(timestamp: DateTime(2023, 1, 15), value: 75.5);
+
       final map = entry.toMap();
       final fromMap = WeightEntry.fromMap(map);
-      
+
       expect(fromMap.timestamp, entry.timestamp);
       expect(fromMap.value, entry.value);
     });
@@ -20,7 +17,7 @@ void main() {
     test('fromMap handles missing values', () {
       final map = <String, dynamic>{};
       final entry = WeightEntry.fromMap(map);
-      
+
       expect(entry.value, 0.0);
     });
   });
@@ -29,7 +26,10 @@ void main() {
     final testDate = DateTime(2023, 1, 15);
     final weightHistory = [
       WeightEntry(timestamp: testDate, value: 70.0),
-      WeightEntry(timestamp: testDate.add(const Duration(days: 7)), value: 71.5),
+      WeightEntry(
+        timestamp: testDate.add(const Duration(days: 7)),
+        value: 71.5,
+      ),
     ];
 
     final userData = UserData(
@@ -43,7 +43,7 @@ void main() {
     test('toMap and fromMap should be consistent', () {
       final map = userData.toMap();
       final fromMap = UserData.fromMap(map);
-      
+
       expect(fromMap.name, userData.name);
       expect(fromMap.birthdate, userData.birthdate);
       expect(fromMap.units, userData.units);
@@ -62,7 +62,7 @@ void main() {
         'theme': 'dark',
         'other_settings_json': '{}',
       };
-      
+
       final userData = UserData.fromMap(map);
       expect(userData.weightHistory, isEmpty);
     });
@@ -76,7 +76,7 @@ void main() {
         'theme': 'dark',
         'other_settings_json': '{}',
       };
-      
+
       final userData = UserData.fromMap(map);
       expect(userData.weightHistory, isEmpty);
       expect(userData.name, 'Test');
@@ -87,9 +87,12 @@ void main() {
     });
 
     test('copyWith creates new instance with updated values', () {
-      final updated = userData.copyWith(name: 'Jane Doe', units: Units.imperial);
+      final updated = userData.copyWith(
+        name: 'Jane Doe',
+        units: Units.imperial,
+      );
       expect(updated.theme, userData.theme);
-      
+
       expect(updated.name, 'Jane Doe');
       expect(updated.units, Units.imperial);
       expect(updated.birthdate, userData.birthdate);
@@ -97,9 +100,18 @@ void main() {
       expect(updated.createdAt, userData.createdAt);
     });
 
+    test('constructor wraps weight history as immutable', () {
+      expect(
+        () => userData.weightHistory.add(
+          WeightEntry(timestamp: DateTime(2023, 2, 1), value: 72.0),
+        ),
+        throwsUnsupportedError,
+      );
+    });
+
     test('weightUnit returns correct unit', () {
       expect(userData.weightUnit, 'kg');
-      
+
       final imperialUser = userData.copyWith(units: Units.imperial);
       expect(imperialUser.weightUnit, 'lbs');
     });
@@ -115,7 +127,7 @@ void main() {
           createdAt: today,
           theme: 'dark',
         );
-        expect(userData.age, 35);
+        expect(userData.ageAt(today), 33);
       });
 
       test('returns correct age when birthday has not passed this year', () {
@@ -128,7 +140,7 @@ void main() {
           createdAt: today,
           theme: 'dark',
         );
-        expect(userData.age, 35);
+        expect(userData.ageAt(today), 32);
       });
 
       test('handles leap year birthday', () {
@@ -141,7 +153,7 @@ void main() {
           createdAt: today,
           theme: 'dark',
         );
-        expect(userData.age, 25);
+        expect(userData.ageAt(today), 24);
       });
     });
   });
