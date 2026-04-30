@@ -6,11 +6,7 @@ import 'screens/workout_builder_screen.dart';
 import 'screens/insights_screen.dart';
 import 'screens/app_wrapper.dart';
 import 'services/app_navigation_service.dart';
-import 'services/exercise_service.dart';
-import 'services/workout_service.dart';
 import 'services/workout_session_service.dart';
-import 'services/user_service.dart';
-import 'services/live_workout_notification_service.dart';
 import 'dart:ui';
 import 'constants/app_constants.dart';
 
@@ -24,22 +20,7 @@ void main() async {
   });
   
   final logger = Logger('ZenithApp');
-  logger.info('Application startup initiated');
-  
-  // Load exercises, workouts, and active session on app startup
-  await ExerciseService.instance.loadExercises();
-  await WorkoutService.instance.loadData();
-  await WorkoutSessionService.instance.loadActiveSession();
-  await UserService.instance.loadUserProfile();
-  logger.info('Core services initialized');
-  
-  logger.info('Initializing LiveWorkoutNotificationService...');
-  await LiveWorkoutNotificationService().initialize(); 
-  logger.info('LiveWorkoutNotificationService initialized.');
-  
-  WorkoutSessionService.instance.initializeNotificationCallback();
-  
-  logger.info('Starting application');
+  logger.info('Starting application shell');
   runApp(const WorkoutTrackerApp());
 }
 
