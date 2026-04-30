@@ -10,6 +10,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_002_band-assisted-bench-press]
 name = "Band-Assisted Bench Press"
@@ -21,6 +23,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_003_bar-dip]
 name = "Bar Dip"
@@ -32,6 +36,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_004_bench-press]
 name = "Bench Press"
@@ -43,6 +49,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_005_board-press]
 name = "Board Press"
@@ -54,39 +62,47 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_006_cable-chest-press]
 name = "Cable Chest Press"
 slug = "cable-chest-press"
 primary_muscle_group = "Chest"
-secondary_muscle_groups = [ "Front Deltoids", "Triceps",]
+secondary_muscle_groups = [ "Shoulders", "Triceps",]
 instructions = [ "Fasten a pair of handles in the top position of a cable cross. Grip the handles, step forward, and lean slightly forward.", "Push the handles forward until they meet in front of your body.", "With control, let the handles go back to the starting position.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_007_close-grip-bench-press]
 name = "Close-Grip Bench Press"
 slug = "close-grip-bench-press"
 primary_muscle_group = "Triceps"
-secondary_muscle_groups = [ "Chest", "Front Deltoids",]
+secondary_muscle_groups = [ "Chest", "Shoulders",]
 instructions = [ "Lie on the bench, pull your shoulder blades together and down, and slightly arch your back.", "Grip the bar narrower than in a regular bench press so that your hands are directly above your shoulders or even closer.", "Take a breath and hold it, and unrack the bar.", "Lower the bar with control until it touches your chest somewhere where the ribs end.", "Push the bar up to the starting position while exhaling.", "Take another breath in the top position, and repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_008_close-grip-feet-up-bench-press]
 name = "Close-Grip Feet-Up Bench Press"
 slug = "close-grip-feet-up-bench-press"
 primary_muscle_group = "Triceps"
-secondary_muscle_groups = [ "Chest", "Front Deltoids",]
+secondary_muscle_groups = [ "Chest", "Shoulders",]
 instructions = [ "Lie on the bench, pull your shoulderblades together and down, and raise your chest up.", "Grip the bar narrower than in a regular bench press, so that your hands are directly above your shoulders or even closer.", "Lift your feet up and hold them in the air.", "Take a breath and hold it, and unrack the bar.", "Lower the bar with control, until it touches your chest somewhere where the ribs end.", "Take another breath in the top position, and repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_009_assisted-dip]
 name = "Assisted Dip"
@@ -98,17 +114,21 @@ equipment = "Machine"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_010_decline-bench-press]
 name = "Decline Bench Press"
 slug = "decline-bench-press"
 primary_muscle_group = "Chest"
-secondary_muscle_groups = [ "Triceps", "Front Deltoids",]
+secondary_muscle_groups = [ "Triceps", "Shoulders",]
 instructions = [ "Set a bench so that it is in decline, either by adjusting the backrest or by elevating the foot.", "Lie down on the bench, pull your shoulder blades together and down, with a proud chest.", "Grip the bar slightly wider than shoulder-width apart.", "Take a breath and hold it, and unrack the bar.", "Lower the bar with control until it touches your chest.", "Push the bar up while exhaling.", "Take another breath in the top position, and repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_011_decline-push-up]
 name = "Decline Push-Up"
@@ -120,17 +140,21 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_012_dumbbell-chest-fly]
 name = "Dumbbell Chest Fly"
 slug = "dumbbell-chest-fly"
 primary_muscle_group = "Chest"
-secondary_muscle_groups = [ "Front Deltoids",]
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Lie on a bench, and lift a pair of dumbbells up to the starting position.", "With almost completely straight arms, lower the dumbbells out to your sides.", "When you’ve lowered the dumbbells as deep as possible, reverse the motion and return the dumbbells to the starting position.", "Repeat for reps.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_013_dumbbell-chest-press]
 name = "Dumbbell Chest Press"
@@ -138,10 +162,12 @@ slug = "dumbbell-chest-press"
 primary_muscle_group = "Chest"
 secondary_muscle_groups = [ "Triceps",]
 instructions = [ "Lie on a bench, and lift a pair of dumbbells up to the starting position.", "Press the dumbbells up to straight arms, while exhaling.", "Inhale at the top, or while lowering the dumbbells with control back to your shoulders.", "Repeat for reps.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_014_dumbbell-decline-chest-press]
 name = "Dumbbell Decline Chest Press"
@@ -149,32 +175,38 @@ slug = "dumbbell-decline-chest-press"
 primary_muscle_group = "Chest"
 secondary_muscle_groups = [ "Triceps",]
 instructions = [ "Set a bench so that it is in decline, either by adjusting the backrest or by elevating the foot.", "Lie on a bench, and lift a pair of dumbbells to the starting position.", "Press the dumbbells up to straight arms, while exhaling.", "Inhale at the top, or while lowering the dumbbells with control back to your shoulders.", "Repeat for reps.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_015_dumbbell-pullover]
 name = "Dumbbell Pullover"
 slug = "dumbbell-pullover"
 primary_muscle_group = "Chest"
-secondary_muscle_groups = [ "Lats",]
+secondary_muscle_groups = [ "Back",]
 instructions = [ "Lie down on a bench and lift a dumbbell up to almost straight arms above you.", "Lower the dumbbell down behind your head, while keeping your arms almost completely straight, just with a slight bend in the elbows.", "Reverse the motion and return the dumbbell to the starting position.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_016_dumbbell-floor-press]
 name = "Dumbbell Floor Press"
 slug = "dumbbell-floor-press"
 primary_muscle_group = "Chest"
 secondary_muscle_groups = [ "Triceps",]
-instructions = [ "Sit on the floor with your legs straight and a pair of dumbbells beside you.", "Pick the dumbbells up and place them in your hip creak.", "Lay down while you bring the dumbbells up to your chest.", "Press them dumbbells to straight arms, bend your knees, and place your feet flat on the floor.", "Lower the dumbbells slowly until your upper arms hit the floor.", "Reverse the motion and push the dumbbells up to straight arms again.", "Gently drop the dumbbells to the floor to finish the set.",]
-equipment = "Dumbell"
+instructions = [ "Sit on the floor with your legs straight and a pair of dumbbells beside you.", "Pick the dumbbells up and place them in your hip crease.", "Lay down while you bring the dumbbells up to your chest.", "Press the dumbbells to straight arms, bend your knees, and place your feet flat on the floor.", "Lower the dumbbells slowly until your upper arms hit the floor.", "Reverse the motion and push the dumbbells up to straight arms again.", "Gently drop the dumbbells to the floor to finish the set.",]
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_017_feet-up-bench-press]
 name = "Feet-Up Bench Press"
@@ -186,6 +218,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_018_floor-press]
 name = "Floor Press"
@@ -197,6 +231,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_019_incline-bench-press]
 name = "Incline Bench Press"
@@ -208,6 +244,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_020_incline-push-up]
 name = "Incline Push-Up"
@@ -219,6 +257,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_021_kettlebell-floor-press]
 name = "Kettlebell Floor Press"
@@ -226,10 +266,12 @@ slug = "kettlebell-floor-press"
 primary_muscle_group = "Chest"
 secondary_muscle_groups = [ "Triceps",]
 instructions = [ "Sit on the floor with your legs straight and a pair of kettlebells beside you.", "Pick the kettlebells up and place them in your hip creak.", "Lay down while you bring the kettlebells up to your chest.", "Press to straight arms, bend your knees, and place your feet flat on the floor.", "Lower the kettlebells slowly until your upper arms hit the floor.", "Reverse the motion and push the kettlebells up to straight arms again.", "Gently drop the kettlebells to the floor to finish the set.",]
-equipment = "Dumbell"
+equipment = "Kettlebell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_022_kneeling-incline-push-up]
 name = "Kneeling Incline Push-Up"
@@ -241,6 +283,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_023_kneeling-push-up]
 name = "Kneeling Push-Up"
@@ -252,28 +296,34 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_024_machine-chest-fly]
 name = "Machine Chest Fly"
 slug = "machine-chest-fly"
 primary_muscle_group = "Chest"
-secondary_muscle_groups = [ "Front Deltoids",]
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Adjust the back support and handles so that you can grip the handles at shoulder height and get a long range of motion.", "With just a slight bend in the arms, push the handles forward until they meet in front of your body.", "With control, let the handles go back to the starting position.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_025_pec-deck]
 name = "Pec Deck"
 slug = "pec-deck"
 primary_muscle_group = "Chest"
-secondary_muscle_groups = [ "Front Deltoids",]
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Adjust the the back support and handles, so that you can lean your elbows against the pads while your upper arms are horizontal.", "Push the pads forward until they meet in front of your body.", "With control, let the pads go back to the starting position.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_026_machine-chest-press]
 name = "Machine Chest Press"
@@ -285,6 +335,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_027_pin-bench-press]
 name = "Pin Bench Press"
@@ -296,6 +348,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_028_push-up]
 name = "Push-Up"
@@ -307,6 +361,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_029_push-up-against-wall]
 name = "Push-Up Against Wall"
@@ -318,6 +374,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_030_push-ups-with-feet-in-rings]
 name = "Push-Ups With Feet in Rings"
@@ -329,28 +387,34 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_031_resistance-band-chest-fly]
 name = "Resistance Band Chest Fly"
 slug = "resistance-band-chest-fly"
 primary_muscle_group = "Chest"
-secondary_muscle_groups = [ "Front Deltoids",]
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Attach the band to a door or something similarly stable around chest level.", "In a standing position, grab the band with one hand and move away from the anchor point until you feel a stretch and resistance in your chest muscles.", "Pull the band in front of your body at chest height with a slight bend at the elbow.", "Contract your chest muscle before returning to the starting position with a controlled movement and repeat for reps.", "Switch to the other side of your body and perform the above steps again.",]
-equipment = "None"
+equipment = "Resistance Band"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_032_ring-dip]
 name = "Ring Dip"
 slug = "ring-dip"
 primary_muscle_group = "Triceps"
-secondary_muscle_groups = [ "Front Deltoids",]
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Grip a pair of rings about shoulder-width apart, and jump up to straight arms to get into the starting position.", "Lower yourself with control until your shoulder is below your elbow or as deep as you comfortably can.", "Reverse the motion and return to the starting position.",]
-equipment = "None"
+equipment = "Gymnastics Rings"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_033_smith-machine-bench-press]
 name = "Smith Machine Bench Press"
@@ -362,6 +426,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_034_smith-machine-incline-bench-press]
 name = "Smith Machine Incline Bench Press"
@@ -373,6 +439,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_035_smith-machine-reverse-grip-bench-press]
 name = "Smith Machine Reverse Grip Bench Press"
@@ -384,468 +452,554 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_036_standing-cable-chest-fly]
 name = "Standing Cable Chest Fly"
 slug = "standing-cable-chest-fly"
 primary_muscle_group = "Chest"
-secondary_muscle_groups = [ "Front Deltoids",]
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Fasten a pair of handles in the top position of a cable cross. Grip the handles, step forward, and lean slightly forward.", "With just a slight bend in the arms, push the handles forward until they meet in front of your body.", "With control, let the handles go back to the starting position.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_037_standing-resistance-band-chest-fly]
 name = "Standing Resistance Band Chest Fly"
 slug = "standing-resistance-band-chest-fly"
 primary_muscle_group = "Chest"
-secondary_muscle_groups = [ "Front Deltoids",]
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Attach the band to a door or something similarly stable around chest level.", "In a standing position, grab the band with one hand and move away from the anchor point until you feel a stretch and resistance in your chest muscles.", "Pull the band in front of your body at chest height with a slight bend at the elbow.", "Contract your chest muscle before returning to the starting position with a controlled movement and repeat for reps.", "Switch to the other side of your body and perform the above steps again.",]
-equipment = "None"
+equipment = "Resistance Band"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_038_incline-dumbbell-press]
 name = "Incline Dumbbell Press"
 slug = "incline-dumbbell-press"
 primary_muscle_group = "Chest"
 secondary_muscle_groups = [ "Shoulders", "Triceps",]
-instructions = [ "Perform incline dumbbell press with proper form and control.",]
-equipment = "Dumbell"
+instructions = [ "Lie on an incline bench with a dumbbell in each hand, palms facing forward.", "Press the dumbbells upwards until your arms are fully extended, but do not lock your elbows.", "Lower the dumbbells slowly and with control back to the starting position.", "Repeat for desired repetitions.",]
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_039_arnold-press]
 name = "Arnold Press"
 slug = "arnold-press"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Lateral Deltoids", "Triceps",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders", "Triceps",]
 instructions = [ "Start with the dumbbells in front of your chest with your palms facing toward your body.", "As you press the dumbbells up, rotate your palms outward so they face forward when your arms are extended overhead.", "Lower the dumbbells back to the starting position, rotating your palms inward again.", "Repeat for reps.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_040_band-external-shoulder-rotation]
 name = "Band External Shoulder Rotation"
 slug = "band-external-shoulder-rotation"
-primary_muscle_group = "Rotator Cuffs"
+primary_muscle_group = "Shoulders"
 secondary_muscle_groups = []
 instructions = [ "Fasten an elastic band at elbow height. Grab the band, step away and stand sideways to the band.", "Grab the band with your arm that is on the opposite side from the band’s attachment point. Keep your upper arm close to your side, and bend your elbow to 90 degrees.", "Rotate your upper arm externally (outwards) against the resistance of the band, as far as possible.", "Reverse the movement, and repeat for reps.",]
-equipment = "None"
+equipment = "Band"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_041_band-pull-apart]
 name = "Band Pull-Apart"
 slug = "band-pull-apart"
-primary_muscle_group = "Rear Deltoids"
-secondary_muscle_groups = [ "Trapezius",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Back",]
 instructions = [ "Grab an elastic band, and hold it out before you on straight arms.", "Pull the band apart by moving your arms to the sides as far as you can, or until your arms are pointing straight out.", "Return with control to the starting position.",]
-equipment = "None"
+equipment = "Band"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_042_band-internal-shoulder-rotation]
 name = "Band Internal Shoulder Rotation"
 slug = "band-internal-shoulder-rotation"
-primary_muscle_group = "Rotator Cuffs"
+primary_muscle_group = "Shoulders"
 secondary_muscle_groups = []
 instructions = [ "Fasten an elastic band at elbow height. Grab the band, step away and stand sideways to the band.", "Grab the band with your arm that is closest to the band’s attachment point. Keep your upper arm close to your side, and bend your elbow to 90 degrees.", "Rotate your upper arm internally (inwards) against the resistance of the band, as far as possible.", "Reverse the movement, and repeat for reps.",]
-equipment = "None"
+equipment = "Band"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_043_banded-face-pull]
 name = "Banded Face Pull"
 slug = "banded-face-pull"
-primary_muscle_group = "Rear Deltoids"
-secondary_muscle_groups = [ "Trapezius", "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Back", "Shoulders",]
 instructions = [ "Attach a resistance band at face height. Grab the band with an overhand grip and take a step or two backward.", "With you elbows held high, pull the band toward your face by moving your upper arms straight out to the sides while rotating your forearms upward.", "Return to the starting position in a controlled manner by allowing the band to move forward again.", "Repeat for reps.",]
-equipment = "None"
+equipment = "Resistance Band"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_044_barbell-front-raise]
 name = "Barbell Front Raise"
 slug = "barbell-front-raise"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Hold a barbell in straight arms, in front of your body.", "With control, lift the barbell forward with straight arms, until the bar is at shoulder height.", "Reverse the movement and lower the bar with control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_045_barbell-rear-delt-row]
 name = "Barbell Rear Delt Row"
 slug = "barbell-rear-delt-row"
-primary_muscle_group = "Rear Deltoids"
-secondary_muscle_groups = [ "Rotator Cuffs", "Biceps", "Forearm Flexors",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders", "Biceps", "Forearms",]
 instructions = [ "Grip the bar with a wide overhand grip, and lean forward with the bar hanging from straight arms.", "Inhale and pull the bar high on your chest, with your upper arms pointing straight out to the sides.", "With control, lower the bar back to the starting position.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_046_behind-the-neck-press]
 name = "Behind the Neck Press"
 slug = "behind-the-neck-press"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Trapezius", "Triceps",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Back", "Triceps",]
 instructions = [ "Grab a bar slightly wider than shoulder-width apart, and duck under it so that it is resting against the base of your neck.", "Take a breath, lightly brace your core, and unrack the bar. Take a step back.", "Press the bar up until your arms are straight, while exhaling.", "Inhale at the top, or while lowering the bar with control back to the base of your neck.", "Repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_047_barbell-upright-row]
 name = "Barbell Upright Row"
 slug = "barbell-upright-row"
-primary_muscle_group = "Lateral Deltoids"
-secondary_muscle_groups = [ "Front Deltoids", "Trapezius", "Biceps",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders", "Back", "Biceps",]
 instructions = [ "Grip the bar with an overhand grip, slightly narrower than shoulder-width apart.", "Pull the bar straight up until it is at the level of your chin.", "With control, lower the bar back to the starting position.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_048_cable-front-raise]
 name = "Cable Front Raise"
 slug = "cable-front-raise"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Stand in front of a cable machine and attach a handle, rope, or straight bar to the low pulley.", "Grip the handle with a pronated grip (palms facing down) and stand with your feet shoulder-width apart, with your back facing the cable machine.", "Maintain a slight bend in your elbows and keep a neutral spine.", "Lift the handle straight forward until it reaches shoulder height, without using momentum from your body.", "Lower the weight back to the starting position in a controlled manner.", "Repeat for reps.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_049_cable-lateral-raise]
 name = "Cable Lateral Raise"
 slug = "cable-lateral-raise"
-primary_muscle_group = "Lateral Deltoids"
-secondary_muscle_groups = [ "Front Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Grip a handle connected to the lower position on a cable pulley. Stand close to the pulley, with the arm holding the handle facing away from the machine.", "With control, lift the handle outwards to your sides, until your upper arm is horizontal.", "Lower the handle with control.", "Repeat for reps.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_050_cable-rear-delt-row]
 name = "Cable Rear Delt Row"
 slug = "cable-rear-delt-row"
-primary_muscle_group = "Rear Deltoids"
-secondary_muscle_groups = [ "Trapezius", "Biceps",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Back", "Biceps",]
 instructions = [ "Fasten a rope handle in a high position on a cable pulley. Grip the ropes with an overhand grip, and take a step or two back.", "With elbows held high, pull the rope towards you by letting your upper arms move straight out towards your sides. Pull your scapulas together in the end position.", "Return with control to the starting position, by letting your arms move forward again.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_051_cuban-press]
 name = "Cuban Press"
 slug = "cuban-press"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Lateral Deltoids", "Rear Deltoids", "Trapezius", "Triceps",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders", "Shoulders", "Back", "Triceps",]
 instructions = [ "Stand with feet shoulder-width apart, holding a pair of dumbbells with an overhand grip (palms facing down).", "Lift the dumbbells in a controlled motion up to shoulder height, with your elbows in line with your shoulders.", "Once the dumbbells reach shoulder height, rotate your shoulders outward, lifting the dumbbells and turning your wrists so your palms face forward.", "Press the dumbbells overhead to full extension.", "Reverse the movement by lower the dumbbells back to shoulder height, rotate the shoulders inward, and then lower the dumbbells back to the starting position in front of your thighs.", "Repeat the movement for the desired number of repetitions.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_052_devils-press]
 name = "Devils Press"
 slug = "devils-press"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Forearm Flexors", "Calves", "Abs", "Trapezius", "Triceps",]
+primary_muscle_group = "Full Body"
+secondary_muscle_groups = [ "Forearms", "Calves", "Abs", "Back", "Triceps", "Shoulders", "Glutes", "Hamstrings", "Quads",]
 instructions = [ "Stand with a dumbbell in each hand, feet shoulder-width apart.", "Go down into a burpee by placing the dumbbells on the ground and jumping back into a plank position.", "Lower your chest all the way to the floor.", "Push yourself up from the ground and jump so that your feet lands between the dumbbells.", "With power from your hips, explosively lift the dumbbells up, as in a snatch, until you are standing with the dumbbells fully extended overhead.", "Lower the dumbbells back to the ground in a controlled manner.", "Repeat for reps.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = true
+timed = false
 
 [exercise_053_dumbbell-front-raise]
 name = "Dumbbell Front Raise"
 slug = "dumbbell-front-raise"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Hold a pair of dumbbells in straight arms, in front of your hip.", "With control, lift the dumbbells forward with straight arms, until the dumbbells are at shoulder height.", "Reverse the movement and lower the dumbbells with control.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_054_dumbbell-horizontal-internal-shoulder-rotation]
 name = "Dumbbell Horizontal Internal Shoulder Rotation"
 slug = "dumbbell-horizontal-internal-shoulder-rotation"
-primary_muscle_group = "Rotator Cuffs"
+primary_muscle_group = "Shoulders"
 secondary_muscle_groups = []
 instructions = [ "Lie down on your back, with your upper arm out to your side at 90 degrees, and your elbow bent to 90 degrees.", "With a dumbbell, rotate your arm internally (upwards) against the direction of resistance until your forearm is vertical.", "Reverse the movement, and repeat for reps.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_055_dumbbell-horizontal-external-shoulder-rotation]
 name = "Dumbbell Horizontal External Shoulder Rotation"
 slug = "dumbbell-horizontal-external-shoulder-rotation"
-primary_muscle_group = "Rotator Cuffs"
+primary_muscle_group = "Shoulders"
 secondary_muscle_groups = []
 instructions = [ "Stand sideways to a barbell, set slightly below your shoulder height, so that your upper arm is horizontal when you are resting it on the bar.", "Hold a dumbbell in your hand, and bend your elbow to 90 degrees.", "Rotate your arm externally (upwards) against the direction of resistance, as far as possible.", "Reverse the movement, and repeat for reps.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_056_dumbbell-lateral-raise]
 name = "Dumbbell Lateral Raise"
 slug = "dumbbell-lateral-raise"
-primary_muscle_group = "Lateral Deltoids"
-secondary_muscle_groups = [ "Front Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Hold a pair of dumbbells in almost straight arms hanging by your sides.", "With control, lift the dumbbells out to your sides until your upper arms are horizontal.", "Lower the dumbbells with control.", "Repeat for reps.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_057_dumbbell-rear-delt-row]
 name = "Dumbbell Rear Delt Row"
 slug = "dumbbell-rear-delt-row"
-primary_muscle_group = "Rear Deltoids"
-secondary_muscle_groups = [ "Rotator Cuffs", "Biceps", "Forearm Flexors",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders", "Biceps", "Forearms",]
 instructions = [ "Lean forward with a dumbbell in each hand.", "Inhale and make a wide rowing motion, where you let your upper arms go out towards the sides.", "With control, lower the dumbbells back to the starting position.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_058_dumbbell-shoulder-press]
 name = "Dumbbell Shoulder Press"
 slug = "dumbbell-shoulder-press"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Triceps", "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Triceps", "Shoulders",]
 instructions = [ "Grab a pair of dumbbells, and lift them up to the starting position at your shoulders.", "Inhale and lightly brace your core.", "Press the dumbbells up to straight arms, while exhaling.", "Inhale at the top, or while lowering the dumbbells with control back to your shoulders.", "Repeat for reps.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_059_face-pull]
 name = "Face Pull"
 slug = "face-pull"
-primary_muscle_group = "Rear Deltoids"
-secondary_muscle_groups = [ "Trapezius", "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Back", "Shoulders",]
 instructions = [ "Fasten a rope handle in a high position on a cable pulley. Grip the ropes with an overhand grip, and take a step or two back.", "With elbows held high, pull the rope towards you by letting your upper arms move straight out towards your sides while simultaneously rotating your forearms up.", "Return with control to the starting position by letting your arms move forward again.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_060_front-hold]
 name = "Front Hold"
 slug = "front-hold"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Hold a plate in straight arms, in front of your body.", "With control, lift the plate forward with straight arms, until the bar is at shoulder height.", "Hold still.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = true
 
 [exercise_061_handstand-push-up]
 name = "Handstand Push-Up"
 slug = "handstand-push-up"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Lateral Deltoids", "Triceps",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders", "Triceps",]
 instructions = [ "Place your hands shoulder-width apart on the floor, with fingers pointing forward.", "Kick up into a handstand position against a wall. To increase the stability, you could let your heels lightly rest on the wall.", "Embrace your core and maintain a stable body position throughout the movement.", "Bend your elbows and lower your head in a controlled manner toward the ground.", "Press back up by extending your elbows until you return to the starting position.", "Repeat for reps.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_062_jerk]
 name = "Jerk"
 slug = "jerk"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Quads", "Glutes", "Adductors", "Lower Back", "Trapezius", "Triceps", "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Quads", "Glutes", "Adductors", "Back", "Back", "Triceps", "Shoulders",]
 instructions = [ "Get into the starting position by lifting the bar out from a rack. Grip the bar slightly wider than shoulder-width apart, and let it rest on the front of your shoulders.", "Hold your breath, and brace your core slightly.", "Slightly bend your knees, and then forcefully extend them to push the bar up.", "Duck under the bar and catch it on straight arms, with your legs in a lunge position or squat position.", "Stand up on straight legs while controlling the bar on straight arms above your head. If you caught the bar in a lunge position, first take a step back with your front foot and then step forward with your back foot, until you’re standing with your feet side by side again. If you caught the bar in a squat position, just stand up as in a normal squat.", "Lower the bar in front of you with control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_063_kettlebell-halo]
 name = "Kettlebell Halo"
 slug = "kettlebell-halo"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Trapezius", "Triceps", "Abs", "Obliques",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Back", "Triceps", "Abs", "Obliques",]
 instructions = [ "Hold a kettlebell upside-down by the horns in front of your chest.", "Brace your core and keep your elbows close to your body.", "Begin circling the kettlebell slowly around your head, keeping it close to your skull.", "Move in a smooth, controlled motion — don’t let your ribs flare and keep your head still.", "Complete the desired number of reps.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_064_landmine-press]
 name = "Landmine Press"
 slug = "landmine-press"
-primary_muscle_group = "Front Deltoids"
+primary_muscle_group = "Shoulders"
 secondary_muscle_groups = [ "Triceps", "Chest",]
-instructions = [ "Stand either on your feets, or on your knees, with your core activated and the feet about shoulder-width apart.", "Place the barbell in your hands, and rest it on your chest.", "Press to lockout by extending the elbows and flexing the shoulders.", "Slowly lower the barbell back to the starting position.", "Repeat for reps.",]
+instructions = [ "Stand either on your feet, or on your knees, with your core activated and the feet about shoulder-width apart.", "Place the barbell in your hands, and rest it on your chest.", "Press to lockout by extending the elbows and flexing the shoulders.", "Slowly lower the barbell back to the starting position.", "Repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_065_lying-dumbbell-external-shoulder-rotation]
 name = "Lying Dumbbell External Shoulder Rotation"
 slug = "lying-dumbbell-external-shoulder-rotation"
-primary_muscle_group = "Rotator Cuffs"
+primary_muscle_group = "Shoulders"
 secondary_muscle_groups = []
 instructions = [ "Lie down on your side, with your upper arm close to your side, and your elbow bent to 90 degrees.", "Grab a dumbbell and rotate your arm externally (upwards) against the direction of resistance, as far as possible.", "Reverse the movement, and repeat for reps.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_066_lying-dumbbell-internal-shoulder-rotation]
 name = "Lying Dumbbell Internal Shoulder Rotation"
 slug = "lying-dumbbell-internal-shoulder-rotation"
-primary_muscle_group = "Rotator Cuffs"
+primary_muscle_group = "Shoulders"
 secondary_muscle_groups = []
 instructions = [ "Lie down on your side, with your arm close to your side, and your elbow bent to 90 degrees.", "With a dumbbell, rotate your arm internally (upwards) against the direction of resistance, as far as possible.", "Reverse the movement, and repeat for reps.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_067_machine-lateral-raise]
 name = "Machine Lateral Raise"
 slug = "machine-lateral-raise"
-primary_muscle_group = "Lateral Deltoids"
-secondary_muscle_groups = [ "Front Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Adjust the machine so that the pads are leaning against your elbows.", "Lift your arms out to your sides, until your upper arms are horizontal.", "Lower the arms again.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_068_machine-shoulder-press]
 name = "Machine Shoulder Press"
 slug = "machine-shoulder-press"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Triceps", "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Triceps", "Shoulders",]
 instructions = [ "Adjust the machine to the appropriate settings, sit down, and grip the handles.", "Press the handles upwards until your arms are straight.", "Lower the handles with control.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_069_monkey-row]
 name = "Monkey Row"
 slug = "monkey-row"
-primary_muscle_group = "Lateral Deltoids"
-secondary_muscle_groups = [ "Rear Deltoids", "Trapezius", "Biceps",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders", "Back", "Biceps",]
 instructions = [ "Perform monkey row with proper form and control.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_070_one-arm-landmine-press]
 name = "One-Arm Landmine Press"
 slug = "one-arm-landmine-press"
-primary_muscle_group = "Front Deltoids"
+primary_muscle_group = "Shoulders"
 secondary_muscle_groups = [ "Triceps", "Chest",]
 instructions = [ "Stand with your core activated and the feet about shoulder-width apart.", "Place the barbell in one hand, and rest it on your shoulder.", "Press to lockout by extending the elbow and flexing the shoulder.", "Slowly lower the barbell back to the starting position on your shoulder.", "Repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_071_overhead-press]
 name = "Overhead Press"
 slug = "overhead-press"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Triceps", "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Triceps", "Shoulders",]
 instructions = [ "First, place a barbell in a rack at about chest height.", "Grip the bar slightly wider than shoulder-width apart, and step close to it.", "Inhale, lightly brace your core, and unrack the bar.", "Let the bar rest against your front delts while you step back from the rack.", "Press the bar up to straight arms while exhaling.", "Inhale at the top or while lowering the bar with control back to your shoulders.", "Repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_072_plate-front-raise]
 name = "Plate Front Raise"
 slug = "plate-front-raise"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Hold a plate in straight arms, in front of your body.", "With control, lift the plate forward with straight arms, until the bar is at shoulder height.", "Reverse the movement and lower the plate with control.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_073_power-jerk]
 name = "Power Jerk"
 slug = "power-jerk"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Quads", "Glutes", "Adductors", "Lower Back", "Trapezius", "Triceps", "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Quads", "Glutes", "Adductors", "Back", "Back", "Triceps", "Shoulders",]
 instructions = [ "Get into the starting position by cleaning the bar or lifting it out from a rack. Grip the bar slightly wider than shoulder-width apart, and let it rest on the front of your shoulders.", "Hold your breath and brace your core slightly.", "Slightly bend your knees, and then forcefully extend them to push the bar up.", "Duck under the bar and catch it on straight arms, by slightly bending your knees.", "Stand up on straight legs again.", "Lower the bar in front of you, with control, or lower it back unto the front of your shoulders.",]
 equipment = "Barbell"
-bodyweight = false
+bodyweight = "false"
 image = ""
 animation = ""
+cardio = "false"
+timed = "false"
 
 [exercise_074_push-press]
 name = "Push Press"
 slug = "push-press"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Quads", "Glutes", "Adductors", "Lower Back", "Trapezius", "Triceps", "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Quads", "Glutes", "Adductors", "Back", "Back", "Triceps", "Shoulders",]
 instructions = [ "Clean a bar to your shoulders, or lift it out from a rack.", "Let the bar rest against the front of your shoulders, with your grip slightly outside your shoulders.", "Inhale and lightly brace your core.", "Bend your knees, and then forcefully push yourself and the bar upwards using your legs.", "When your legs are extended, immediately start pressing the bar with your arms, until your arms are fully extended.", "With control, lower the bar back to your shoulders.",]
 equipment = "Barbell"
-bodyweight = false
+bodyweight = "false"
 image = ""
 animation = ""
+cardio = "false"
+timed = "false"
 
 [exercise_075_reverse-dumbbell-flyes]
 name = "Reverse Dumbbell Flyes"
 slug = "reverse-dumbbell-flyes"
-primary_muscle_group = "Rear Deltoids"
-secondary_muscle_groups = [ "Trapezius",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Back",]
 instructions = [ "Hold a pair of dumbbells, lean forward, and let your arms hang towards the floor.", "With almost straight arms (just a slight bend at the elbow), slowly lift the dumbbells by raising your arms out to the sides.", "Reverse the movement and lower the dumbbells back to the starting position.",]
-equipment = "Dumbell"
-bodyweight = false
+equipment = "Dumbbell"
+bodyweight = "false"
 image = ""
 animation = ""
+cardio = "false"
+timed = "false"
 
 [exercise_076_reverse-machine-fly]
 name = "Reverse Machine Fly"
 slug = "reverse-machine-fly"
-primary_muscle_group = "Rear Deltoids"
-secondary_muscle_groups = [ "Trapezius",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Back",]
 instructions = [ "Adjust the chest support and handles so that you can grip the handles at shoulder height and get a long range of motion.", "With just a slight bend in the arms, pull the handles backward by bringing your arms out to the sides.", "Reverse the movement and let the handles go back to the starting position.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_077_seated-dumbbell-shoulder-press]
 name = "Seated Dumbbell Shoulder Press"
 slug = "seated-dumbbell-shoulder-press"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Triceps", "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Triceps", "Shoulders",]
 instructions = [ "Sit down on a bench with a raised backrest.", "Grab a pair of dumbbells and lift them up to the starting position at your shoulders.", "Inhale and lightly brace your core.", "Press the dumbbells up to straight arms while exhaling.", "Inhale at the top or while lowering the dumbbells with control back to your shoulders.", "Repeat for reps.",]
 equipment = "Dumbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_078_cable-internal-shoulder-rotation]
 name = "Cable Internal Shoulder Rotation"
@@ -857,70 +1011,84 @@ equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_079_seated-barbell-overhead-press]
 name = "Seated Barbell Overhead Press"
 slug = "seated-barbell-overhead-press"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Triceps", "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Triceps", "Shoulders",]
 instructions = [ "Sit down on a bench with a raised backrest. The bench should be placed close to a rack, where a barbell rests at about shoulder height.", "Grip the bar with an overhand grip.", "Inhale, lightly brace your core, and unrack the bar. Lean back on the backrest.", "Press the bar up to straight arms, while exhaling.", "Inhale at the top, or while lowering the bar with control back to your shoulders.", "Repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_080_seated-smith-machine-shoulder-press]
 name = "Seated Smith Machine Shoulder Press"
 slug = "seated-smith-machine-shoulder-press"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Triceps", "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Triceps", "Shoulders",]
 instructions = [ "Sit on a bench, unrack a barbell and lower it to the starting position at the top of your chest.", "Press the bar up to straight arms, while exhaling.", "Inhale at the top, or while lowering the bar with control back to your chest.", "Repeat for reps.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_081_snatch-grip-behind-the-neck-press]
 name = "Snatch Grip Behind the Neck Press"
 slug = "snatch-grip-behind-the-neck-press"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Trapezius", "Triceps",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Back", "Triceps",]
 instructions = [ "Grab a bar with a snatch grip width, and duck under it so that it is resting against the base of your neck.", "Take a breath, lightly brace your core, and unrack the bar. Take a step back.", "Press the bar up until your arms are straight, while exhaling.", "Inhale at the top, or while lowering the bar with control back to the base of your neck.", "Repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_082_squat-jerk]
 name = "Squat Jerk"
 slug = "squat-jerk"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Trapezius", "Triceps", "Lateral Deltoids", "Calves",]
+secondary_muscle_groups = [ "Back", "Triceps", "Shoulders", "Calves",]
 instructions = [ "Get into the starting position by cleaning the bar or lifting it out from a rack. Grip the bar slightly wider than shoulder-width apart, and let it rest on the front of your shoulders.", "Hold your breath, and brace your core slightly.", "Slightly bend your knees, and then forcefully extend them to push the bar up.", "Duck under the bar and catch it on straight arms, by bending your knees like in a squat.", "Stand up on straight legs again.", "Lower the bar in front of you, with control, or lower it back unto the front of your shoulders.",]
 equipment = "Barbell"
 bodyweight = false
+cardio = false
+timed = false
 image = ""
 animation = ""
 
 [exercise_083_split-jerk]
 name = "Split Jerk"
 slug = "split-jerk"
-primary_muscle_group = "Front Deltoids"
-secondary_muscle_groups = [ "Quads", "Glutes", "Adductors", "Lower Back", "Trapezius", "Triceps", "Lateral Deltoids",]
+primary_muscle_group = "Shoulders"
+secondary_muscle_groups = [ "Quads", "Glutes", "Adductors", "Back", "Back", "Triceps", "Shoulders",]
 instructions = [ "Get into the starting position by cleaning the bar or lifting it out from a rack. Grip the bar slightly wider than shoulder-width apart, and let it rest on the front of your shoulders.", "Hold your breath and brace your core slightly.", "Slightly bend your knees, and then forcefully extend them to push the bar up.", "Duck under the bar and catch it on straight arms, with your legs in a lunge position.", "First take a step back with your front foot and then step forward with your back foot, until you’re standing with your feet side by side again, while controlling the bar on straight arms above your head.", "Lower the bar in front of you, with control.",]
 equipment = "Barbell"
 bodyweight = false
+cardio = false
+timed = false
 image = ""
 animation = ""
 
 [exercise_084_wall-walk]
 name = "Wall Walk"
 slug = "wall-walk"
-primary_muscle_group = "Front Deltoids"
+primary_muscle_group = "Shoulders"
 secondary_muscle_groups = [ "Triceps", "Chest", "Abs",]
 instructions = [ "Start in a push-up position with your feet touching the wall.", "Place your feet on the wall and begin walking them upward as you walk your hands back toward the wall.", "Continue until you reach a controlled handstand position close to the wall.", "Pause briefly, then reverse the movement by walking your hands forward and feet down the wall.", "Return to the starting position with control. If you want to, you can start/finish each repetition with a push-up.", "Repeat for reps.",]
 equipment = "None"
 bodyweight = true
+cardio = false
+timed = false
 image = ""
 animation = ""
 
@@ -934,193 +1102,229 @@ equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_086_cable-crossover-bicep-curl]
 name = "Cable Crossover Bicep Curl"
 slug = "cable-crossover-bicep-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Stand in the middle of a cable machine with the handles attached to the high pulleys on either side. Grip the handles with an underhand grip, palms facing up.", "Position your feet shoulder-width apart and take a small step forward to create slight tension in the cables", "Keep your elbows close to your body and curl the handles toward your face by bending your elbows and engaging your biceps.", "At the top of the movement, pause and squeeze your biceps.", "Slowly lower the handles back to the starting position with full control.", "Repeat for reps.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_087_barbell-curl]
 name = "Barbell Curl"
 slug = "barbell-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Grip a bar with an underhand (supinated) grip, hands about shoulder-width apart.", "Lift the bar with control, by flexing your elbows.", "Don’t let your upper arm travel back during the curl, keep it at your side or move it slightly forward.", "Reverse the movement and lower the bar back to the starting position.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_088_bodyweight-curl]
 name = "Bodyweight Curl"
 slug = "bodyweight-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Grab the handles of your TRX (or your rings), and stand with your body facing the anchor point.", "Keep your feet close towards the anchor point, leaning back with the cables tensioned. Keep your core activated the entire time.", "In the starting position, keep your arms straight and the palms facing toward your face. At this point, the elbows should be higher up than the shoulders.", "Slowly bend your arms with control and curl yourself towards the handles.", "Reverse the movement and repeat for reps.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_089_barbell-preacher-curl]
 name = "Barbell Preacher Curl"
 slug = "barbell-preacher-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Grab a barbell and sit down at a preacher curl bench, resting your upper arms against the pad.", "Lower the barbell as far as you can, with control.", "Reverse the motion and return to the starting position.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_090_bayesian-curl]
 name = "Bayesian Curl"
 slug = "bayesian-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Stand in front of a cable machine with the handle attached to the lower pulley. Hold the handle in one hand and position yourself with your back facing the machine.", "Step forward slightly so that the cable creates light tension, and lean your torso slightly forward.", "Keep your elbow close to your body, starting with your arm extended behind you.", "Bend your elbow and pull the handle forward and upward, contracting your biceps at the top. Keep your upper arm stationary throughout the movement.", "Slowly lower back to the starting position and repeat.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_091_cable-curl-with-bar]
 name = "Cable Curl With Bar"
 slug = "cable-curl-with-bar"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Fasten a bar in the lower position of a cable cross. Grip the bar with an underhand (supinated) grip, hands about shoulder-width apart, and take a step back.", "Lift the bar with control, by flexing your elbows.", "Don’t let your upper arm travel back during the curl, keep it still or move it slightly forward.", "Reverse the movement and lower the bar back to the starting position.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_092_concentration-curl]
 name = "Concentration Curl"
 slug = "concentration-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Sit on a bench with a dumbbell in hand. Lean your elbow onto the inside of your leg.", "Lift the dumbbell with control by flexing your elbow.", "Reverse the movement and lower the dumbbell back to the starting position.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_093_cable-curl-with-rope]
 name = "Cable Curl With Rope"
 slug = "cable-curl-with-rope"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Fasten a rope in the lower position of a cable cross. Grip the rope with a neutral grip and take a step back.", "Lift the rope with control, by flexing your elbows.", "Don’t let your upper arm travel back during the curl, keep it still or move it slightly forward.", "Reverse the movement and lower the rope back to the starting position.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_094_dumbbell-curl]
 name = "Dumbbell Curl"
 slug = "dumbbell-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Hold a pair of dumbbells in an underhand (supinated) grip, arms hanging by your sides.", "Lift the dumbbells with control, by flexing your elbows.", "Don’t let your upper arms travel back during the curl. Keep them at your sides, or move them slightly forward.", "Reverse the movement and lower the dumbbells back to the starting position.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_095_drag-curl]
 name = "Drag Curl"
 slug = "drag-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Stand with feet shoulder-width apart, holding a barbell with palms facing up in a relaxed underhand grip.", "Pull the bar up along your body by driving your elbows back, creating a “dragging” motion, unlike regular curls where you bend the elbow to lift the weight forward in a rotating movement.", "Keep the bar close to your body, ensuring your shoulders remain down; focus on activating the biceps by keeping your torso stable.", "Drive the elbows upward and back, and once the weight reaches upper chest height with forearms parallel to the floor, reverse the movement and slowly lower it along the same path.", "Repeat for the desired number of repetitions.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_096_dumbbell-preacher-curl]
 name = "Dumbbell Preacher Curl"
 slug = "dumbbell-preacher-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Use a preacher curl bench, or position the back rest of a regular training bench so that it leans back slightly.", "Grab a dumbbell, stand behind the bench, and rest your upper arm against the back rest.", "Lower the dumbbell as far as you can, and then reverse the motion, returning to the starting position.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_097_hammer-curl]
 name = "Hammer Curl"
 slug = "hammer-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Hold a pair of dumbbells in a neutral grip (palms facing each other), arms hanging by your sides.", "Lift the dumbbells with control by flexing your elbows.", "Don’t let your upper arms travel back during the curl. Keep them at your sides, or move them slightly forward.", "Reverse the movement and lower the dumbbells back to the starting position.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_098_incline-dumbbell-curl]
 name = "Incline Dumbbell Curl"
 slug = "incline-dumbbell-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Grab a pair of dumbbells, and sit down on an inclined bench. Let your arms hang straight down by your sides.", "Lift the dumbbells with control, by flexing your elbows.", "Reverse the movement and lower the dumbbells back to the starting position.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_099_machine-bicep-curl]
 name = "Machine Bicep Curl"
 slug = "machine-bicep-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Adjust the machine so that you are correctly positioned. Your upper arms should rest on the padding, and your elbows should be in line with the machine’s joint.", "Grab the handles with an underhand grip around shoulder width apart.", "Curl the weight up as far as possible. Make sure to do the entire movement at a controlled speed.", "Revert the movement, and stop just before the weights hit the stacks.", "Repeat for reps.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_100_resistance-band-curl]
 name = "Resistance Band Curl"
 slug = "resistance-band-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Stand on the middle of a resistance band with your feet hip-width apart, holding one end of the band in each hand with palms facing up.", "Stand upright with your arms at your sides and engage your core for stability.", "Bend your elbows and curl the band up towards your shoulders by contracting your biceps.", "Briefly pause at the top, then lower your arms back to the starting position in a controlled manner.", "Repeat for reps.",]
-equipment = "None"
+equipment = "Resistance Band"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_101_spider-curl]
 name = "Spider Curl"
 slug = "spider-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Lie down on your chest and stomach on a 45-degree bench, holding a pair of dumbbells in an underhand (supinated) grip.", "With your upper arms vertical, lift the dumbbells with control, by flexing your elbows.", "Don’t let your upper arms travel back or forwards during the curl. Keep the movement to your forearms only.", "Reverse the movement and lower the dumbbells back to the starting position.",]
-equipment = "Dumbell"
+equipment = "Dumbbell, Bench"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_102_zottman-curl]
 name = "Zottman Curl"
 slug = "zottman-curl"
 primary_muscle_group = "Biceps"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Hold a dumbbell in each hand with palms facing up (supinated grip).", "Bend your elbows and curl the dumbbells upward like a regular bicep curl.", "At the top, rotate your wrists so your palms face downward (pronated grip).", "Slowly lower the dumbbells back to the starting position with the reverse grip.", "Rotate back to the original position and repeat for the desired number of repetitions.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_103_crossbody-cable-triceps-extension]
 name = "Crossbody Cable Triceps Extension"
@@ -1132,6 +1336,8 @@ equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_104_barbell-standing-triceps-extension]
 name = "Barbell Standing Triceps Extension"
@@ -1143,6 +1349,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_105_barbell-incline-triceps-extension]
 name = "Barbell Incline Triceps Extension"
@@ -1154,6 +1362,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_106_barbell-lying-triceps-extension]
 name = "Barbell Lying Triceps Extension"
@@ -1165,28 +1375,34 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_107_bench-dip]
 name = "Bench Dip"
 slug = "bench-dip"
 primary_muscle_group = "Triceps"
-secondary_muscle_groups = [ "Chest", "Front Deltoids",]
+secondary_muscle_groups = [ "Chest", "Shoulders",]
 instructions = [ "Turn your back towards a sturdy training bench, and put your hands on the pad about shoulder-width apart. Extend your legs in front of you.", "Lower yourself with control for as far as comfortable by bending your arms.", "Reverse the motion and return to the starting position.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_108_close-grip-push-up]
 name = "Close-Grip Push-Up"
 slug = "close-grip-push-up"
 primary_muscle_group = "Triceps"
-secondary_muscle_groups = [ "Abs", "Chest", "Front Deltoids",]
+secondary_muscle_groups = [ "Abs", "Chest", "Shoulders",]
 instructions = [ "Assume the starting position, with hands shoulder-width apart.", "Try to form a straight line from head to feet and brace your abdomen slightly.", "Lower yourself as deep as you can, while inhaling.", "Reverse the motion when you’ve touched the floor and push yourself up to straight arms again while exhaling.", "Repeat for reps.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_109_dumbbell-lying-triceps-extension]
 name = "Dumbbell Lying Triceps Extension"
@@ -1194,10 +1410,12 @@ slug = "dumbbell-lying-triceps-extension"
 primary_muscle_group = "Triceps"
 secondary_muscle_groups = []
 instructions = [ "Lie down on a bench which your head close to the edge. Hold a pair of dumbbells with your arms pointing straight up.", "Lower the dumbbell down behind your head. Try to keep the same distance between your elbows throughout the movement.", "Reverse the motion and extend your arms again.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_110_dumbbell-standing-triceps-extension]
 name = "Dumbbell Standing Triceps Extension"
@@ -1205,10 +1423,12 @@ slug = "dumbbell-standing-triceps-extension"
 primary_muscle_group = "Triceps"
 secondary_muscle_groups = []
 instructions = [ "Lift a dumbbell up to a straight arm over your head.", "Lower the dumbbell down behind your head, while keeping your upper arm still and vertical.", "Reverse the motion and extend your arm again.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_111_overhead-cable-triceps-extension]
 name = "Overhead Cable Triceps Extension"
@@ -1220,17 +1440,21 @@ equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_112_tate-press]
 name = "Tate Press"
 slug = "tate-press"
 primary_muscle_group = "Triceps"
-secondary_muscle_groups = [ "Front Deltoids", "Chest",]
+secondary_muscle_groups = [ "Shoulders", "Chest",]
 instructions = [ "Lie on a bench, flat or with a small incline, holding a dumbbell in each hand with your arms extended straight up over your chest, palms facing your feet.", "Bend your elbows and lower the dumbbells towards your chest by allowing your elbows to move outward at an angle, so the dumbbells almost touch your chest.", "Press the dumbbells back to the starting position by extending your elbows, focusing on triceps engagement.", "Repeat for the desired number of repetitions.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_113_tricep-pushdown-with-bar]
 name = "Tricep Pushdown With Bar"
@@ -1242,6 +1466,8 @@ equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_114_tricep-pushdown-with-rope]
 name = "Tricep Pushdown With Rope"
@@ -1253,6 +1479,8 @@ equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_115_tricep-bodyweight-extension]
 name = "Tricep Bodyweight Extension"
@@ -1264,17 +1492,21 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_116_barbell-hack-squat]
 name = "Barbell Hack Squat"
 slug = "barbell-hack-squat"
 primary_muscle_group = "Quads"
-secondary_muscle_groups = [ "Glutes", "Adductors", "Lower Back", "Trapezius", "Forearm Flexors", "Calves",]
+secondary_muscle_groups = [ "Glutes", "Adductors", "Back", "Back", "Forearms", "Calves",]
 instructions = [ "Stand in front of a bar. Squat down and grip the bar with your arms outside your legs.", "Inhale, brace your core slightly, and lift the bar.", "Pull the bar close to your body, with a straight back, until you are standing straight.", "Lower the bar back to the ground with control.", "Take another breath, and repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_117_air-squat]
 name = "Air Squat"
@@ -1286,6 +1518,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_118_barbell-lunge]
 name = "Barbell Lunge"
@@ -1297,6 +1531,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_119_body-weight-lunge]
 name = "Body Weight Lunge"
@@ -1308,6 +1544,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_120_bodyweight-leg-curl]
 name = "Bodyweight Leg Curl"
@@ -1319,39 +1557,47 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_121_box-jump]
 name = "Box Jump"
 slug = "box-jump"
-primary_muscle_group = "Quads"
-secondary_muscle_groups = [ "Calves",]
+primary_muscle_group = "Full Body"
+secondary_muscle_groups = [ "Quads", "Calves", "Glutes", "Hamstrings",]
 instructions = [ "Stand in front of a sturdy box with your feet shoulder-width apart.", "Slightly bend your knees and lower into a half-squat while swinging your arms back.", "Explode upward by pushing off the ground with your feet and swinging your arms forward to create momentum.", "Jump onto the box, landing softly with your knees slightly bent, feet fully on the box, and your torso upright.", "Stand up fully once you’ve landed on the box.", "Step, or carefully jump, down and repeat for the desired number of repetitions.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_122_belt-squat]
 name = "Belt Squat"
 slug = "belt-squat"
 primary_muscle_group = "Quads"
-secondary_muscle_groups = [ "Calves",]
+secondary_muscle_groups = [ "Calves", "Glutes", "Hamstrings",]
 instructions = [ "Place the belt around your waist properly, and attach it to the machine.", "Make sure that you’re standing accordingly to your normal squat stance. Inhale and brace your core slightly, and unrack the weight.", "Squat as deep as possible with good technique.", "With control, stop and reverse the movement, extending your hips and legs again.", "Exhale on the way up or exchange air in the top position.", "Inhale and repeat for reps.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_123_barbell-walking-lunge]
 name = "Barbell Walking Lunge"
 slug = "barbell-walking-lunge"
 primary_muscle_group = "Quads"
-secondary_muscle_groups = []
+secondary_muscle_groups = [ "Glutes", "Hamstrings",]
 instructions = [ "Stand with your feet at shoulder-width apart, with a slight bend in the knees. Make sure that your core is engaged.", "Step forward with one of your legs, bending both knees at the same time. Stop the movement just before the back knee touches the floor, you should have about a 90-degree angle in both knees.", "Drive through your front foot and extend the knee until you get back to a standing position.", "Continue by repeating the movement on the other side.", "Repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_124_box-squat]
 name = "Box Squat"
@@ -1363,6 +1609,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_125_bulgarian-split-squat]
 name = "Bulgarian Split Squat"
@@ -1374,17 +1622,21 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_126_dumbbell-lunge]
 name = "Dumbbell Lunge"
 slug = "dumbbell-lunge"
 primary_muscle_group = "Quads"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Hold a dumbbell in each hand and stand with your feet about shoulder width apart.", "Take a big step forward and sink as deep as possible in a lunge position, without hitting the knee of the back leg in the floor.", "Return to the starting position by pushing yourself back with the front leg.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_127_dumbbell-squat]
 name = "Dumbbell Squat"
@@ -1392,10 +1644,12 @@ slug = "dumbbell-squat"
 primary_muscle_group = "Quads"
 secondary_muscle_groups = [ "Calves",]
 instructions = [ "Hold a dumbbell in each hand, and stand with your feet about shoulder-width apart. You can hold the dumbells down at your sides, or keep them on your shoulders", "Inhale, lightly brace your core, and squat down as deep as possible.", "Reverse the movement, and return to a standing position. Exhale on the way up.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_128_front-squat]
 name = "Front Squat"
@@ -1407,28 +1661,34 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_129_glute-ham-raise]
 name = "Glute Ham Raise"
 slug = "glute-ham-raise"
 primary_muscle_group = "Hamstrings"
-secondary_muscle_groups = [ "Glutes", "Lower Back",]
+secondary_muscle_groups = [ "Glutes", "Back",]
 instructions = [ "Position yourself in a Glute Ham Raise machine with your knees on the support pad and feet secured under the footplate.", "Keep your body straight from knees to head, engaging your core, and place your hands by your sides or across your chest.", "Lower yourself slowly forward by bending at the knees, controlling the movement until your body is almost parallel to the floor.", "Once you reach the bottom position, pull your body back to the starting position by engaging your hamstrings and glutes.", "Repeat for reps.",]
 equipment = "Machine"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_130_goblet-squat]
 name = "Goblet Squat"
 slug = "goblet-squat"
 primary_muscle_group = "Quads"
-secondary_muscle_groups = [ "Lower Back", "Calves",]
+secondary_muscle_groups = [ "Back", "Calves",]
 instructions = [ "Grab a kettlebell in the sides of the handle, and hold the kettlebell against your chest.", "Stand with your feet about shoulder-width apart, and your toes pointing slightly outward.", "Inhale, lightly brace your core, and squat down as deep as possible.", "Reverse the movement and return to the starting position. Exhale on the way up.",]
-equipment = "Dumbell"
+equipment = "Kettlebell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_131_hack-squat-machine]
 name = "Hack Squat Machine"
@@ -1440,6 +1700,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_132_hip-adduction-machine]
 name = "Hip Adduction Machine"
@@ -1451,6 +1713,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_133_chair-squat]
 name = "Chair Squat"
@@ -1462,6 +1726,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_134_landmine-hack-squat]
 name = "Landmine Hack Squat"
@@ -1473,17 +1739,21 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_135_landmine-squat]
 name = "Landmine Squat"
 slug = "landmine-squat"
 primary_muscle_group = "Quads"
-secondary_muscle_groups = [ "Glutes", "Lower Back", "Calves",]
+secondary_muscle_groups = [ "Glutes", "Back", "Calves",]
 instructions = [ "Place one end of a barbell into a corner. Grip the other end with both of your hands and rest your hands against the top of your chest.", "Inhale and brace your core lightly. Squat down as deep as possible with good technique.", "With control, stop and reverse the movement, extending your hips and legs again until you are standing up.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_136_leg-curl-on-ball]
 name = "Leg Curl On Ball"
@@ -1495,6 +1765,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_137_leg-extension]
 name = "Leg Extension"
@@ -1506,6 +1778,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_138_leg-press]
 name = "Leg Press"
@@ -1517,6 +1791,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_139_lying-leg-curl]
 name = "Lying Leg Curl"
@@ -1528,28 +1804,34 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_140_jumping-lunge]
 name = "Jumping Lunge"
 slug = "jumping-lunge"
 primary_muscle_group = "Quads"
-secondary_muscle_groups = []
+secondary_muscle_groups = [ "Glutes", "Hamstrings", "Calves",]
 instructions = [ "Take a big step forward with your right leg and sink as deep as possible in a lunge position without hitting the knee of the back leg on the floor.", "Explosively jump up, switching the position of your legs while in mid-air. As you land, make sure to soften the landing and go directly into the lunge position with your left leg forward. Your front knee should be over your ankle and your back knee should be pointing down towards the floor.", "Continue alternating legs with each jump. Maintain a steady pace and keep your torso upright throughout the exercise.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = true
+timed = false
 
 [exercise_141_nordic-hamstring-eccentric]
 name = "Nordic Hamstring Eccentric"
 slug = "nordic-hamstring-eccentric"
 primary_muscle_group = "Hamstrings"
-secondary_muscle_groups = []
+secondary_muscle_groups = [ "Glutes",]
 instructions = [ "Start off standing on your knees with a straight hip. Feet wedged under something immovable, like a heavily loaded barbell, or a strong training partner.", "Lean your torso forward by extending your knees with no hip movement. In other words, do not push your butt backward.", "Control the eccentric movement by fighting the gravitational forces with all your hamstring strength. If possible, try keeping the eccentric phase to two seconds.", "When your chest reaches the floor, push yourself up using your arms and start over.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_142_one-legged-leg-extension]
 name = "One-Legged Leg Extension"
@@ -1561,6 +1843,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_143_one-legged-lying-leg-curl]
 name = "One-Legged Lying Leg Curl"
@@ -1572,6 +1856,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_144_one-legged-seated-leg-curl]
 name = "One-Legged Seated Leg Curl"
@@ -1583,6 +1869,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_145_pause-squat]
 name = "Pause Squat"
@@ -1594,6 +1882,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_146_pistol-squat]
 name = "Pistol Squat"
@@ -1605,39 +1895,47 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_147_reverse-barbell-lunge]
 name = "Reverse Barbell Lunge"
 slug = "reverse-barbell-lunge"
-primary_muscle_group = "Adductors"
-secondary_muscle_groups = []
+primary_muscle_group = "Glutes"
+secondary_muscle_groups = [ "Quads", "Hamstrings",]
 instructions = [ "Take a big step backward and sink as deep as possible in a lunge position, without hitting the knee of the back leg in the floor.", "Return to the starting position by pushing yourself back with the front leg.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_148_reverse-dumbbell-lunge]
 name = "Reverse Dumbbell Lunge"
 slug = "reverse-dumbbell-lunge"
 primary_muscle_group = "Quads"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Hold a dumbbell in each hand and stand with your feet about shoulder width apart.", "Take a big step backwards and sink as deep as possible in a lunge position, without hitting the knee of the back leg in the floor.", "Return to the starting position by pushing yourself back with the front leg.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_149_romanian-deadlift]
 name = "Romanian Deadlift"
 slug = "romanian-deadlift"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Adductors", "Trapezius", "Forearm Flexors",]
+secondary_muscle_groups = [ "Adductors", "Back", "Forearms",]
 instructions = [ "Get into the starting position by deadlifting a barbell off the floor, or by unracking it from a barbell rack.", "Inhale, brace your core slightly, and lean forward by hinging in your hips. Keep your knees almost completely extended.", "Lean forward as far as possible without rounding your back. You don’t have to touch the barbell to the floor, although it is OK if you do.", "Reverse the movement and return to the starting position. Exhale on the way up.", "Take another breath, and repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_150_safety-bar-squat]
 name = "Safety Bar Squat"
@@ -1649,6 +1947,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_151_seated-leg-curl]
 name = "Seated Leg Curl"
@@ -1660,6 +1960,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_152_reverse-body-weight-lunge]
 name = "Reverse Body Weight Lunge"
@@ -1671,17 +1973,21 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_153_side-lunges-bodyweight]
 name = "Side Lunges (Bodyweight)"
 slug = "side-lunges-bodyweight"
-primary_muscle_group = "Legs"
-secondary_muscle_groups = [ "Glutes", "Hamstrings", "Core",]
+primary_muscle_group = "Quads"
+secondary_muscle_groups = [ "Glutes", "Hamstrings",]
 instructions = [ "Stand up straight with plenty of space to your side for you to step out.", "Lightly brace your core, and take a big step to the side.", "Go as deep as possible without your heel lifting from the ground and while maintaining control.", "Push yourself back up by pressing the foot from the ground.", "Repeat for reps.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_154_smith-machine-bulgarian-split-squat]
 name = "Smith Machine Bulgarian Split Squat"
@@ -1693,6 +1999,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_155_smith-machine-front-squat]
 name = "Smith Machine Front Squat"
@@ -1704,6 +2012,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_156_smith-machine-squat]
 name = "Smith Machine Squat"
@@ -1715,6 +2025,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_157_squat]
 name = "Squat"
@@ -1726,17 +2038,21 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_158_step-up]
 name = "Step Up"
 slug = "step-up"
-primary_muscle_group = "Legs"
-secondary_muscle_groups = [ "Glutes", "Hamstrings", "Core",]
+primary_muscle_group = "Quads"
+secondary_muscle_groups = [ "Glutes", "Hamstrings",]
 instructions = [ "Stand in front of a chair, bench or something else that you can step up on.", "Place your foot on the chair.", "Lightly brace your core, and step up until your leg is straight.", "Lower yourself in a controlled motion.", "You can keep your foot at the chair, and repeat for reps.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_159_zercher-squat]
 name = "Zercher Squat"
@@ -1748,17 +2064,21 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_160_half-air-squat]
 name = "Half Air Squat"
 slug = "half-air-squat"
-primary_muscle_group = "Legs"
-secondary_muscle_groups = [ "Glutes", "Hamstrings", "Core",]
+primary_muscle_group = "Quads"
+secondary_muscle_groups = [ "Glutes", "Hamstrings", "Abs",]
 instructions = [ "Perform half air squat with proper form and control.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_161_zombie-squat]
 name = "Zombie Squat"
@@ -1770,248 +2090,294 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_162_shallow-body-weight-lunge]
 name = "Shallow Body Weight Lunge"
 slug = "shallow-body-weight-lunge"
-primary_muscle_group = "Legs"
-secondary_muscle_groups = [ "Glutes", "Hamstrings", "Core",]
+primary_muscle_group = "Quads"
+secondary_muscle_groups = [ "Glutes", "Hamstrings", "Abs",]
 instructions = [ "Perform shallow body weight lunge with proper form and control.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_163_assisted-pull-up]
 name = "Assisted Pull-Up"
 slug = "assisted-pull-up"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Rear Deltoids", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Shoulders", "Forearms",]
 instructions = [ "Grip the bar with a pronated grip (palms facing away from you), a little wider than shoulder-width apart. Put your feet/knees on the pad and let your body weight push it down until you’re hanging with your arms extended.", "Keep your chest up, and look up at the bar.", "Inhale and pull yourself up until your chin is over the bar or the bar touches your upper chest.", "Exhale and lower yourself with control until your arms are fully extended again.",]
 equipment = "Machine"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_164_assisted-chin-up]
 name = "Assisted Chin-Up"
 slug = "assisted-chin-up"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Rear Deltoids", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Shoulders", "Forearms",]
 instructions = [ "Grip the bar with a supinated grip (palms facing you), about shoulder-width apart. Put your feet/knees on the pad and let your body weight push it down until you’re hanging with your arms extended.", "Keep your chest up, and look up at the bar.", "Inhale and pull yourself up until your chin is over the bar, or the bar touches your upper chest.", "Exhale and lower yourself with control until your arms are fully extended.",]
 equipment = "Machine"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_165_banded-muscle-up]
 name = "Banded Muscle-Up"
 slug = "banded-muscle-up"
-primary_muscle_group = "Chest"
-secondary_muscle_groups = [ "Biceps", "Forearm Flexors", "Front Deltoids", "Rear Deltoids", "Rotator Cuffs",]
+primary_muscle_group = "Full Body"
+secondary_muscle_groups = [ "Biceps", "Forearms", "Shoulders", "Chest", "Triceps", "Back",]
 instructions = [ "Use a rubber band of self-selected resistance. The thicker the band, the easier it’ll be to get over the bar.", "Start with the band wrapped around one or both feet.", "Hang with straight elbows and a firm grip on the bar.", "Pull hard and use the assistance from the band to get through the transition part.", "Find a balanced position to land above the bar. It might help to make a stomach-to-bar contact.", "Finish with a press to locked elbows.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_166_barbell-row]
 name = "Barbell Row"
 slug = "barbell-row"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Lower Back", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Back", "Forearms", "Shoulders",]
 instructions = [ "Grip the bar with an overhand grip.", "Lean forward with the bar hanging from straight arms.", "Inhale and pull the bar towards you.", "Pull the bar as high as you can so that it touches your abs or chest, if possible.", "With control, lower the bar back to the starting position.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_167_back-extension]
 name = "Back Extension"
 slug = "back-extension"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Hamstrings",]
+secondary_muscle_groups = [ "Hamstrings", "Back",]
 instructions = [ "First, adjust the machine: The top pad should be positioned against the top of your thighs.", "Step onto the machine and position yourself with your feet shoulder-width apart and your upper thighs against the top pad.", "Your upper body should be hanging off the edge of the machine, with your arms crossed over your chest or your hands behind your head.", "Hold a weight plate against your chest or a barbell across your shoulders if you want to use additional weight.", "Prepare to lift: Take a deep breath in, and as you exhale, engage your lower back muscles to lift your upper body until your body forms a straight line.", "Hold this position for a second, then inhale as you slowly lower your upper body back down to the starting position. Make sure to keep your movements slow and controlled, and don’t use momentum to swing your body up or down.",]
 equipment = "Machine"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_168_barbell-shrug]
 name = "Barbell Shrug"
 slug = "barbell-shrug"
-primary_muscle_group = "Trapezius"
-secondary_muscle_groups = [ "Forearm Flexors",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Hold a barbell in straight arms in front of your body.", "Lift your shoulders straight up as high as possible.", "Lower your shoulders again.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_169_block-clean]
 name = "Block Clean"
 slug = "block-clean"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Hamstrings", "Trapezius", "Forearm Flexors", "Calves",]
+secondary_muscle_groups = [ "Hamstrings", "Back", "Forearms", "Calves",]
 instructions = [ "Place the bar on blocks so that the bar is just above knee height.", "Grip the bar with an overhand grip, about shoulder-width apart.", "Hold your breath, and brace your core slightly.", "Lift the bar in a smooth but fast motion by extending your legs and knees simultaneously. Then squat down again to receive the bar on the front of your shoulders.", "Stand up on straight legs again.", "Lower the bar in front of you, with control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_170_cable-close-grip-seated-row]
 name = "Cable Close Grip Seated Row"
 slug = "cable-close-grip-seated-row"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Forearms", "Shoulders",]
 instructions = [ "Attach a narrow handle to the cable row, and assume the starting position.", "Maintain an upright posture with your chest out, shoulders back, and core engaged. Lean forward slightly and let your scapulae move freely by letting them slide forward to the starting position.", "Inhale, retract your shoulder blades and pull the handle towards your lower abdomen while leaning back slightly.", "Exhale and slowly return to the starting position by extending your arms and leaning forward.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_171_block-snatch]
 name = "Block Snatch"
 slug = "block-snatch"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Hamstrings", "Trapezius", "Calves", "Forearm Flexors",]
+secondary_muscle_groups = [ "Hamstrings", "Back", "Calves", "Forearms",]
 instructions = [ "Place a barbell on two blocks, so that it is resting just above knee height.", "Lean forward and grip the bar with a wide overhand grip.", "Inhale, and brace your core slightly.", "Lift the bar in a smooth but fast motion, by extending your legs and knees simultaneously.", "Once the bar has reached maximum speed, squat down deep and catch the bar on straight arms over your head.", "When you’ve got control of the bar, stand up straight.", "Lower the bar down to the blocks again, with control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_172_cable-wide-grip-seated-row]
 name = "Cable Wide Grip Seated Row"
 slug = "cable-wide-grip-seated-row"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Forearms", "Shoulders",]
 instructions = [ "Grip a bar slightly wider than shoulder width and assume the starting position.", "Inhale and pull the handle towards your abdomen, while leaning back slightly.", "Exhale and slowly return to the starting position by extending your arms and leaning forward.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_173_chest-to-bar]
 name = "Chest to Bar"
 slug = "chest-to-bar"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Rear Deltoids", "Biceps", "Rotator Cuffs", "Forearm Flexors",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Shoulders", "Biceps", "Forearms",]
 instructions = [ "Grip a pull-up bar with an overhand grip, slightly wider than shoulder-width.", "Hang with straight arms and activate your scapula by pulling your shoulder blades down and back.", "Pull yourself up explosively using your back and arms until your chest touches the bar.", "Lower yourself back to the starting position in a controlled manner.", "Repeat for the desired number of repetitions.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_174_chin-up]
 name = "Chin-Up"
 slug = "chin-up"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Rear Deltoids", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Shoulders", "Forearms",]
 instructions = [ "Grip the bar with a supinated grip (palms facing you), about shoulder-width apart.", "Keep your chest up, and look up at the bar.", "Inhale and pull yourself up until your chin is over the bar, or the bar touches your upper chest.", "Exhale and lower yourself with control until your arms are fully extended.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_175_clean]
 name = "Clean"
 slug = "clean"
-primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Hamstrings", "Trapezius", "Forearm Flexors", "Calves",]
+primary_muscle_group = "Full Body"
+secondary_muscle_groups = [ "Hamstrings", "Back", "Forearms", "Calves", "Quads", "Glutes", "Shoulders",]
 instructions = [ "Step up close to the bar, so that it is about over the middle of your foot.", "Lean forward and grip the bar with an overhand grip, about shoulder-width apart.", "Hold your breath, and brace your core slightly.", "Lift the bar in a smooth but fast motion. Then squat down again to receive the bar on the front of your shoulders.", "Stand up on straight legs again.", "Lower the bar in front of you, with control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_176_clean-and-jerk]
 name = "Clean and Jerk"
 slug = "clean-and-jerk"
-primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Hamstrings", "Trapezius", "Forearm Flexors", "Triceps", "Lateral Deltoids", "Calves",]
+primary_muscle_group = "Full Body"
+secondary_muscle_groups = [ "Hamstrings", "Back", "Forearms", "Triceps", "Shoulders", "Calves", "Quads", "Glutes",]
 instructions = [ "Step up close to the bar, so that it is about over the middle of your foot.", "Lean forward and grip the bar with an overhand grip, about shoulder-width apart.", "Hold your breath, and brace your core slightly.", "Lift the bar in a smooth but fast motion. Then squat down again to receive the bar on the front of your shoulders. Stand up on straight legs again.", "Slightly bend your knees, and then forcefully extend them to push the bar up.", "Duck under the bar and catch it on straight arms, with your legs in a lunge position.", "First, take a step back with your front foot and then step forward with your back foot, until you’re standing with your feet side by side again, while controlling the bar on straight arms above your head.", "Lower the bar in front of you, with control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_177_close-grip-lat-pulldown]
 name = "Close-Grip Lat Pulldown"
 slug = "close-grip-lat-pulldown"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Rear Deltoids", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Shoulders", "Forearms",]
 instructions = [ "Grip the bar with your hands narrower than shoulder-width apart.", "Sit down with your thighs under the leg support, keep your chest up, and look up at the bar.", "Inhale and pull the bar towards you.", "Pull the bar down until it is below your chin or touches your upper chest.", "Exhale and slowly return the bar until your arms are fully extended.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_178_deadlift]
 name = "Deadlift"
 slug = "deadlift"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Quads", "Hamstrings", "Adductors", "Trapezius", "Forearm Flexors",]
+secondary_muscle_groups = [ "Quads", "Hamstrings", "Adductors", "Back", "Forearms",]
 instructions = [ "Step up close to the bar so that it is about over the middle of your foot.", "Inhale, lean forward, and grip the bar.", "Hold your breath, brace your core slightly, and lift the bar.", "Pull the bar close to your body, with a straight back, until you are standing straight.", "Lower the bar back to the ground with control.", "Take another breath, and repeat for reps.",]
 equipment = "Barbell"
-bodyweight = false
+bodyweight = "false"
 image = ""
 animation = ""
+cardio = "false"
+timed = "false"
 
 [exercise_179_deficit-deadlift]
 name = "Deficit Deadlift"
 slug = "deficit-deadlift"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Quads", "Hamstrings", "Adductors", "Trapezius", "Forearm Flexors",]
+secondary_muscle_groups = [ "Quads", "Hamstrings", "Adductors", "Back", "Forearms",]
 instructions = [ "Stand on an elevation of optional height (i.e. a weight plate), and stand close to the bar, so that it is about over the middle of your foot.", "Inhale, lean forward, and grip the bar.", "Hold your breath, brace your core slightly, and lift the bar.", "Pull the bar close to your body, with a straight back, until you are standing straight.", "Lower the bar back to the ground with control.", "Take another breath, and repeat for reps.",]
 equipment = "Barbell"
-bodyweight = false
+bodyweight = "false"
 image = ""
 animation = ""
+cardio = "false"
+timed = "false"
 
 [exercise_180_dumbbell-deadlift]
 name = "Dumbbell Deadlift"
 slug = "dumbbell-deadlift"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Quads", "Hamstrings", "Adductors", "Trapezius", "Forearm Flexors",]
+secondary_muscle_groups = [ "Quads", "Hamstrings", "Adductors", "Back", "Forearms",]
 instructions = [ "Hold a dumbbell in each hand, and stand with your feet about hip-width apart.", "Inhale and lightly brace your core.", "Lower the dumbbells close to the floor, by leaning forward and bending your knees.", "Reverse the movement, and return to a standing position. Exhale on the way up.",]
-equipment = "Dumbell"
-bodyweight = false
+equipment = "Dumbbell"
+bodyweight = "false"
 image = ""
 animation = ""
+cardio = "false"
+timed = "false"
 
 [exercise_181_dumbbell-row]
 name = "Dumbbell Row"
 slug = "dumbbell-row"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Forearms", "Shoulders",]
 instructions = [ "Start by placing a dumbbell on the floor beside a bench or chair. Stand facing the bench or chair and place your left hand and left knee on top of it.", "Keep your back flat and parallel to the ground, with a slight bend in the standing leg. Grip the dumbbell with your right hand.", "Inhale and pull the dumbbell by driving the elbow toward the ceiling.", "With control, lower the dumbbell back to the starting position while exhaling.", "Complete desired reps on one side, then switch to the opposite arm and leg.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_182_dumbbell-shrug]
 name = "Dumbbell Shrug"
 slug = "dumbbell-shrug"
-primary_muscle_group = "Trapezius"
-secondary_muscle_groups = [ "Forearm Flexors",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Hold a pair of dumbbells at your sides.", "Lift your shoulders straight up as high as possible.", "Lower your shoulders again.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_183_floor-back-extension]
 name = "Floor Back Extension"
 slug = "floor-back-extension"
-primary_muscle_group = "Lower Back"
+primary_muscle_group = "Back"
 secondary_muscle_groups = []
 instructions = [ "Lie on the ground with your arms at about a 90-degree angle to your sides.", "Fix your eyes on the ground to keep the neck in a natural position.", "Lift your upper body by using your lower back. You may pause at the top of the movement, feeling the lower back muscles working.", "Lower your upper body in a slow and controlled motion.", "Repeat for reps.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_184_good-morning]
 name = "Good Morning"
@@ -2023,391 +2389,463 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_185_gorilla-row]
 name = "Gorilla Row"
 slug = "gorilla-row"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Forearm Flexors", "Rear Deltoids",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Forearms", "Shoulders",]
 instructions = [ "Stand with feet wider than shoulder-width apart, holding a dumbbell in each hand between your legs. Hinge forward with a slight bend in your knees.", "Keep your back straight and core engaged, rowing one dumbbell up toward your hip while keeping the opposite arm stable.", "Lower the dumbbell in a controlled motion and repeat with the opposite arm.", "Continue alternating arms for the desired number of repetitions.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_186_hang-clean]
 name = "Hang Clean"
 slug = "hang-clean"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Hamstrings", "Trapezius", "Forearm Flexors", "Calves",]
+secondary_muscle_groups = [ "Hamstrings", "Back", "Forearms", "Calves",]
 instructions = [ "Grip the bar with an overhand grip, about shoulder-width apart, and lift it up to get into the starting position.", "Hold your breath, and brace your core slightly.", "Lower the bar along your thighs, down to about knee-level, by bending your hips and knees.", "Reverse the movement, and lift the bar in a smooth but fast motion by extending your legs and knees simultaneously. Then squat down again to receive the bar on the front of your shoulders.", "Stand up on straight legs again.", "Lower the bar in front of you, with control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_187_hang-power-clean]
 name = "Hang Power Clean"
 slug = "hang-power-clean"
-primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Adductors", "Hamstrings", "Trapezius", "Forearm Flexors",]
+primary_muscle_group = "Full Body"
+secondary_muscle_groups = [ "Glutes", "Adductors", "Hamstrings", "Back", "Forearms", "Quads", "Shoulders", "Triceps",]
 instructions = [ "Grip the bar with an overhand grip, about shoulder-width apart, and lift it up to get into the starting position.", "Hold your breath, and brace your core slightly.", "Lower the bar along your thighs, down to about knee-level, by bending your hips and knees.", "Reverse the movement, and lift the bar in a smooth but fast motion by extending your legs and knees simultaneously.", "Bend your knees slightly and receive the bar on the front of your shoulders.", "Stand up on straight legs again.", "Lower the bar in front of you, with control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_188_hang-power-snatch]
 name = "Hang Power Snatch"
 slug = "hang-power-snatch"
-primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Adductors", "Hamstrings", "Trapezius", "Forearm Flexors",]
+primary_muscle_group = "Full Body"
+secondary_muscle_groups = [ "Glutes", "Adductors", "Hamstrings", "Back", "Forearms", "Quads", "Shoulders", "Triceps",]
 instructions = [ "Grip the bar with a wide overhand grip, and lift it up to get into the starting position, with the bar resting in the hip crease.", "Hold your breath, and brace your core slightly.", "Lower the bar along your thighs, down to about knee-level, by bending your hips and knees.", "Reverse the movement, and lift the bar in a smooth but fast motion, by extending your legs and knees simultaneously.", "Once the bar has reached maximum speed, bend your knees slightly and catch the bar on straight arms over your head.", "When you’ve got control of the bar, stand up straight.", "Lower the bar in front of you, with control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_189_hang-snatch]
 name = "Hang Snatch"
 slug = "hang-snatch"
-primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Hamstrings", "Trapezius", "Forearm Flexors", "Calves",]
+primary_muscle_group = "Full Body"
+secondary_muscle_groups = [ "Glutes", "Hamstrings", "Back", "Forearms", "Calves", "Quads", "Shoulders", "Triceps",]
 instructions = [ "Grip the bar with a wide overhand grip and lift it up to get into the starting position, with the bar resting in the hip crease.", "Hold your breath and brace your core slightly.", "Lower the bar along your thighs, down to about knee-level, by bending your hips and knees.", "Reverse the movement and lift the bar in a smooth but fast motion, by extending your legs and knees simultaneously.", "Once the bar has reached maximum speed, squat down deep and catch the bar on straight arms over your head.", "When you’ve got control of the bar, stand up straight.", "Lower the bar in front of you, with control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_190_inverted-row]
 name = "Inverted Row"
 slug = "inverted-row"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Forearms", "Shoulders",]
 instructions = [ "Place a barbell in a rack, high enough for you to be able to hang below it in straight arms, with your heels on the floor.", "Grip the bar with an overhand grip, slightly wider than shoulder-width apart.", "Inhale, and pull yourself up as high as you can, or until your chest touches the bar.", "Exhale, while lowering yourself back to the starting position with control.",]
 equipment = "Barbell"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_191_jefferson-curl]
 name = "Jefferson Curl"
 slug = "jefferson-curl"
-primary_muscle_group = "Lower Back"
-secondary_muscle_groups = [ "Adductors", "Glutes", "Hamstrings", "Trapezius",]
-instructions = [ "Stand tall with a light barbell or other weight in your hands. For extra range of motion, you might want to stand on a small block.", "Bend forward by tucking your chin into your chest and then slowly and deliberately start to round your spine, vertebrae by vertebrae, starting from the neck and moving down towards the lower back.", "As you round your spine, allow the barbell to lower towards the ground, keeping it close to your body. Go as low as your flexibility allows, but don’t force it. You should feel a stretch but not pain.", "Once you’ve reached the lowest point that you can comfortably go, pause for a moment.", "Start uncurling your spine, beginning from the lower back and working your way up to your neck until you have returned to the starting position.",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Adductors", "Glutes", "Hamstrings", "Back",]
+instructions = [ "Stand tall with a light barbell or other weight in your hands. For extra range of motion, you might want to stand on a small block.", "Bend forward by tucking your chin into your chest and then slowly and deliberately start to round your spine, vertebrae by vertebrae, starting from the neck and moving down towards the lower back.", "As you round your spine, allow the barbell to lower towards the ground, keeping it close to your body. Go as low as your flexibility allows, but don't force it. You should feel a stretch but not pain.", "Once you've reached the lowest point that you can comfortably go, pause for a moment.", "Start uncurling your spine, beginning from the lower back and working your way up to your neck until you have returned to the starting position.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_192_inverted-row-with-underhand-grip]
 name = "Inverted Row with Underhand Grip"
 slug = "inverted-row-with-underhand-grip"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Forearms", "Shoulders",]
 instructions = [ "Place a barbell in a rack, high enough for you to be able to hang below it in straight arms, with your heels on the floor.", "Grip the bar with an underhand grip, about shoulder-width apart.", "Inhale, and pull yourself up as high as you can, or until your chest touches the bar.", "Exhale, while lowering yourself back to the starting position with control.",]
 equipment = "Barbell"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_193_jumping-muscle-up]
 name = "Jumping Muscle-Up"
 slug = "jumping-muscle-up"
 primary_muscle_group = "Chest"
-secondary_muscle_groups = [ "Biceps", "Forearm Flexors", "Front Deltoids", "Rear Deltoids", "Rotator Cuffs",]
+secondary_muscle_groups = [ "Biceps", "Forearms", "Shoulders",]
 instructions = [ "Use a box of self-selected height.", "Start on top of the box with bent knees and straight arms/elbows. Keep a firm grip on the rings.", "Jump hard simultaneously as you pull yourself up to get through the transition part and into the bottom of the dip.", "Find a balanced and secure position to land at the bottom of the dip. Try to squeeze the rings against your body (torso or stomach) before continuing the movement with the finishing dip press.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_194_kettlebell-clean]
 name = "Kettlebell Clean"
 slug = "kettlebell-clean"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Hamstrings", "Trapezius", "Forearm Flexors", "Adductors", "Obliques",]
+secondary_muscle_groups = [ "Hamstrings", "Back", "Forearms", "Adductors", "Obliques",]
 instructions = [ "Stand with a wide stance, with a kettlebell placed about 20 inches in front of you.", "Grab the kettlebell with one hand and tilt it slightly toward you.", "In one powerful motion, pull the kettlebell back between your legs.", "Stand up explosively. This will cause the kettlebell to swing forward.", "Use your arm to guide the kettlebell closer to your body as it rises.", "As the kettlebell passes your hip, perform an uppercut-like motion to bring your arm under the kettlebell and into the rack position.",]
-equipment = "Dumbell"
+equipment = "Kettlebell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_195_kettlebell-swing]
 name = "Kettlebell Swing"
 slug = "kettlebell-swing"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Hamstrings", "Adductors", "Trapezius", "Forearm Flexors",]
+secondary_muscle_groups = [ "Hamstrings", "Adductors", "Back", "Forearms",]
 instructions = [ "Place a kettlebell on the ground, about one or two feet in front of you.", "Take a wide stance, lean forward and grip the kettlebell.", "Brace your core slightly, and swing the kettlebell back between your legs, while inhaling.", "Swing the kettlebell forward by extending your hip, while exhaling.", "Try to swing the kettlebell to about chest height.", "Repeat for reps and put the kettlebell back on the ground when you’re finished.",]
-equipment = "Dumbell"
+equipment = "Kettlebell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_196_kroc-row]
 name = "Kroc Row"
 slug = "kroc-row"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Lower Back", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Back", "Forearms", "Shoulders",]
 instructions = [ "Place one hand on a bench for support, and either both feet on the floor, or one knee on the bench. Hold a heavy dumbbell in the opposite hand with your arm fully extended.", "Brace your core, and keep it activated during the entire movement. Lower the dumbbell towards the floor for a full range of motion.", "Pull the dumbbell explosively up towards your hip by engaging your back muscles, keeping the elbow close to your body during the lift.", "Lower the dumbbell back down in a controlled manner to the starting position and repeat for the desired number of reps.", "Switch sides and repeat on the opposite arm.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_197_lat-pulldown-with-pronated-grip]
 name = "Lat Pulldown With Pronated Grip"
 slug = "lat-pulldown-with-pronated-grip"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Rear Deltoids", "Forearm Flexors", "Rotator Cuffs",]
-instructions = [ "Begin by adjusting the thigh pad to fit snugly against your thighs to prevent your body from lifting off the seat.", "Grasp the bar with an overhand (pronated) grip, with your hands slightly wider than shoulder-width apart.", "Sit with your thighs under the thigh pad, keep your chest up, and look at the bar.", "Pull the bar down towards your chest, leading with your elbows.  Pull until the bar is below your chin or touches your upper chest.", "Squeeze your shoulder blades together at the bottom of the movement.", "Exhale and slowly release the bar back up to the starting position.",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Shoulders", "Forearms",]
+instructions = [ "Begin by adjusting the thigh pad to fit snugly against your thighs to prevent your body from lifting off the seat.", "Grasp the bar with an overhand (pronated) grip, with your hands slightly wider than shoulder-width apart.", "Sit with your thighs under the thigh pad, keep your chest up, and look at the bar.", "Pull the bar down towards your chest, leading with your elbows. Pull until the bar is below your chin or touches your upper chest.", "Squeeze your shoulder blades together at the bottom of the movement.", "Exhale and slowly release the bar back up to the starting position.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_198_lat-pulldown-with-supinated-grip]
 name = "Lat Pulldown With Supinated Grip"
 slug = "lat-pulldown-with-supinated-grip"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Rear Deltoids", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Shoulders", "Forearms",]
 instructions = [ "Grip the bar with a supinated grip (palms facing you), about shoulder-width apart.", "Sit down with your thighs under the leg support, keep your chest up, and look up at the bar.", "Inhale and pull the bar towards you.", "Pull the bar down until it is below your chin or touches your upper chest.", "Exhale and slowly return the bar until your arms are fully extended.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_199_neutral-close-grip-lat-pulldown]
 name = "Neutral Close-Grip Lat Pulldown"
 slug = "neutral-close-grip-lat-pulldown"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Rear Deltoids", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Shoulders", "Forearms", "Shoulders",]
 instructions = [ "Attatch a grip to the lat pulldown that lets you have a neutral close-grip.", "Sit down with your thighs under the leg support, keep your chest up, and look up at the bar.", "Inhale and pull the bar towards you.", "Pull the bar down until it is below your chin or touches your upper chest.", "Exhale and slowly return the bar until your arms are fully extended.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_200_one-handed-cable-row]
 name = "One-Handed Cable Row"
 slug = "one-handed-cable-row"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Forearms", "Shoulders",]
 instructions = [ "Grab the handle and assume the starting position.", "Inhale and pull the handle towards the side of your abdomen, while leaning back slightly.", "Exhale and slowly return to the starting position by extending your arm and leaning forward.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_201_kettlebell-clean-jerk]
 name = "Kettlebell Clean & Jerk"
 slug = "kettlebell-clean-jerk"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Hamstrings", "Adductors", "Trapezius", "Forearm Flexors", "Triceps", "Lateral Deltoids",]
+secondary_muscle_groups = [ "Hamstrings", "Adductors", "Back", "Forearms", "Triceps", "Shoulders",]
 instructions = [ "Stand with your feet slightly wider than shoulder-width, with a kettlebell placed about 20 inches/50cm in front of you.", "Grab the kettlebell with one hand and tilt it slightly toward you.", "In an explosive motion, pull the kettlebell backward between your legs.", "Stand up explosively. This will cause the kettlebell to swing forward.", "Pull the kettlebell close to your body and, as it passes your hip, perform an uppercut-like motion to bring your arm under the bell and into the rack position.", "Slightly bend your knees, then explosively extend your legs. Use the power from your hips and legs to drive the kettlebell upward.", "As the kettlebell rises from the force of your legs, finish the movement by pressing with your arm to lock the weight out overhead.", "Land softly back into the rack position.", "Repeat for reps.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_202_one-handed-kettlebell-swing]
 name = "One-Handed Kettlebell Swing"
 slug = "one-handed-kettlebell-swing"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Hamstrings", "Adductors", "Trapezius", "Forearm Flexors", "Obliques",]
+secondary_muscle_groups = [ "Hamstrings", "Adductors", "Back", "Forearms", "Obliques",]
 instructions = [ "Place a kettlebell on the ground, about one or two feet in front of you.", "Take a wide stance, lean forward and grip the kettlebell with one hand.", "Brace your core slightly, and swing the kettlebell back between your legs, while inhaling.", "Swing the kettlebell forward by extending your hip, while exhaling.", "Try to swing the kettlebell to about chest height.", "Repeat for reps and put the kettlebell back on the ground when you’re finished.",]
-equipment = "Dumbell"
+equipment = "Kettlebell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_203_kettlebell-clean-press]
 name = "Kettlebell Clean & Press"
 slug = "kettlebell-clean-press"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Hamstrings", "Trapezius", "Forearm Flexors", "Triceps", "Lateral Deltoids", "Adductors", "Obliques",]
+secondary_muscle_groups = [ "Hamstrings", "Back", "Forearms", "Triceps", "Shoulders", "Adductors", "Obliques",]
 instructions = [ "Stand with a wide stance, with a kettlebell placed about 20 inches/50 cm in front of you.", "Grab the kettlebell with one hand and tilt it slightly toward you.", "In one powerful motion, pull the kettlebell back between your legs.", "Stand up explosively. This will cause the kettlebell to swing forward.", "Use your arm to guide the kettlebell closer to your body as it rises.", "As the kettlebell passes your hip, perform an uppercut-like motion to bring your arm under the kettlebell and into the rack position.", "From the rack position, press the kettlebell upward until your arm is fully extended and your upper arm is next to your ear. Keep your shoulder blade in a neutral position.", "Reverse the movement and repeat for reps.",]
-equipment = "Dumbell"
+equipment = "Kettlebell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_204_one-handed-lat-pulldown]
 name = "One-Handed Lat Pulldown"
 slug = "one-handed-lat-pulldown"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Rear Deltoids", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Shoulders", "Forearms",]
 instructions = [ "Sit down with your thighs under the leg support, grasp the handle with one hand, keep your chest up, and look slightly up.", "Inhale and pull the handle towards your side.", "Exhale and slowly return the handle until your arm is extended again.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_205_pause-deadlift]
 name = "Pause Deadlift"
 slug = "pause-deadlift"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Quads", "Hamstrings", "Adductors", "Trapezius", "Forearm Flexors",]
+secondary_muscle_groups = [ "Quads", "Hamstrings", "Adductors", "Back", "Forearms",]
 instructions = [ "Step up close to the bar, so that it is about over the middle of your foot.", "Inhale, lean forward, and grip the bar.", "Hold your breath, brace your core slightly, and lift the bar.", "Pause the movement when the bar is just a few inches above the floor.", "After a pause of a second or two, complete the lift by pulling the bar close to your body, until fully extended.", "Lower the bar back to the ground with control.", "Take another breath, and repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_206_pendlay-row]
 name = "Pendlay Row"
 slug = "pendlay-row"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Lower Back", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Back", "Forearms", "Shoulders",]
 instructions = [ "Lean forward by hinging in your hip, and grip a bar with an overhand grip.", "Pull the bar towards you, without otherwise moving your upper body. Pull the bar as high as you can, so that it touches your abs or chest if possible.", "With control, lower the bar back to the floor.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_207_power-clean]
 name = "Power Clean"
 slug = "power-clean"
-primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Quads", "Adductors", "Hamstrings", "Trapezius", "Forearm Flexors",]
+primary_muscle_group = "Full Body"
+secondary_muscle_groups = [ "Glutes", "Quads", "Adductors", "Hamstrings", "Back", "Forearms", "Shoulders",]
 instructions = [ "Step up close to the bar, so that it is about over the middle of your foot.", "Lean forward and grip the bar with an overhand grip, about shoulder-width apart.", "Hold your breath, and brace your core slightly.", "Lift the bar in a smooth but fast motion. Bend your knees slightly and receive the bar on the front of your shoulders.", "Stand up on straight legs again.", "Lower the bar in front of you, with control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_208_power-snatch]
 name = "Power Snatch"
 slug = "power-snatch"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Quads", "Adductors", "Hamstrings", "Trapezius", "Forearm Flexors",]
+secondary_muscle_groups = [ "Quads", "Adductors", "Hamstrings", "Back", "Forearms",]
 instructions = [ "Step up close to the bar, so that it is about over the middle of your foot.", "Lean forward and grip the bar with a wide overhand grip, close to the weight plates.", "Hold your breath, brace your core slightly, and lower your hip closer to the floor.", "Lift the bar in a smooth but fast motion, by extending your legs and knees simultaneously.", "Once the bar has reached maximum speed, bend your knees slightly and catch the bar on straight arms over your head.", "When you’ve got control of the bar, stand up straight.", "Lower the bar in front of you, with control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_209_pull-up]
 name = "Pull-Up"
 slug = "pull-up"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Rear Deltoids", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Shoulders", "Forearms",]
 instructions = [ "Grip the bar with palms facing away from you, slightly wider than shoulder-width.", "Keep your chest up, and look up at the bar.", "Inhale and pull yourself up until your chin is over the bar or the bar touches your upper chest.", "Exhale and lower yourself with control until your arms are fully extended.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_210_rack-pull]
 name = "Rack Pull"
 slug = "rack-pull"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Hamstrings", "Adductors", "Trapezius", "Forearm Flexors",]
+secondary_muscle_groups = [ "Hamstrings", "Adductors", "Back", "Forearms",]
 instructions = [ "Set the bar at desired height, using a rack or blocks.", "Step up close to the bar, so that it is over the middle of your foot.", "Inhale, lean forward and bend your knees slightly, and grip the bar.", "Hold your breath, brace your core, and lift the bar.", "Pull the bar close to your body with a straight back, until you are standing straight.", "Lower the bar back to the rack or blocks with control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_211_ring-pull-up]
 name = "Ring Pull-Up"
 slug = "ring-pull-up"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Rear Deltoids", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Shoulders", "Forearms",]
 instructions = [ "Adjust the rings to a height where you can hang with fully extended arms without your feet touching the ground.", "Grab the rings and hang with your body straight and core engaged.", "Pull yourself up by driving your elbows down and back, bringing your chest to or above the rings.", "Slowly extend your arms to lower yourself back to the starting position.", "Repeat for reps.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_212_ring-row]
 name = "Ring Row"
 slug = "ring-row"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Forearms", "Shoulders",]
 instructions = [ "Adjust the gymnastic rings to your desired height and grip the rings while facing the anchor point.", "Lean back with your arms extended and walk your feet forward until your body is at an angle, keeping a straight line from head to heels.", "Pull your chest towards the rings by driving your elbows back, keeping your body straight and core engaged.", "Slowly extend your arms to lower yourself back to the starting position.", "Repeat for reps.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_213_scap-pull-up]
 name = "Scap Pull-Up"
 slug = "scap-pull-up"
-primary_muscle_group = "Rotator Cuffs"
-secondary_muscle_groups = []
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Shoulders",]
 instructions = [ "Grip the bar with a pronated grip (palms facing away from you), slightly wider than shoulder width.", "Inhale and pull your shoulder blades down and together by activating the muscles in your back. Pull your shoulders away from your ears.", "Exhale, relax the shoulder blades and let them come up again.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_214_seal-row]
 name = "Seal Row"
 slug = "seal-row"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Forearms", "Shoulders",]
 instructions = [ "Lie on your stomach on a bench, with a barbell placed on the floor below you.", "Grip the bar with an overhand grip, slightly wider than shoulder-width.", "Inhale and pull the bar towards you.", "Pull the bar as high as you can, so that it touches the underside of the bench if possible.", "With control, lower the bar back to the starting position.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_215_seated-machine-row]
 name = "Seated Machine Row"
 slug = "seated-machine-row"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Forearms", "Shoulders",]
 instructions = [ "Adjust the machine to the correct settings and sit down in the starting position.", "Inhale and pull the handles towards you, as far as possible.", "Exhale and slowly return the handles to the starting position again.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_216_single-leg-deadlift-with-kettlebell]
 name = "Single Leg Deadlift with Kettlebell"
 slug = "single-leg-deadlift-with-kettlebell"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Abductors", "Adductors", "Forearm Flexors", "Trapezius",]
+secondary_muscle_groups = [ "Abductors", "Adductors", "Forearms", "Back",]
 instructions = [ "Stand on one leg, holding a kettlebell in the opposite hand, maintaining an upright posture with a slight bend in the knee of the standing leg.", "Hinge forward at the hips, extending your free leg straight back as your torso lowers.", "Keep your back straight and lower the kettlebell toward the ground without touching it.", "Drive through the heel of the standing leg to return to an upright position.", "Repeat for the desired number of repetitions, and then switch legs.",]
-equipment = "Dumbell"
+equipment = "Kettlebell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_217_smith-machine-one-handed-row]
 name = "Smith Machine One-Handed Row"
 slug = "smith-machine-one-handed-row"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Forearms", "Shoulders",]
 instructions = [ "Set the bar in the Smith machine at an appropriate height.", "Stand beside the machine and grip the bar with one hand. Bend your knees slightly and lean forward. If you want, place your other hand on your knee for support.", "Keep your back straight and core engaged.", "Pull the bar up towards your hip by engaging your back muscles and keeping your elbow close to your body.", "Pause briefly at the top, then lower the bar back down in a controlled manner.", "Repeat for the desired number of reps, then switch sides.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_218_snatch]
 name = "Snatch"
 slug = "snatch"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Hamstrings", "Trapezius", "Forearm Flexors", "Calves",]
+secondary_muscle_groups = [ "Hamstrings", "Back", "Forearms", "Calves", "Shoulders", "Quads",]
 instructions = [ "Step up close to the bar, so that it is about over the middle of your foot.", "Lean forward and grip the bar with a wide overhand grip, close to the weight plates.", "Hold your breath, brace your core slightly, and lower your hip closer to the floor.", "Lift the bar in a smooth but fast motion, by extending your legs and knees simultaneously.", "Once the bar has reached maximum speed, squat down deep and catch the bar on straight arms over your head.", "When you’ve got control of the bar, stand up straight.", "Lower the bar in front of you, with control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_219_snatch-grip-deadlift]
 name = "Snatch Grip Deadlift"
 slug = "snatch-grip-deadlift"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Quads", "Hamstrings", "Adductors", "Trapezius", "Forearm Flexors",]
+secondary_muscle_groups = [ "Quads", "Hamstrings", "Adductors", "Back", "Forearms",]
 instructions = [ "Step up close to the bar, so that it is about over the middle of your foot.", "Inhale, lean forward and take a wide grip, like in a snatch.", "Hold your breath, brace your core slightly, and lift the bar.", "Pull the bar close to your body, with a straight back, until you are standing straight.", "Lower the bar back to the ground with control.", "Take another breath, and repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 ["exercise_220_muscle-up-(rings)"]
 name = "Muscle-Up (Rings)"
@@ -2419,28 +2857,34 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_221_stiff-legged-deadlift]
 name = "Stiff-Legged Deadlift"
 slug = "stiff-legged-deadlift"
-primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Adductors", "Trapezius", "Forearm Flexors",]
+primary_muscle_group = "Hamstrings"
+secondary_muscle_groups = [ "Adductors", "Back", "Forearms",]
 instructions = [ "Step up close to the bar, so that it is about over the middle of your foot. Keep your feet shoulder-width apart.", "Inhale, lean forward with only a slight bend in your knees, and grip the bar.", "Hold your breath, brace your core slightly, and lift the bar.", "Pull the bar close to your body, with a straight back, until you have reached a standing position.", "Lower the bar back to the ground with control, still keeping your legs straight.", "Take another breath, and repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_222_straight-arm-lat-pulldown]
 name = "Straight Arm Lat Pulldown"
 slug = "straight-arm-lat-pulldown"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Rear Deltoids", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Shoulders", "Shoulders",]
 instructions = [ "Grip the bar with a pronated grip (palms facing away from you), slightly wider than shoulder-width.", "With straight arms, push the bar down in front of you by contracting your lats.", "Slowly return the bar to the starting position.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 ["exercise_223_muscle-up-(bar)"]
 name = "Muscle-Up (Bar)"
@@ -2452,83 +2896,99 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_224_sumo-deadlift]
 name = "Sumo Deadlift"
 slug = "sumo-deadlift"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Quads", "Hamstrings", "Adductors", "Trapezius", "Forearm Flexors",]
+secondary_muscle_groups = [ "Quads", "Hamstrings", "Adductors", "Back", "Forearms",]
 instructions = [ "Step up close to the bar with wide foot placement. A good starting point is to have the bar over the middle of your foot and stand so wide that your shins are vertical, as seen from the front.", "Inhale, bend down and grip the bar.", "Hold your breath, brace your core slightly, and lift the bar.", "Pull the bar close to your body, with a straight back, until you are standing straight.", "Lower the bar back to the ground with control.", "Take another breath, and repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_225_t-bar-row]
 name = "T-Bar Row"
 slug = "t-bar-row"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Biceps", "Lower Back", "Forearm Flexors", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Back", "Forearms", "Shoulders",]
 instructions = [ "Stand on the plate, lean forward, and grasp the bar with an overhand grip in straight arms.", "Inhale and pull the bar towards you as high as possible.", "With control, lower the bar back to the starting position.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_226_towel-row]
 name = "Towel Row"
 slug = "towel-row"
-primary_muscle_group = "Lats"
+primary_muscle_group = "Back"
 secondary_muscle_groups = [ "Biceps",]
 instructions = [ "Wrap a strong towel (or two for extra grip) around a secure object such as a door, railing, pole, or tree branch. Make sure it won’t slip when under load.", "Hold one end of the towel in each hand and lean backward at an angle, keeping your body straight like a plank.", "Engage your back, squeeze your shoulder blades together, and pull your chest toward the towel.", "Slowly extend your arms back to the starting position without letting your shoulders slump forward.", "Repeat for reps.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_227_trap-bar-deadlift-with-high-handles]
 name = "Trap Bar Deadlift With High Handles"
 slug = "trap-bar-deadlift-with-high-handles"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Adductors", "Trapezius", "Forearm Flexors",]
+secondary_muscle_groups = [ "Adductors", "Back", "Forearms",]
 instructions = [ "Step into the bar’s opening, and position yourself so that the handles are in line with the middle of your feet.", "Inhale, bend down and grip the handles.", "Hold your breath, brace your core slightly, and lift the bar.", "Lift the bar with a straight back, until you are standing straight.", "Lower the bar back to the ground with control.", "Take another breath, and repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_228_trap-bar-deadlift-with-low-handles]
 name = "Trap Bar Deadlift With Low Handles"
 slug = "trap-bar-deadlift-with-low-handles"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Adductors", "Trapezius", "Forearm Flexors",]
+secondary_muscle_groups = [ "Adductors", "Back", "Forearms",]
 instructions = [ "Step into the bar’s opening and position yourself so that the handles are in line with the middle of your feet.", "Inhale, bend down and grip the handles.", "Hold your breath, brace your core slightly, and lift the bar.", "Lift the bar with a straight back, until you are standing straight.", "Lower the bar back to the ground with control.", "Take another breath, and repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_229_pull-up-with-a-neutral-grip]
 name = "Pull-Up With a Neutral Grip"
 slug = "pull-up-with-a-neutral-grip"
 primary_muscle_group = "Back"
-secondary_muscle_groups = [ "Biceps", "Rear Deltoids",]
+secondary_muscle_groups = [ "Biceps", "Shoulders",]
 instructions = [ "Perform pull-up with a neutral grip with proper form and control.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_230_cable-pull-through]
 name = "Cable Pull Through"
 slug = "cable-pull-through"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Lower Back", "Hamstrings", "Adductors",]
+secondary_muscle_groups = [ "Back", "Hamstrings", "Adductors",]
 instructions = [ "Fasten a rope handle in the lower position on a cable pulley. Turn your back against the pulley, with the cable between your thights, and take a few steps forward.", "Bend forward by hinging in your hips, and let the rope handle move backwards between your thighs.", "Extend your hip again, and return to standing.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_231_cossack-squat]
 name = "Cossack Squat"
@@ -2540,6 +3000,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_232_cable-machine-hip-abduction]
 name = "Cable Machine Hip Abduction"
@@ -2551,6 +3013,8 @@ equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_233_clamshells]
 name = "Clamshells"
@@ -2562,28 +3026,34 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_234_death-march-with-dumbbells]
 name = "Death March with Dumbbells"
 slug = "death-march-with-dumbbells"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Adductors", "Forearm Flexors", "Trapezius",]
+secondary_muscle_groups = [ "Adductors", "Forearms", "Back",]
 instructions = [ "Stand upright with your feet hip-width apart, holding a dumbbell in each hand by your sides.", "Take a short step forward with one leg, keeping both legs almost straight with a slight bend in the knees.", "Hinge at the hips and lower your torso until you feel a stretch in the hamstrings. Remember to keep tension in your core, and keep your back straight.", "Push back up to standing and take the next step forward with the opposite leg.", "Repeat the movement, alternating legs with each step.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_235_dumbbell-romanian-deadlift]
 name = "Dumbbell Romanian Deadlift"
 slug = "dumbbell-romanian-deadlift"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Adductors", "Trapezius", "Forearm Flexors",]
+secondary_muscle_groups = [ "Adductors", "Back", "Forearms",]
 instructions = [ "Stand upright holding a pair of dumbbells.", "Inhale, brace your core slightly, and lean forward by hinging in your hips. Keep your knees almost completely extended.", "Lean forward as far as possible without rounding your back. You don’t have to touch the dumbbells to the floor, although it is OK if you do.", "Reverse the movement and return to the starting position. Exhale on the way up.", "Take another breath, and repeat for reps.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_236_dumbbell-frog-pumps]
 name = "Dumbbell Frog Pumps"
@@ -2591,10 +3061,12 @@ slug = "dumbbell-frog-pumps"
 primary_muscle_group = "Glutes"
 secondary_muscle_groups = [ "Hamstrings", "Adductors",]
 instructions = [ "Lie on your back and bring the soles of your feet together into a frog position, try to bring your feet as close to your butt as possible. Place a dumbbell on your hips.", "Make sure to keep your core activated, and the lower back and shoulders pressed down on the floor before starting the movement.", "Press your feet down into the floor and squeeze your glutes to thrust your hips upwards.", "Pause at the top and then reverse the movement. Make sure to do the entire movement slow and controlled.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_237_donkey-kicks]
 name = "Donkey Kicks"
@@ -2606,6 +3078,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_238_fire-hydrants]
 name = "Fire Hydrants"
@@ -2617,6 +3091,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_239_frog-pumps]
 name = "Frog Pumps"
@@ -2628,6 +3104,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_240_glute-bridge]
 name = "Glute Bridge"
@@ -2639,6 +3117,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_241_hip-abduction-against-band]
 name = "Hip Abduction Against Band"
@@ -2650,6 +3130,8 @@ equipment = "None"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_242_hip-abduction-machine]
 name = "Hip Abduction Machine"
@@ -2661,6 +3143,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_243_hip-thrust]
 name = "Hip Thrust"
@@ -2672,6 +3156,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_244_hip-thrust-machine]
 name = "Hip Thrust Machine"
@@ -2683,6 +3169,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_245_hip-thrust-with-band-around-knees]
 name = "Hip Thrust With Band Around Knees"
@@ -2694,6 +3182,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_246_lateral-walk-with-band]
 name = "Lateral Walk With Band"
@@ -2705,28 +3195,34 @@ equipment = "None"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_247_machine-glute-kickbacks]
 name = "Machine Glute Kickbacks"
 slug = "machine-glute-kickbacks"
 primary_muscle_group = "Glutes"
 secondary_muscle_groups = [ "Hamstrings", "Adductors",]
-instructions = [ "Adjust the machine to your body. Thexa0knees should be facing forward and resting near the bottom of the padding. Place your forearms on the upper padding and grip the handles.", "Next, make sure that you have the arm of the machine under your knee. Brace your core, keep your body still, and start to press your leg backwards and upwards by activating the glute.", "Push the leg as far up as you can without rotating in the hips, then return to the starting position.", "Do all reps on one side first, and then switch to the other leg.",]
+instructions = [ "Adjust the machine to your body. The knees should be facing forward and resting near the bottom of the padding. Place your forearms on the upper padding and grip the handles.", "Next, make sure that you have the arm of the machine under your knee. Brace your core, keep your body still, and start to press your leg backwards and upwards by activating the glute.", "Push the leg as far up as you can without rotating in the hips, then return to the starting position.", "Do all reps on one side first, and then switch to the other leg.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_248_one-legged-hip-thrust]
 name = "One-Legged Hip Thrust"
 slug = "one-legged-hip-thrust"
 primary_muscle_group = "Glutes"
 secondary_muscle_groups = [ "Adductors", "Abductors", "Quads",]
-instructions = [ "Lean your back against a chair, sofa, bench or whatever furniture you have at hand.", "Place one feet on the floor and lift the other leg.", "Push your hips towards the ceiling, using your glute muscle in the leg that touches the floor. The working leg should form a ~90-degree angle at the top position.", "Lower the hips and repeat for reps.",]
+instructions = [ "Lean your back against a chair, sofa, bench or whatever furniture you have at hand.", "Place one foot on the floor and lift the other leg.", "Push your hips towards the ceiling, using your glute muscle in the leg that touches the floor. The working leg should form a ~90-degree angle at the top position.", "Lower the hips and repeat for reps.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_249_one-legged-glute-bridge]
 name = "One-Legged Glute Bridge"
@@ -2738,6 +3234,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_250_reverse-hyperextension]
 name = "Reverse Hyperextension"
@@ -2749,17 +3247,21 @@ equipment = "Machine"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_251_romanian-deadlift]
 name = "Romanian Deadlift"
 slug = "romanian-deadlift"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Adductors", "Trapezius", "Forearm Flexors",]
+secondary_muscle_groups = [ "Adductors", "Back", "Forearms",]
 instructions = [ "Get into the starting position by deadlifting a barbell off the floor, or by unracking it from a barbell rack.", "Inhale, brace your core slightly, and lean forward by hinging in your hips. Keep your knees almost completely extended.", "Lean forward as far as possible without rounding your back. You don’t have to touch the barbell to the floor, although it is OK if you do.", "Reverse the movement and return to the starting position. Exhale on the way up.", "Take another breath, and repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_252_smith-machine-hip-thrust]
 name = "Smith Machine Hip Thrust"
@@ -2771,28 +3273,34 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_253_single-leg-romanian-deadlift]
 name = "Single Leg Romanian Deadlift"
 slug = "single-leg-romanian-deadlift"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Adductors", "Trapezius", "Forearm Flexors",]
-instructions = [ "Stand upright and hold the bar with your hands about shoulder-width apart.", "Brace your core, and lift one leg off the ground.", "Keep the back straight and start to lean forward by hinging at the hips. Lower until you feel a stretch in the standing leg’s hamstring. Make sure to keep your hips still, you don’t want the side with your lifted legxa0to start rotating upwards.", "Return to the starting position. Finish all yourxa0reps on one side first, and then repeat on the other leg.",]
+secondary_muscle_groups = [ "Adductors", "Back", "Forearms",]
+instructions = [ "Stand upright and hold the bar with your hands about shoulder-width apart.", "Brace your core, and lift one leg off the ground.", "Keep the back straight and start to lean forward by hinging at the hips. Lower until you feel a stretch in the standing leg’s hamstring. Make sure to keep your hips still, you don’t want the side with your lifted leg to start rotating upwards.", "Return to the starting position. Finish all your reps on one side first, and then repeat on the other leg.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_254_standing-glute-kickback-in-machine]
 name = "Standing Glute Kickback in Machine"
 slug = "standing-glute-kickback-in-machine"
 primary_muscle_group = "Glutes"
 secondary_muscle_groups = [ "Hamstrings", "Adductors",]
-instructions = [ "Adjust the machine to your body. Thexa0knees should be facing forward and resting near the bottom of the padding. Place your forearms on the upper padding and grip the handles.", "Next, make sure that you have the arm of the machine under your knee. Brace your core, keep your body still, and start to press your leg backwards and upwards by activating the glute.", "Push the leg as far up as you can without rotating in the hips, then return to the starting position.", "Do all reps on one side first, and then switch to the other leg.",]
+instructions = [ "Adjust the machine to your body. The knees should be facing forward and resting near the bottom of the padding. Place your forearms on the upper padding and grip the handles.", "Next, make sure that you have the arm of the machine under your knee. Brace your core, keep your body still, and start to press your leg backwards and upwards by activating the glute.", "Push the leg as far up as you can without rotating in the hips, then return to the starting position.", "Do all reps on one side first, and then switch to the other leg.",]
 equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_255_standing-glute-push-down]
 name = "Standing Glute Push Down"
@@ -2804,17 +3312,21 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_256_step-up]
 name = "Step Up"
 slug = "step-up"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Glutes", "Hamstrings", "Core",]
+secondary_muscle_groups = [ "Glutes", "Hamstrings", "Abs",]
 instructions = [ "Stand in front of a chair, bench or something else that you can step up on.", "Place your foot on the chair.", "Lightly brace your core, and step up until your leg is straight.", "Lower yourself in a controlled motion.", "You can keep your foot at the chair, and repeat for reps.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_257_banded-side-kicks]
 name = "Banded Side Kicks"
@@ -2822,21 +3334,25 @@ slug = "banded-side-kicks"
 primary_muscle_group = "Glutes"
 secondary_muscle_groups = []
 instructions = [ "Perform banded side kicks with proper form and control.",]
-equipment = "None"
+equipment = "Resistance Band"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_258_ball-slams]
 name = "Ball Slams"
 slug = "ball-slams"
-primary_muscle_group = "Lats"
-secondary_muscle_groups = [ "Glutes", "Front Deltoids",]
+primary_muscle_group = "Full Body"
+secondary_muscle_groups = [ "Glutes", "Shoulders",]
 instructions = [ "Stand with your feet about shoulder-width apart, your knees and hips slightly bent, holding the ball in both hands at chest height. Engage your core, and keep a good posture.", "Extend your knees and drive your hips forward while simultaneously lifting the ball. Aim for being as tall as possible, the ball overhead, arms up, hips slightly forward, and on your toes from the force of your drive.", "Use your core and arms to slam the medicine ball straight down between your feet with as much force as possible. Press your hips back and bend your knees to further power the slam. Exhale as you slam the ball down.", "Squat down to pick up the ball from the floor, then immediately move into the next slam by repeating the movement. Repeat for reps or time.",]
-equipment = "Dumbell"
+equipment = "Medicine Ball"
 bodyweight = false
 image = ""
 animation = ""
+cardio = true
+timed = true
 
 [exercise_259_crunch]
 name = "Crunch"
@@ -2848,6 +3364,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_260_core-twist]
 name = "Core Twist"
@@ -2855,10 +3373,12 @@ slug = "core-twist"
 primary_muscle_group = "Obliques"
 secondary_muscle_groups = []
 instructions = [ "Sit on the floor with your knees bent and feet either on the ground or lifted slightly off.", "Hold a weight plate, medicine ball, or kettlebell with both hands in front of your chest.", "Lean slightly back with a straight back and engaged core.", "Twist your torso to one side and bring the weight toward your hip, keeping your hips stable.", "Return to the center and rotate to the other side.", "Repeat for the desired number of repetitions.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_261_cable-crunch]
 name = "Cable Crunch"
@@ -2870,17 +3390,21 @@ equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_262_dragon-flag]
 name = "Dragon Flag"
 slug = "dragon-flag"
 primary_muscle_group = "Abs"
-secondary_muscle_groups = [ "Obliques", "Lats",]
+secondary_muscle_groups = [ "Obliques", "Back",]
 instructions = [ "Lie flat on your back on a bench, gripping the edge of the bench behind your head for stability.", "Lift your legs and torso off the ground, keeping your body in a straight line from shoulders to feet, creating a hollow position.", "Lower your legs and torso slowly, keeping your core engaged, until your back is just above the bench.", "Pause at the bottom, then raise your legs and torso back to the starting position.", "Repeat for the desired number of repetitions.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_263_hanging-knee-raise]
 name = "Hanging Knee Raise"
@@ -2892,6 +3416,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_264_hanging-leg-raise]
 name = "Hanging Leg Raise"
@@ -2903,6 +3429,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_265_dead-bug]
 name = "Dead Bug"
@@ -2914,17 +3442,21 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_266_hanging-windshield-wiper]
 name = "Hanging Windshield Wiper"
 slug = "hanging-windshield-wiper"
 primary_muscle_group = "Obliques"
-secondary_muscle_groups = [ "Forearm Flexors",]
+secondary_muscle_groups = [ "Forearms",]
 instructions = [ "Grip a pull-up bar and hang with your arms straight and legs together.", "Engage your core and lift your legs until they are parallel to the ground, or higher if possible.", "Keep your legs straight and begin to rotate them in a controlled manner to one side, as far as you can without losing control.", "Rotate your legs back through the center and continue to the opposite side, like a windshield wiper.", "Repeat the movement from side to side for the desired number of repetitions, keeping your core engaged throughout the exercise.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_267_hanging-sit-up]
 name = "Hanging Sit-Up"
@@ -2936,6 +3468,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_268_high-to-low-wood-chop-with-band]
 name = "High to Low Wood Chop with Band"
@@ -2947,6 +3481,8 @@ equipment = "None"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_269_hollow-hold]
 name = "Hollow Hold"
@@ -2958,6 +3494,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = true
 
 [exercise_270_horizontal-wood-chop-with-band]
 name = "Horizontal Wood Chop with Band"
@@ -2969,6 +3507,8 @@ equipment = "None"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_271_horizontal-wood-chop-with-cable]
 name = "Horizontal Wood Chop with Cable"
@@ -2980,6 +3520,8 @@ equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_272_jackknife-sit-up]
 name = "Jackknife Sit-Up"
@@ -2991,6 +3533,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_273_kneeling-ab-wheel-roll-out]
 name = "Kneeling Ab Wheel Roll-Out"
@@ -3002,6 +3546,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_274_kettlebell-plank-pull-through]
 name = "Kettlebell Plank Pull Through"
@@ -3009,43 +3555,51 @@ slug = "kettlebell-plank-pull-through"
 primary_muscle_group = "Abs"
 secondary_muscle_groups = [ "Obliques",]
 instructions = [ "Get into a plank position with your hands directly under your shoulders and a kettlebell placed just outside one hand.", "Keep your body stable and engage your core.", "Reach the opposite hand under your body and drag the kettlebell to the other side.", "Return your hand to the plank position and repeat on the other side.",]
-equipment = "Dumbell"
+equipment = "Kettlebell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = true
 
 [exercise_275_kneeling-plank]
 name = "Kneeling Plank"
 slug = "kneeling-plank"
 primary_muscle_group = "Abs"
 secondary_muscle_groups = [ "Obliques",]
-instructions = [ "Stand on your elbows and knees.", "Brace your abs, and try to form and hold a straight line from your head to hips.",]
+instructions = [ "Start on your elbows and knees.", "Brace your abs, and try to form and hold a straight line from your head to hips.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = true
 
 [exercise_276_kneeling-side-plank]
 name = "Kneeling Side Plank"
 slug = "kneeling-side-plank"
 primary_muscle_group = "Obliques"
 secondary_muscle_groups = [ "Abs",]
-instructions = [ "Stand on your side, leaning against one elbow and your knee.", "Brace your core and try to form and hold a straight line from your head to knees.",]
+instructions = [ "Start on your side, leaning on one elbow and your knee.", "Brace your core and try to form and hold a straight line from your head to knees.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = true
 
 [exercise_277_l-sit]
 name = "L-Sit"
 slug = "l-sit"
 primary_muscle_group = "Abs"
-secondary_muscle_groups = [ "Chest", "Front Deltoids", "Triceps", "Obliques", "Quads",]
+secondary_muscle_groups = [ "Chest", "Shoulders", "Triceps", "Obliques", "Quads",]
 instructions = [ "Sit on the floor with your legs extended straight in front of you.", "Place your hands on the floor beside your hips, with your fingers pointing forward or slightly outward. If available, you can use parallettes or push-up handles to make the movement more comfortable and provide more space for your legs.", "Tighten your core muscles and engage your quadriceps to help lift your legs.", "Push down through your hands to lift your hips off the ground.", "Keep your legs straight and extended in front of you, forming an “L” shape with your body. Your arms should remain straight and locked throughout the exercise, and your legs should be parallel to the ground or as high as possible without rounding your back or losing form.", "Hold the L-sit for the desired amount of time.", "Lower your body back to the floor.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = true
 
 [exercise_278_lying-leg-raise]
 name = "Lying Leg Raise"
@@ -3057,6 +3611,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_279_lying-windshield-wiper]
 name = "Lying Windshield Wiper"
@@ -3068,6 +3624,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_280_lying-windshield-wiper-with-bent-knees]
 name = "Lying Windshield Wiper with Bent Knees"
@@ -3079,6 +3637,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_281_machine-crunch]
 name = "Machine Crunch"
@@ -3090,6 +3650,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_282_mountain-climbers]
 name = "Mountain Climbers"
@@ -3101,6 +3663,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = true
+timed = false
 
 [exercise_283_oblique-crunch]
 name = "Oblique Crunch"
@@ -3112,6 +3676,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_284_plank]
 name = "Plank"
@@ -3123,6 +3689,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = true
 
 [exercise_285_oblique-sit-up]
 name = "Oblique Sit-Up"
@@ -3134,6 +3702,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_286_dead-bug-with-dumbbells]
 name = "Dead Bug With Dumbbells"
@@ -3141,10 +3711,12 @@ slug = "dead-bug-with-dumbbells"
 primary_muscle_group = "Abs"
 secondary_muscle_groups = []
 instructions = [ "Perform dead bug with dumbbells with proper form and control.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_287_plank-with-leg-lifts]
 name = "Plank with Leg Lifts"
@@ -3156,17 +3728,21 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_288_side-plank]
 name = "Side Plank"
 slug = "side-plank"
 primary_muscle_group = "Obliques"
 secondary_muscle_groups = [ "Abs",]
-instructions = [ "Stand on your side, leaning against one elbow.", "Place the foot of the top leg in front of the other foot.", "Brace your core, and try to form and hold a straight line from your head to your feet.",]
+instructions = [ "Start by lying on your side with your legs straight and stacked. Place your elbow directly under your shoulder and forearm on the ground, perpendicular to your body.", "Engage your core and lift your hips off the ground, forming a straight line from your head to your feet. Your body should be supported by your forearm and the side of your bottom foot.", "Hold this position, keeping your core tight and avoiding sagging hips.", "Remember to breathe steadily throughout the exercise.", "Lower your hips slowly back to the starting position.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = true
 
 [exercise_289_sit-up]
 name = "Sit-Up"
@@ -3178,17 +3754,21 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_290_high-to-low-wood-chop-with-cable]
 name = "High to Low Wood Chop with Cable"
 slug = "high-to-low-wood-chop-with-cable"
 primary_muscle_group = "Abs"
-secondary_muscle_groups = []
-instructions = [ "Perform high to low wood chop with cable with proper form and control.",]
+secondary_muscle_groups = [ "Obliques", "Shoulders", "Back",]
+instructions = [ "Stand with feet shoulder-width apart, holding the cable handle with both hands at one side, high and away from your body. Your body should be rotated towards the starting side.", "Initiate the movement by rotating your torso and pulling the cable handle downwards and across your body to the opposite side, finishing low and close to your body.", "Torso should rotate and core should be engaged throughout the movement. Control the return to the starting position.",]
 equipment = "Cable"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_291_seated-calf-raise]
 name = "Seated Calf Raise"
@@ -3200,6 +3780,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_292_eccentric-heel-drop]
 name = "Eccentric Heel Drop"
@@ -3211,6 +3793,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_293_barbell-standing-calf-raise]
 name = "Barbell Standing Calf Raise"
@@ -3222,6 +3806,8 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_294_heel-raise]
 name = "Heel Raise"
@@ -3233,6 +3819,8 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_295_standing-calf-raise]
 name = "Standing Calf Raise"
@@ -3244,6 +3832,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_296_donkey-calf-raise]
 name = "Donkey Calf Raise"
@@ -3255,127 +3845,151 @@ equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_297_dumbbell-wrist-curl]
 name = "Dumbbell Wrist Curl"
 slug = "dumbbell-wrist-curl"
-primary_muscle_group = "Forearm Flexors"
+primary_muscle_group = "Forearms"
 secondary_muscle_groups = []
 instructions = [ "Grab a dumbbell with an underhand grip and rest your forearm against your thigh, or alternatively against a bench.", "Lower your hand towards the floor, and let the dumbbell roll out in your fingers.", "Reverse the motion by closing your grip and bending your wrist upwards.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_298_barbell-wrist-curl]
 name = "Barbell Wrist Curl"
 slug = "barbell-wrist-curl"
-primary_muscle_group = "Forearm Flexors"
+primary_muscle_group = "Forearms"
 secondary_muscle_groups = []
 instructions = [ "Grab a barbell with an underhand grip and rest your forearms against your thighs, or alternatively against a bench.", "Lower your hands towards the floor, and let the barbell roll out in your fingers.", "Reverse the motion by closing your grip and bending your wrists upwards.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_299_bar-hang]
 name = "Bar Hang"
 slug = "bar-hang"
-primary_muscle_group = "Forearm Flexors"
+primary_muscle_group = "Forearms"
 secondary_muscle_groups = []
 instructions = [ "Grab a bar and hang from it.", "Experiment with hanging with relaxed or active shoulders.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = true
 
 [exercise_300_barbell-wrist-curl-behind-the-back]
 name = "Barbell Wrist Curl Behind the Back"
 slug = "barbell-wrist-curl-behind-the-back"
-primary_muscle_group = "Forearm Flexors"
+primary_muscle_group = "Forearms"
 secondary_muscle_groups = []
 instructions = [ "Perform barbell wrist curl behind the back with proper form and control.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_301_farmers-walk]
 name = "Farmers Walk"
 slug = "farmers-walk"
-primary_muscle_group = "Forearm Flexors"
-secondary_muscle_groups = [ "Quads", "Abs", "Lower Back", "Calves", "Lateral Deltoids",]
+primary_muscle_group = "Forearms"
+secondary_muscle_groups = [ "Quads", "Abs", "Back", "Calves", "Shoulders",]
 instructions = [ "Step in between two farmers walk-cases, or similar implements.", "Inhale, lean forward and grip the handles.", "Hold your breath, brace your core slightly, and lift the weights.", "Look ahead, and start moving forward in small steps. Increase the stride length as you increase the speed.", "Try to keep your body in a straight line and not lean excessively forward as you walk.", "When you are done, lower the implements back to the ground in a controlled manner.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = true
 
 [exercise_302_one-handed-bar-hang]
 name = "One-Handed Bar Hang"
 slug = "one-handed-bar-hang"
-primary_muscle_group = "Forearm Flexors"
+primary_muscle_group = "Forearms"
 secondary_muscle_groups = []
 instructions = [ "Perform one-handed bar hang with proper form and control.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = true
 
 [exercise_303_fat-bar-deadlift]
 name = "Fat Bar Deadlift"
 slug = "fat-bar-deadlift"
 primary_muscle_group = "Glutes"
-secondary_muscle_groups = [ "Quads", "Hamstrings", "Adductors", "Trapezius",]
+secondary_muscle_groups = [ "Quads", "Hamstrings", "Adductors", "Back",]
 instructions = [ "Step up close to the bar, so that it is about over the middle of your foot.", "Breathe in, lean forward and grip the bar.", "Hold your breath, brace your core slightly, and lift the bar.", "Pull the bar close to your body, with a straight back, until you are standing straight.", "Lower the bar back to the ground with control.", "Take another breath, and repeat for reps.",]
 equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_304_gripper]
 name = "Gripper"
 slug = "gripper"
-primary_muscle_group = "Forearm Flexors"
+primary_muscle_group = "Forearms"
 secondary_muscle_groups = []
 instructions = [ "Perform gripper with proper form and control.",]
-equipment = "None"
+equipment = "Gripper"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_305_plate-wrist-curl]
 name = "Plate Wrist Curl"
 slug = "plate-wrist-curl"
-primary_muscle_group = "Forearm Flexors"
+primary_muscle_group = "Forearms"
 secondary_muscle_groups = []
 instructions = [ "Grab a weight plate with a pinching underhand grip and rest your forearm against your thigh, or alternatively against a bench.", "Lower your hand towards the floor.", "Reverse the motion by bending your wrist upwards.",]
-equipment = "Dumbell"
+equipment = "Plate"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_306_plate-pinch]
 name = "Plate Pinch"
 slug = "plate-pinch"
-primary_muscle_group = "Forearm Flexors"
+primary_muscle_group = "Forearms"
 secondary_muscle_groups = []
 instructions = [ "Grab a pair of weight plates in a pinching grip.", "Lift the weight plates off the ground.", "Hold them for as long as you can, and then put them down in a controlled manner.",]
-equipment = "Dumbell"
+equipment = "Plate"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = true
 
 [exercise_307_towel-pull-up]
 name = "Towel Pull-Up"
 slug = "towel-pull-up"
-primary_muscle_group = "Forearm Flexors"
-secondary_muscle_groups = [ "Biceps", "Rear Deltoids", "Rotator Cuffs",]
+primary_muscle_group = "Back"
+secondary_muscle_groups = [ "Biceps", "Shoulders", "Shoulders",]
 instructions = [ "Lay a pair of towels over a pull-up bar. Grab one in each hand.", "Inhale and pull yourself up as high as you can.", "Exhale and lower yourself with control until your arms are fully extended.",]
 equipment = "None"
 bodyweight = true
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_308_barbell-wrist-extension]
 name = "Barbell Wrist Extension"
@@ -3387,17 +4001,21 @@ equipment = "Barbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_309_wrist-roller]
 name = "Wrist Roller"
 slug = "wrist-roller"
-primary_muscle_group = "Forearm Flexors"
+primary_muscle_group = "Forearms"
 secondary_muscle_groups = []
 instructions = [ "Stand with your feet shoulder-width apart, holding the wrist roller bar with both hands, arms fully extended in front of you.", "Attach a weight to the rope or cord hanging from the wrist roller.", "Begin the exercise by rolling the bar forward using your wrists, lifting the weight from the ground by winding the rope around the bar.", "Once the weight reaches the top, slowly reverse the motion, unwinding the rope and lowering the weight back to the ground.", "Repeat for the desired number of repetitions.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_310_dumbbell-wrist-extension]
 name = "Dumbbell Wrist Extension"
@@ -3405,10 +4023,12 @@ slug = "dumbbell-wrist-extension"
 primary_muscle_group = "Forearms"
 secondary_muscle_groups = []
 instructions = [ "Grab a dumbbell with an overhand grip and rest your forearm against your thigh, or alternatively against a bench.", "Lower your hand towards the floor.", "Reverse the motion by bending your wrist upwards.",]
-equipment = "Dumbell"
+equipment = "Dumbbell"
 bodyweight = false
 image = ""
 animation = ""
+cardio = false
+timed = false
 
 [exercise_311_stationary-bike]
 name = "Stationary Bike"
@@ -3420,6 +4040,8 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = true
+timed = true
 
 [exercise_312_rowing-machine]
 name = "Rowing Machine"
@@ -3431,3 +4053,5 @@ equipment = "Machine"
 bodyweight = false
 image = ""
 animation = ""
+cardio = true
+timed = true

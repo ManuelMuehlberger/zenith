@@ -233,8 +233,8 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
     return Container(
       margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
       decoration: BoxDecoration(
-        color: AppConstants.CARD_BG_COLOR,
-        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+        color: const Color(0xFF1C1C1E),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _isExpanded
               ? AppConstants.ACCENT_COLOR.withAlpha((255 * 0.6).round())
@@ -243,16 +243,16 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha((255 * 0.15).round()),
-            blurRadius: 8.0,
-            offset: const Offset(0, 2),
+            color: Colors.black.withAlpha((255 * 0.18).round()),
+            blurRadius: 10.0,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+          borderRadius: BorderRadius.circular(16),
           onTap: _toggleExpansion,
           child: Column(
             children: [
@@ -289,7 +289,10 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                     Expanded(
                       child: Text(
                         _displayName,
-                        style: AppConstants.CARD_TITLE_TEXT_STYLE,
+                        style: AppConstants.CARD_TITLE_TEXT_STYLE.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -468,16 +471,16 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
               // Expandable content
               SizeTransition(
                 sizeFactor: _expandAnimation,
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.transparent, // Transparent to blend with card
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(AppConstants.CARD_RADIUS),
-                      bottomRight: Radius.circular(AppConstants.CARD_RADIUS),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Colors.transparent, // Transparent to blend with card
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(16),
+                        bottomRight: Radius.circular(16),
+                      ),
                     ),
-                  ),
-                  child: Padding(
+                    child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

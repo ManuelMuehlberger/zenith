@@ -8,6 +8,7 @@ import '../services/user_service.dart';
 import '../services/workout_session_service.dart';
 import '../screens/exercise_info_screen.dart';
 import '../constants/app_constants.dart';
+import '../utils/weight_text_input_formatter.dart';
 
 class EditExerciseCard extends StatefulWidget {
   final WorkoutExercise exercise;
@@ -17,7 +18,15 @@ class EditExerciseCard extends StatefulWidget {
   final Function(int) onRemoveExercise;
   final Function(int) onAddSet;
   final Function(int, int) onRemoveSet;
-  final Function(int, int, {int? targetReps, double? targetWeight, String? type, int? targetRestSeconds}) onUpdateSet;
+  final Function(
+    int,
+    int, {
+    int? targetReps,
+    double? targetWeight,
+    String? type,
+    int? targetRestSeconds,
+  })
+  onUpdateSet;
   final Function(int, String) onUpdateNotes;
   final Function(int, int) onToggleRepRange;
   final String weightUnit;
@@ -41,11 +50,15 @@ class EditExerciseCard extends StatefulWidget {
   State<EditExerciseCard> createState() => _EditExerciseCardState();
 }
 
-class _EditExerciseCardState extends State<EditExerciseCard> with TickerProviderStateMixin {
+class _EditExerciseCardState extends State<EditExerciseCard>
+    with TickerProviderStateMixin {
   late Map<String, TextEditingController> _controllers;
   late TextEditingController _notesController;
   late AnimationController _reorderModeController;
   late Animation<Color?> _borderColorAnimation;
+
+  // Track focus for each weight field to avoid overwriting user input mid-typing.
+  final Map<String, FocusNode> _weightFocusNodes = {};
 
   @override
   void initState() {
@@ -63,19 +76,21 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
 
   void _initializeControllers() {
     _controllers = {};
-    
+
     for (final set in widget.exercise.sets) {
       final repsKey = 'reps_${widget.exercise.id}_${set.id}';
       final weightKey = 'weight_${widget.exercise.id}_${set.id}';
-      
+
       _controllers[repsKey] = TextEditingController(
         text: set.targetReps?.toString() ?? '',
       );
       _controllers[weightKey] = TextEditingController(
-        text: set.targetWeight != null ? WorkoutSessionService.instance.formatWeight(set.targetWeight!) : '',
+        text: set.targetWeight != null
+            ? WorkoutSessionService.instance.formatWeight(set.targetWeight!)
+            : '',
       );
     }
-    
+
     _notesController = TextEditingController(text: widget.exercise.notes ?? '');
   }
 
@@ -92,13 +107,13 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
     // Update controllers for current sets
     final currentSetIds = widget.exercise.sets.map((s) => s.id).toSet();
     final existingKeys = _controllers.keys.toSet();
-    
+
     // Remove controllers for sets that no longer exist
     final keysToRemove = existingKeys.where((key) {
       final setId = key.split('_').last;
       return !currentSetIds.contains(setId);
     }).toList();
-    
+
     for (final key in keysToRemove) {
       _controllers.remove(key)?.dispose();
     }
@@ -107,7 +122,7 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
     for (final set in widget.exercise.sets) {
       final repsKey = 'reps_${widget.exercise.id}_${set.id}';
       final weightKey = 'weight_${widget.exercise.id}_${set.id}';
-      
+
       if (!_controllers.containsKey(repsKey)) {
         _controllers[repsKey] = TextEditingController(
           text: set.targetReps?.toString() ?? '',
@@ -120,21 +135,27 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
           controller.text = newText;
         }
       }
-      
+
       if (!_controllers.containsKey(weightKey)) {
         _controllers[weightKey] = TextEditingController(
-          text: set.targetWeight != null ? WorkoutSessionService.instance.formatWeight(set.targetWeight!) : '',
+          text: set.targetWeight != null
+              ? WorkoutSessionService.instance.formatWeight(set.targetWeight!)
+              : '',
         );
       } else {
-        // Update existing controller with new value
+        // Update existing controller with new value, BUT never overwrite while the user is editing.
         final controller = _controllers[weightKey]!;
-        final newText = set.targetWeight != null ? WorkoutSessionService.instance.formatWeight(set.targetWeight!) : '';
-        if (controller.text != newText) {
+        final newText = set.targetWeight != null
+            ? WorkoutSessionService.instance.formatWeight(set.targetWeight!)
+            : '';
+        final isEditing = _weightFocusNodes[weightKey]?.hasFocus ?? false;
+
+        if (!isEditing && controller.text != newText) {
           controller.text = newText;
         }
       }
     }
-    
+
     // Update notes controller if needed
     if (_notesController.text != (widget.exercise.notes ?? '')) {
       _notesController.text = widget.exercise.notes ?? '';
@@ -146,6 +167,12 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
       controller.dispose();
     }
     _controllers.clear();
+
+    for (final node in _weightFocusNodes.values) {
+      node.dispose();
+    }
+    _weightFocusNodes.clear();
+
     _notesController.dispose();
   }
 
@@ -156,15 +183,30 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
     super.dispose();
   }
 
-  TextEditingController _getController(String controllerKey, String textToInitializeWith) {
+  TextEditingController _getController(
+    String controllerKey,
+    String textToInitializeWith,
+  ) {
     if (!_controllers.containsKey(controllerKey)) {
-      _controllers[controllerKey] = TextEditingController(text: textToInitializeWith);
+      _controllers[controllerKey] = TextEditingController(
+        text: textToInitializeWith,
+      );
     }
     return _controllers[controllerKey]!;
   }
 
   String get _weightUnit {
-    return UserService.instance.currentProfile?.units == Units.imperial ? 'lbs' : 'kg';
+    return UserService.instance.currentProfile?.units == Units.imperial
+        ? 'lbs'
+        : 'kg';
+  }
+
+  int _decimalPlacesFor(double value) {
+    // Keep up to 2 decimals, but don't force trailing zeros (e.g. 100 -> "100", 30.5 -> "30.5").
+    final scaled = (value * 100).round();
+    if (scaled % 100 == 0) return 0;
+    if (scaled % 10 == 0) return 1;
+    return 2;
   }
 
   void _showExerciseInfo(BuildContext context) {
@@ -172,9 +214,8 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ExerciseInfoScreen(
-            exercise: widget.exercise.exerciseDetail!,
-          ),
+          builder: (context) =>
+              ExerciseInfoScreen(exercise: widget.exercise.exerciseDetail!),
         ),
       );
     } else {
@@ -220,17 +261,8 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            Column(
-              children: [
-                _buildHeader(),
-                _buildSetsList(),
-              ],
-            ),
-            Positioned(
-              bottom: -15,
-              right: 15,
-              child: _buildAddSetButton(),
-            ),
+            Column(children: [_buildHeader(), _buildSetsList()]),
+            Positioned(bottom: -15, right: 15, child: _buildAddSetButton()),
           ],
         ),
       ),
@@ -290,7 +322,8 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.exercise.exerciseDetail?.name ?? widget.exercise.exerciseSlug,
+                      widget.exercise.exerciseDetail?.name ??
+                          widget.exercise.exerciseSlug,
                       style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
                         color: AppConstants.ACCENT_COLOR,
                         fontSize: 20,
@@ -306,18 +339,23 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
                     onPressed: () => widget.onToggleNotes(widget.exerciseIndex),
                     icon: Icon(
                       widget.isNotesExpanded
-                        ? Icons.sticky_note_2
-                        : Icons.sticky_note_2_outlined,
+                          ? Icons.sticky_note_2
+                          : Icons.sticky_note_2_outlined,
                       color: widget.isNotesExpanded
-                        ? Colors.amber
-                        : (widget.exercise.notes?.isNotEmpty ?? false)
+                          ? Colors.amber
+                          : (widget.exercise.notes?.isNotEmpty ?? false)
                           ? Colors.amber.withAlpha(150)
                           : Colors.grey[500],
                       size: 24,
                     ),
-                    tooltip: widget.isNotesExpanded ? 'Hide notes' : 'Show notes',
+                    tooltip: widget.isNotesExpanded
+                        ? 'Hide notes'
+                        : 'Show notes',
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   PullDownButton(
@@ -328,7 +366,8 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
                         icon: Icons.info_outline,
                       ),
                       PullDownMenuItem(
-                        onTap: () => widget.onRemoveExercise(widget.exerciseIndex),
+                        onTap: () =>
+                            widget.onRemoveExercise(widget.exerciseIndex),
                         title: 'Remove Exercise',
                         icon: Icons.delete_outline,
                         isDestructive: true,
@@ -336,7 +375,10 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
                     ],
                     buttonBuilder: (context, showMenu) => IconButton(
                       padding: const EdgeInsets.all(8),
-                      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
                       onPressed: showMenu,
                       icon: Icon(
                         Icons.more_horiz,
@@ -354,7 +396,9 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
                       height: 40,
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppConstants.ACCENT_COLOR_ORANGE.withAlpha((255 * 0.2).round()),
+                        color: AppConstants.ACCENT_COLOR_ORANGE.withAlpha(
+                          (255 * 0.2).round(),
+                        ),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
@@ -393,7 +437,8 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
                   ),
                   contentPadding: const EdgeInsets.all(12),
                 ),
-                onChanged: (value) => widget.onUpdateNotes(widget.exerciseIndex, value),
+                onChanged: (value) =>
+                    widget.onUpdateNotes(widget.exerciseIndex, value),
               ),
             ),
         ],
@@ -402,7 +447,8 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
   }
 
   Widget _buildSetsList() {
-    final isBodyWeight = widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
+    final isBodyWeight =
+        widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
       child: Column(
@@ -451,7 +497,8 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
   }
 
   Widget _buildSetRow(WorkoutSet set, int setIndex) {
-    final isBodyWeight = widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
+    final isBodyWeight =
+        widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -488,7 +535,11 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
               initialText: set.targetReps?.toString() ?? "",
               onChanged: (value) {
                 final reps = int.tryParse(value);
-                widget.onUpdateSet(widget.exerciseIndex, setIndex, targetReps: reps ?? (value.isEmpty ? 0 : null));
+                widget.onUpdateSet(
+                  widget.exerciseIndex,
+                  setIndex,
+                  targetReps: reps ?? (value.isEmpty ? 0 : null),
+                );
               },
             ),
           ),
@@ -498,12 +549,18 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
             Flexible(
               child: _buildSetInput(
                 controllerKey: 'weight_${widget.exercise.id}_${set.id}',
-                initialText: set.targetWeight != null 
-                    ? WorkoutSessionService.instance.formatWeight(set.targetWeight!) 
+                initialText: set.targetWeight != null
+                    ? WorkoutSessionService.instance.formatWeight(
+                        set.targetWeight!,
+                      )
                     : "",
                 onChanged: (value) {
                   final weight = double.tryParse(value);
-                  widget.onUpdateSet(widget.exerciseIndex, setIndex, targetWeight: weight ?? (value.isEmpty ? 0.0 : null));
+                  widget.onUpdateSet(
+                    widget.exerciseIndex,
+                    setIndex,
+                    targetWeight: weight ?? (value.isEmpty ? 0.0 : null),
+                  );
                 },
                 showWeightSuffix: true,
               ),
@@ -516,7 +573,11 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
             height: 32,
             child: IconButton(
               padding: EdgeInsets.zero,
-              icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 24),
+              icon: const Icon(
+                Icons.remove_circle_outline,
+                color: Colors.red,
+                size: 24,
+              ),
               onPressed: () {
                 if (widget.exercise.sets.length > 1) {
                   widget.onRemoveSet(widget.exerciseIndex, setIndex);
@@ -538,13 +599,60 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
     required Function(String) onChanged,
     bool showWeightSuffix = false,
   }) {
+    final controller = _getController(controllerKey, initialText);
+
+    final FocusNode? focusNode = showWeightSuffix
+        ? (_weightFocusNodes[controllerKey] ??= FocusNode())
+        : null;
+
+    // Normalize + clamp weight and commit to model on blur.
+    void commitWeightIfNeeded() {
+      if (!showWeightSuffix) return;
+
+      final raw = controller.text.trim();
+      if (raw.isEmpty) {
+        onChanged('');
+        return;
+      }
+
+      final normalized = raw.replaceAll(',', '.');
+      final parsed = double.tryParse(normalized);
+      if (parsed == null) return;
+
+      // Clamp and round to 2 decimals.
+      final clamped = parsed.clamp(0.0, 999.0) as double;
+      final rounded = (clamped * 100).roundToDouble() / 100;
+
+      final formatted = rounded.toStringAsFixed(_decimalPlacesFor(rounded));
+
+      if (controller.text != formatted) {
+        controller.text = formatted;
+        controller.selection = TextSelection.collapsed(
+          offset: formatted.length,
+        );
+      }
+
+      // Ensure stored numeric value reflects the committed value.
+      onChanged(formatted);
+    }
+
+    if (focusNode != null && !focusNode.hasListeners) {
+      focusNode.addListener(() {
+        if (!focusNode.hasFocus) {
+          commitWeightIfNeeded();
+        }
+      });
+    }
+
     return TextFormField(
-      controller: _getController(controllerKey, initialText),
+      controller: controller,
+      focusNode: focusNode,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
-        FilteringTextInputFormatter.allow(
-          showWeightSuffix ? RegExp(r'^\d*\.?\d{0,2}') : RegExp(r'^\d*')
-        )
+        if (showWeightSuffix)
+          WeightTextInputFormatter()
+        else
+          FilteringTextInputFormatter.digitsOnly,
       ],
       textAlign: TextAlign.center,
       style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
@@ -570,24 +678,31 @@ class _EditExerciseCardState extends State<EditExerciseCard> with TickerProvider
             width: 1,
           ),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
       ),
-      onChanged: onChanged,
+      onChanged: (value) {
+        // Normalize commas while typing so parsing stays stable.
+        if (showWeightSuffix && value.contains(',')) {
+          final normalized = value.replaceAll(',', '.');
+          controller.value = controller.value.copyWith(
+            text: normalized,
+            selection: TextSelection.collapsed(offset: normalized.length),
+            composing: TextRange.empty,
+          );
+          onChanged(normalized);
+          return;
+        }
+        onChanged(value);
+      },
       onTap: () {
-        if (_controllers.containsKey(controllerKey)) {
-          final controller = _controllers[controllerKey]!;
-          if (controller.text.isNotEmpty) {
-            // Store the future and cancel any previous one to prevent "Timer is still pending" errors in tests
-            // This ensures that if a new tap occurs before the previous Future.delayed completes,
-            // the previous one is effectively cancelled, preventing the test framework from
-            // complaining about pending timers.
-            // Removed Future.delayed to prevent "Timer is still pending" errors in tests.
-            // The text selection on tap is not critical for test logic and can be handled synchronously.
-            controller.selection = TextSelection(
-              baseOffset: 0,
-              extentOffset: controller.text.length,
-            );
-          }
+        if (controller.text.isNotEmpty) {
+          controller.selection = TextSelection(
+            baseOffset: 0,
+            extentOffset: controller.text.length,
+          );
         }
       },
     );

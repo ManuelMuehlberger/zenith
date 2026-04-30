@@ -93,8 +93,8 @@ class SimpleBarChart extends StatelessWidget {
                       ),
                     );
                   } else {
-                    // Many days (1M), show weeks (Mondays)
-                    if (currentData.weekStart.weekday == 1) {
+                    // Many days (1M), show every 7th day
+                    if (index % 7 == 0) {
                       return SideTitleWidget(
                         meta: meta,
                         child: Text(
@@ -109,31 +109,26 @@ class SimpleBarChart extends StatelessWidget {
                     }
                   }
                 } else if (effectiveGrouping == InsightsGrouping.week) {
-                  // Show day of month for each week
-                  String label = '${currentData.weekStart.day}';
-                  bool isHighlight = false;
-
-                  // Highlight first week of month with month name
+                  // Only show month name for the first week of the month
                   if (currentData.weekStart.day <= 7) {
                     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                    label = monthNames[currentData.weekStart.month - 1];
-                    isHighlight = true;
-                  }
-                  return SideTitleWidget(
-                    meta: meta,
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        color: isHighlight ? AppConstants.TEXT_SECONDARY_COLOR : AppConstants.TEXT_TERTIARY_COLOR,
-                        fontSize: 10,
-                        fontWeight: isHighlight ? FontWeight.bold : FontWeight.w500,
+                    final label = monthNames[currentData.weekStart.month - 1];
+                    return SideTitleWidget(
+                      meta: meta,
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                          color: AppConstants.TEXT_SECONDARY_COLOR,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 } else {
                   // Month grouping
-                  // Show Jan, Apr, Jul, Oct
-                  if (currentData.weekStart.month % 3 == 1) {
+                  // Show Jan, May, Sep (every 4 months)
+                  if (currentData.weekStart.month % 4 == 1) {
                     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                     final monthName = monthNames[currentData.weekStart.month - 1];
                     return SideTitleWidget(
