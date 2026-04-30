@@ -1,22 +1,27 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:pull_down_button/pull_down_button.dart';
+
+import '../constants/app_constants.dart';
 import '../models/workout.dart';
-import '../models/workout_template.dart';
 import '../models/workout_exercise.dart';
+import '../models/workout_template.dart';
 import '../services/workout_session_service.dart';
 import '../services/workout_template_service.dart';
+import '../theme/app_theme.dart';
 import '../utils/navigation_helper.dart';
 import '../utils/workout_metrics.dart';
-import '../constants/app_constants.dart';
 
 class ExpandableWorkoutCard extends StatefulWidget {
   // Unified: support either a concrete Workout (legacy usage) or a WorkoutTemplate (preferred)
   final Workout? workout;
   final WorkoutTemplate? template;
-  final Future<List<WorkoutExercise>> Function(String templateId)? loadTemplateExercises;
+  final Future<List<WorkoutExercise>> Function(String templateId)?
+  loadTemplateExercises;
 
   final VoidCallback onEditPressed;
   final VoidCallback onDeletePressed;
@@ -31,9 +36,9 @@ class ExpandableWorkoutCard extends StatefulWidget {
     required this.onDeletePressed,
     required this.index,
   }) : assert(
-          (workout != null) != (template != null),
-          'Provide exactly one of workout or template',
-        );
+         (workout != null) != (template != null),
+         'Provide exactly one of workout or template',
+       );
 
   @override
   State<ExpandableWorkoutCard> createState() => _ExpandableWorkoutCardState();
@@ -54,15 +59,19 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
   String get _displayName =>
       _isTemplate ? widget.template!.name : widget.workout!.name;
 
-  IconData get _displayIcon =>
-      _isTemplate ? WorkoutIcons.getIconDataFromCodePoint(widget.template!.iconCodePoint) : widget.workout!.icon;
+  IconData get _displayIcon => _isTemplate
+      ? WorkoutIcons.getIconDataFromCodePoint(widget.template!.iconCodePoint)
+      : widget.workout!.icon;
 
   Color get _displayColor => _isTemplate
-      ? Color(widget.template!.colorValue ?? 0xFF2196F3)
+      ? widget.template!.colorValue != null
+            ? Color(widget.template!.colorValue!)
+            : AppThemeColors.accent
       : widget.workout!.color;
 
-  List<WorkoutExercise> get _effectiveExercises =>
-      _isTemplate ? (_templateExercises ?? const []) : widget.workout!.exercises;
+  List<WorkoutExercise> get _effectiveExercises => _isTemplate
+      ? (_templateExercises ?? const [])
+      : widget.workout!.exercises;
 
   int get _exerciseCount => _effectiveExercises.length;
 
@@ -135,7 +144,9 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
     try {
       final items = await (widget.loadTemplateExercises != null
           ? widget.loadTemplateExercises!(widget.template!.id)
-          : WorkoutTemplateService.instance.getTemplateExercises(widget.template!.id));
+          : WorkoutTemplateService.instance.getTemplateExercises(
+              widget.template!.id,
+            ));
       if (mounted) {
         setState(() {
           _templateExercises = items;
@@ -172,7 +183,6 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
     HapticFeedback.lightImpact();
   }
 
-
   Future<void> _startWorkout() async {
     try {
       if (_isTemplate) {
@@ -202,7 +212,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
         await WorkoutSessionService.instance.startWorkout(widget.workout!);
       }
 
-      HapticFeedback.mediumImpact();
+      unawaited(HapticFeedback.mediumImpact());
 
       if (mounted) {
         // Navigate to the Workouts tab (index 1)
@@ -211,10 +221,11 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
       }
     } catch (e) {
       if (mounted) {
+        final colorScheme = context.appScheme;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to start workout: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: colorScheme.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -227,30 +238,33 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
     final exerciseCount = _exerciseCount;
     final totalSets = _totalSets;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
       decoration: BoxDecoration(
-        color: const Color(0xFF1C1C1E),
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _isExpanded
-              ? AppConstants.ACCENT_COLOR.withAlpha((255 * 0.6).round())
-              : AppConstants.CARD_STROKE_COLOR,
+              ? colorScheme.primary.withValues(alpha: 0.6)
+              : Theme.of(context).dividerColor,
           width: _isExpanded ? 1.5 : AppConstants.CARD_STROKE_WIDTH,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha((255 * 0.18).round()),
+            color: colors.shadow.withValues(alpha: 0.18),
             blurRadius: 10.0,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
-        color: Colors.transparent,
+        color: AppThemeColors.clear,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: _toggleExpansion,
@@ -273,23 +287,21 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                       height: 52,
                       decoration: BoxDecoration(
                         color: _displayColor.withAlpha((255 * 0.15).round()),
-                        borderRadius: BorderRadius.circular(26), // Fully rounded
+                        borderRadius: BorderRadius.circular(
+                          26,
+                        ), // Fully rounded
                         border: Border.all(
                           color: _displayColor.withAlpha((255 * 0.3).round()),
                           width: 0.5,
                         ),
                       ),
-                      child: Icon(
-                        _displayIcon,
-                        color: _displayColor,
-                        size: 26,
-                      ),
+                      child: Icon(_displayIcon, color: _displayColor, size: 26),
                     ),
                     const SizedBox(width: AppConstants.ITEM_HORIZONTAL_GAP),
                     Expanded(
                       child: Text(
                         _displayName,
-                        style: AppConstants.CARD_TITLE_TEXT_STYLE.copyWith(
+                        style: textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                           fontSize: 18,
                         ),
@@ -307,7 +319,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                           duration: const Duration(milliseconds: 300),
                           child: Icon(
                             Icons.keyboard_arrow_down,
-                            color: AppConstants.TEXT_SECONDARY_COLOR,
+                            color: colors.textSecondary,
                             size: 20,
                           ),
                         ),
@@ -332,7 +344,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                             padding: EdgeInsets.zero,
                             child: Icon(
                               CupertinoIcons.ellipsis,
-                              color: AppConstants.TEXT_SECONDARY_COLOR,
+                              color: colors.textSecondary,
                               size: 16,
                             ),
                           ),
@@ -350,7 +362,9 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                 padding: _isExpanded
                     ? const EdgeInsets.fromLTRB(20, 20, 20, 10)
                     : const EdgeInsets.fromLTRB(
-                        AppConstants.CARD_PADDING + 52 + AppConstants.ITEM_HORIZONTAL_GAP,
+                        AppConstants.CARD_PADDING +
+                            52 +
+                            AppConstants.ITEM_HORIZONTAL_GAP,
                         4,
                         AppConstants.CARD_PADDING,
                         AppConstants.CARD_PADDING,
@@ -359,14 +373,19 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                   duration: const Duration(milliseconds: 300),
                   firstCurve: Curves.easeInOut,
                   secondCurve: Curves.easeInOut,
-                  crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                  crossFadeState: _isExpanded
+                      ? CrossFadeState.showSecond
+                      : CrossFadeState.showFirst,
                   firstChild: Row(
                     children: [
                       // Exercise count with icon
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.1).round()),
+                          color: colors.textTertiary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
@@ -375,12 +394,12 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                             Icon(
                               Icons.fitness_center_outlined,
                               size: 12,
-                              color: AppConstants.TEXT_SECONDARY_COLOR,
+                              color: colors.textSecondary,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               '$exerciseCount',
-                              style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                              style: textTheme.labelMedium?.copyWith(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -391,9 +410,12 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                       const SizedBox(width: 8),
                       // Sets count with icon
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.1).round()),
+                          color: colors.textTertiary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
@@ -402,12 +424,12 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                             Icon(
                               Icons.layers_outlined,
                               size: 12,
-                              color: AppConstants.TEXT_SECONDARY_COLOR,
+                              color: colors.textSecondary,
                             ),
                             const SizedBox(width: 4),
                             Text(
                               '$totalSets',
-                              style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                              style: textTheme.labelMedium?.copyWith(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -418,9 +440,12 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                       const SizedBox(width: 8),
                       // Duration estimate
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: AppConstants.ACCENT_COLOR.withAlpha((255 * 0.1).round()),
+                          color: colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
@@ -429,15 +454,17 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                             Icon(
                               Icons.schedule_outlined,
                               size: 12,
-                              color: AppConstants.ACCENT_COLOR,
+                              color: colorScheme.primary,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              WorkoutMetrics.getFormattedDuration(_effectiveExercises),
-                              style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                              WorkoutMetrics.getFormattedDuration(
+                                _effectiveExercises,
+                              ),
+                              style: textTheme.labelMedium?.copyWith(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: AppConstants.ACCENT_COLOR,
+                                color: colorScheme.primary,
                               ),
                             ),
                           ],
@@ -460,7 +487,9 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                       ),
                       _buildExpandedStatItem(
                         icon: Icons.schedule_outlined,
-                        value: WorkoutMetrics.getFormattedDuration(_effectiveExercises).replaceAll('~', ''),
+                        value: WorkoutMetrics.getFormattedDuration(
+                          _effectiveExercises,
+                        ).replaceAll('~', ''),
                         label: 'Minutes',
                       ),
                     ],
@@ -471,16 +500,16 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
               // Expandable content
               SizeTransition(
                 sizeFactor: _expandAnimation,
-                  child: Container(
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: Colors.transparent, // Transparent to blend with card
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(16),
-                        bottomRight: Radius.circular(16),
-                      ),
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: AppThemeColors.clear,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
                     ),
-                    child: Padding(
+                  ),
+                  child: Padding(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -493,9 +522,9 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                                 padding: const EdgeInsets.only(bottom: 16.0),
                                 child: Text(
                                   'Last performed: ${DateFormat.yMMMd().format(DateTime.parse(widget.template!.lastUsed!))}',
-                                  style: AppConstants.IOS_SUBTEXT_STYLE.copyWith(
+                                  style: textTheme.bodySmall?.copyWith(
                                     fontSize: 12,
-                                    color: AppConstants.TEXT_TERTIARY_COLOR,
+                                    color: colors.textTertiary,
                                   ),
                                 ),
                               ),
@@ -505,15 +534,16 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                           if (_effectiveExercises.isNotEmpty) ...[
                             Text(
                               'Exercises',
-                              style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
+                              style: textTheme.titleSmall?.copyWith(
                                 fontSize: 16,
-                                color: AppConstants.TEXT_PRIMARY_COLOR,
                               ),
                             ),
                             const SizedBox(height: 8),
-                            ..._effectiveExercises.map((exercise) => 
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 6),
+                            ..._effectiveExercises.map(
+                              (exercise) => Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 6,
+                                ),
                                 child: Row(
                                   children: [
                                     Container(
@@ -527,25 +557,30 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        exercise.exerciseDetail?.name ?? exercise.exerciseSlug,
-                                        style: AppConstants.IOS_BODY_TEXT_STYLE.copyWith(
+                                        exercise.exerciseDetail?.name ??
+                                            exercise.exerciseSlug,
+                                        style: textTheme.bodyLarge?.copyWith(
                                           fontSize: 14,
-                                          color: AppConstants.TEXT_PRIMARY_COLOR,
                                         ),
                                       ),
                                     ),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: AppConstants.TEXT_SECONDARY_COLOR.withAlpha((255 * 0.15).round()),
+                                        color: colors.textSecondary.withValues(
+                                          alpha: 0.15,
+                                        ),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
                                         '${exercise.sets.length} sets',
-                                        style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                                        style: textTheme.labelMedium?.copyWith(
                                           fontSize: 10,
                                           fontWeight: FontWeight.w600,
-                                          color: AppConstants.TEXT_SECONDARY_COLOR,
+                                          color: colors.textSecondary,
                                         ),
                                       ),
                                     ),
@@ -564,10 +599,10 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                           child: ElevatedButton(
                             onPressed: _startWorkout,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppConstants.ACCENT_COLOR,
-                              foregroundColor: Colors.white,
+                              backgroundColor: colorScheme.primary,
+                              foregroundColor: colorScheme.onPrimary,
                               elevation: 0,
-                              shadowColor: Colors.transparent,
+                              shadowColor: AppThemeColors.clear,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -575,17 +610,14 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(
-                                  Icons.play_arrow_rounded,
-                                  size: 24,
-                                ),
+                                const Icon(Icons.play_arrow_rounded, size: 24),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Start Workout',
-                                  style: AppConstants.IOS_BODY_TEXT_STYLE.copyWith(
+                                  style: textTheme.bodyLarge?.copyWith(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.white,
+                                    color: colorScheme.onPrimary,
                                   ),
                                 ),
                               ],
@@ -609,37 +641,30 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
     required String value,
     required String label,
   }) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppConstants.ACCENT_COLOR.withAlpha((255 * 0.1).round()),
+            color: colorScheme.primary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            icon,
-            size: 20,
-            color: AppConstants.ACCENT_COLOR,
-          ),
+          child: Icon(icon, size: 20, color: colorScheme.primary),
         ),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
-            fontSize: 18,
-            color: AppConstants.TEXT_PRIMARY_COLOR,
-          ),
-        ),
+        Text(value, style: textTheme.titleMedium?.copyWith(fontSize: 18)),
         Text(
           label,
-          style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+          style: textTheme.labelMedium?.copyWith(
             fontSize: 12,
-            color: AppConstants.TEXT_SECONDARY_COLOR,
+            color: colors.textSecondary,
           ),
         ),
       ],
     );
   }
-
 }

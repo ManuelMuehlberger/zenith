@@ -1,8 +1,11 @@
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:logging/logging.dart';
+
 import '../constants/app_constants.dart';
+import '../theme/app_theme.dart';
 
 class TimelineScreen extends StatefulWidget {
   const TimelineScreen({super.key});
@@ -28,15 +31,15 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final double topPadding = MediaQuery.of(context).padding.top;
     final double headerHeight = topPadding + kToolbarHeight;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           Positioned.fill(child: _buildMainContent(headerHeight)),
-          // Glass header overlay
           Positioned(
             top: 0,
             left: 0,
@@ -49,7 +52,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 ),
                 child: Container(
                   height: headerHeight,
-                  color: AppConstants.HEADER_BG_COLOR_MEDIUM,
+                  color: colors.overlayMedium,
                   child: SafeArea(bottom: false, child: _buildHeaderContent()),
                 ),
               ),
@@ -61,37 +64,30 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Widget _buildHeaderContent() {
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
+
     return SizedBox(
       height: kToolbarHeight,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Row(
           children: [
-            // Back button
             Builder(
               builder: (context) => IconButton(
                 onPressed: () {
                   _logger.fine('Closing development timeline screen');
                   Navigator.of(context).pop();
                 },
-                icon: const Icon(
+                icon: Icon(
                   CupertinoIcons.back,
-                  color: Colors.white,
+                  color: colorScheme.onSurface,
                   size: 28,
                 ),
               ),
             ),
-
-            // Title
-            const Expanded(
-              child: Text(
-                'Development Timeline',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+            Expanded(
+              child: Text('Development Timeline', style: textTheme.titleMedium),
             ),
           ],
         ),
@@ -100,25 +96,25 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Widget _buildMainContent(double headerHeight) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return CustomScrollView(
       slivers: [
-        // Space for header
         SliverToBoxAdapter(child: SizedBox(height: headerHeight)),
-
-        // Content
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // Header
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.blue.withOpacity(0.2),
-                        Colors.purple.withOpacity(0.2),
+                        colorScheme.primary.withValues(alpha: 0.2),
+                        colors.warning.withValues(alpha: 0.16),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -133,42 +129,36 @@ class _TimelineScreenState extends State<TimelineScreen> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.2),
+                              color: colorScheme.primary.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               CupertinoIcons.rocket_fill,
-                              color: Colors.blue,
+                              color: colorScheme.primary,
                               size: 24,
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const Text(
-                            'Roadmap',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          Text('Roadmap', style: textTheme.headlineSmall),
                         ],
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Track the evolution of your workout companion',
-                        style: TextStyle(color: Colors.grey[300], fontSize: 16),
+                        style: textTheme.bodyLarge?.copyWith(
+                          color: colors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
-
                 _buildTimelineItem(
                   version: '1.0.0',
                   title: 'Foundation',
                   subtitle: 'Core workout tracking & basic features',
                   status: TimelineStatus.completed,
-                  features: [
+                  features: const [
                     'Workout creation and tracking',
                     'Exercise database integration',
                     'Basic statistics and insights',
@@ -176,15 +166,14 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     'Data export/import',
                   ],
                   icon: CupertinoIcons.checkmark_seal_fill,
-                  color: Colors.green,
+                  color: colors.success,
                 ),
-
                 _buildTimelineItem(
                   version: '0.2.0',
                   title: 'Enhanced Experience',
                   subtitle: 'Exercise renders & smooth animations',
                   status: TimelineStatus.inProgress,
-                  features: [
+                  features: const [
                     'Exercise demonstration videos',
                     'Smooth page transitions',
                     'Enhanced workout animations',
@@ -192,15 +181,14 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     'Better visual feedback',
                   ],
                   icon: CupertinoIcons.play_circle_fill,
-                  color: Colors.blue,
+                  color: colorScheme.primary,
                 ),
-
                 _buildTimelineItem(
                   version: '0.3.0',
                   title: 'Insights & Widgets',
                   subtitle: 'Advanced analytics & home screen widgets',
                   status: TimelineStatus.planned,
-                  features: [
+                  features: const [
                     'Home screen widgets',
                     'Advanced workout analytics',
                     'Progress tracking charts',
@@ -208,15 +196,14 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     'Performance predictions',
                   ],
                   icon: CupertinoIcons.chart_bar_fill,
-                  color: Colors.orange,
+                  color: colors.warning,
                 ),
-
                 _buildTimelineItem(
                   version: '0.4.0',
                   title: 'Social & Sharing',
                   subtitle: 'Connect with friends & share progress',
                   status: TimelineStatus.planned,
-                  features: [
+                  features: const [
                     'Workout sharing capabilities',
                     'Progress photo integration',
                     'Achievement system',
@@ -224,15 +211,14 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     'Community features',
                   ],
                   icon: CupertinoIcons.person_2_fill,
-                  color: Colors.purple,
+                  color: colors.textSecondary,
                 ),
-
                 _buildTimelineItem(
                   version: '0.5.0',
                   title: 'AI Integration',
                   subtitle: 'Smart recommendations & form analysis',
-                  status: TimelineStatus.planned,
-                  features: [
+                  status: TimelineStatus.future,
+                  features: const [
                     'AI workout recommendations',
                     'Form analysis using camera',
                     'Personalized training plans',
@@ -240,15 +226,14 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     'Injury prevention insights',
                   ],
                   icon: CupertinoIcons.lightbulb_fill,
-                  color: Colors.pink,
+                  color: colors.textSecondary,
                 ),
-
                 _buildTimelineItem(
                   version: '1.0.0+',
                   title: 'Beyond',
                   subtitle: 'Wearable integration & advanced features',
                   status: TimelineStatus.future,
-                  features: [
+                  features: const [
                     'Apple Watch integration',
                     'Heart rate monitoring',
                     'Advanced biometric tracking',
@@ -256,38 +241,33 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     'Sleep pattern analysis',
                   ],
                   icon: CupertinoIcons.infinite,
-                  color: Colors.cyan,
+                  color: colors.textTertiary,
                 ),
-
                 const SizedBox(height: 32),
-
-                // Footer
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[900],
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
                     children: [
-                      const Icon(
+                      Icon(
                         CupertinoIcons.heart_fill,
-                        color: Colors.red,
+                        color: colorScheme.error,
                         size: 24,
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Built with passion for fitness',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: textTheme.titleSmall,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Your feedback shapes our roadmap',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colors.textTertiary,
+                        ),
                       ),
                     ],
                   ),
@@ -309,6 +289,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
     required IconData icon,
     required Color color,
   }) {
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
+    final colors = context.appColors;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       child: Row(
@@ -323,52 +307,49 @@ class _TimelineScreenState extends State<TimelineScreen> {
                   color: status == TimelineStatus.completed
                       ? color
                       : status == TimelineStatus.inProgress
-                      ? color.withOpacity(0.7)
-                      : Colors.grey[700],
+                      ? color.withValues(alpha: 0.7)
+                      : colors.textTertiary,
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: status == TimelineStatus.completed
                         ? color
                         : status == TimelineStatus.inProgress
                         ? color
-                        : Colors.grey[600]!,
+                        : colors.textSecondary,
                     width: 2,
                   ),
                 ),
                 child: Icon(
                   icon,
                   color: status == TimelineStatus.completed
-                      ? Colors.white
+                      ? colorScheme.onPrimary
                       : status == TimelineStatus.inProgress
-                      ? Colors.white
-                      : Colors.grey[400],
+                      ? colorScheme.onPrimary
+                      : colors.textSecondary,
                   size: 20,
                 ),
               ),
               if (version != '1.0.0+')
-                Container(width: 2, height: 60, color: Colors.grey[700]),
+                Container(width: 2, height: 60, color: colors.textTertiary),
             ],
           ),
           const SizedBox(width: 16),
-
-          // Content
           Expanded(
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[900],
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: status == TimelineStatus.inProgress
-                      ? color.withOpacity(0.5)
-                      : Colors.transparent,
+                      ? color.withValues(alpha: 0.5)
+                      : AppThemeColors.clear,
                   width: 1,
                 ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
                   Row(
                     children: [
                       Container(
@@ -377,12 +358,12 @@ class _TimelineScreenState extends State<TimelineScreen> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.2),
+                          color: color.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           version,
-                          style: TextStyle(
+                          style: textTheme.labelMedium?.copyWith(
                             color: color,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -394,24 +375,15 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text(title, style: textTheme.titleMedium),
                   const SizedBox(height: 4),
-
                   Text(
                     subtitle,
-                    style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colors.textTertiary,
+                    ),
                   ),
                   const SizedBox(height: 12),
-
-                  // Features
                   ...features.map(
                     (feature) => Padding(
                       padding: const EdgeInsets.only(bottom: 4),
@@ -420,15 +392,14 @@ class _TimelineScreenState extends State<TimelineScreen> {
                           Icon(
                             CupertinoIcons.circle_fill,
                             size: 6,
-                            color: Colors.grey[500],
+                            color: colors.textTertiary,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               feature,
-                              style: TextStyle(
-                                color: Colors.grey[300],
-                                fontSize: 13,
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colors.textSecondary,
                               ),
                             ),
                           ),
@@ -446,28 +417,30 @@ class _TimelineScreenState extends State<TimelineScreen> {
   }
 
   Widget _buildStatusBadge(TimelineStatus status) {
+    final textTheme = context.appText;
+
     Color color;
     String text;
     IconData icon;
 
     switch (status) {
       case TimelineStatus.completed:
-        color = Colors.green;
+        color = context.appColors.success;
         text = 'Released';
         icon = CupertinoIcons.checkmark_circle_fill;
         break;
       case TimelineStatus.inProgress:
-        color = Colors.blue;
+        color = context.appScheme.primary;
         text = 'In Progress';
         icon = CupertinoIcons.clock_fill;
         break;
       case TimelineStatus.planned:
-        color = Colors.orange;
+        color = context.appColors.warning;
         text = 'Planned';
         icon = CupertinoIcons.calendar;
         break;
       case TimelineStatus.future:
-        color = Colors.grey;
+        color = context.appColors.textSecondary;
         text = 'Future';
         icon = CupertinoIcons.star_fill;
         break;
@@ -476,7 +449,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -486,7 +459,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
           const SizedBox(width: 4),
           Text(
             text,
-            style: TextStyle(
+            style: textTheme.bodySmall?.copyWith(
               color: color,
               fontSize: 11,
               fontWeight: FontWeight.w600,

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart'; // Import for kDebugMode
+
+import '../constants/app_constants.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
+import '../screens/exercise_info_screen.dart';
 import '../services/user_service.dart';
 import '../services/workout_session_service.dart';
-import '../screens/exercise_info_screen.dart';
-import '../constants/app_constants.dart';
+import '../theme/app_theme.dart';
 import '../utils/weight_text_input_formatter.dart';
 import 'edit_exercise/edit_exercise_card_sections.dart';
 
@@ -210,6 +211,8 @@ class _EditExerciseCardState extends State<EditExerciseCard>
   }
 
   void _showExerciseInfo(BuildContext context) {
+    final textTheme = context.appText;
+
     if (widget.exercise.exerciseDetail != null) {
       Navigator.push(
         context,
@@ -223,7 +226,7 @@ class _EditExerciseCardState extends State<EditExerciseCard>
         SnackBar(
           content: Text(
             'Exercise details not available for ${widget.exercise.exerciseSlug}',
-            style: AppConstants.IOS_BODY_TEXT_STYLE,
+            style: textTheme.bodyLarge,
           ),
         ),
       );
@@ -232,6 +235,9 @@ class _EditExerciseCardState extends State<EditExerciseCard>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final colors = context.appColors;
+
     return Container(
       key: ValueKey(widget.exercise.id),
       margin: const EdgeInsets.only(bottom: 20.0),
@@ -240,7 +246,7 @@ class _EditExerciseCardState extends State<EditExerciseCard>
         builder: (context, child) {
           return Container(
             decoration: BoxDecoration(
-              color: AppConstants.CARD_BG_COLOR,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
               border: Border.all(
                 color: _borderColorAnimation.value!,
@@ -249,7 +255,7 @@ class _EditExerciseCardState extends State<EditExerciseCard>
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withAlpha((255 * 0.15).round()),
+                  color: colors.shadow.withValues(alpha: 0.15),
                   blurRadius: 8.0,
                   offset: const Offset(0, 2),
                 ),
@@ -353,6 +359,9 @@ class _EditExerciseCardState extends State<EditExerciseCard>
     required Function(String) onChanged,
     bool showWeightSuffix = false,
   }) {
+    final colors = context.appColors;
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
     final controller = _getController(controllerKey, initialText);
 
     // Normalize + clamp weight and commit to model on blur.
@@ -409,14 +418,12 @@ class _EditExerciseCardState extends State<EditExerciseCard>
           FilteringTextInputFormatter.digitsOnly,
       ],
       textAlign: TextAlign.center,
-      style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
-        color: AppConstants.TEXT_PRIMARY_COLOR,
-      ),
+      style: textTheme.titleSmall?.copyWith(color: colors.textPrimary),
       decoration: InputDecoration(
         filled: true,
-        fillColor: Colors.grey[800]!.withAlpha((255 * 0.5).round()),
+        fillColor: colors.field.withValues(alpha: 0.5),
         suffixText: showWeightSuffix ? _weightUnit : null,
-        suffixStyle: AppConstants.IOS_SUBTEXT_STYLE,
+        suffixStyle: textTheme.bodySmall,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
@@ -428,7 +435,7 @@ class _EditExerciseCardState extends State<EditExerciseCard>
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: Colors.blue.withAlpha((255 * 0.5).round()),
+            color: colorScheme.primary.withValues(alpha: 0.5),
             width: 1,
           ),
         ),

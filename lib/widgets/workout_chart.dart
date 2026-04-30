@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+
 import '../services/insights_service.dart';
-import '../constants/app_constants.dart';
+import '../theme/app_theme.dart';
 
 class WorkoutChart extends StatelessWidget {
   final String title;
@@ -36,14 +37,19 @@ class WorkoutChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const double cardRadius = 16.0;
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     if (data.isEmpty) {
       return Container(
         height: height,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppConstants.CARD_BG_COLOR,
-          borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-          border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(cardRadius),
+          border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
         ),
         child: Center(
           child: Column(
@@ -52,10 +58,10 @@ class WorkoutChart extends StatelessWidget {
               Icon(
                 CupertinoIcons.chart_bar,
                 size: 32,
-                color: AppConstants.TEXT_TERTIARY_COLOR,
+                color: colors.textTertiary,
               ),
               const SizedBox(height: 8),
-              Text('No data available', style: AppConstants.IOS_SUBTEXT_STYLE),
+              Text('No data available', style: textTheme.bodySmall),
             ],
           ),
         ),
@@ -95,7 +101,7 @@ class WorkoutChart extends StatelessWidget {
 
     final finalRange = maxY - minY;
 
-    Widget chart = LineChart(
+    final Widget chart = LineChart(
       LineChartData(
         minY: minY,
         maxY: maxY,
@@ -105,7 +111,7 @@ class WorkoutChart extends StatelessWidget {
           horizontalInterval: finalRange / 4,
           getDrawingHorizontalLine: (value) {
             return FlLine(
-              color: AppConstants.DIVIDER_COLOR,
+              color: Theme.of(context).dividerColor,
               strokeWidth: 0.5,
               dashArray: [5, 5],
             );
@@ -113,8 +119,12 @@ class WorkoutChart extends StatelessWidget {
         ),
         titlesData: FlTitlesData(
           show: showTitles,
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: showTitles,
@@ -203,10 +213,10 @@ class WorkoutChart extends StatelessWidget {
                     meta: meta,
                     child: Text(
                       label,
-                      style: TextStyle(
+                      style: textTheme.bodySmall?.copyWith(
                         color: isHighlight
-                            ? AppConstants.TEXT_SECONDARY_COLOR
-                            : AppConstants.TEXT_TERTIARY_COLOR,
+                            ? colors.textSecondary
+                            : colors.textTertiary,
                         fontSize: 10,
                         fontWeight: isHighlight
                             ? FontWeight.bold
@@ -219,7 +229,7 @@ class WorkoutChart extends StatelessWidget {
               },
             ),
           ),
-          leftTitles: AxisTitles(
+          leftTitles: const AxisTitles(
             sideTitles: SideTitles(
               showTitles: false, // Hide Y-axis labels for cleaner look
             ),
@@ -241,7 +251,7 @@ class WorkoutChart extends StatelessWidget {
                   radius: dotRadius,
                   color: color,
                   strokeWidth: 1.5,
-                  strokeColor: AppConstants.CARD_BG_COLOR,
+                  strokeColor: colorScheme.surface,
                 );
               },
             ),
@@ -251,8 +261,8 @@ class WorkoutChart extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  color.withAlpha((255 * 0.25).round()),
-                  color.withAlpha((255 * 0.05).round()),
+                  color.withValues(alpha: 0.25),
+                  color.withValues(alpha: 0.05),
                 ],
               ),
             ),
@@ -261,8 +271,7 @@ class WorkoutChart extends StatelessWidget {
         lineTouchData: LineTouchData(
           enabled: true,
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (touchedSpot) =>
-                AppConstants.WORKOUT_BUTTON_BG_COLOR,
+            getTooltipColor: (touchedSpot) => colorScheme.surface,
             tooltipPadding: const EdgeInsets.all(8),
             tooltipMargin: 8,
             getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
@@ -295,15 +304,15 @@ class WorkoutChart extends StatelessWidget {
 
                 return LineTooltipItem(
                   '$dateLabel\n',
-                  TextStyle(
-                    color: AppConstants.TEXT_SECONDARY_COLOR,
+                  textTheme.bodySmall!.copyWith(
+                    color: colors.textSecondary,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                   children: [
                     TextSpan(
                       text: '${barSpot.y.toStringAsFixed(1)} $unit',
-                      style: TextStyle(
+                      style: textTheme.bodyMedium?.copyWith(
                         color: color,
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -320,7 +329,7 @@ class WorkoutChart extends StatelessWidget {
                 return spotIndexes.map((spotIndex) {
                   return TouchedSpotIndicatorData(
                     FlLine(
-                      color: color.withAlpha((255 * 0.3).round()),
+                      color: color.withValues(alpha: 0.3),
                       strokeWidth: 1,
                       dashArray: [3, 3],
                     ),
@@ -330,7 +339,7 @@ class WorkoutChart extends StatelessWidget {
                           radius: 5,
                           color: color,
                           strokeWidth: 2,
-                          strokeColor: Colors.white,
+                          strokeColor: colors.textPrimary,
                         );
                       },
                     ),
@@ -349,9 +358,9 @@ class WorkoutChart extends StatelessWidget {
       height: height,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppConstants.CARD_BG_COLOR,
-        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-        border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(cardRadius),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -370,8 +379,8 @@ class WorkoutChart extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colors.textPrimary,
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
@@ -383,12 +392,12 @@ class WorkoutChart extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: color.withAlpha((255 * 0.15).round()),
+                    color: color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     unit,
-                    style: TextStyle(
+                    style: textTheme.bodySmall?.copyWith(
                       color: color,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
@@ -433,8 +442,8 @@ class CompactChart extends StatelessWidget {
       height: height,
       child: LineChart(
         LineChartData(
-          gridData: FlGridData(show: false),
-          titlesData: FlTitlesData(show: false),
+          gridData: const FlGridData(show: false),
+          titlesData: const FlTitlesData(show: false),
           borderData: FlBorderData(show: false),
           lineBarsData: [
             LineChartBarData(
@@ -444,21 +453,21 @@ class CompactChart extends StatelessWidget {
               color: color,
               barWidth: 2,
               isStrokeCapRound: true,
-              dotData: FlDotData(show: false),
+              dotData: const FlDotData(show: false),
               belowBarData: BarAreaData(
                 show: true,
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    color.withAlpha((255 * 0.2).round()),
-                    color.withAlpha((255 * 0.05).round()),
+                    color.withValues(alpha: 0.2),
+                    color.withValues(alpha: 0.05),
                   ],
                 ),
               ),
             ),
           ],
-          lineTouchData: LineTouchData(enabled: false),
+          lineTouchData: const LineTouchData(enabled: false),
         ),
       ),
     );
@@ -482,14 +491,19 @@ class WorkoutBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const double cardRadius = 16.0;
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     if (data.isEmpty) {
       return Container(
         height: height,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppConstants.CARD_BG_COLOR,
-          borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-          border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(cardRadius),
+          border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
         ),
         child: Center(
           child: Column(
@@ -498,10 +512,10 @@ class WorkoutBarChart extends StatelessWidget {
               Icon(
                 CupertinoIcons.chart_bar_fill,
                 size: 32,
-                color: AppConstants.TEXT_TERTIARY_COLOR,
+                color: colors.textTertiary,
               ),
               const SizedBox(height: 8),
-              Text('No data available', style: AppConstants.IOS_SUBTEXT_STYLE),
+              Text('No data available', style: textTheme.bodySmall),
             ],
           ),
         ),
@@ -514,17 +528,17 @@ class WorkoutBarChart extends StatelessWidget {
       height: height,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppConstants.CARD_BG_COLOR,
-        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-        border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(cardRadius),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.white,
+            style: textTheme.bodyMedium?.copyWith(
+              color: colors.textPrimary,
               fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
@@ -543,8 +557,8 @@ class WorkoutBarChart extends StatelessWidget {
                       children: [
                         Text(
                           entry.value.toStringAsFixed(0),
-                          style: TextStyle(
-                            color: AppConstants.TEXT_SECONDARY_COLOR,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colors.textSecondary,
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),
@@ -556,10 +570,7 @@ class WorkoutBarChart extends StatelessWidget {
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: [
-                                  color,
-                                  color.withAlpha((255 * 0.7).round()),
-                                ],
+                                colors: [color, color.withValues(alpha: 0.7)],
                               ),
                               borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(4),
@@ -585,8 +596,8 @@ class WorkoutBarChart extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text(
                           entry.key,
-                          style: TextStyle(
-                            color: AppConstants.TEXT_TERTIARY_COLOR,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: colors.textTertiary,
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
                           ),

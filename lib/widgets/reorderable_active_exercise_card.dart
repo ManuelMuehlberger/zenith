@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../constants/app_constants.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
-import '../services/workout_session_service.dart';
 import '../screens/exercise_info_screen.dart';
-import '../constants/app_constants.dart';
+import '../services/workout_session_service.dart';
+import '../theme/app_theme.dart';
 import '../utils/weight_text_input_formatter.dart';
 
 class ReorderableActiveExerciseCard extends StatefulWidget {
@@ -16,7 +18,8 @@ class ReorderableActiveExerciseCard extends StatefulWidget {
   final bool isDragging;
   final bool isOtherDragging;
   final Function(int) onToggleNotes;
-  final Function(String, String, {int? reps, double? weight, bool? isCompleted}) onUpdateSet;
+  final Function(String, String, {int? reps, double? weight, bool? isCompleted})
+  onUpdateSet;
   final Function(String, String) onToggleSetCompletion;
   final VoidCallback onAddSet;
   final Function(String) onRemoveSet;
@@ -42,10 +45,13 @@ class ReorderableActiveExerciseCard extends StatefulWidget {
   });
 
   @override
-  State<ReorderableActiveExerciseCard> createState() => _ReorderableActiveExerciseCardState();
+  State<ReorderableActiveExerciseCard> createState() =>
+      _ReorderableActiveExerciseCardState();
 }
 
-class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExerciseCard> with TickerProviderStateMixin {
+class _ReorderableActiveExerciseCardState
+    extends State<ReorderableActiveExerciseCard>
+    with TickerProviderStateMixin {
   final Map<String, TextEditingController> _controllers = {};
   late AnimationController _reorderModeController;
   late Animation<Color?> _borderColorAnimation;
@@ -89,9 +95,14 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
     super.dispose();
   }
 
-  TextEditingController _getController(String controllerKey, String textToInitializeWith) {
+  TextEditingController _getController(
+    String controllerKey,
+    String textToInitializeWith,
+  ) {
     if (!_controllers.containsKey(controllerKey)) {
-      _controllers[controllerKey] = TextEditingController(text: textToInitializeWith);
+      _controllers[controllerKey] = TextEditingController(
+        text: textToInitializeWith,
+      );
     }
     return _controllers[controllerKey]!;
   }
@@ -116,21 +127,25 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final colorScheme = context.appScheme;
     return AnimatedBuilder(
       animation: _borderColorAnimation,
       builder: (context, child) {
         return Container(
           decoration: BoxDecoration(
-            color: AppConstants.CARD_BG_COLOR,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
             border: Border.all(
               color: _borderColorAnimation.value!,
-              width: widget.isReorderMode ? 1.5 : AppConstants.CARD_STROKE_WIDTH,
+              width: widget.isReorderMode
+                  ? 1.5
+                  : AppConstants.CARD_STROKE_WIDTH,
               strokeAlign: BorderSide.strokeAlignInside,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withAlpha((255 * 0.15).round()),
+                color: colors.shadow.withValues(alpha: 0.15),
                 blurRadius: 8.0,
                 offset: const Offset(0, 2),
               ),
@@ -142,19 +157,17 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Column(
-            children: [
-              _buildHeader(),
-              _buildSetsList(),
-            ],
-          ),
+          Column(children: [_buildHeader(), _buildSetsList()]),
           Positioned(
             bottom: -15,
             right: 15,
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
-              child: widget.isReorderMode ? _buildAddSetButton() : const SizedBox.shrink(),
+              transitionBuilder: (child, animation) =>
+                  ScaleTransition(scale: animation, child: child),
+              child: widget.isReorderMode
+                  ? _buildAddSetButton()
+                  : const SizedBox.shrink(),
             ),
           ),
         ],
@@ -163,6 +176,9 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
   }
 
   Widget _buildAddSetButton() {
+    final colors = context.appColors;
+    final textTheme = context.appText;
+
     return GestureDetector(
       onTap: () {
         widget.onAddSet();
@@ -172,12 +188,12 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
         width: 120,
         height: 36,
         decoration: BoxDecoration(
-          color: AppConstants.ACCENT_COLOR_ORANGE,
+          color: colors.warning,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.black, width: 2),
+          border: Border.all(color: colors.overlayStrong, width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: colors.shadow.withValues(alpha: 0.3),
               spreadRadius: 1,
               blurRadius: 3,
               offset: const Offset(0, 1),
@@ -187,11 +203,11 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.add, color: Colors.white, size: 20),
+            Icon(Icons.add, color: colors.textPrimary, size: 20),
             const SizedBox(width: 4),
             Text(
               'Add Set',
-              style: AppConstants.HEADER_BUTTON_TEXT_STYLE.copyWith(color: Colors.white),
+              style: textTheme.labelLarge?.copyWith(color: colors.textPrimary),
             ),
           ],
         ),
@@ -200,6 +216,9 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
   }
 
   Widget _buildHeader() {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
       child: Column(
@@ -212,8 +231,9 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.exercise.exerciseDetail?.name ?? widget.exercise.exerciseSlug,
-                      style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
+                      widget.exercise.exerciseDetail?.name ??
+                          widget.exercise.exerciseSlug,
+                      style: textTheme.titleSmall?.copyWith(
                         color: widget.workoutColor,
                         fontSize: 20,
                       ),
@@ -226,23 +246,29 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
                   onPressed: () => widget.onToggleNotes(widget.exerciseIndex),
                   icon: Icon(
                     widget.expandedNotes.contains(widget.exerciseIndex)
-                      ? Icons.sticky_note_2
-                      : Icons.sticky_note_2_outlined,
+                        ? Icons.sticky_note_2
+                        : Icons.sticky_note_2_outlined,
                     color: widget.expandedNotes.contains(widget.exerciseIndex)
-                      ? Colors.amber
-                      : Colors.grey[500],
+                        ? colors.warning
+                        : colors.textTertiary,
                     size: 24,
                   ),
-                  tooltip: widget.expandedNotes.contains(widget.exerciseIndex) ? 'Hide notes' : 'Show notes',
+                  tooltip: widget.expandedNotes.contains(widget.exerciseIndex)
+                      ? 'Hide notes'
+                      : 'Show notes',
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
                 ),
               SizedBox(
                 width: 40,
                 height: 40,
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
-                  transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+                  transitionBuilder: (child, animation) =>
+                      FadeTransition(opacity: animation, child: child),
                   child: widget.isReorderMode
                       ? ReorderableDragStartListener(
                           key: ValueKey('drag_handle_${widget.exercise.id}'),
@@ -250,12 +276,12 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppConstants.ACCENT_COLOR_ORANGE.withAlpha((255 * 0.2).round()),
+                              color: colors.warning.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.drag_handle,
-                              color: AppConstants.ACCENT_COLOR_ORANGE,
+                              color: colors.warning,
                               size: 24,
                             ),
                           ),
@@ -265,7 +291,11 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
                           padding: const EdgeInsets.all(8),
                           constraints: const BoxConstraints(),
                           onPressed: () => _showExerciseInfo(context),
-                          icon: Icon(Icons.info_outline, color: AppConstants.TEXT_SECONDARY_COLOR, size: 28),
+                          icon: Icon(
+                            Icons.info_outline,
+                            color: colors.textSecondary,
+                            size: 28,
+                          ),
                           tooltip: 'Exercise Info',
                         ),
                 ),
@@ -273,19 +303,20 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
             ],
           ),
           if (widget.expandedNotes.contains(widget.exerciseIndex) &&
-              widget.exercise.notes != null && widget.exercise.notes!.isNotEmpty) ...[
+              widget.exercise.notes != null &&
+              widget.exercise.notes!.isNotEmpty) ...[
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey[800],
+                color: colors.field,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[600]!, width: 1),
+                border: Border.all(color: colors.textSecondary, width: 1),
               ),
               child: Text(
                 widget.exercise.notes ?? "",
-                style: AppConstants.IOS_SUBTEXT_STYLE,
+                style: textTheme.bodySmall,
               ),
             ),
           ],
@@ -295,7 +326,9 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
   }
 
   Widget _buildSetsList() {
-    final isBodyWeight = widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
+    final textTheme = context.appText;
+    final isBodyWeight =
+        widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
       child: Column(
@@ -307,12 +340,20 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
                 const SizedBox(width: 28),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: Text('Reps', textAlign: TextAlign.center, style: AppConstants.IOS_SUBTEXT_STYLE),
+                  child: Text(
+                    'Reps',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodySmall,
+                  ),
                 ),
                 if (!isBodyWeight) ...[
                   const SizedBox(width: 16),
                   Expanded(
-                    child: Text('Weight', textAlign: TextAlign.center, style: AppConstants.IOS_SUBTEXT_STYLE),
+                    child: Text(
+                      'Weight',
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodySmall,
+                    ),
                   ),
                 ],
                 const SizedBox(width: 16),
@@ -334,14 +375,20 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
   }
 
   Widget _buildSetRow(WorkoutSet set, int setNumber) {
+    final colors = context.appColors;
+    final textTheme = context.appText;
     final isCompleted = set.isCompleted;
     final canComplete = _canCompleteSet(widget.exercise.id, setNumber);
-    final originalSet = setNumber <= widget.exercise.sets.length ? widget.exercise.sets[setNumber - 1] : null;
+    final originalSet = setNumber <= widget.exercise.sets.length
+        ? widget.exercise.sets[setNumber - 1]
+        : null;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       decoration: BoxDecoration(
-        color: isCompleted ? Colors.green.withAlpha((255 * 0.08).round()) : Colors.transparent,
+        color: isCompleted
+            ? colors.success.withValues(alpha: 0.08)
+            : AppThemeColors.clear,
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: Row(
@@ -351,14 +398,20 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
             width: 28,
             height: 42,
             decoration: BoxDecoration(
-              color: isCompleted ? Colors.green : canComplete ? Colors.grey[700] : Colors.grey[800],
+              color: isCompleted
+                  ? colors.success
+                  : canComplete
+                  ? colors.textSecondary
+                  : colors.field,
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
                 setNumber.toString(),
-                style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
-                  color: canComplete || isCompleted ? AppConstants.TEXT_PRIMARY_COLOR : AppConstants.TEXT_TERTIARY_COLOR,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: canComplete || isCompleted
+                      ? colors.textPrimary
+                      : colors.textTertiary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -368,11 +421,17 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
           Expanded(
             child: _buildDecoratedSetInput(
               controllerKey: '${widget.exercise.id}_${set.id}_reps',
-              initialText: (set.actualReps ?? 0) > 0 ? set.actualReps.toString() : "",
+              initialText: (set.actualReps ?? 0) > 0
+                  ? set.actualReps.toString()
+                  : "",
               goalValue: originalSet?.targetReps?.toString(),
               onChanged: (value) {
                 final reps = int.tryParse(value);
-                widget.onUpdateSet(widget.exercise.id, set.id, reps: reps ?? (value.isEmpty ? 0 : null));
+                widget.onUpdateSet(
+                  widget.exercise.id,
+                  set.id,
+                  reps: reps ?? (value.isEmpty ? 0 : null),
+                );
               },
               enabled: !isCompleted,
             ),
@@ -382,11 +441,23 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
             Expanded(
               child: _buildDecoratedSetInput(
                 controllerKey: '${widget.exercise.id}_${set.id}_weight',
-                initialText: (set.actualWeight ?? 0.0) > 0.0 ? WorkoutSessionService.instance.formatWeight(set.actualWeight!) : "",
-                goalValue: originalSet?.targetWeight != null ? WorkoutSessionService.instance.formatWeight(originalSet!.targetWeight!) : null,
+                initialText: (set.actualWeight ?? 0.0) > 0.0
+                    ? WorkoutSessionService.instance.formatWeight(
+                        set.actualWeight!,
+                      )
+                    : "",
+                goalValue: originalSet?.targetWeight != null
+                    ? WorkoutSessionService.instance.formatWeight(
+                        originalSet!.targetWeight!,
+                      )
+                    : null,
                 onChanged: (value) {
                   final weight = double.tryParse(value);
-                  widget.onUpdateSet(widget.exercise.id, set.id, weight: weight ?? (value.isEmpty ? 0.0 : null));
+                  widget.onUpdateSet(
+                    widget.exercise.id,
+                    set.id,
+                    weight: weight ?? (value.isEmpty ? 0.0 : null),
+                  );
                 },
                 enabled: !isCompleted,
                 showKgSuffix: true,
@@ -399,12 +470,17 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
             height: 32,
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+              transitionBuilder: (child, animation) =>
+                  ScaleTransition(scale: animation, child: child),
               child: widget.isReorderMode
                   ? IconButton(
                       key: ValueKey('remove_set_${set.id}'),
                       padding: EdgeInsets.zero,
-                      icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 24),
+                      icon: Icon(
+                        Icons.remove_circle_outline,
+                        color: Theme.of(context).colorScheme.error,
+                        size: 24,
+                      ),
                       onPressed: () => widget.onRemoveSet(set.id),
                     )
                   : GestureDetector(
@@ -412,28 +488,44 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
                       onTap: canComplete
                           ? () {
                               HapticFeedback.lightImpact();
-                              widget.onToggleSetCompletion(widget.exercise.id, set.id);
+                              widget.onToggleSetCompletion(
+                                widget.exercise.id,
+                                set.id,
+                              );
                             }
                           : null,
                       child: Container(
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: isCompleted ? Colors.green : canComplete ? Colors.transparent : Colors.grey[800],
+                          color: isCompleted
+                              ? colors.success
+                              : canComplete
+                              ? AppThemeColors.clear
+                              : colors.field,
                           border: Border.all(
-                              color: isCompleted
-                                  ? Colors.green
-                                  : canComplete
-                                      ? Colors.grey[600]!
-                                      : Colors.grey[700]!,
-                              width: 2),
+                            color: isCompleted
+                                ? colors.success
+                                : canComplete
+                                ? colors.textSecondary
+                                : colors.textTertiary,
+                            width: 2,
+                          ),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: isCompleted
-                            ? const Icon(Icons.check_rounded, color: Colors.white, size: 20)
+                            ? Icon(
+                                Icons.check_rounded,
+                                color: colors.textPrimary,
+                                size: 20,
+                              )
                             : !canComplete
-                                ? Icon(Icons.lock_outline, color: Colors.grey[500], size: 16)
-                                : null,
+                            ? Icon(
+                                Icons.lock_outline,
+                                color: colors.textTertiary,
+                                size: 16,
+                              )
+                            : null,
                       ),
                     ),
             ),
@@ -467,14 +559,22 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
     required bool enabled,
     bool showKgSuffix = false,
   }) {
+    final colors = context.appColors;
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
     const double goalTextFontSize = 10.0;
     const double verticalPaddingAboveMainText = 2.0;
     const double spaceBetweenMainAndGoal = 1.0;
     const double verticalPaddingBelowGoalText = 3.0;
     const double goalTextLineHeight = goalTextFontSize * 1.2;
-    final double bottomPaddingForGoal = goalTextLineHeight + spaceBetweenMainAndGoal + verticalPaddingBelowGoalText;
+    const double bottomPaddingForGoal =
+        goalTextLineHeight +
+        spaceBetweenMainAndGoal +
+        verticalPaddingBelowGoalText;
 
-    final bool showFullGoalText = widget.workoutStartedAt == null || DateTime.now().difference(widget.workoutStartedAt!).inSeconds < 5;
+    final bool showFullGoalText =
+        widget.workoutStartedAt == null ||
+        DateTime.now().difference(widget.workoutStartedAt!).inSeconds < 5;
     final String formattedGoalValue = _formatGoalValue(goalValue);
 
     return Stack(
@@ -492,23 +592,50 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
           ],
           textAlign: TextAlign.center,
           textAlignVertical: TextAlignVertical.top,
-          style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(color: enabled ? AppConstants.TEXT_PRIMARY_COLOR : AppConstants.TEXT_TERTIARY_COLOR),
+          style: textTheme.titleSmall?.copyWith(
+            color: enabled ? colors.textPrimary : colors.textTertiary,
+          ),
           decoration: InputDecoration(
             filled: true,
-            fillColor: enabled ? Colors.grey[800]!.withAlpha((255 * 0.5).round()) : Colors.grey[850],
+            fillColor: enabled
+                ? colors.field.withValues(alpha: 0.5)
+                : colors.surfaceAlt,
             suffixText: showKgSuffix ? widget.weightUnit : null,
-            suffixStyle: AppConstants.IOS_SUBTEXT_STYLE,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.blue.withAlpha((255 * 0.5).round()), width: 1)),
-            contentPadding: EdgeInsets.fromLTRB(12, verticalPaddingAboveMainText, 12, bottomPaddingForGoal),
+            suffixStyle: textTheme.bodySmall,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: colorScheme.primary.withValues(alpha: 0.5),
+                width: 1,
+              ),
+            ),
+            contentPadding: const EdgeInsets.fromLTRB(
+              12,
+              verticalPaddingAboveMainText,
+              12,
+              bottomPaddingForGoal,
+            ),
           ),
           onChanged: onChanged,
           onTap: () {
             if (_controllers.containsKey(controllerKey)) {
               final controller = _controllers[controllerKey]!;
               if (controller.text.isNotEmpty) {
-                Future.delayed(Duration.zero, () => controller.selection = TextSelection(baseOffset: 0, extentOffset: controller.text.length));
+                Future.delayed(
+                  Duration.zero,
+                  () => controller.selection = TextSelection(
+                    baseOffset: 0,
+                    extentOffset: controller.text.length,
+                  ),
+                );
               }
             }
           },
@@ -532,9 +659,11 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
                 showFullGoalText
                     ? 'Goal: $formattedGoalValue${showKgSuffix && !(widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false) ? " ${widget.weightUnit}" : ""}'
                     : formattedGoalValue,
-                key: ValueKey<bool>(showFullGoalText), // Key is crucial for AnimatedSwitcher to work correctly
+                key: ValueKey<bool>(
+                  showFullGoalText,
+                ), // Key is crucial for AnimatedSwitcher to work correctly
                 textAlign: TextAlign.center,
-                style: AppConstants.IOS_SUBTEXT_STYLE,
+                style: textTheme.bodySmall,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -547,11 +676,18 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
     if (widget.exercise.exerciseDetail != null) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => ExerciseInfoScreen(exercise: widget.exercise.exerciseDetail!)),
+        MaterialPageRoute(
+          builder: (context) =>
+              ExerciseInfoScreen(exercise: widget.exercise.exerciseDetail!),
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Exercise details not available for ${widget.exercise.exerciseSlug}')),
+        SnackBar(
+          content: Text(
+            'Exercise details not available for ${widget.exercise.exerciseSlug}',
+          ),
+        ),
       );
     }
   }

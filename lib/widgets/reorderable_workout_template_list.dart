@@ -1,9 +1,12 @@
+import 'dart:developer' as developer; // Add debug logging
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:developer' as developer; // Add debug logging
-import '../models/workout_template.dart';
-import 'expandable_workout_card.dart';
+
 import '../constants/app_constants.dart';
+import '../models/workout_template.dart';
+import '../theme/app_theme.dart';
+import 'expandable_workout_card.dart';
 
 class ReorderableWorkoutTemplateList extends StatefulWidget {
   final List<WorkoutTemplate> templates;
@@ -32,11 +35,12 @@ class ReorderableWorkoutTemplateList extends StatefulWidget {
 
 class _ReorderableWorkoutTemplateListState
     extends State<ReorderableWorkoutTemplateList> {
-  int? _draggingIndex;
   int? _dropIndex;
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = context.appText;
+
     if (widget.templates.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -45,21 +49,19 @@ class _ReorderableWorkoutTemplateListState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.folderId != null)
-          const Text(
+          Text(
             'Workouts in folder',
-            style: TextStyle(
+            style: textTheme.titleMedium?.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
             ),
           )
         else
-          const Text(
+          Text(
             'Workouts',
-            style: TextStyle(
+            style: textTheme.titleMedium?.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
             ),
           ),
         const SizedBox(height: AppConstants.SECTION_VERTICAL_GAP),
@@ -72,6 +74,9 @@ class _ReorderableWorkoutTemplateListState
   }
 
   Widget _buildReorderableItem(int index) {
+    final colors = context.appColors;
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
     final template = widget.templates[index];
 
     final card = ExpandableWorkoutCard(
@@ -83,32 +88,29 @@ class _ReorderableWorkoutTemplateListState
     );
 
     final draggable = LongPressDraggable<Map<String, dynamic>>(
-      data: {
-        'templateId': template.id,
-        'index': index,
-        'type': 'template',
-      },
+      data: {'templateId': template.id, 'index': index, 'type': 'template'},
       delay: const Duration(milliseconds: 300),
       onDragStarted: () {
-        developer.log('Drag started for template: ${template.id} at index: $index');
+        developer.log(
+          'Drag started for template: ${template.id} at index: $index',
+        );
         HapticFeedback.mediumImpact();
-        setState(() {
-          _draggingIndex = index;
-        });
         widget.onDragStarted?.call();
       },
       onDragEnd: (details) {
-        developer.log('Drag ended for template: ${template.id} at index: $index');
+        developer.log(
+          'Drag ended for template: ${template.id} at index: $index',
+        );
         setState(() {
-          _draggingIndex = null;
           _dropIndex = null;
         });
         widget.onDragEnded?.call();
       },
       onDraggableCanceled: (velocity, offset) {
-        developer.log('Drag canceled for template: ${template.id} at index: $index');
+        developer.log(
+          'Drag canceled for template: ${template.id} at index: $index',
+        );
         setState(() {
-          _draggingIndex = null;
           _dropIndex = null;
         });
       },
@@ -117,16 +119,10 @@ class _ReorderableWorkoutTemplateListState
         child: Material(
           elevation: 8.0,
           borderRadius: BorderRadius.circular(16.0),
-          child: Opacity(
-            opacity: 0.8,
-            child: card,
-          ),
+          child: Opacity(opacity: 0.8, child: card),
         ),
       ),
-      childWhenDragging: Opacity(
-        opacity: 0.5,
-        child: card,
-      ),
+      childWhenDragging: Opacity(opacity: 0.5, child: card),
       child: card,
     );
 
@@ -137,7 +133,8 @@ class _ReorderableWorkoutTemplateListState
         final draggedIndex = data['index'] as int;
         if (draggedIndex == index) return false;
         developer.log(
-            'Drag target will accept template at index: $index, draggedIndex: $draggedIndex');
+          'Drag target will accept template at index: $index, draggedIndex: $draggedIndex',
+        );
         setState(() {
           _dropIndex = index;
         });
@@ -157,7 +154,8 @@ class _ReorderableWorkoutTemplateListState
           newIndex--;
         }
         developer.log(
-            'Drag target accept template: draggedIndex: $draggedIndex, newIndex: $newIndex');
+          'Drag target accept template: draggedIndex: $draggedIndex, newIndex: $newIndex',
+        );
         widget.onTemplateReordered(draggedIndex, newIndex);
         setState(() {
           _dropIndex = null;
@@ -175,18 +173,22 @@ class _ReorderableWorkoutTemplateListState
               height: showPlaceholder ? 80 : 0,
               width: double.infinity,
               margin: showPlaceholder
-                  ? const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP)
+                  ? const EdgeInsets.only(
+                      bottom: AppConstants.CARD_VERTICAL_GAP,
+                    )
                   : EdgeInsets.zero,
               decoration: BoxDecoration(
-                color: Colors.blue.withAlpha(50),
+                color: colorScheme.primary.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-                border: Border.all(color: Colors.blue, width: 2),
+                border: Border.all(color: colorScheme.primary, width: 2),
               ),
               child: showPlaceholder
-                  ? const Center(
+                  ? Center(
                       child: Text(
                         'Move here',
-                        style: AppConstants.IOS_NORMAL_TEXT_STYLE,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colors.textPrimary,
+                        ),
                       ),
                     )
                   : null,
@@ -199,6 +201,10 @@ class _ReorderableWorkoutTemplateListState
   }
 
   Widget _buildDropZone(int targetIndex) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return DragTarget<Map<String, dynamic>>(
       onWillAcceptWithDetails: (details) {
         final data = details.data;
@@ -242,15 +248,17 @@ class _ReorderableWorkoutTemplateListState
               ? const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP)
               : EdgeInsets.zero,
           decoration: BoxDecoration(
-            color: Colors.blue.withAlpha(50),
+            color: colorScheme.primary.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-            border: Border.all(color: Colors.blue, width: 2),
+            border: Border.all(color: colorScheme.primary, width: 2),
           ),
           child: showPlaceholder
-              ? const Center(
+              ? Center(
                   child: Text(
                     'Move to end',
-                    style: AppConstants.IOS_NORMAL_TEXT_STYLE,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colors.textPrimary,
+                    ),
                   ),
                 )
               : null,

@@ -136,20 +136,11 @@ class AppConstants {
 
   static const TextStyle CARD_TITLE_TEXT_STYLE = AppTextStyles.sectionTitle;
 
-  static const TextStyle CARD_SUBTITLE_TEXT_STYLE = AppTextStyles.bodySecondary;
-
   // Button and action text constants
   static const String BACK_BUTTON_TOOLTIP = 'Back';
   static const String SELECT_EXERCISE_TITLE = 'Select Exercise';
   static const String DONE_BUTTON_TEXT = 'Done';
   static const TextStyle HEADER_BUTTON_TEXT_STYLE = AppTextStyles.action;
-
-  // Active Workout Screen specific text styles
-  static const TextStyle WORKOUT_HEADER_PROGRESS_TEXT_STYLE = TextStyle(
-    color: ACCENT_COLOR,
-    fontSize: 11,
-    fontWeight: FontWeight.w600,
-  );
 }
 
 /// Supported measurement units

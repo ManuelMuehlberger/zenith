@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
-import '../../constants/app_constants.dart';
 import '../../models/workout_exercise.dart';
 import '../../models/workout_set.dart';
+import '../../theme/app_theme.dart';
 
 class EditExerciseAddSetButton extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const EditExerciseAddSetButton({
-    super.key,
-    required this.onPressed,
-  });
+  const EditExerciseAddSetButton({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final textTheme = context.appText;
+
     return GestureDetector(
       onTap: () {
         onPressed();
@@ -25,12 +25,12 @@ class EditExerciseAddSetButton extends StatelessWidget {
         width: 110,
         height: 36,
         decoration: BoxDecoration(
-          color: AppConstants.ACCENT_COLOR_ORANGE,
+          color: colors.warning,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.black, width: 2),
+          border: Border.all(color: colors.overlayStrong, width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha((255 * 0.3).round()),
+              color: colors.shadow.withValues(alpha: 0.3),
               spreadRadius: 1,
               blurRadius: 3,
               offset: const Offset(0, 1),
@@ -40,12 +40,12 @@ class EditExerciseAddSetButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.add, color: Colors.white, size: 18),
+            Icon(Icons.add, color: colors.textPrimary, size: 18),
             const SizedBox(width: 2),
             Text(
               'Add',
-              style: AppConstants.HEADER_BUTTON_TEXT_STYLE.copyWith(
-                color: Colors.white,
+              style: textTheme.labelLarge?.copyWith(
+                color: colors.textPrimary,
                 fontSize: 14,
               ),
             ),
@@ -80,6 +80,10 @@ class EditExerciseHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
       child: Column(
@@ -93,8 +97,8 @@ class EditExerciseHeader extends StatelessWidget {
                   children: [
                     Text(
                       exercise.exerciseDetail?.name ?? exercise.exerciseSlug,
-                      style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
-                        color: AppConstants.ACCENT_COLOR,
+                      style: textTheme.titleSmall?.copyWith(
+                        color: colorScheme.primary,
                         fontSize: 20,
                       ),
                     ),
@@ -111,10 +115,10 @@ class EditExerciseHeader extends StatelessWidget {
                           ? Icons.sticky_note_2
                           : Icons.sticky_note_2_outlined,
                       color: isNotesExpanded
-                          ? Colors.amber
+                          ? colors.warning
                           : (exercise.notes?.isNotEmpty ?? false)
-                              ? Colors.amber.withAlpha(150)
-                              : Colors.grey[500],
+                          ? colors.warning.withValues(alpha: 0.6)
+                          : colors.textTertiary,
                       size: 24,
                     ),
                     tooltip: isNotesExpanded ? 'Hide notes' : 'Show notes',
@@ -148,7 +152,7 @@ class EditExerciseHeader extends StatelessWidget {
                       onPressed: showMenu,
                       icon: Icon(
                         Icons.more_horiz,
-                        color: AppConstants.TEXT_SECONDARY_COLOR,
+                        color: colors.textSecondary,
                         size: 28,
                       ),
                       tooltip: 'Exercise Options',
@@ -162,14 +166,12 @@ class EditExerciseHeader extends StatelessWidget {
                       height: 40,
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppConstants.ACCENT_COLOR_ORANGE.withAlpha(
-                          (255 * 0.2).round(),
-                        ),
+                        color: colors.warning.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.drag_handle,
-                        color: AppConstants.ACCENT_COLOR_ORANGE,
+                        color: colors.warning,
                         size: 24,
                       ),
                     ),
@@ -183,13 +185,15 @@ class EditExerciseHeader extends StatelessWidget {
               padding: const EdgeInsets.only(top: 12.0),
               child: TextFormField(
                 controller: notesController,
-                style: AppConstants.IOS_BODY_TEXT_STYLE,
+                style: textTheme.bodyLarge,
                 maxLines: 3,
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: Colors.grey[800],
+                  fillColor: colors.field,
                   hintText: 'Add notes for this exercise...',
-                  hintStyle: AppConstants.IOS_HINT_TEXT_STYLE,
+                  hintStyle: textTheme.bodyMedium?.copyWith(
+                    color: colors.textSecondary,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide.none,
@@ -197,7 +201,7 @@ class EditExerciseHeader extends StatelessWidget {
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(
-                      color: Colors.blue.withAlpha((255 * 0.5).round()),
+                      color: colorScheme.primary.withValues(alpha: 0.5),
                       width: 1,
                     ),
                   ),
@@ -226,6 +230,8 @@ class EditExerciseSetsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = context.appText;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
       child: Column(
@@ -240,7 +246,7 @@ class EditExerciseSetsList extends StatelessWidget {
                   child: Text(
                     'Reps',
                     textAlign: TextAlign.center,
-                    style: AppConstants.IOS_SUBTEXT_STYLE,
+                    style: textTheme.bodySmall,
                   ),
                 ),
                 if (!isBodyWeight) ...[
@@ -249,7 +255,7 @@ class EditExerciseSetsList extends StatelessWidget {
                     child: Text(
                       'Weight',
                       textAlign: TextAlign.center,
-                      style: AppConstants.IOS_SUBTEXT_STYLE,
+                      style: textTheme.bodySmall,
                     ),
                   ),
                 ],
@@ -288,10 +294,13 @@ class EditExerciseSetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final textTheme = context.appText;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color: AppThemeColors.clear,
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: Row(
@@ -301,14 +310,14 @@ class EditExerciseSetRow extends StatelessWidget {
             width: 28,
             height: 42,
             decoration: BoxDecoration(
-              color: Colors.grey[700],
+              color: colors.textSecondary,
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
                 '${setIndex + 1}',
-                style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
-                  color: AppConstants.TEXT_PRIMARY_COLOR,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.textPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -326,9 +335,9 @@ class EditExerciseSetRow extends StatelessWidget {
             height: 32,
             child: IconButton(
               padding: EdgeInsets.zero,
-              icon: const Icon(
+              icon: Icon(
                 Icons.remove_circle_outline,
-                color: Colors.red,
+                color: Theme.of(context).colorScheme.error,
                 size: 24,
               ),
               onPressed: () {

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --staged | --range [from-ref] [to-ref]" >&2
+  echo "Usage: $0 --staged | --range [from-ref] [to-ref] | --all" >&2
   exit 1
 }
 
@@ -15,9 +15,8 @@ repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 
 changed_files=()
-color_allowlist=(
-  "lib/main.dart"
-  "lib/constants/app_constants.dart"
+theme_definition_roots=(
+  "lib/theme/"
 )
 
 collect_changed_files() {
@@ -28,11 +27,11 @@ collect_changed_files() {
   done
 }
 
-is_color_allowlisted() {
+is_theme_definition_allowlisted() {
   local file_path="$1"
 
-  for allowed_path in "${color_allowlist[@]}"; do
-    if [ "$file_path" = "$allowed_path" ]; then
+  for allowed_path in "${theme_definition_roots[@]}"; do
+    if [[ "$file_path" == "$allowed_path"* ]]; then
       return 0
     fi
   done
@@ -70,6 +69,10 @@ case "$1" in
       git diff --name-only --diff-filter=ACMR "$2" "$3" -- '*.dart'
     )
     ;;
+  --all)
+    shift
+    collect_changed_files < <(find lib -name '*.dart' -type f | sort)
+    ;;
   *)
     usage
     ;;
@@ -101,14 +104,34 @@ for file_path in "${changed_files[@]}"; do
     error_count=$((error_count + 1))
   fi
 
-  if ! is_color_allowlisted "$file_path"; then
+  if ! is_theme_definition_allowlisted "$file_path"; then
     raw_color_matches=$(grep -nE '\b(Colors|CupertinoColors)\.' "$file_path" || true)
     if [ -n "$raw_color_matches" ]; then
       report_matches \
         "ERROR" \
-        "Raw framework color usage is only allowed in the theme/token files" \
+        "Raw framework color usage is only allowed in lib/theme/" \
         "$file_path" \
         "$raw_color_matches"
+      error_count=$((error_count + 1))
+    fi
+
+    hardcoded_color_matches=$(grep -nE 'Color\(0x[0-9A-Fa-f]+\)|Color\.fromARGB\([[:space:]]*[0-9]+[[:space:]]*,[[:space:]]*[0-9]+[[:space:]]*,[[:space:]]*[0-9]+[[:space:]]*,[[:space:]]*[0-9]+[[:space:]]*\)|Color\.fromRGBO\([[:space:]]*[0-9]+[[:space:]]*,[[:space:]]*[0-9]+[[:space:]]*,[[:space:]]*[0-9]+[[:space:]]*,[[:space:]]*(0(\.[0-9]+)?|1(\.0+)?)' "$file_path" || true)
+    if [ -n "$hardcoded_color_matches" ]; then
+      report_matches \
+        "ERROR" \
+        "Hardcoded color constructors are only allowed in lib/theme/" \
+        "$file_path" \
+        "$hardcoded_color_matches"
+      error_count=$((error_count + 1))
+    fi
+
+    raw_style_matches=$(grep -nE '\b(TextStyle|TextTheme|ColorScheme|ThemeData)\(' "$file_path" || true)
+    if [ -n "$raw_style_matches" ]; then
+      report_matches \
+        "ERROR" \
+        "New text style and theme definitions must live in lib/theme/" \
+        "$file_path" \
+        "$raw_style_matches"
       error_count=$((error_count + 1))
     fi
   fi
@@ -123,15 +146,6 @@ for file_path in "${changed_files[@]}"; do
     warning_count=$((warning_count + 1))
   fi
 
-  text_style_color_matches=$(grep -nE 'TextStyle\(.*color:\s*(Colors|CupertinoColors)\.' "$file_path" || true)
-  if [ -n "$text_style_color_matches" ]; then
-    report_matches \
-      "WARNING" \
-      "TextStyle uses a raw framework color on the same line; prefer theme tokens" \
-      "$file_path" \
-      "$text_style_color_matches"
-    warning_count=$((warning_count + 1))
-  fi
 done
 
 if [ "$warning_count" -gt 0 ]; then

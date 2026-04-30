@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import '../constants/app_constants.dart';
+import 'package:flutter/material.dart';
+
+import '../theme/app_theme.dart';
 
 class InsightsStatCard extends StatelessWidget {
   final String title;
@@ -29,15 +30,17 @@ class InsightsStatCard extends StatelessWidget {
   }
 
   Widget _buildFullCard(BuildContext context) {
+    const double cardRadius = 16.0;
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppConstants.CARD_BG_COLOR,
-        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-        border: Border.all(
-          color: AppConstants.DIVIDER_COLOR,
-          width: 0.5,
-        ),
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(cardRadius),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,8 +60,8 @@ class InsightsStatCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
-                    color: AppConstants.TEXT_SECONDARY_COLOR,
+                  style: textTheme.labelMedium?.copyWith(
+                    color: colors.textSecondary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -68,18 +71,14 @@ class InsightsStatCard extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             value,
-            style: const TextStyle(
+            style: textTheme.headlineSmall?.copyWith(
               fontSize: 28,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
             ),
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 4),
-            Text(
-              subtitle!,
-              style: AppConstants.IOS_SUBTEXT_STYLE,
-            ),
+            Text(subtitle!, style: textTheme.bodySmall),
           ],
         ],
       ),
@@ -87,6 +86,9 @@ class InsightsStatCard extends StatelessWidget {
   }
 
   Widget _buildCompactCard(BuildContext context) {
+    const double cardRadius = 16.0;
+    final textTheme = context.appText;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -94,15 +96,12 @@ class InsightsStatCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            color.withAlpha((255 * 0.12).round()),
-            color.withAlpha((255 * 0.08).round()),
+            color.withValues(alpha: 0.12),
+            color.withValues(alpha: 0.08),
           ],
         ),
-        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-        border: Border.all(
-          color: color.withAlpha((255 * 0.3).round()),
-          width: 0.5,
-        ),
+        borderRadius: BorderRadius.circular(cardRadius),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 0.5),
       ),
       child: Column(
         children: [
@@ -110,7 +109,7 @@ class InsightsStatCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withAlpha((255 * 0.2).round()),
+              color: color.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 22),
@@ -118,18 +117,15 @@ class InsightsStatCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             value,
-            style: TextStyle(
+            style: textTheme.headlineSmall?.copyWith(
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             title,
-            style: AppConstants.IOS_SUBTEXT_STYLE.copyWith(
-              fontSize: 12,
-            ),
+            style: textTheme.bodySmall?.copyWith(fontSize: 12),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -161,18 +157,19 @@ class ActivityRingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const double cardRadius = 16.0;
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
+
     final progress = (value / goal).clamp(0.0, 1.0);
     final percentage = (progress * 100).toInt();
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppConstants.CARD_BG_COLOR,
-        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-        border: Border.all(
-          color: AppConstants.DIVIDER_COLOR,
-          width: 0.5,
-        ),
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(cardRadius),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
       ),
       child: Column(
         children: [
@@ -189,9 +186,9 @@ class ActivityRingCard extends StatelessWidget {
                   child: CircularProgressIndicator(
                     value: 1.0,
                     strokeWidth: 10,
-                    backgroundColor: Colors.transparent,
+                    backgroundColor: AppThemeColors.clear,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                      color.withAlpha((255 * 0.15).round()),
+                      color.withValues(alpha: 0.15),
                     ),
                   ),
                 ),
@@ -207,7 +204,7 @@ class ActivityRingCard extends StatelessWidget {
                       return CircularProgressIndicator(
                         value: value,
                         strokeWidth: 10,
-                        backgroundColor: Colors.transparent,
+                        backgroundColor: AppThemeColors.clear,
                         valueColor: AlwaysStoppedAnimation<Color>(color),
                         strokeCap: StrokeCap.round,
                       );
@@ -222,10 +219,9 @@ class ActivityRingCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '$percentage%',
-                      style: const TextStyle(
+                      style: textTheme.titleMedium?.copyWith(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
                       ),
                     ),
                   ],
@@ -234,25 +230,21 @@ class ActivityRingCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            title,
-            style: AppConstants.IOS_LABEL_TEXT_STYLE,
-          ),
+          Text(title, style: textTheme.labelMedium),
           const SizedBox(height: 4),
           RichText(
             text: TextSpan(
               children: [
                 TextSpan(
                   text: value.toStringAsFixed(0),
-                  style: const TextStyle(
+                  style: textTheme.titleMedium?.copyWith(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white,
                   ),
                 ),
                 TextSpan(
                   text: ' / ${goal.toStringAsFixed(0)} $unit',
-                  style: AppConstants.IOS_SUBTEXT_STYLE,
+                  style: textTheme.bodySmall,
                 ),
               ],
             ),
@@ -282,12 +274,15 @@ class MetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppConstants.WORKOUT_BUTTON_BG_COLOR,
+          color: context.appScheme.surface,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -306,17 +301,13 @@ class MetricTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    label,
-                    style: AppConstants.IOS_SUBTEXT_STYLE,
-                  ),
+                  Text(label, style: textTheme.bodySmall),
                   const SizedBox(height: 2),
                   Text(
                     value,
-                    style: const TextStyle(
+                    style: textTheme.bodyLarge?.copyWith(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -325,7 +316,7 @@ class MetricTile extends StatelessWidget {
             if (onTap != null)
               Icon(
                 CupertinoIcons.chevron_right,
-                color: AppConstants.TEXT_TERTIARY_COLOR,
+                color: colors.textTertiary,
                 size: 16,
               ),
           ],
