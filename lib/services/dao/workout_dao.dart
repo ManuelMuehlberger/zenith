@@ -10,22 +10,7 @@ class WorkoutDao extends BaseDao<Workout> {
 
   @override
   Workout fromMap(Map<String, dynamic> map) {
-    return Workout(
-      id: map['id'] as WorkoutId,
-      name: map['name'] as String,
-      description: map['description'] as String?,
-      iconCodePoint: map['iconCodePoint'] as int?,
-      colorValue: map['colorValue'] as int?,
-      folderId: map['folderId'] as WorkoutFolderId?,
-      notes: map['notes'] as String?,
-      lastUsed: map['lastUsed'] as String?,
-      orderIndex: map['orderIndex'] as int?,
-      status: WorkoutStatus.values[map['status'] as int],
-      templateId: map['templateId'] as WorkoutId?,
-      startedAt: map['startedAt'] != null ? DateTime.parse(map['startedAt'] as String) : null,
-      completedAt: map['completedAt'] != null ? DateTime.parse(map['completedAt'] as String) : null,
-      exercises: [], // To be loaded separately
-    );
+    return Workout.fromMap(map);
   }
 
   @override
@@ -89,7 +74,8 @@ class WorkoutDao extends BaseDao<Workout> {
       );
       final workouts = maps.map((map) => fromMap(map)).toList();
       logger.fine(
-          'Found ${workouts.length} workouts with status: ${status.name}');
+        'Found ${workouts.length} workouts with status: ${status.name}',
+      );
       return workouts;
     } catch (e) {
       logger.severe('Failed to get workouts with status ${status.name}: $e');
@@ -123,7 +109,9 @@ class WorkoutDao extends BaseDao<Workout> {
         whereArgs: [templateId],
       );
       final workouts = maps.map((map) => fromMap(map)).toList();
-      logger.fine('Found ${workouts.length} workouts for templateId: $templateId');
+      logger.fine(
+        'Found ${workouts.length} workouts for templateId: $templateId',
+      );
       return workouts;
     } catch (e) {
       logger.severe('Failed to get workouts for templateId $templateId: $e');
@@ -133,20 +121,26 @@ class WorkoutDao extends BaseDao<Workout> {
 
   /// Get workouts within a date range
   Future<List<Workout>> getWorkoutsInDateRange(
-      DateTime startDate, DateTime endDate) async {
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
     final db = await database;
     logger.fine(
-        'Getting completed workouts between ${startDate.toIso8601String()} and ${endDate.toIso8601String()}');
+      'Getting completed workouts between ${startDate.toIso8601String()} and ${endDate.toIso8601String()}',
+    );
     try {
-      final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      final List<Map<String, dynamic>> maps = await db.rawQuery(
+        '''
         SELECT * FROM $tableName 
         WHERE startedAt >= ? AND startedAt <= ? AND status = ?
         ORDER BY startedAt DESC
-      ''', [
-        startDate.toIso8601String(),
-        endDate.toIso8601String(),
-        WorkoutStatus.completed.index
-      ]);
+      ''',
+        [
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          WorkoutStatus.completed.index,
+        ],
+      );
       final workouts = maps.map((map) => fromMap(map)).toList();
       logger.fine('Found ${workouts.length} workouts in the date range.');
       return workouts;
@@ -166,7 +160,9 @@ class WorkoutDao extends BaseDao<Workout> {
     logger.fine('Deleting workout with id: $id');
     try {
       final result = await delete(id);
-      logger.fine('Successfully deleted workout with id: $id. Rows affected: $result');
+      logger.fine(
+        'Successfully deleted workout with id: $id. Rows affected: $result',
+      );
       return result;
     } catch (e) {
       logger.severe('Failed to delete workout with id: $id. Error: $e');

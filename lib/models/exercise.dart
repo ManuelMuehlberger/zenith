@@ -11,106 +11,40 @@ class Exercise {
   final String equipment;
   final String image;
   final String animation;
-  final bool isBodyWeightExercise; // bodyweight exercises do not have a "weight" associated to them in the active workout page.
+  final bool
+  isBodyWeightExercise; // bodyweight exercises do not have a "weight" associated to them in the active workout page.
 
   Exercise({
     required this.slug,
     required this.name,
     required this.primaryMuscleGroup,
-    required this.secondaryMuscleGroups,
-    required this.instructions,
+    required List<MuscleGroup> secondaryMuscleGroups,
+    required List<String> instructions,
     this.equipment = '',
     required this.image,
     required this.animation,
     this.isBodyWeightExercise = false,
-  });
+  }) : secondaryMuscleGroups = List.unmodifiable(secondaryMuscleGroups),
+       instructions = List.unmodifiable(instructions);
 
   factory Exercise.fromMap(Map<String, dynamic> map) {
-    // Support both snake_case and camelCase keys for backward compatibility
-    final String primaryMgName =
-        (map['primaryMuscleGroup'] ?? map['primary_muscle_group'] ?? '').toString();
-
-    // Secondary muscle groups can be a JSON string or a List, and under two different keys
-    final dynamic secondaryRaw = map.containsKey('secondaryMuscleGroups')
-        ? map['secondaryMuscleGroups']
-        : map['secondary_muscle_groups'];
-
-    List<MuscleGroup> secondaryMuscleGroups;
-    if (secondaryRaw == null) {
-      secondaryMuscleGroups = [];
-    } else if (secondaryRaw is String) {
-      try {
-        final list = jsonDecode(secondaryRaw) as List;
-        secondaryMuscleGroups = List<MuscleGroup>.from(
-            list.map((e) => MuscleGroup.fromName(e.toString())));
-      } catch (_) {
-        secondaryMuscleGroups = [];
-      }
-    } else if (secondaryRaw is List) {
-      secondaryMuscleGroups = List<MuscleGroup>.from(
-          secondaryRaw.map((e) => MuscleGroup.fromName(e.toString())));
-    } else {
-      secondaryMuscleGroups = [];
-    }
-
-    // Instructions can be a JSON string or a List (key is 'instructions' in tests)
-    final dynamic instructionsRaw = map['instructions'];
-    List<String> instructions;
-    if (instructionsRaw == null) {
-      instructions = [];
-    } else if (instructionsRaw is String) {
-      try {
-        instructions = List<String>.from(jsonDecode(instructionsRaw) as List);
-      } catch (_) {
-        instructions = [];
-      }
-    } else if (instructionsRaw is List) {
-      instructions = List<String>.from(instructionsRaw);
-    } else {
-      instructions = [];
-    }
-
-    // Bodyweight flag across multiple possible keys/types
-    bool isBodyWeightExercise = false;
-    if (map.containsKey('bodyweight')) {
-      final v = map['bodyweight'];
-      if (v is bool) {
-        isBodyWeightExercise = v;
-      } else if (v is int) {
-        isBodyWeightExercise = v == 1;
-      } else {
-        isBodyWeightExercise = (v ?? false) as bool;
-      }
-    } else if (map.containsKey('is_bodyweight_exercise')) {
-      final v = map['is_bodyweight_exercise'];
-      if (v is bool) {
-        isBodyWeightExercise = v;
-      } else if (v is int) {
-        isBodyWeightExercise = v == 1;
-      } else {
-        isBodyWeightExercise = (v ?? false) as bool;
-      }
-    } else if (map.containsKey('isBodyWeightExercise')) {
-      final v = map['isBodyWeightExercise'];
-      if (v is bool) {
-        isBodyWeightExercise = v;
-      } else if (v is int) {
-        isBodyWeightExercise = v == 1;
-      } else {
-        isBodyWeightExercise = (v ?? false) as bool;
-      }
-    }
-
     return Exercise(
-      slug: map['slug'] ?? '',
-      name: map['name'] ?? '',
-      primaryMuscleGroup: MuscleGroup.fromName(primaryMgName),
-      secondaryMuscleGroups: secondaryMuscleGroups,
-      instructions: instructions,
-      equipment: map['equipment'] ?? '',
-      image: map['image'] ?? '',
-      animation: map['animation'] ?? '',
-      isBodyWeightExercise: isBodyWeightExercise,
+      slug: _readString(map, ['slug']),
+      name: _readString(map, ['name']),
+      primaryMuscleGroup: _readPrimaryMuscleGroup(map),
+      secondaryMuscleGroups: _readMuscleGroups(map, const [
+        'secondaryMuscleGroups',
+        'secondary_muscle_groups',
+      ]),
+      instructions: _readStringList(map, const ['instructions']),
+      equipment: _readString(map, ['equipment'], fallback: ''),
+      image: _readString(map, ['image'], fallback: ''),
+      animation: _readString(map, ['animation'], fallback: ''),
+      isBodyWeightExercise: _readBool(map, const [
+        'bodyweight',
+        'is_bodyweight_exercise',
+        'isBodyWeightExercise',
+      ]),
     );
   }
 
@@ -120,8 +54,9 @@ class Exercise {
       'slug': slug,
       'name': name,
       'primary_muscle_group': primaryMuscleGroup.name,
-      'secondary_muscle_groups':
-          jsonEncode(secondaryMuscleGroups.map((e) => e.name).toList()),
+      'secondary_muscle_groups': jsonEncode(
+        secondaryMuscleGroups.map((e) => e.name).toList(),
+      ),
       'instructions': jsonEncode(instructions),
       'equipment': equipment,
       'image': image,
@@ -129,4 +64,92 @@ class Exercise {
       'is_bodyweight_exercise': isBodyWeightExercise ? 1 : 0,
     };
   }
+}
+
+String _readString(
+  Map<String, dynamic> map,
+  List<String> keys, {
+  String fallback = '',
+}) {
+  for (final key in keys) {
+    final value = map[key];
+    if (value == null) {
+      continue;
+    }
+    if (value is String) {
+      return value;
+    }
+    return value.toString();
+  }
+  return fallback;
+}
+
+MuscleGroup _readPrimaryMuscleGroup(Map<String, dynamic> map) {
+  final name = _readString(map, const [
+    'primaryMuscleGroup',
+    'primary_muscle_group',
+  ]);
+  return MuscleGroup.fromName(name);
+}
+
+List<MuscleGroup> _readMuscleGroups(
+  Map<String, dynamic> map,
+  List<String> keys,
+) {
+  final values = _readDynamicList(map, keys);
+  return List<MuscleGroup>.unmodifiable(
+    values.map((value) => MuscleGroup.fromName(value.toString())),
+  );
+}
+
+List<String> _readStringList(Map<String, dynamic> map, List<String> keys) {
+  final values = _readDynamicList(map, keys);
+  return List<String>.unmodifiable(values.map((value) => value.toString()));
+}
+
+List<dynamic> _readDynamicList(Map<String, dynamic> map, List<String> keys) {
+  for (final key in keys) {
+    final value = map[key];
+    if (value == null) {
+      continue;
+    }
+    if (value is List) {
+      return List<dynamic>.from(value);
+    }
+    if (value is String) {
+      final decoded = jsonDecode(value);
+      if (decoded is List) {
+        return List<dynamic>.from(decoded);
+      }
+      throw FormatException('Expected list payload for "$key"');
+    }
+    throw FormatException('Invalid "$key": expected List or JSON string');
+  }
+  return const [];
+}
+
+bool _readBool(Map<String, dynamic> map, List<String> keys) {
+  for (final key in keys) {
+    final value = map[key];
+    if (value == null) {
+      continue;
+    }
+    if (value is bool) {
+      return value;
+    }
+    if (value is int) {
+      return value == 1;
+    }
+    if (value is String) {
+      final normalized = value.trim().toLowerCase();
+      if (normalized == 'true' || normalized == '1') {
+        return true;
+      }
+      if (normalized == 'false' || normalized == '0') {
+        return false;
+      }
+    }
+    throw FormatException('Invalid boolean value for "$key"');
+  }
+  return false;
 }

@@ -25,7 +25,13 @@ base_url = os.environ.get("OPENAI_BASE_URL")
 #    print("Please set it with: export OPENAI_BASE_URL='https://openrouter.ai/api/v1'")
 #    exit(1)
 
-client = OpenAI(api_key="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", base_url="https://openrouter.ai/api/v1")
+if not api_key:
+    raise RuntimeError("OPENAI_API_KEY environment variable not set")
+
+client = OpenAI(
+    api_key=api_key,
+    base_url=base_url or "https://openrouter.ai/api/v1",
+)
 
 def load_exercises(filepath):
     with open(filepath, 'r') as f:

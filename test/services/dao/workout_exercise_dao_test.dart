@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/models/workout_exercise.dart';
+import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/services/dao/workout_exercise_dao.dart';
 
 void main() {
@@ -68,6 +69,21 @@ void main() {
       expect(workoutExercise.exerciseSlug, 'deadlift');
       expect(workoutExercise.notes, isNull);
       expect(workoutExercise.orderIndex, isNull);
+    });
+
+    test('should return immutable sets collection from model factory', () {
+      final workoutExercise = dao.fromMap({
+        'id': 'exercise987',
+        'workoutId': 'workout987',
+        'exerciseSlug': 'press',
+      });
+
+      expect(
+        () => workoutExercise.sets.add(
+          WorkoutSet(workoutExerciseId: workoutExercise.id, setIndex: 0),
+        ),
+        throwsUnsupportedError,
+      );
     });
   });
 }

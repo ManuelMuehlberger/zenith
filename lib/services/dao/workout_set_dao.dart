@@ -10,17 +10,7 @@ class WorkoutSetDao extends BaseDao<WorkoutSet> {
 
   @override
   WorkoutSet fromMap(Map<String, dynamic> map) {
-    return WorkoutSet(
-      id: map['id'] as WorkoutSetId,
-      workoutExerciseId: map['workoutExerciseId'] as WorkoutExerciseId,
-      setIndex: map['setIndex'] as int,
-      targetReps: map['targetReps'] as int?,
-      targetWeight: (map['targetWeight'] as num?)?.toDouble(),
-      targetRestSeconds: map['targetRestSeconds'] as int?,
-      actualReps: map['actualReps'] as int?,
-      actualWeight: (map['actualWeight'] as num?)?.toDouble(),
-      isCompleted: (map['isCompleted'] as int? ?? 0) == 1,
-    );
+    return WorkoutSet.fromMap(map);
   }
 
   @override
@@ -45,9 +35,12 @@ class WorkoutSetDao extends BaseDao<WorkoutSet> {
 
   /// Get workout sets by workout exercise ID
   Future<List<WorkoutSet>> getWorkoutSetsByWorkoutExerciseId(
-      WorkoutExerciseId workoutExerciseId) async {
+    WorkoutExerciseId workoutExerciseId,
+  ) async {
     final db = await database;
-    logger.fine('Getting workout sets for workoutExerciseId: $workoutExerciseId');
+    logger.fine(
+      'Getting workout sets for workoutExerciseId: $workoutExerciseId',
+    );
     try {
       final List<Map<String, dynamic>> maps = await db.query(
         tableName,
@@ -57,21 +50,25 @@ class WorkoutSetDao extends BaseDao<WorkoutSet> {
       final sets = maps.map((map) => fromMap(map)).toList()
         ..sort((a, b) => a.setIndex.compareTo(b.setIndex));
       logger.fine(
-          'Found ${sets.length} sets for workoutExerciseId: $workoutExerciseId');
+        'Found ${sets.length} sets for workoutExerciseId: $workoutExerciseId',
+      );
       return sets;
     } catch (e) {
       logger.severe(
-          'Failed to get sets for workoutExerciseId $workoutExerciseId: $e');
+        'Failed to get sets for workoutExerciseId $workoutExerciseId: $e',
+      );
       rethrow;
     }
   }
 
   /// Get completed workout sets by workout exercise ID
   Future<List<WorkoutSet>> getCompletedWorkoutSetsByWorkoutExerciseId(
-      WorkoutExerciseId workoutExerciseId) async {
+    WorkoutExerciseId workoutExerciseId,
+  ) async {
     final db = await database;
     logger.fine(
-        'Getting completed workout sets for workoutExerciseId: $workoutExerciseId');
+      'Getting completed workout sets for workoutExerciseId: $workoutExerciseId',
+    );
     try {
       final List<Map<String, dynamic>> maps = await db.query(
         tableName,
@@ -81,11 +78,13 @@ class WorkoutSetDao extends BaseDao<WorkoutSet> {
       final sets = maps.map((map) => fromMap(map)).toList()
         ..sort((a, b) => a.setIndex.compareTo(b.setIndex));
       logger.fine(
-          'Found ${sets.length} completed sets for workoutExerciseId: $workoutExerciseId');
+        'Found ${sets.length} completed sets for workoutExerciseId: $workoutExerciseId',
+      );
       return sets;
     } catch (e) {
       logger.severe(
-          'Failed to get completed sets for workoutExerciseId $workoutExerciseId: $e');
+        'Failed to get completed sets for workoutExerciseId $workoutExerciseId: $e',
+      );
       rethrow;
     }
   }
@@ -100,7 +99,9 @@ class WorkoutSetDao extends BaseDao<WorkoutSet> {
     logger.fine('Deleting workout set with id: $id');
     try {
       final result = await delete(id);
-      logger.fine('Successfully deleted workout set with id: $id. Rows affected: $result');
+      logger.fine(
+        'Successfully deleted workout set with id: $id. Rows affected: $result',
+      );
       return result;
     } catch (e) {
       logger.severe('Failed to delete workout set with id: $id. Error: $e');
@@ -110,10 +111,12 @@ class WorkoutSetDao extends BaseDao<WorkoutSet> {
 
   /// Delete workout sets by workout exercise ID
   Future<int> deleteWorkoutSetsByWorkoutExerciseId(
-      WorkoutExerciseId workoutExerciseId) async {
+    WorkoutExerciseId workoutExerciseId,
+  ) async {
     final db = await database;
-    logger
-        .fine('Deleting workout sets for workoutExerciseId: $workoutExerciseId');
+    logger.fine(
+      'Deleting workout sets for workoutExerciseId: $workoutExerciseId',
+    );
     try {
       final count = await db.delete(
         tableName,
@@ -121,11 +124,13 @@ class WorkoutSetDao extends BaseDao<WorkoutSet> {
         whereArgs: [workoutExerciseId],
       );
       logger.fine(
-          'Deleted $count sets for workoutExerciseId: $workoutExerciseId');
+        'Deleted $count sets for workoutExerciseId: $workoutExerciseId',
+      );
       return count;
     } catch (e) {
       logger.severe(
-          'Failed to delete sets for workoutExerciseId $workoutExerciseId: $e');
+        'Failed to delete sets for workoutExerciseId $workoutExerciseId: $e',
+      );
       rethrow;
     }
   }

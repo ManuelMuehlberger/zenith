@@ -76,12 +76,32 @@ void main() {
       expect(copiedExercise.notes, isNull);
     });
 
+    test('should keep sets immutable and allow clearing nullable fields', () {
+      final exerciseWithSet = workoutExercise.addSet(targetReps: 10);
+      final copiedExercise = exerciseWithSet.copyWith(
+        orderIndex: null,
+        exerciseDetail: null,
+      );
+
+      expect(copiedExercise.orderIndex, isNull);
+      expect(copiedExercise.exerciseDetail, isNull);
+      expect(
+        () => copiedExercise.sets.add(
+          WorkoutSet(workoutExerciseId: copiedExercise.id, setIndex: 1),
+        ),
+        throwsUnsupportedError,
+      );
+    });
+
     test('should calculate total sets', () {
       final exerciseWithSets = workoutExercise.copyWith(
-        sets: List.generate(3, (index) => WorkoutSet(
-          workoutExerciseId: workoutExercise.id,
-          setIndex: index,
-        )),
+        sets: List.generate(
+          3,
+          (index) => WorkoutSet(
+            workoutExerciseId: workoutExercise.id,
+            setIndex: index,
+          ),
+        ),
       );
 
       expect(exerciseWithSets.totalSets, 3);
@@ -99,7 +119,10 @@ void main() {
       expect(exerciseWithNewSet.sets.first.targetWeight, 50.0);
       expect(exerciseWithNewSet.sets.first.targetRestSeconds, 60);
       expect(exerciseWithNewSet.sets.first.setIndex, 0);
-      expect(exerciseWithNewSet.sets.first.workoutExerciseId, workoutExercise.id);
+      expect(
+        exerciseWithNewSet.sets.first.workoutExerciseId,
+        workoutExercise.id,
+      );
     });
 
     test('should remove a set', () {
@@ -110,7 +133,9 @@ void main() {
 
       expect(exerciseWithSets.sets.length, 3);
 
-      final exerciseWithSetRemoved = exerciseWithSets.removeSet(exerciseWithSets.sets[1].id);
+      final exerciseWithSetRemoved = exerciseWithSets.removeSet(
+        exerciseWithSets.sets[1].id,
+      );
 
       expect(exerciseWithSetRemoved.sets.length, 2);
       expect(exerciseWithSetRemoved.sets[0].targetReps, 10);
