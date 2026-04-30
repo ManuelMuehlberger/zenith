@@ -34,6 +34,8 @@ class FolderCard extends StatelessWidget {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
+    final transparentSurface = colorScheme.surface.withValues(alpha: 0);
+    final defaultBorderColor = colors.textPrimary.withValues(alpha: 0.35);
     final workoutCount =
         itemCount ??
         WorkoutService.instance.getWorkoutsInFolder(folder.id).length;
@@ -74,7 +76,7 @@ class FolderCard extends StatelessWidget {
             border: Border.all(
               color: showDropHint
                   ? colorScheme.primary.withValues(alpha: 0.8)
-                  : Theme.of(context).dividerColor,
+                  : defaultBorderColor,
               width: showDropHint ? 1.5 : AppConstants.CARD_STROKE_WIDTH,
             ),
             boxShadow: showDropHint
@@ -95,7 +97,7 @@ class FolderCard extends StatelessWidget {
                   ],
           ),
           child: Material(
-            color: AppThemeColors.clear,
+            color: transparentSurface,
             child: InkWell(
               borderRadius: BorderRadius.circular(16.0),
               onTap: onTap,

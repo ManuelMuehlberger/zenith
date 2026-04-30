@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../models/workout.dart';
 import '../models/workout_template.dart';
+import '../theme/app_theme.dart';
 
 class ExpandableWorkoutTemplateCard extends StatefulWidget {
   final WorkoutTemplate template;
@@ -21,10 +23,12 @@ class ExpandableWorkoutTemplateCard extends StatefulWidget {
   });
 
   @override
-  State<ExpandableWorkoutTemplateCard> createState() => _ExpandableWorkoutTemplateCardState();
+  State<ExpandableWorkoutTemplateCard> createState() =>
+      _ExpandableWorkoutTemplateCardState();
 }
 
-class _ExpandableWorkoutTemplateCardState extends State<ExpandableWorkoutTemplateCard> 
+class _ExpandableWorkoutTemplateCardState
+    extends State<ExpandableWorkoutTemplateCard>
     with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   late AnimationController _controller;
@@ -62,6 +66,8 @@ class _ExpandableWorkoutTemplateCardState extends State<ExpandableWorkoutTemplat
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: Draggable<Map<String, dynamic>>(
@@ -84,9 +90,9 @@ class _ExpandableWorkoutTemplateCardState extends State<ExpandableWorkoutTemplat
             width: MediaQuery.of(context).size.width - 32,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[850],
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue, width: 2),
+              border: Border.all(color: colorScheme.primary, width: 2),
             ),
             child: Row(
               children: [
@@ -94,16 +100,17 @@ class _ExpandableWorkoutTemplateCardState extends State<ExpandableWorkoutTemplat
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: widget.template.colorValue != null 
-                        ? Color(widget.template.colorValue!) 
-                        : Colors.blue,
+                    color: _templateColor(context),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     widget.template.iconCodePoint != null
-                        ? IconData(widget.template.iconCodePoint!, fontFamily: 'MaterialIcons')
+                        ? IconData(
+                            widget.template.iconCodePoint!,
+                            fontFamily: 'MaterialIcons',
+                          )
                         : Icons.fitness_center,
-                    color: Colors.white,
+                    color: colorScheme.onPrimary,
                     size: 24,
                   ),
                 ),
@@ -111,36 +118,35 @@ class _ExpandableWorkoutTemplateCardState extends State<ExpandableWorkoutTemplat
                 Expanded(
                   child: Text(
                     widget.template.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: context.appText.titleSmall,
                   ),
                 ),
               ],
             ),
           ),
         ),
-        childWhenDragging: Opacity(
-          opacity: 0.3,
-          child: _buildCard(),
-        ),
+        childWhenDragging: Opacity(opacity: 0.3, child: _buildCard()),
         child: _buildCard(),
       ),
     );
   }
 
   Widget _buildCard() {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return GestureDetector(
       onTap: _toggleExpanded,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: Colors.grey[900],
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: _isExpanded ? Colors.blue : Colors.grey[800]!,
+            color: _isExpanded
+                ? colorScheme.primary
+                : Theme.of(context).dividerColor,
             width: _isExpanded ? 2 : 1,
           ),
         ),
@@ -154,16 +160,17 @@ class _ExpandableWorkoutTemplateCardState extends State<ExpandableWorkoutTemplat
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: widget.template.colorValue != null 
-                          ? Color(widget.template.colorValue!) 
-                          : Colors.blue,
+                      color: _templateColor(context),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       widget.template.iconCodePoint != null
-                          ? IconData(widget.template.iconCodePoint!, fontFamily: 'MaterialIcons')
+                          ? IconData(
+                              widget.template.iconCodePoint!,
+                              fontFamily: 'MaterialIcons',
+                            )
                           : Icons.fitness_center,
-                      color: Colors.white,
+                      color: colorScheme.onPrimary,
                       size: 24,
                     ),
                   ),
@@ -172,23 +179,14 @@ class _ExpandableWorkoutTemplateCardState extends State<ExpandableWorkoutTemplat
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          widget.template.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (widget.template.description != null && widget.template.description!.isNotEmpty)
+                        Text(widget.template.name, style: textTheme.titleSmall),
+                        if (widget.template.description != null &&
+                            widget.template.description!.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
                               widget.template.description!,
-                              style: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 14,
-                              ),
+                              style: textTheme.bodyMedium,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -199,10 +197,7 @@ class _ExpandableWorkoutTemplateCardState extends State<ExpandableWorkoutTemplat
                   AnimatedRotation(
                     turns: _isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: Icon(
-                      Icons.expand_more,
-                      color: Colors.grey[400],
-                    ),
+                    child: Icon(Icons.expand_more, color: colors.textSecondary),
                   ),
                 ],
               ),
@@ -214,43 +209,21 @@ class _ExpandableWorkoutTemplateCardState extends State<ExpandableWorkoutTemplat
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Divider(color: Colors.grey),
+                    const Divider(),
                     const SizedBox(height: 8),
-                    if (widget.template.notes != null && widget.template.notes!.isNotEmpty) ...[
-                      Text(
-                        'Notes',
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                    if (widget.template.notes != null &&
+                        widget.template.notes!.isNotEmpty) ...[
+                      Text('Notes', style: textTheme.labelMedium),
                       const SizedBox(height: 4),
-                      Text(
-                        widget.template.notes!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
-                      ),
+                      Text(widget.template.notes!, style: textTheme.bodyLarge),
                       const SizedBox(height: 12),
                     ],
                     if (widget.template.lastUsed != null) ...[
-                      Text(
-                        'Last Used',
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      Text('Last Used', style: textTheme.labelMedium),
                       const SizedBox(height: 4),
                       Text(
                         _formatLastUsed(widget.template.lastUsed!),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                        ),
+                        style: textTheme.bodyLarge,
                       ),
                       const SizedBox(height: 12),
                     ],
@@ -261,22 +234,15 @@ class _ExpandableWorkoutTemplateCardState extends State<ExpandableWorkoutTemplat
                             onPressed: widget.onEditPressed,
                             icon: const Icon(Icons.edit, size: 18),
                             label: const Text('Edit'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         IconButton(
                           onPressed: widget.onMorePressed,
                           icon: const Icon(Icons.more_vert),
-                          color: Colors.grey[400],
+                          color: colors.textSecondary,
                           style: IconButton.styleFrom(
-                            backgroundColor: Colors.grey[800],
+                            backgroundColor: colors.surfaceAlt,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -294,12 +260,25 @@ class _ExpandableWorkoutTemplateCardState extends State<ExpandableWorkoutTemplat
     );
   }
 
+  Color _templateColor(BuildContext context) {
+    final templateColorValue = widget.template.colorValue;
+    if (templateColorValue == null) {
+      return context.appScheme.primary;
+    }
+
+    return Workout(
+      id: widget.template.id,
+      name: widget.template.name,
+      colorValue: templateColorValue,
+    ).color;
+  }
+
   String _formatLastUsed(String lastUsed) {
     try {
       final date = DateTime.parse(lastUsed);
       final now = DateTime.now();
       final difference = now.difference(date);
-      
+
       if (difference.inDays == 0) {
         return 'Today';
       } else if (difference.inDays == 1) {

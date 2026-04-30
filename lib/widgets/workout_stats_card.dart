@@ -96,7 +96,6 @@ class _WorkoutStatsCardState extends State<WorkoutStatsCard> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.appScheme;
-    final colors = context.appColors;
 
     if (_isLoading || _data == null) {
       final dummyData = WorkoutInsights(
@@ -139,7 +138,6 @@ class _WorkoutStatsCardState extends State<WorkoutStatsCard> {
               context: context,
               value: data.totalWorkouts.toString(),
               label: 'Workouts',
-              color: colors.warning,
             ),
             const SizedBox(height: 4),
             _buildStatItem(
@@ -147,14 +145,12 @@ class _WorkoutStatsCardState extends State<WorkoutStatsCard> {
               value:
                   '${(data.averageWorkoutDuration * 60).toStringAsFixed(0)}m',
               label: 'Avg Duration',
-              color: colorScheme.primary,
             ),
             const SizedBox(height: 4),
             _buildStatItem(
               context: context,
               value: _formatWeight(data.averageWeightPerWorkout),
               label: 'Avg Weight',
-              color: colors.success,
             ),
           ],
         );
@@ -166,7 +162,6 @@ class _WorkoutStatsCardState extends State<WorkoutStatsCard> {
     required BuildContext context,
     required String value,
     required String label,
-    required Color color,
   }) {
     final textTheme = context.appText;
     final colors = context.appColors;

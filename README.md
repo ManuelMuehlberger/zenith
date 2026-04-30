@@ -42,10 +42,10 @@ The hook chain now does two things on changed Dart files:
 
 Blocking policy checks:
 
-- New `withOpacity(...)` usage in `lib/`.
-- New raw `Colors.*` or `CupertinoColors.*` usage outside `lib/theme/`.
-- New hardcoded color constructors outside `lib/theme/`.
-- New `TextStyle(...)`, `TextTheme(...)`, `ColorScheme(...)`, or `ThemeData(...)` definitions outside `lib/theme/`.
+- `withOpacity(...)` usage in `lib/`.
+- Raw `Colors.*` or `CupertinoColors.*` usage outside `lib/theme/`.
+- Hardcoded color constructors outside `lib/theme/`.
+- `TextStyle(...)`, `TextTheme(...)`, `ColorScheme(...)`, or `ThemeData(...)` definitions outside `lib/theme/`.
 
 Warning-only policy checks:
 

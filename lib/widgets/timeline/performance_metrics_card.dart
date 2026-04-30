@@ -41,7 +41,6 @@ class PerformanceMetricsCard extends StatelessWidget {
               label: 'THIS MONTH',
               count: currentMonthWorkouts,
               volume: currentMonthVolume,
-              isCurrent: true,
             ),
           ),
           Expanded(
@@ -50,7 +49,6 @@ class PerformanceMetricsCard extends StatelessWidget {
               label: 'LAST MONTH',
               count: lastMonthWorkouts,
               volume: lastMonthVolume,
-              isCurrent: false,
             ),
           ),
         ],
@@ -63,7 +61,6 @@ class PerformanceMetricsCard extends StatelessWidget {
     required String label,
     required int count,
     required double volume,
-    required bool isCurrent,
   }) {
     final textTheme = context.appText;
     final colors = context.appColors;

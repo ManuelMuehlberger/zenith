@@ -66,8 +66,6 @@ class AppConstants {
   static const double CARD_STROKE_WIDTH = 0.5;
   static const Color CARD_STROKE_COLOR = HEADER_STROKE_COLOR;
 
-  static const Color HEADER_TITLE_COLOR = AppThemeColors.textPrimary;
-
   static const Color TEXT_PRIMARY_COLOR = AppThemeColors.textPrimary;
   static const Color TEXT_SECONDARY_COLOR = AppThemeColors.textSecondary;
   static const Color TEXT_TERTIARY_COLOR = AppThemeColors.textTertiary;
@@ -92,8 +90,6 @@ class AppConstants {
 
   static const double HEADER_LARGE_TITLE_FONT_SIZE = 32.0;
   static const FontWeight HEADER_LARGE_TITLE_FONT_WEIGHT = FontWeight.w700;
-  static const TextStyle HEADER_LARGE_TITLE_TEXT_STYLE = AppTextStyles.display;
-
   static const double HEADER_EXTRA_LARGE_TITLE_FONT_SIZE = 32.0;
   static const FontWeight HEADER_EXTRA_LARGE_TITLE_FONT_WEIGHT =
       FontWeight.w800;
@@ -103,38 +99,25 @@ class AppConstants {
   static const double HEADER_SUPER_LARGE_TITLE_FONT_SIZE = 36.0;
   static const FontWeight HEADER_SUPER_LARGE_TITLE_FONT_WEIGHT =
       FontWeight.w800;
-  static const TextStyle HEADER_SUPER_LARGE_TITLE_TEXT_STYLE =
-      AppTextStyles.hero;
-
   static const double IOS_TITLE_FONT_SIZE = 18.0;
   static const FontWeight IOS_TITLE_FONT_WEIGHT = FontWeight.w600;
   static const TextStyle IOS_TITLE_TEXT_STYLE = AppTextStyles.sectionTitle;
 
   static const double IOS_BODY_FONT_SIZE = 16.0;
   static const FontWeight IOS_BODY_FONT_WEIGHT = FontWeight.w400;
-  static const TextStyle IOS_BODY_TEXT_STYLE = AppTextStyles.body;
-
-  static const TextStyle IOS_HINT_TEXT_STYLE = AppTextStyles.bodySecondary;
-
   static const double IOS_LABEL_FONT_SIZE = 14.0;
   static const FontWeight IOS_LABEL_FONT_WEIGHT = FontWeight.w500;
   static const TextStyle IOS_LABEL_TEXT_STYLE = AppTextStyles.label;
 
   static const double IOS_NORMAL_FONT_SIZE = 15.0;
   static const FontWeight IOS_NORMAL_FONT_WEIGHT = FontWeight.w400;
-  static const TextStyle IOS_NORMAL_TEXT_STYLE = AppTextStyles.bodySecondary;
-
   static const double IOS_SUBTITLE_FONT_SIZE = 15.0;
   static const FontWeight IOS_SUBTITLE_FONT_WEIGHT = FontWeight.w400;
   static const TextStyle IOS_SUBTITLE_TEXT_STYLE = AppTextStyles.bodySecondary;
 
-  static const TextStyle IOS_SUBTITLE_ACCENT_TEXT_STYLE = AppTextStyles.action;
-
   static const double IOS_SUBTEXT_FONT_SIZE = 13.0;
   static const FontWeight IOS_SUBTEXT_FONT_WEIGHT = FontWeight.w400;
   static const TextStyle IOS_SUBTEXT_STYLE = AppTextStyles.caption;
-
-  static const TextStyle CARD_TITLE_TEXT_STYLE = AppTextStyles.sectionTitle;
 
   // Button and action text constants
   static const String BACK_BUTTON_TOOLTIP = 'Back';

@@ -1,23 +1,23 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
-import '../constants/app_constants.dart';
 import '../models/workout.dart';
 import '../screens/home/home_timeline_data.dart';
 import '../screens/workout_detail_screen.dart';
 import '../services/user_service.dart';
 import '../services/workout_service.dart';
 import '../services/workout_timeline_grouping_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/home/home_timeline_item_builder.dart';
 import '../widgets/profile_icon_button.dart';
 import '../widgets/timeline/animated_insert.dart';
-import 'package:flutter/services.dart';
-import 'dart:ui';
+import '../widgets/timeline/archive_trigger_footer.dart';
 import '../widgets/timeline/skeleton_timeline_row.dart';
 import '../widgets/timeline/timeline_list_item.dart';
-import '../widgets/timeline/archive_trigger_footer.dart';
 
 class DetentScrollPhysics extends BouncingScrollPhysics {
   const DetentScrollPhysics({super.parent});
@@ -35,7 +35,7 @@ class DetentScrollPhysics extends BouncingScrollPhysics {
       // If we are past the trigger point (e.g. 120), apply massive friction
       // This creates the "detent" or "wall" effect requested.
       if (overscroll > 120) {
-        return offset * 0.05; 
+        return offset * 0.05;
       }
     }
     return super.applyPhysicsToUserOffset(position, offset);
@@ -61,7 +61,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<ArchiveTriggerFooterState> _archiveTriggerKey = GlobalKey();
-  
+
   List<MonthlyWorkoutGroup> _allArchiveGroups = [];
   int _nextArchiveIndex = 0;
   bool _isLoadingMore = false;
@@ -111,13 +111,13 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    
+
     // Only fetch more if archive is visible
     if (!_isArchiveVisible) return;
 
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
-    
+
     if (currentScroll >= maxScroll * 0.8) {
       _fetchNextMonth();
     }
@@ -137,16 +137,17 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
       // Only listen to overscroll at the bottom when archive is not visible
       if (notification.metrics.extentAfter == 0) {
-        final overscroll = notification.metrics.pixels - notification.metrics.maxScrollExtent;
+        final overscroll =
+            notification.metrics.pixels - notification.metrics.maxScrollExtent;
         _archiveTriggerKey.currentState?.updateScroll(overscroll);
-        
+
         // Progressive haptic feedback as user approaches threshold
         if (overscroll > 50.0 && overscroll < 60.0) {
           HapticFeedback.selectionClick();
         } else if (overscroll > 80.0 && overscroll < 90.0) {
           HapticFeedback.mediumImpact();
         }
-        
+
         // Trigger immediately when threshold is reached
         if (overscroll > 100.0) {
           HapticFeedback.heavyImpact();
@@ -154,7 +155,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         }
       }
     }
-    
+
     return false;
   }
 
@@ -181,7 +182,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _timelineItems.insert(insertIndex, newItem);
       _isLoadingMore = false;
     });
-    
+
     _timelineListKey.currentState?.insertItem(insertIndex);
   }
 
@@ -192,7 +193,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
 
     // Remove the footer
-    final footerIndex = _timelineItems.indexWhere((item) => item is TimelineFooterItem);
+    final footerIndex = _timelineItems.indexWhere(
+      (item) => item is TimelineFooterItem,
+    );
     if (footerIndex != -1) {
       final removed = _timelineItems.removeAt(footerIndex);
       _timelineListKey.currentState?.removeItem(
@@ -205,9 +208,13 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
 
     // Insert Archive Header
-    final metricsIndex = _timelineItems.indexWhere((item) => item is TimelineMetricsItem);
-    final insertHeaderIndex = (metricsIndex != -1) ? metricsIndex + 1 : _timelineItems.length;
-    
+    final metricsIndex = _timelineItems.indexWhere(
+      (item) => item is TimelineMetricsItem,
+    );
+    final insertHeaderIndex = (metricsIndex != -1)
+        ? metricsIndex + 1
+        : _timelineItems.length;
+
     _timelineItems.insert(insertHeaderIndex, const TimelineArchiveHeaderItem());
     _timelineListKey.currentState?.insertItem(insertHeaderIndex);
 
@@ -222,7 +229,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     while (_nextArchiveIndex < _allArchiveGroups.length) {
       final group = _allArchiveGroups[_nextArchiveIndex];
-      
+
       if (group.key.year != lastYear) {
         newItems.add(TimelineYearItem(year: group.key.year));
         lastYear = group.key.year;
@@ -231,7 +238,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _nextArchiveIndex++;
       newItems.add(TimelineMonthSummaryItem(group: group));
     }
-    
+
     // Add Endcap at the very end
     newItems.add(const TimelineEndcapItem());
 
@@ -240,7 +247,7 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       setState(() {
         _timelineItems.addAll(newItems);
       });
-      
+
       for (int i = 0; i < newItems.length; i++) {
         // Use slideInFromBottom for the "fly in" effect
         _timelineListKey.currentState?.insertItem(
@@ -256,36 +263,40 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         // First, a quick snap back to create tension
-        _scrollController.animateTo(
-          _scrollController.position.pixels - 20.0,
-          duration: const Duration(milliseconds: 100),
-          curve: Curves.easeOut,
-        ).then((_) {
-          // Then spring forward with more dramatic movement
-          if (_scrollController.hasClients) {
-            _scrollController.animateTo(
-              _scrollController.position.pixels + 120.0,
-              duration: const Duration(milliseconds: 600),
-              curve: Curves.easeOutBack,
-            );
-          }
-        });
+        _scrollController
+            .animateTo(
+              _scrollController.position.pixels - 20.0,
+              duration: const Duration(milliseconds: 100),
+              curve: Curves.easeOut,
+            )
+            .then((_) {
+              // Then spring forward with more dramatic movement
+              if (_scrollController.hasClients) {
+                _scrollController.animateTo(
+                  _scrollController.position.pixels + 120.0,
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeOutBack,
+                );
+              }
+            });
       }
     });
   }
 
   Future<void> _hideArchive() async {
-    HapticFeedback.mediumImpact();
-    
+    unawaited(HapticFeedback.mediumImpact());
+
     setState(() {
       _isArchiveVisible = false;
     });
 
     // Find Archive Header to remove everything from there downwards
-    final headerIndex = _timelineItems.indexWhere((item) => item is TimelineArchiveHeaderItem);
+    final headerIndex = _timelineItems.indexWhere(
+      (item) => item is TimelineArchiveHeaderItem,
+    );
     // Fallback to hide trigger if header not found
-    final startIndex = headerIndex != -1 
-        ? headerIndex 
+    final startIndex = headerIndex != -1
+        ? headerIndex
         : _timelineItems.indexWhere((item) => item is TimelineHideHistoryItem);
 
     if (startIndex != -1) {
@@ -340,7 +351,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     try {
       _logger.info('Loading completed workouts for Home timeline');
-      _logger.fine('Loaded ${workouts.length} workouts from WorkoutService cache');
+      _logger.fine(
+        'Loaded ${workouts.length} workouts from WorkoutService cache',
+      );
       final timelineData = HomeTimelineAssembler.build(workouts);
 
       // Initialize archive pagination
@@ -359,9 +372,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         // Check scrollability after layout to determine if we should allow overscroll
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && _scrollController.hasClients) {
-             setState(() {
-               _isScrollable = _scrollController.position.maxScrollExtent > 0;
-             });
+            setState(() {
+              _isScrollable = _scrollController.position.maxScrollExtent > 0;
+            });
           }
         });
       }
@@ -386,20 +399,19 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
 
     if (result == true) {
-      loadWorkouts();
+      unawaited(loadWorkouts());
     }
   }
 
   void _toggleMonth(MonthKey key) {
     final summaryIndex = _timelineItems.indexWhere(
-      (it) =>
-          it is TimelineMonthSummaryItem &&
-          it.group.key == key,
+      (it) => it is TimelineMonthSummaryItem && it.group.key == key,
     );
 
     if (summaryIndex == -1) return;
 
-    final group = (_timelineItems[summaryIndex] as TimelineMonthSummaryItem).group;
+    final group =
+        (_timelineItems[summaryIndex] as TimelineMonthSummaryItem).group;
 
     final isExpanded = _expandedMonths.contains(key);
 
@@ -412,16 +424,16 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       });
 
       final insertAt = summaryIndex + 1;
-      
+
       // Insert Open Connector
       _timelineItems.insert(insertAt, const TimelineMonthOpenItem());
       _timelineListKey.currentState?.insertItem(insertAt);
-      
+
       // Insert Workouts
       for (int i = 0; i < group.workouts.length; i++) {
         final workout = group.workouts[i];
         final item = TimelineWorkoutItem(
-          workout: workout, 
+          workout: workout,
           isNested: true,
           animationDelay: i * 50,
         );
@@ -433,14 +445,14 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           duration: const Duration(milliseconds: 220),
         );
       }
-      
+
       // Insert Close Connector
       final closeIndex = insertAt + 1 + group.workouts.length;
-      _timelineItems.insert(closeIndex, TimelineMonthCloseItem(
-        animationDelay: group.workouts.length * 50,
-      ));
+      _timelineItems.insert(
+        closeIndex,
+        TimelineMonthCloseItem(animationDelay: group.workouts.length * 50),
+      );
       _timelineListKey.currentState?.insertItem(closeIndex);
-      
     } else {
       // Collapse => remove the previously inserted workout rows
       setState(() {
@@ -452,12 +464,12 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       // Remove items: Open Connector + Workouts + Close Connector
       // Total items to remove = 1 + workouts.length + 1
       final countToRemove = 1 + group.workouts.length + 1;
-      
+
       // Remove from bottom to top
       for (int i = countToRemove - 1; i >= 0; i--) {
         final idx = removeAt + i;
         if (idx >= _timelineItems.length) continue;
-        
+
         final removed = _timelineItems.removeAt(idx);
         _timelineListKey.currentState?.removeItem(
           idx,
@@ -497,15 +509,19 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ? const DetentScrollPhysics(parent: AlwaysScrollableScrollPhysics())
         : const ClampingScrollPhysics();
 
-    final TextStyle smallTitleStyle = AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE.copyWith(fontSize: 20.0);
-    final TextStyle largeTitleStyle = AppConstants.HEADER_EXTRA_LARGE_TITLE_TEXT_STYLE;
+    final smallTitleStyle = context.appText.titleLarge!;
+    final largeTitleStyle = context.appText.displaySmall!;
 
     // The small title widget, used in the collapsed app bar
     final Widget smallTitle = AnimatedSwitcher(
       duration: const Duration(milliseconds: 400),
       transitionBuilder: (child, animation) => FadeTransition(
         opacity: animation,
-        child: SizeTransition(sizeFactor: animation, axisAlignment: -1.0, child: child),
+        child: SizeTransition(
+          sizeFactor: animation,
+          axisAlignment: -1.0,
+          child: child,
+        ),
       ),
       child: _showGreetingTitle
           ? AnimatedBuilder(
@@ -513,8 +529,14 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               animation: UserService.instance,
               builder: (context, _) {
                 final name = UserService.instance.currentProfile?.name.trim();
-                final greeting = (name != null && name.isNotEmpty) ? 'Hey, $name!' : 'Hey!';
-                return Text(greeting, textAlign: TextAlign.center, style: smallTitleStyle);
+                final greeting = (name != null && name.isNotEmpty)
+                    ? 'Hey, $name!'
+                    : 'Hey!';
+                return Text(
+                  greeting,
+                  textAlign: TextAlign.center,
+                  style: smallTitleStyle,
+                );
               },
             )
           : Text(
@@ -528,31 +550,35 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     // The large title widget, used in the expanded app bar background
     final Widget largeTitle = AnimatedSwitcher(
       duration: const Duration(milliseconds: 400),
-      transitionBuilder: (child, animation) => FadeTransition(opacity: animation),
+      transitionBuilder: (child, animation) =>
+          FadeTransition(opacity: animation),
       child: _showGreetingTitle
           ? AnimatedBuilder(
               key: const ValueKey('large_greeting_title'),
               animation: UserService.instance,
               builder: (context, _) {
                 final name = UserService.instance.currentProfile?.name.trim();
-                final greeting = (name != null && name.isNotEmpty) ? 'Hey, $name!' : 'Hey!';
-                return Text(greeting, textAlign: TextAlign.center, style: largeTitleStyle);
+                final greeting = (name != null && name.isNotEmpty)
+                    ? 'Hey, $name!'
+                    : 'Hey!';
+                return Text(
+                  greeting,
+                  textAlign: TextAlign.center,
+                  style: largeTitleStyle,
+                );
               },
             )
           : Text(
               'Recent Workouts',
               key: const ValueKey('large_recent_title'),
               textAlign: TextAlign.center,
-              style: AppConstants.HEADER_EXTRA_LARGE_TITLE_TEXT_STYLE.copyWith(
-                color: Colors.white,
-              ),
+              style: largeTitleStyle,
             ),
     );
 
     final hasAnyItems = _timelineItems.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: Colors.black,
       body: NotificationListener<ScrollNotification>(
         onNotification: _onScrollNotification,
         child: CustomScrollView(
@@ -565,12 +591,12 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               centerTitle: true,
               automaticallyImplyLeading: false,
               leading: const SizedBox(width: kToolbarHeight),
-              backgroundColor: Colors.transparent,
+              backgroundColor: context.appColors.overlayStrong.withValues(
+                alpha: 0,
+              ),
               elevation: 0,
-              expandedHeight: AppConstants.HEADER_EXTRA_HEIGHT + kToolbarHeight,
-              actions: [
-                const ProfileIconButton(),
-              ],
+              expandedHeight: kToolbarHeight + 60.0,
+              actions: const [ProfileIconButton()],
               flexibleSpace: LayoutBuilder(
                 builder: (context, constraints) {
                   return Stack(
@@ -579,11 +605,10 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       // Persistent glass effect layer (covers expanded and collapsed states)
                       ClipRRect(
                         child: BackdropFilter(
-                          filter: ImageFilter.blur(
-                            sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                            sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                          child: ColoredBox(
+                            color: context.appColors.overlayStrong,
                           ),
-                          child: Container(color: AppConstants.HEADER_BG_COLOR_STRONG),
                         ),
                       ),
                       // FlexibleSpaceBar handles title positioning and parallax of the large title
@@ -606,11 +631,13 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
             // Content
             if (_isLoading)
-              const SliverToBoxAdapter(
+              SliverToBoxAdapter(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32.0),
+                  padding: const EdgeInsets.symmetric(vertical: 32.0),
                   child: Center(
-                    child: CircularProgressIndicator(color: Colors.blue),
+                    child: CircularProgressIndicator(
+                      color: context.appScheme.primary,
+                    ),
                   ),
                 ),
               )
@@ -622,20 +649,22 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.fitness_center, size: 64, color: Colors.grey),
+                        Icon(
+                          Icons.fitness_center,
+                          size: 64,
+                          color: context.appColors.textTertiary,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'No workouts yet',
-                          style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
-                            color: AppConstants.TEXT_SECONDARY_COLOR,
+                          style: context.appText.titleMedium?.copyWith(
+                            color: context.appColors.textSecondary,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Start by creating a workout in the Builder tab',
-                          style: AppConstants.IOS_SUBTITLE_TEXT_STYLE.copyWith(
-                            color: AppConstants.TEXT_SECONDARY_COLOR,
-                          ),
+                          style: context.appText.bodyMedium,
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -651,18 +680,21 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   initialItemCount: _timelineItems.length,
                   itemBuilder: (context, index, animation) {
                     final item = _timelineItems[index];
-                    
+
                     if (item is TimelineArchiveHeaderItem) {
                       return AnimatedInsert(
                         animation: animation,
                         child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(0, 0.5),
-                            end: Offset.zero,
-                          ).animate(CurvedAnimation(
-                            parent: animation,
-                            curve: Curves.easeOutCubic,
-                          )),
+                          position:
+                              Tween<Offset>(
+                                begin: const Offset(0, 0.5),
+                                end: Offset.zero,
+                              ).animate(
+                                CurvedAnimation(
+                                  parent: animation,
+                                  curve: Curves.easeOutCubic,
+                                ),
+                              ),
                           child: _buildRowForItem(item, index),
                         ),
                       );
@@ -671,16 +703,16 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     // Check if this item is one of the "old months" being inserted during archive reveal.
                     // We can identify them by type TimelineMonthSummaryItem and if archive is visible.
                     // But simpler: just enable slideInFromBottom for MonthSummary items when archive is visible?
-                    // Or just enable it for all items? 
+                    // Or just enable it for all items?
                     // The user specifically said "old months should fly in".
                     // TimelineMonthSummaryItem is the main one.
-                    
+
                     final isMonthSummary = item is TimelineMonthSummaryItem;
                     // We only want the "fly in" effect during the archive reveal animation.
                     // But AnimatedInsert is used for all insertions.
                     // If we enable it globally for MonthSummary, it might affect other insertions (like lazy load).
                     // But lazy load inserts at the bottom, so slide in from bottom is actually appropriate there too!
-                    
+
                     return AnimatedInsert(
                       animation: animation,
                       slideInFromBottom: isMonthSummary,
@@ -694,12 +726,9 @@ class HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      return SkeletonTimelineRow(index: index);
-                    },
-                    childCount: 3,
-                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    return SkeletonTimelineRow(index: index);
+                  }, childCount: 3),
                 ),
               ),
 

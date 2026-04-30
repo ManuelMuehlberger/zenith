@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../models/user_data.dart';
 import '../../screens/edit_profile_screen.dart';
+import '../../theme/app_theme.dart';
 
 class SettingsProfileSection extends StatelessWidget {
   final UserData? userProfile;
@@ -15,11 +16,9 @@ class SettingsProfileSection extends StatelessWidget {
 
   Future<void> _navigateToEditProfile(BuildContext context) async {
     final result = await Navigator.of(context).push<bool>(
-      CupertinoPageRoute(
-        builder: (context) => const EditProfileScreen(),
-      ),
+      CupertinoPageRoute(builder: (context) => const EditProfileScreen()),
     );
-    
+
     // If changes were made, reload the profile
     if (result == true) {
       onProfileUpdated();
@@ -28,8 +27,12 @@ class SettingsProfileSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Card(
-      color: Colors.grey[900],
+      color: colorScheme.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -39,14 +42,7 @@ class SettingsProfileSection extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                'Profile',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[300],
-                ),
-              ),
+              child: Text('Profile', style: textTheme.titleLarge),
             ),
             Center(
               child: Column(
@@ -56,51 +52,46 @@ class SettingsProfileSection extends StatelessWidget {
                     height: 80,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.grey[800],
-                      border: Border.all(color: Colors.grey[500]!, width: 1.5),
+                      color: colors.field,
+                      border: Border.all(
+                        color: Theme.of(context).dividerColor,
+                        width: 1.5,
+                      ),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       CupertinoIcons.person_fill,
                       size: 40,
-                      color: Colors.grey,
+                      color: colors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 12),
-  Text(
-    userProfile?.age.toString() ?? 'Not set',
-    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
+                  Text(
+                    userProfile?.age.toString() ?? 'Not set',
+                    style: textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
                   CupertinoButton(
                     padding: EdgeInsets.zero,
                     onPressed: () => _navigateToEditProfile(context),
-                    child: Text(
-                      'Edit Profile',
-                      style: TextStyle(
-                        color: Colors.blue[300],
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    child: Text('Edit Profile', style: textTheme.labelLarge),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
             _buildDetailItem(
+              context: context,
               icon: CupertinoIcons.calendar,
               label: 'Age',
               value: userProfile?.age.toString() ?? 'Not set',
             ),
-            _buildDivider(),
+            _buildDivider(context),
             _buildDetailItem(
+              context: context,
               icon: CupertinoIcons.gauge,
               label: 'Weight',
-              value: userProfile != null && userProfile!.weightHistory.isNotEmpty
+              value:
+                  userProfile != null && userProfile!.weightHistory.isNotEmpty
                   ? '${userProfile!.weightHistory.last.value.toStringAsFixed(1)} ${userProfile!.weightUnit}'
                   : 'Not set',
             ),
@@ -111,43 +102,33 @@ class SettingsProfileSection extends StatelessWidget {
   }
 
   Widget _buildDetailItem({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required String value,
   }) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey[400], size: 22),
+          Icon(icon, color: colors.textSecondary, size: 22),
           const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey[300],
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text(label, style: textTheme.bodyMedium),
           const Spacer(),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text(value, style: textTheme.titleSmall),
         ],
       ),
     );
   }
 
-  Widget _buildDivider() {
+  Widget _buildDivider(BuildContext context) {
     return Divider(
       height: 0.5,
       thickness: 0.5,
-      color: Colors.grey[700],
+      color: Theme.of(context).dividerColor,
       indent: 58,
     );
   }

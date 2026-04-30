@@ -1,6 +1,5 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 
 import '../services/insights_service.dart';
 import '../theme/app_theme.dart';
@@ -41,6 +40,7 @@ class WorkoutChart extends StatelessWidget {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
+    final outlineColor = colorScheme.outline;
 
     if (data.isEmpty) {
       return Container(
@@ -49,7 +49,7 @@ class WorkoutChart extends StatelessWidget {
         decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(cardRadius),
-          border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
+          border: Border.all(color: outlineColor, width: 0.5),
         ),
         child: Center(
           child: Column(
@@ -111,7 +111,7 @@ class WorkoutChart extends StatelessWidget {
           horizontalInterval: finalRange / 4,
           getDrawingHorizontalLine: (value) {
             return FlLine(
-              color: Theme.of(context).dividerColor,
+              color: outlineColor,
               strokeWidth: 0.5,
               dashArray: [5, 5],
             );
@@ -360,7 +360,7 @@ class WorkoutChart extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(cardRadius),
-        border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
+        border: Border.all(color: outlineColor, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -495,6 +495,7 @@ class WorkoutBarChart extends StatelessWidget {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
+    final outlineColor = colorScheme.outline;
 
     if (data.isEmpty) {
       return Container(
@@ -503,7 +504,7 @@ class WorkoutBarChart extends StatelessWidget {
         decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(cardRadius),
-          border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
+          border: Border.all(color: outlineColor, width: 0.5),
         ),
         child: Center(
           child: Column(
@@ -530,7 +531,7 @@ class WorkoutBarChart extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(cardRadius),
-        border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
+        border: Border.all(color: outlineColor, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

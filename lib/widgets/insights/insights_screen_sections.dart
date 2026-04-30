@@ -34,6 +34,7 @@ class InsightsAppBar extends StatelessWidget {
     final textTheme = context.appText;
     final colors = context.appColors;
     final smallTitleStyle = textTheme.titleMedium?.copyWith(fontSize: 20.0);
+    final transparentSurface = colorScheme.surface.withValues(alpha: 0);
 
     final smallTitle = AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
@@ -57,7 +58,7 @@ class InsightsAppBar extends StatelessWidget {
       stretch: true,
       centerTitle: true,
       automaticallyImplyLeading: false,
-      backgroundColor: AppThemeColors.clear,
+      backgroundColor: transparentSurface,
       elevation: 0,
       expandedHeight: AppConstants.HEADER_EXTRA_HEIGHT + kToolbarHeight,
       leading: showCalendar
@@ -109,7 +110,7 @@ class InsightsAppBar extends StatelessWidget {
               FlexibleSpaceBar(
                 centerTitle: true,
                 title: smallTitle,
-                background: Container(color: AppThemeColors.clear),
+                background: Container(color: transparentSurface),
                 collapseMode: CollapseMode.parallax,
               ),
             ],
@@ -165,6 +166,7 @@ class InsightsFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
   ) {
     final colorScheme = context.appScheme;
     final colors = context.appColors;
+    final outlineColor = colorScheme.outline;
     final muscleGroups = AppMuscleGroup.values
         .where((group) => group != AppMuscleGroup.na)
         .map((group) => group.displayName)
@@ -187,12 +189,7 @@ class InsightsFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
         child: Container(
           decoration: BoxDecoration(
             color: colors.overlayStrong,
-            border: Border(
-              bottom: BorderSide(
-                color: Theme.of(context).dividerColor,
-                width: 0.5,
-              ),
-            ),
+            border: Border(bottom: BorderSide(color: outlineColor, width: 0.5)),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Row(
@@ -210,10 +207,7 @@ class InsightsFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
                           decoration: BoxDecoration(
                             color: colorScheme.surface,
                             shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Theme.of(context).dividerColor,
-                              width: 0.5,
-                            ),
+                            border: Border.all(color: outlineColor, width: 0.5),
                           ),
                           child: Icon(
                             CupertinoIcons.xmark,
@@ -508,20 +502,26 @@ class InsightsCalendarSlivers {
 
     return [
       SliverToBoxAdapter(
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-          decoration: BoxDecoration(
-            color: AppThemeColors.surface,
-            borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-            border: Border.all(color: AppThemeColors.outline, width: 0.5),
-          ),
-          child: SharedCalendarView(
-            selectedDate: selectedDate,
-            focusedDate: focusedDate,
-            workoutDates: workoutDates,
-            onDateSelected: onDateSelected,
-            onMonthChanged: onMonthChanged,
-          ),
+        child: Builder(
+          builder: (context) {
+            final colorScheme = context.appScheme;
+
+            return Container(
+              margin: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+                border: Border.all(color: colorScheme.outline, width: 0.5),
+              ),
+              child: SharedCalendarView(
+                selectedDate: selectedDate,
+                focusedDate: focusedDate,
+                workoutDates: workoutDates,
+                onDateSelected: onDateSelected,
+                onMonthChanged: onMonthChanged,
+              ),
+            );
+          },
         ),
       ),
       SliverFillRemaining(
@@ -625,6 +625,7 @@ class _InsightsFilterTag extends StatelessWidget {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
+    final outlineColor = colorScheme.outline;
 
     return PullDownButton(
       itemBuilder: (context) => items
@@ -645,9 +646,7 @@ class _InsightsFilterTag extends StatelessWidget {
             color: isSelected ? colorScheme.primary : colorScheme.surface,
             borderRadius: BorderRadius.circular(16.0),
             border: Border.all(
-              color: isSelected
-                  ? colorScheme.primary
-                  : Theme.of(context).dividerColor,
+              color: isSelected ? colorScheme.primary : outlineColor,
               width: 0.5,
             ),
           ),
@@ -694,6 +693,7 @@ class _InsightsBodyweightTag extends StatelessWidget {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
+    final outlineColor = colorScheme.outline;
 
     return CupertinoButton(
       padding: EdgeInsets.zero,
@@ -704,9 +704,7 @@ class _InsightsBodyweightTag extends StatelessWidget {
           color: isSelected ? colorScheme.primary : colorScheme.surface,
           borderRadius: BorderRadius.circular(16.0),
           border: Border.all(
-            color: isSelected
-                ? colorScheme.primary
-                : Theme.of(context).dividerColor,
+            color: isSelected ? colorScheme.primary : outlineColor,
             width: 0.5,
           ),
         ),
@@ -739,6 +737,7 @@ class _InsightsTimeframeDropdown extends StatelessWidget {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
+    final outlineColor = colorScheme.outline;
 
     return PullDownButton(
       itemBuilder: (context) => timeframeOptions
@@ -758,10 +757,7 @@ class _InsightsTimeframeDropdown extends StatelessWidget {
           decoration: BoxDecoration(
             color: colorScheme.surface,
             borderRadius: BorderRadius.circular(8.0),
-            border: Border.all(
-              color: Theme.of(context).dividerColor,
-              width: 0.5,
-            ),
+            border: Border.all(color: outlineColor, width: 0.5),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

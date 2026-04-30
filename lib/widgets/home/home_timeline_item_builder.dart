@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../constants/app_constants.dart';
 import '../../models/workout.dart';
 import '../../services/user_service.dart';
 import '../../services/workout_timeline_grouping_service.dart';
+import '../../theme/app_theme.dart';
 import '../timeline/archive_workout_row.dart';
 import '../timeline/award_stack.dart';
 import '../timeline/hide_history_trigger.dart';
@@ -32,6 +32,10 @@ class HomeTimelineItemBuilder {
   });
 
   Widget build(BuildContext context, TimelineListItem item, int index) {
+    final colorScheme = context.appScheme;
+    final colors = context.appColors;
+    final textTheme = context.appText;
+
     if (item is TimelineDayGroupItem) {
       final workouts = item.workouts;
       final firstWorkout = workouts.first;
@@ -46,12 +50,13 @@ class HomeTimelineItemBuilder {
         }
       }
 
-      final style =
-          isLastInBlock ? TimelineLineStyle.curved : TimelineLineStyle.straight;
+      final style = isLastInBlock
+          ? TimelineLineStyle.curved
+          : TimelineLineStyle.straight;
 
       final uniqueAwards = <String, Award>{};
       for (final workout in workouts) {
-        for (final award in _awardsForWorkout(workout)) {
+        for (final award in _awardsForWorkout(context, workout)) {
           uniqueAwards.putIfAbsent(award.title, () => award);
         }
       }
@@ -62,7 +67,7 @@ class HomeTimelineItemBuilder {
         isNested: false,
         style: style,
         nodeRadius: 9,
-        node: _buildWorkoutNode(firstWorkout),
+        node: _buildWorkoutNode(context, firstWorkout),
         child: TimelineHeaderRow(
           dateText: _relativeDayLabel(timestamp),
           awards: uniqueAwards.values.toList(),
@@ -103,7 +108,7 @@ class HomeTimelineItemBuilder {
             nodeRadius: 9,
             animateLineColor: true,
             animationDelay: item.animationDelay,
-            node: _buildWorkoutNode(workout),
+            node: _buildWorkoutNode(context, workout),
             child: ArchiveWorkoutRow(workout: workout),
           ),
         );
@@ -124,8 +129,8 @@ class HomeTimelineItemBuilder {
         nodeRadius: 11,
         node: TweenAnimationBuilder<Color?>(
           tween: ColorTween(
-            begin: Colors.grey[600]!,
-            end: isExpanded ? Colors.white : Colors.grey[600]!,
+            begin: colors.textTertiary,
+            end: isExpanded ? colorScheme.onSurface : colors.textTertiary,
           ),
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
@@ -133,10 +138,7 @@ class HomeTimelineItemBuilder {
             return Container(
               width: 20,
               height: 20,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             );
           },
         ),
@@ -184,11 +186,8 @@ class HomeTimelineItemBuilder {
       return _DelayedAnimator(
         delay: item.animationDelay,
         builder: (context, value) {
-          final color = Color.lerp(
-            const Color(0xFFE5E5EA).withAlpha((255 * 0.3).round()),
-            Colors.white,
-            value,
-          )!;
+          final dimColor = colors.textTertiary;
+          final color = Color.lerp(dimColor, colorScheme.onSurface, value)!;
           return SizedBox(
             height: 16,
             child: CustomPaint(
@@ -208,6 +207,7 @@ class HomeTimelineItemBuilder {
       return _DelayedAnimator(
         delay: item.animationDelay,
         builder: (context, value) {
+          final dimColor = colors.textTertiary;
           return SizedBox(
             height: 16,
             child: CustomPaint(
@@ -216,7 +216,12 @@ class HomeTimelineItemBuilder {
                 startX: 23,
                 endX: 43,
                 isGradient: true,
-                animationValue: value,
+                gradientTopColor: Color.lerp(
+                  dimColor,
+                  colorScheme.onSurface,
+                  value,
+                )!,
+                gradientBottomColor: dimColor,
               ),
             ),
           );
@@ -235,7 +240,7 @@ class HomeTimelineItemBuilder {
           width: 12,
           height: 12,
           decoration: BoxDecoration(
-            color: Colors.grey[800],
+            color: colors.field,
             shape: BoxShape.circle,
           ),
         ),
@@ -255,14 +260,7 @@ class HomeTimelineItemBuilder {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 2),
           alignment: Alignment.centerLeft,
-          child: Text(
-            item.year.toString(),
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          child: Text(item.year.toString(), style: textTheme.labelMedium),
         ),
       );
     }
@@ -335,7 +333,7 @@ class HomeTimelineItemBuilder {
     return '$durationText • $setsText';
   }
 
-  List<Award> _awardsForWorkout(Workout workout) {
+  List<Award> _awardsForWorkout(BuildContext context, Workout workout) {
     final started = workout.startedAt;
     final completed = workout.completedAt;
     final duration = (started != null && completed != null)
@@ -346,40 +344,40 @@ class HomeTimelineItemBuilder {
 
     if (workout.totalSets >= 20) {
       awards.add(
-        const Award(
+        Award(
           title: 'High Volume',
           icon: Icons.local_fire_department,
-          color: Colors.orange,
+          color: context.appColors.warning,
         ),
       );
     }
 
     if (duration.inMinutes >= 60) {
       awards.add(
-        const Award(
+        Award(
           title: 'Long Session',
           icon: Icons.timer_outlined,
-          color: Colors.lightBlue,
+          color: context.appScheme.primary,
         ),
       );
     }
 
     if (workout.totalWeight >= 10000) {
       awards.add(
-        const Award(
+        Award(
           title: 'Heavy',
           icon: Icons.fitness_center,
-          color: Colors.green,
+          color: context.appColors.success,
         ),
       );
     }
 
     if (awards.isEmpty) {
       awards.add(
-        const Award(
+        Award(
           title: 'Completed',
           icon: Icons.check_circle,
-          color: AppConstants.ACCENT_COLOR,
+          color: context.appScheme.primary,
         ),
       );
     }
@@ -387,19 +385,16 @@ class HomeTimelineItemBuilder {
     return awards;
   }
 
-  Widget _buildWorkoutNode(Workout workout) {
+  Widget _buildWorkoutNode(BuildContext context, Workout workout) {
     return Container(
       width: 22,
       height: 22,
-      decoration: BoxDecoration(
-        color: workout.color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: workout.color, shape: BoxShape.circle),
       child: Center(
         child: Icon(
           workout.icon,
           size: 12,
-          color: Colors.black.withAlpha((255 * 0.7).round()),
+          color: context.appColors.overlayMedium,
         ),
       ),
     );
@@ -410,10 +405,7 @@ class _DelayedAnimator extends StatefulWidget {
   final int delay;
   final Widget Function(BuildContext, double) builder;
 
-  const _DelayedAnimator({
-    required this.delay,
-    required this.builder,
-  });
+  const _DelayedAnimator({required this.delay, required this.builder});
 
   @override
   State<_DelayedAnimator> createState() => _DelayedAnimatorState();
@@ -431,10 +423,7 @@ class _DelayedAnimatorState extends State<_DelayedAnimator>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
 
     Future<void>.delayed(Duration(milliseconds: widget.delay), () {
       if (mounted) {
@@ -464,18 +453,24 @@ class _ConnectorPainter extends CustomPainter {
   final bool isOpen;
   final double startX;
   final double endX;
-  final Color color;
+  final Color? color;
+  final Color? gradientTopColor;
+  final Color? gradientBottomColor;
   final bool isGradient;
-  final double animationValue;
 
   const _ConnectorPainter({
     required this.isOpen,
     required this.startX,
     required this.endX,
-    this.color = Colors.white,
+    this.color,
+    this.gradientTopColor,
+    this.gradientBottomColor,
     this.isGradient = false,
-    this.animationValue = 0.0,
-  });
+  }) : assert(
+         isGradient
+             ? gradientTopColor != null && gradientBottomColor != null
+             : color != null,
+       );
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -485,16 +480,13 @@ class _ConnectorPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     if (isGradient) {
-      final dimColor = const Color(0xFFE5E5EA).withAlpha((255 * 0.3).round());
-      final topColor = Color.lerp(dimColor, Colors.white, animationValue)!;
-
       paint.shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [topColor, dimColor],
+        colors: [gradientTopColor!, gradientBottomColor!],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     } else {
-      paint.color = color;
+      paint.color = color!;
     }
 
     final path = Path();
@@ -526,7 +518,8 @@ class _ConnectorPainter extends CustomPainter {
         oldDelegate.startX != startX ||
         oldDelegate.endX != endX ||
         oldDelegate.color != color ||
-        oldDelegate.isGradient != isGradient ||
-        oldDelegate.animationValue != animationValue;
+        oldDelegate.gradientTopColor != gradientTopColor ||
+        oldDelegate.gradientBottomColor != gradientBottomColor ||
+        oldDelegate.isGradient != isGradient;
   }
 }

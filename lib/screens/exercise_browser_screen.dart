@@ -1,9 +1,12 @@
-import 'package:flutter/material.dart';
 import 'dart:ui';
+
+import 'package:flutter/material.dart';
+
+import '../constants/app_constants.dart';
 import '../models/exercise.dart';
+import '../theme/app_theme.dart';
 import '../widgets/exercise_list_widget.dart';
 import 'exercise_info_screen.dart';
-import '../constants/app_constants.dart';
 
 class ExerciseBrowserScreen extends StatelessWidget {
   const ExerciseBrowserScreen({super.key});
@@ -20,17 +23,22 @@ class ExerciseBrowserScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final double topPadding = MediaQuery.of(context).padding.top;
     final double screenHeaderHeight = topPadding + kToolbarHeight;
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
+    final colors = context.appColors;
+    const backgroundColor = AppThemeColors.background;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: backgroundColor,
       body: Stack(
         fit: StackFit.expand,
         children: [
           ExerciseListWidget(
-            onExerciseSelected: (exercise) => _showExerciseInfo(context, exercise),
+            onExerciseSelected: (exercise) =>
+                _showExerciseInfo(context, exercise),
             additionalTopPadding: screenHeaderHeight,
           ),
-          
+
           // Custom glass "Exercise Statistics" header overlay
           Positioned(
             top: 0,
@@ -39,9 +47,12 @@ class ExerciseBrowserScreen extends StatelessWidget {
             height: screenHeaderHeight,
             child: ClipRRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+                filter: ImageFilter.blur(
+                  sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+                  sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                ),
                 child: Container(
-                  color: AppConstants.HEADER_BG_COLOR_MEDIUM,
+                  color: colors.overlayMedium,
                   child: SafeArea(
                     bottom: false,
                     child: SizedBox(
@@ -51,20 +62,19 @@ class ExerciseBrowserScreen extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.only(left: 8.0),
                             child: IconButton(
-                              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                              icon: Icon(
+                                Icons.arrow_back_ios_new,
+                                color: colorScheme.onSurface,
+                              ),
                               onPressed: () => Navigator.of(context).pop(),
                               tooltip: 'Back',
                             ),
                           ),
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               'Exercise Statistics',
                               textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 19,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: textTheme.titleLarge,
                             ),
                           ),
                           const SizedBox(width: 56), // Balance the IconButton

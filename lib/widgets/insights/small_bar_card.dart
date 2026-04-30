@@ -1,9 +1,10 @@
 import 'package:flutter/cupertino.dart';
-import '../../services/insights_service.dart';
+
+import '../../models/weekly_bar_data.dart';
 import '../../services/insights/insight_data_provider.dart';
+import '../../services/insights_service.dart';
 import 'insight_card.dart';
 import 'simple_bar_chart.dart';
-import '../../models/weekly_bar_data.dart';
 
 class WeeklyTrendCard extends StatefulWidget {
   final String title;
@@ -51,18 +52,20 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
 
   Future<void> _fetchData() async {
     if (!mounted) return;
-    setState(() { _isLoading = true; });
-    
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final timeframe = widget.filters['timeframe'] ?? '6M';
       final monthsBack = _getMonthsBack(timeframe);
-      
+
       final data = await widget.provider.getData(
         timeframe: timeframe,
         monthsBack: monthsBack,
         filters: widget.filters,
       );
-      
+
       if (mounted) {
         setState(() {
           if (timeframe == 'All') {
@@ -85,21 +88,29 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
 
   int _getMonthsBack(String timeframe) {
     switch (timeframe) {
-      case '1W': return 1;
-      case '1M': return 1;
-      case '3M': return 3;
-      case '6M': return 6;
-      case '1Y': return 12;
-      case '2Y': return 24;
-      case 'All': return 999;
-      default: return 6;
+      case '1W':
+        return 1;
+      case '1M':
+        return 1;
+      case '3M':
+        return 3;
+      case '6M':
+        return 6;
+      case '1Y':
+        return 12;
+      case '2Y':
+        return 24;
+      case 'All':
+        return 999;
+      default:
+        return 6;
     }
   }
 
   List<InsightDataPoint> _trimData(List<InsightDataPoint> data) {
     int firstDataIndex = -1;
     final count = data.length;
-    
+
     for (int i = 0; i < count; i++) {
       final hasData = data[i].value > 0 || (data[i].maxValue ?? 0) > 0;
       if (hasData) {
@@ -109,12 +120,12 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
     }
 
     if (firstDataIndex == -1) {
-      final keepCount = 6;
+      const keepCount = 6;
       if (count <= keepCount) return data;
       return data.sublist(count - keepCount);
     }
 
-    final padding = 2;
+    const padding = 2;
     final startIndex = (firstDataIndex - padding).clamp(0, count);
 
     if (startIndex == 0) return data;
@@ -139,17 +150,22 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
         );
         return _trimData(data);
       },
-      mainValueBuilder: widget.mainValueBuilder ?? (data) {
-        if (data.isEmpty) return "0";
-        final average = data.map((e) => e.value).reduce((a, b) => a + b) / data.length;
-        return average.toStringAsFixed(1);
-      },
+      mainValueBuilder:
+          widget.mainValueBuilder ??
+          (data) {
+            if (data.isEmpty) return "0";
+            final average =
+                data.map((e) => e.value).reduce((a, b) => a + b) / data.length;
+            return average.toStringAsFixed(1);
+          },
       subLabelBuilder: widget.subLabelBuilder ?? (data) => "Avg / Week",
       collapsedContentBuilder: (data) {
-        if (_isLoading) return const Center(child: CupertinoActivityIndicator());
+        if (_isLoading) {
+          return const Center(child: CupertinoActivityIndicator());
+        }
         final weeklyData = _prepareWeeklyData(data);
         final maxY = _calculateMaxY(weeklyData);
-        
+
         final timeframe = widget.filters['timeframe'] ?? '6M';
         final grouping = InsightsService.getGroupingForTimeframe(timeframe);
 
@@ -166,7 +182,7 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
       expandedContentBuilder: (context, data, timeframe, months) {
         final weeklyData = _prepareWeeklyData(data);
         final maxY = _calculateMaxY(weeklyData);
-        
+
         final grouping = InsightsService.getGroupingForTimeframe(timeframe);
 
         return SimpleBarChart(
@@ -184,7 +200,7 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
       axisBuilder: (context, data, timeframe, months) {
         final weeklyData = _prepareWeeklyData(data);
         final maxY = _calculateMaxY(weeklyData);
-        
+
         final grouping = InsightsService.getGroupingForTimeframe(timeframe);
 
         return SimpleBarChart(
@@ -205,50 +221,63 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
 
   double? _getItemWidth(String timeframe) {
     switch (timeframe) {
-      case '1W': return 50.0;
-      case '1M': return 12.0;
-      case '3M': return 30.0;
-      case '6M': return 20.0;
-      case '1Y': return 30.0;
-      case '2Y': return 30.0;
-      case 'All': return 30.0;
-      default: return 40.0;
+      case '1W':
+        return 50.0;
+      case '1M':
+        return 12.0;
+      case '3M':
+        return 30.0;
+      case '6M':
+        return 20.0;
+      case '1Y':
+        return 30.0;
+      case '2Y':
+        return 30.0;
+      case 'All':
+        return 30.0;
+      default:
+        return 40.0;
     }
   }
 
   double _getBarWidth(String timeframe) {
     switch (timeframe) {
-      case '1W': return 20.0;
-      case '1M': return 6.0;
-      case '3M': return 12.0;
-      case '6M': return 8.0;
-      case '1Y': return 12.0;
-      case '2Y': return 12.0;
-      case 'All': return 12.0;
-      default: return 16.0;
+      case '1W':
+        return 20.0;
+      case '1M':
+        return 6.0;
+      case '3M':
+        return 12.0;
+      case '6M':
+        return 8.0;
+      case '1Y':
+        return 12.0;
+      case '2Y':
+        return 12.0;
+      case 'All':
+        return 12.0;
+      default:
+        return 16.0;
     }
   }
 
   static List<WeeklyBarData> _prepareWeeklyData(List<InsightDataPoint> data) {
-    return List.generate(
-      data.length,
-      (index) {
-        final dataPoint = data[index];
-        final label = _generateLabel(index, data.length, dataPoint.date);
-        return WeeklyBarData(
-          label: label,
-          minValue: dataPoint.minValue ?? 0,
-          maxValue: dataPoint.maxValue ?? dataPoint.value,
-          weekStart: dataPoint.date,
-        );
-      },
-    );
+    return List.generate(data.length, (index) {
+      final dataPoint = data[index];
+      final label = _generateLabel(index, data.length, dataPoint.date);
+      return WeeklyBarData(
+        label: label,
+        minValue: dataPoint.minValue ?? 0,
+        maxValue: dataPoint.maxValue ?? dataPoint.value,
+        weekStart: dataPoint.date,
+      );
+    });
   }
 
   static String _generateLabel(int index, int totalSlots, DateTime weekStart) {
     final isLast = index == totalSlots - 1;
     final isSecondLast = index == totalSlots - 2;
-    
+
     // For 6-8 time slots (weekly grouping)
     if (totalSlots <= 8) {
       if (isLast) return 'This Week';
@@ -256,7 +285,7 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
       final weeksAgo = totalSlots - index - 1;
       return '${weeksAgo}w ago';
     }
-    
+
     // For 9+ time slots (monthly grouping)
     if (isLast) return 'This Mo';
     if (isSecondLast) return 'Last Mo';
@@ -266,9 +295,11 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
 
   static double _calculateMaxY(List<WeeklyBarData> data) {
     if (data.isEmpty) return 10;
-    
-    final maxValue = data.map((d) => d.maxValue).reduce((a, b) => a > b ? a : b);
-    
+
+    final maxValue = data
+        .map((d) => d.maxValue)
+        .reduce((a, b) => a > b ? a : b);
+
     // Round up to next even number for cleaner axis
     final roundedMax = (maxValue * 1.1).ceil().toDouble();
     return roundedMax.clamp(4, double.infinity);

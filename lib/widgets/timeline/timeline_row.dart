@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../constants/app_constants.dart';
+import '../../theme/app_theme.dart';
 
 enum TimelineLineStyle { straight, curved }
 
@@ -73,10 +73,14 @@ class TimelineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final dimTrackColor = colorScheme.onSurface.withValues(alpha: 0.3);
+    final highlightTrackColor = colorScheme.onSurface;
+
     // Node aligns with the top edge of the card content.
     // We add some top padding so the node doesn't sit flush with the row top.
     const double nodeTopOffset = 19.5;
-    
+
     return Padding(
       padding: padding,
       child: Stack(
@@ -95,10 +99,11 @@ class TimelineRow extends StatelessWidget {
                   child: animateLineColor
                       ? _DelayedLineAnimator(
                           delay: animationDelay,
+                          beginColor: dimTrackColor,
+                          endColor: highlightTrackColor,
                           builder: (context, color) {
                             return CustomPaint(
                               painter: _TimelineTrackPainter(
-                                baseColor: AppConstants.ACCENT_COLOR,
                                 style: style,
                                 isNested: isNested,
                                 isLast: isLast,
@@ -108,56 +113,60 @@ class TimelineRow extends StatelessWidget {
                                 expansionProgress: 1.0,
                                 isExpandable: false,
                                 isDotted: isDotted,
+                                dimTrackColor: dimTrackColor,
+                                highlightTrackColor: highlightTrackColor,
                                 lineColor: color,
                               ),
                             );
                           },
                         )
                       : isExpandable
-                          ? TweenAnimationBuilder<double>(
-                              tween: Tween<double>(
-                                begin: isExpanded ? 1.0 : 0.0,
-                                end: isExpanded ? 1.0 : 0.0,
-                              ),
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                              builder: (context, value, child) {
-                                return CustomPaint(
-                                  painter: _TimelineTrackPainter(
-                                    baseColor: AppConstants.ACCENT_COLOR,
-                                    style: style,
-                                    isNested: isNested,
-                                    isLast: isLast,
-                                    fadeLine: fadeLine,
-                                    gapStart: nodeTopOffset - nodeRadius,
-                                    gapEnd: nodeTopOffset + nodeRadius,
-                                    expansionProgress: value,
-                                    isExpandable: true,
-                                    isDotted: isDotted,
-                                  ),
-                                );
-                              },
-                            )
-                          : CustomPaint(
+                      ? TweenAnimationBuilder<double>(
+                          tween: Tween<double>(
+                            begin: isExpanded ? 1.0 : 0.0,
+                            end: isExpanded ? 1.0 : 0.0,
+                          ),
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                          builder: (context, value, child) {
+                            return CustomPaint(
                               painter: _TimelineTrackPainter(
-                                baseColor: AppConstants.ACCENT_COLOR,
                                 style: style,
                                 isNested: isNested,
                                 isLast: isLast,
                                 fadeLine: fadeLine,
                                 gapStart: nodeTopOffset - nodeRadius,
                                 gapEnd: nodeTopOffset + nodeRadius,
-                                expansionProgress: 1.0,
-                                isExpandable: false,
+                                expansionProgress: value,
+                                isExpandable: true,
                                 isDotted: isDotted,
+                                dimTrackColor: dimTrackColor,
+                                highlightTrackColor: highlightTrackColor,
                               ),
-                            ),
+                            );
+                          },
+                        )
+                      : CustomPaint(
+                          painter: _TimelineTrackPainter(
+                            style: style,
+                            isNested: isNested,
+                            isLast: isLast,
+                            fadeLine: fadeLine,
+                            gapStart: nodeTopOffset - nodeRadius,
+                            gapEnd: nodeTopOffset + nodeRadius,
+                            expansionProgress: 1.0,
+                            isExpandable: false,
+                            isDotted: isDotted,
+                            dimTrackColor: dimTrackColor,
+                            highlightTrackColor: highlightTrackColor,
+                          ),
+                        ),
                 ),
                 // The Node
                 // We position the center of the node at nodeTopOffset.
                 Positioned(
                   top: nodeTopOffset - nodeRadius,
-                  child: node ?? _buildDefaultNode(),
+                  child: node ?? _buildDefaultNode(context),
                 ),
               ],
             ),
@@ -172,26 +181,26 @@ class TimelineRow extends StatelessWidget {
     );
   }
 
-  Widget _buildDefaultNode() {
+  Widget _buildDefaultNode(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final colors = context.appColors;
+
     // Fallback if no node widget is provided
     // We'll use a simple dot that matches the new design language
     return Container(
       width: 28, // Radius 14px * 2
       height: 28,
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: colors.surfaceAlt,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: nodeColor ?? AppConstants.ACCENT_COLOR,
-          width: 3,
-        ),
+        border: Border.all(color: nodeColor ?? colorScheme.primary, width: 3),
       ),
       child: Center(
         child: Container(
           width: 2,
           height: 2,
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: colorScheme.onSurface,
             shape: BoxShape.circle,
           ),
         ),
@@ -202,15 +211,23 @@ class TimelineRow extends StatelessWidget {
 
 class _DelayedLineAnimator extends StatefulWidget {
   final int delay;
+  final Color beginColor;
+  final Color endColor;
   final Widget Function(BuildContext, Color) builder;
 
-  const _DelayedLineAnimator({required this.delay, required this.builder});
+  const _DelayedLineAnimator({
+    required this.delay,
+    required this.beginColor,
+    required this.endColor,
+    required this.builder,
+  });
 
   @override
   State<_DelayedLineAnimator> createState() => _DelayedLineAnimatorState();
 }
 
-class _DelayedLineAnimatorState extends State<_DelayedLineAnimator> with SingleTickerProviderStateMixin {
+class _DelayedLineAnimatorState extends State<_DelayedLineAnimator>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Color?> _colorAnimation;
 
@@ -221,10 +238,10 @@ class _DelayedLineAnimatorState extends State<_DelayedLineAnimator> with SingleT
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    
+
     _colorAnimation = ColorTween(
-      begin: const Color(0xFFE5E5EA).withOpacity(0.3),
-      end: Colors.white,
+      begin: widget.beginColor,
+      end: widget.endColor,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     Future.delayed(Duration(milliseconds: widget.delay), () {
@@ -252,7 +269,6 @@ class _DelayedLineAnimatorState extends State<_DelayedLineAnimator> with SingleT
 }
 
 class _TimelineTrackPainter extends CustomPainter {
-  final Color baseColor;
   final TimelineLineStyle style;
   final bool isNested;
   final bool isLast;
@@ -262,10 +278,11 @@ class _TimelineTrackPainter extends CustomPainter {
   final double expansionProgress;
   final bool isExpandable;
   final bool isDotted;
+  final Color dimTrackColor;
+  final Color highlightTrackColor;
   final Color? lineColor;
 
   _TimelineTrackPainter({
-    required this.baseColor,
     required this.style,
     required this.isNested,
     required this.isLast,
@@ -274,6 +291,8 @@ class _TimelineTrackPainter extends CustomPainter {
     required this.gapEnd,
     required this.expansionProgress,
     required this.isExpandable,
+    required this.dimTrackColor,
+    required this.highlightTrackColor,
     this.isDotted = false,
     this.lineColor,
   });
@@ -281,15 +300,12 @@ class _TimelineTrackPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final centerX = size.width / 2;
-    
+
     // Styling based on requirements
-    // Track Color: Flat White (or very light grey #E5E5EA) with opacity: 0.3
+    // Track Color: Flat White (or very light grey) with opacity: 0.3
     // Track Weight: 4px
-    const Color defaultTrackColor = Color(0xFFE5E5EA);
-    const double defaultTrackOpacity = 0.3;
-    
-    final Color effectiveColor = lineColor ?? defaultTrackColor.withOpacity(defaultTrackOpacity);
-    
+    final Color effectiveColor = lineColor ?? dimTrackColor;
+
     final paint = Paint()
       ..color = effectiveColor
       ..strokeWidth = 4
@@ -300,16 +316,13 @@ class _TimelineTrackPainter extends CustomPainter {
       paint.shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [
-          effectiveColor,
-          effectiveColor.withOpacity(0.0),
-        ],
+        colors: [effectiveColor, effectiveColor.withValues(alpha: 0)],
         stops: const [0.5, 1.0],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
     }
 
     // 1. Draw The Line
-    
+
     if (style == TimelineLineStyle.straight) {
       // If gapStart >= gapEnd, it means nodeRadius is 0 (or negative), so we should draw a continuous line.
       // This fixes the "highlighted dot" issue where two rounded caps overlap.
@@ -318,18 +331,28 @@ class _TimelineTrackPainter extends CustomPainter {
           final dottedPaint = Paint()
             ..color = effectiveColor
             ..style = PaintingStyle.fill;
-            
+
           double y = 0;
-          final endY = isLast ? size.height : size.height; // Draw full height for dotted if not last
+          final endY = isLast
+              ? size.height
+              : size.height; // Draw full height for dotted if not last
           while (y < endY) {
             canvas.drawCircle(Offset(centerX, y), 2.0, dottedPaint);
             y += 6.0;
           }
         } else {
           if (!isLast) {
-             canvas.drawLine(Offset(centerX, 0), Offset(centerX, size.height), paint);
+            canvas.drawLine(
+              Offset(centerX, 0),
+              Offset(centerX, size.height),
+              paint,
+            );
           } else {
-             canvas.drawLine(Offset(centerX, 0), Offset(centerX, size.height), paint); // Draw full height for solid if last
+            canvas.drawLine(
+              Offset(centerX, 0),
+              Offset(centerX, size.height),
+              paint,
+            ); // Draw full height for solid if last
           }
         }
         return;
@@ -340,36 +363,47 @@ class _TimelineTrackPainter extends CustomPainter {
         // Case A: Minimized (Closed) - Dotted Line
         // Fade out dots as we expand (if expandable)
         // If just dotted, opacity is constant (based on effectiveColor)
-        
+
         final double dotsOpacity;
         if (isExpandable) {
           dotsOpacity = (1.0 - expansionProgress).clamp(0.0, 1.0) * 0.3;
         } else {
-          dotsOpacity = defaultTrackOpacity; // Use default opacity for static dotted lines
+          dotsOpacity = 0.3; // Use default opacity for static dotted lines
         }
 
         if (dotsOpacity > 0.01) {
           final dottedPaint = Paint()
-            ..color = isExpandable ? Colors.white.withOpacity(dotsOpacity) : effectiveColor
+            ..color = isExpandable
+                ? highlightTrackColor.withValues(alpha: dotsOpacity)
+                : effectiveColor
             ..style = PaintingStyle.fill;
-            
+
           double y = 0;
           while (y < gapStart) {
-            canvas.drawCircle(Offset(centerX, y), 2.0, dottedPaint); // Radius 2.0 = Diameter 4.0
+            canvas.drawCircle(
+              Offset(centerX, y),
+              2.0,
+              dottedPaint,
+            ); // Radius 2.0 = Diameter 4.0
             y += 6.0; // Vertical spacing 6px
           }
         }
-        
+
         // Case B: Maximized (Open) - Gradient Line Overlay
         // Animation: Fade In Gradient (Dim -> White)
         if (expansionProgress > 0) {
-          final dimColor = const Color(0xFFE5E5EA).withOpacity(0.3);
-          final whiteColor = Colors.white;
-          
           // Interpolate colors from Transparent to Target
-          final topColor = Color.lerp(dimColor.withOpacity(0), dimColor, expansionProgress)!;
-          final bottomColor = Color.lerp(whiteColor.withOpacity(0), whiteColor, expansionProgress)!;
-          
+          final topColor = Color.lerp(
+            dimTrackColor.withValues(alpha: 0),
+            dimTrackColor,
+            expansionProgress,
+          )!;
+          final bottomColor = Color.lerp(
+            highlightTrackColor.withValues(alpha: 0),
+            highlightTrackColor,
+            expansionProgress,
+          )!;
+
           final gradientPaint = Paint()
             ..strokeWidth = 4
             ..style = PaintingStyle.stroke
@@ -379,47 +413,62 @@ class _TimelineTrackPainter extends CustomPainter {
               end: Alignment.bottomCenter,
               colors: [topColor, bottomColor],
             ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-            
-          canvas.drawLine(Offset(centerX, 0), Offset(centerX, gapStart), gradientPaint);
+
+          canvas.drawLine(
+            Offset(centerX, 0),
+            Offset(centerX, gapStart),
+            gradientPaint,
+          );
         }
       } else {
         canvas.drawLine(Offset(centerX, 0), Offset(centerX, gapStart), paint);
       }
-      
+
       // Draw bottom segment
       if ((isExpandable || isDotted) && !isLast) {
         // Case A: Minimized (Closed) - Dotted Line
         // Fade out dots as we expand
-        
+
         final double dotsOpacity;
         if (isExpandable) {
           dotsOpacity = (1.0 - expansionProgress).clamp(0.0, 1.0) * 0.3;
         } else {
-          dotsOpacity = defaultTrackOpacity;
+          dotsOpacity = 0.3;
         }
 
         if (dotsOpacity > 0.01) {
           final dottedPaint = Paint()
-            ..color = isExpandable ? Colors.white.withOpacity(dotsOpacity) : effectiveColor
+            ..color = isExpandable
+                ? highlightTrackColor.withValues(alpha: dotsOpacity)
+                : effectiveColor
             ..style = PaintingStyle.fill;
-            
+
           double y = gapEnd + 3; // Start slightly below
           while (y < size.height) {
-            canvas.drawCircle(Offset(centerX, y), 2.0, dottedPaint); // Radius 2.0 = Diameter 4.0
+            canvas.drawCircle(
+              Offset(centerX, y),
+              2.0,
+              dottedPaint,
+            ); // Radius 2.0 = Diameter 4.0
             y += 6.0; // Vertical spacing 6px
           }
         }
-        
+
         // Case B: Maximized (Open) - Gradient Line Overlay
         // Animation: Fade In Gradient (Dim -> White)
         if (expansionProgress > 0) {
-          final dimColor = const Color(0xFFE5E5EA).withOpacity(0.3);
-          final whiteColor = Colors.white;
-          
           // Interpolate colors from Transparent to Target
-          final topColor = Color.lerp(dimColor.withOpacity(0), dimColor, expansionProgress)!;
-          final bottomColor = Color.lerp(whiteColor.withOpacity(0), whiteColor, expansionProgress)!;
-          
+          final topColor = Color.lerp(
+            dimTrackColor.withValues(alpha: 0),
+            dimTrackColor,
+            expansionProgress,
+          )!;
+          final bottomColor = Color.lerp(
+            highlightTrackColor.withValues(alpha: 0),
+            highlightTrackColor,
+            expansionProgress,
+          )!;
+
           final gradientPaint = Paint()
             ..strokeWidth = 4
             ..style = PaintingStyle.stroke
@@ -429,23 +478,34 @@ class _TimelineTrackPainter extends CustomPainter {
               end: Alignment.bottomCenter,
               colors: [topColor, bottomColor],
             ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-            
-          canvas.drawLine(Offset(centerX, gapEnd), Offset(centerX, size.height), gradientPaint);
+
+          canvas.drawLine(
+            Offset(centerX, gapEnd),
+            Offset(centerX, size.height),
+            gradientPaint,
+          );
         }
       } else if (!isLast) {
         // Standard solid bottom segment
-        canvas.drawLine(Offset(centerX, gapEnd), Offset(centerX, size.height), paint);
+        canvas.drawLine(
+          Offset(centerX, gapEnd),
+          Offset(centerX, size.height),
+          paint,
+        );
       }
     } else {
       // The Swirl - Denoting "Time Compressed"
       final path = Path();
       path.moveTo(centerX, 0);
       path.cubicTo(
-        centerX - 8, size.height * 0.33, // Control Point 1
-        centerX + 8, size.height * 0.66, // Control Point 2
-        centerX, size.height             // End Point
+        centerX - 8,
+        size.height * 0.33, // Control Point 1
+        centerX + 8,
+        size.height * 0.66, // Control Point 2
+        centerX,
+        size.height, // End Point
       );
-      
+
       if (!isLast) {
         canvas.drawPath(path, paint);
       }
@@ -454,8 +514,7 @@ class _TimelineTrackPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _TimelineTrackPainter oldDelegate) {
-    return oldDelegate.baseColor != baseColor ||
-        oldDelegate.style != style ||
+    return oldDelegate.style != style ||
         oldDelegate.isNested != isNested ||
         oldDelegate.isLast != isLast ||
         oldDelegate.fadeLine != fadeLine ||
@@ -464,6 +523,8 @@ class _TimelineTrackPainter extends CustomPainter {
         oldDelegate.expansionProgress != expansionProgress ||
         oldDelegate.isExpandable != isExpandable ||
         oldDelegate.isDotted != isDotted ||
+        oldDelegate.dimTrackColor != dimTrackColor ||
+        oldDelegate.highlightTrackColor != highlightTrackColor ||
         oldDelegate.lineColor != lineColor;
   }
 }

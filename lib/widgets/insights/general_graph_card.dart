@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
+
 import '../../services/insights_service.dart';
-import 'insight_card.dart';
 import '../workout_chart.dart';
+import 'insight_card.dart';
 
 class GeneralGraphCard extends StatelessWidget {
   final String title;
@@ -65,23 +65,35 @@ class GeneralGraphCard extends StatelessWidget {
 
   double _getBarWidth(String timeframe) {
     switch (timeframe) {
-      case '1W': return 6.0;
-      case '1M': return 5.0;
-      case '3M': return 4.0;
-      case '6M': return 3.0;
-      case '1Y': return 2.5;
-      default: return 2.0;
+      case '1W':
+        return 6.0;
+      case '1M':
+        return 5.0;
+      case '3M':
+        return 4.0;
+      case '6M':
+        return 3.0;
+      case '1Y':
+        return 2.5;
+      default:
+        return 2.0;
     }
   }
 
   double _getDotRadius(String timeframe) {
     switch (timeframe) {
-      case '1W': return 6.0;
-      case '1M': return 5.0;
-      case '3M': return 4.5;
-      case '6M': return 4.0;
-      case '1Y': return 3.0;
-      default: return 2.5;
+      case '1W':
+        return 6.0;
+      case '1M':
+        return 5.0;
+      case '3M':
+        return 4.5;
+      case '6M':
+        return 4.0;
+      case '1Y':
+        return 3.0;
+      default:
+        return 2.5;
     }
   }
 }

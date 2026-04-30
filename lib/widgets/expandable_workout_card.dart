@@ -63,11 +63,22 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
       ? WorkoutIcons.getIconDataFromCodePoint(widget.template!.iconCodePoint)
       : widget.workout!.icon;
 
-  Color get _displayColor => _isTemplate
-      ? widget.template!.colorValue != null
-            ? Color(widget.template!.colorValue!)
-            : AppThemeColors.accent
-      : widget.workout!.color;
+  Color _resolveDisplayColor(Color fallbackColor) {
+    if (!_isTemplate) {
+      return widget.workout!.color;
+    }
+
+    final templateColorValue = widget.template!.colorValue;
+    if (templateColorValue == null) {
+      return fallbackColor;
+    }
+
+    return Workout(
+      id: widget.template!.id,
+      name: widget.template!.name,
+      colorValue: templateColorValue,
+    ).color;
+  }
 
   List<WorkoutExercise> get _effectiveExercises => _isTemplate
       ? (_templateExercises ?? const [])
@@ -241,6 +252,9 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
+    final displayColor = _resolveDisplayColor(colorScheme.primary);
+    final transparentSurface = colorScheme.surface.withValues(alpha: 0);
+    final defaultBorderColor = colors.textPrimary.withValues(alpha: 0.35);
     final exerciseCount = _exerciseCount;
     final totalSets = _totalSets;
 
@@ -252,7 +266,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
         border: Border.all(
           color: _isExpanded
               ? colorScheme.primary.withValues(alpha: 0.6)
-              : Theme.of(context).dividerColor,
+              : defaultBorderColor,
           width: _isExpanded ? 1.5 : AppConstants.CARD_STROKE_WIDTH,
         ),
         boxShadow: [
@@ -264,7 +278,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
         ],
       ),
       child: Material(
-        color: AppThemeColors.clear,
+        color: transparentSurface,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: _toggleExpansion,
@@ -286,16 +300,16 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: _displayColor.withAlpha((255 * 0.15).round()),
+                        color: displayColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(
                           26,
                         ), // Fully rounded
                         border: Border.all(
-                          color: _displayColor.withAlpha((255 * 0.3).round()),
+                          color: displayColor.withValues(alpha: 0.3),
                           width: 0.5,
                         ),
                       ),
-                      child: Icon(_displayIcon, color: _displayColor, size: 26),
+                      child: Icon(_displayIcon, color: displayColor, size: 26),
                     ),
                     const SizedBox(width: AppConstants.ITEM_HORIZONTAL_GAP),
                     Expanded(
@@ -502,9 +516,9 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                 sizeFactor: _expandAnimation,
                 child: Container(
                   width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: AppThemeColors.clear,
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: transparentSurface,
+                    borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(16),
                       bottomRight: Radius.circular(16),
                     ),
@@ -550,7 +564,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                                       width: 6,
                                       height: 6,
                                       decoration: BoxDecoration(
-                                        color: _displayColor,
+                                        color: displayColor,
                                         borderRadius: BorderRadius.circular(3),
                                       ),
                                     ),
@@ -602,7 +616,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                               backgroundColor: colorScheme.primary,
                               foregroundColor: colorScheme.onPrimary,
                               elevation: 0,
-                              shadowColor: AppThemeColors.clear,
+                              shadowColor: transparentSurface,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),

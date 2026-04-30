@@ -3,21 +3,23 @@ import 'package:intl/intl.dart';
 
 import '../../constants/app_constants.dart';
 import '../../models/workout.dart';
+import '../../theme/app_theme.dart';
 
 class ArchiveWorkoutRow extends StatelessWidget {
   final Workout workout;
 
-  const ArchiveWorkoutRow({
-    super.key,
-    required this.workout,
-  });
+  const ArchiveWorkoutRow({super.key, required this.workout});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     // Compact Layout:
     // [Date] [Card]
     // Date is to the left. Card takes remaining space.
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 4), // Reduced vertical space
       child: Row(
@@ -33,9 +35,11 @@ class ArchiveWorkoutRow extends StatelessWidget {
             child: SizedBox(
               width: 40,
               child: Text(
-                _formatDate(workout.completedAt ?? workout.startedAt ?? DateTime.now()),
-                style: const TextStyle(
-                  color: Colors.grey,
+                _formatDate(
+                  workout.completedAt ?? workout.startedAt ?? DateTime.now(),
+                ),
+                style: textTheme.bodySmall?.copyWith(
+                  color: colors.textSecondary,
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
@@ -43,21 +47,21 @@ class ArchiveWorkoutRow extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Slim Card
           Expanded(
             child: Container(
               height: 44, // Reduced height
               decoration: BoxDecoration(
-                color: const Color(0xFF1C1C1E),
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppConstants.CARD_STROKE_COLOR,
+                  color: AppThemeColors.outline,
                   width: AppConstants.CARD_STROKE_WIDTH,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withAlpha((255 * 0.18).round()),
+                    color: colors.shadow.withValues(alpha: 0.18),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -72,8 +76,8 @@ class ArchiveWorkoutRow extends StatelessWidget {
                   Flexible(
                     child: Text(
                       workout.name,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: colorScheme.onSurface,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),

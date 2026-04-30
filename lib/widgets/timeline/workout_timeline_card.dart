@@ -37,7 +37,7 @@ class WorkoutTimelineCard extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Theme.of(context).dividerColor,
+          color: colorScheme.outline,
           width: AppConstants.CARD_STROKE_WIDTH,
         ),
         boxShadow: [

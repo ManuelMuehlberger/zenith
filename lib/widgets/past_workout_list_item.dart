@@ -58,6 +58,7 @@ class PastWorkoutListItem extends StatelessWidget {
         final textTheme = context.appText;
         final colorScheme = context.appScheme;
         final colors = context.appColors;
+        final outlineColor = colorScheme.outline;
 
         return GestureDetector(
           onTap: () async {
@@ -76,10 +77,10 @@ class PastWorkoutListItem extends StatelessWidget {
               bottom: AppConstants.CARD_VERTICAL_GAP,
             ),
             decoration: BoxDecoration(
-              color: AppConstants.CARD_BG_COLOR,
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
               border: Border.all(
-                color: AppConstants.CARD_STROKE_COLOR,
+                color: outlineColor,
                 width: AppConstants.CARD_STROKE_WIDTH,
               ),
               boxShadow: [
@@ -289,7 +290,7 @@ class PastWorkoutListItem extends StatelessWidget {
                               ),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: AppConstants.CARD_STROKE_COLOR,
+                                color: outlineColor,
                                 width: 0.5,
                               ),
                             ),

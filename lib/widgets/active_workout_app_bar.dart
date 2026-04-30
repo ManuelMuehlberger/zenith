@@ -58,6 +58,7 @@ class ActiveWorkoutAppBar extends StatelessWidget
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
+    final outlineColor = colorScheme.outline;
     final progress = session.completedSets / session.totalSets;
     final duration = session.completedAt != null
         ? session.completedAt!.difference(session.startedAt ?? DateTime.now())
@@ -187,7 +188,7 @@ class ActiveWorkoutAppBar extends StatelessWidget
                           Container(
                             width: 1,
                             height: 20,
-                            color: Theme.of(context).dividerColor,
+                            color: outlineColor,
                             margin: const EdgeInsets.symmetric(horizontal: 8),
                           ),
                           _buildInlineStatCard(
@@ -198,7 +199,7 @@ class ActiveWorkoutAppBar extends StatelessWidget
                           Container(
                             width: 1,
                             height: 20,
-                            color: Theme.of(context).dividerColor,
+                            color: outlineColor,
                             margin: const EdgeInsets.symmetric(horizontal: 8),
                           ),
                           _buildInlineStatCard(

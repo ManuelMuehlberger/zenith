@@ -57,9 +57,9 @@ class _NamePageState extends State<NamePage> {
               color: colors.textTertiary,
             ),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+              color: colors.field,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).dividerColor),
+              border: Border.all(color: AppThemeColors.outline),
             ),
             padding: const EdgeInsets.all(16),
             controller: widget.nameController,
@@ -355,9 +355,7 @@ class UnitOption extends StatelessWidget {
             : colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isSelected
-              ? colorScheme.primary
-              : Theme.of(context).dividerColor,
+          color: isSelected ? colorScheme.primary : AppThemeColors.outline,
           width: isSelected ? 2 : 1,
         ),
       ),

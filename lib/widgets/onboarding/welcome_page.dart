@@ -99,7 +99,7 @@ class WelcomePage extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerColor),
+        border: Border.all(color: AppThemeColors.outline),
       ),
       child: Material(
         color: AppThemeColors.clear,

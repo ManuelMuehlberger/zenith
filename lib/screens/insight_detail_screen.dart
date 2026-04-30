@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:pull_down_button/pull_down_button.dart';
+
 import '../constants/app_constants.dart';
 import '../services/insights_service.dart';
+import '../theme/app_theme.dart';
 
 class InsightDetailScreen extends StatefulWidget {
   final String title;
@@ -10,9 +12,26 @@ class InsightDetailScreen extends StatefulWidget {
   final Color color;
   final String unit;
   final Map<String, dynamic> initialFilters;
-  final Future<dynamic> Function(String timeframe, int months, Map<String, dynamic> filters) dataFetcher;
-  final Widget Function(BuildContext context, dynamic data, String timeframe, int months) chartBuilder;
-  final Widget? Function(BuildContext context, dynamic data, String timeframe, int months)? axisBuilder;
+  final Future<dynamic> Function(
+    String timeframe,
+    int months,
+    Map<String, dynamic> filters,
+  )
+  dataFetcher;
+  final Widget Function(
+    BuildContext context,
+    dynamic data,
+    String timeframe,
+    int months,
+  )
+  chartBuilder;
+  final Widget? Function(
+    BuildContext context,
+    dynamic data,
+    String timeframe,
+    int months,
+  )?
+  axisBuilder;
   final String Function(dynamic data) mainValueBuilder;
   final String Function(dynamic data) subLabelBuilder;
   final int Function(dynamic data)? dataCountBuilder;
@@ -79,7 +98,7 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
     _selectedEquipment = widget.initialFilters['equipment'];
     _selectedBodyWeight = widget.initialFilters['isBodyWeight'];
     _selectedExerciseName = widget.initialFilters['exerciseName'];
-    
+
     // Also initialize timeframe if passed in initialFilters (optional, but good for consistency)
     if (widget.initialFilters.containsKey('timeframe')) {
       _selectedTimeframe = widget.initialFilters['timeframe'];
@@ -113,28 +132,34 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
         'isBodyWeight': _selectedBodyWeight,
         'exerciseName': _selectedExerciseName,
       };
-      
+
       // Always fetch a large history (e.g., 60 months/5 years) to allow scrolling into the past
       // The timeframe parameter is still passed so the fetcher can decide on grouping (weekly vs monthly)
       const int monthsToFetch = 60;
 
-      final data = await widget.dataFetcher(_selectedTimeframe, monthsToFetch, filters);
+      final data = await widget.dataFetcher(
+        _selectedTimeframe,
+        monthsToFetch,
+        filters,
+      );
       if (mounted) {
         setState(() {
           _data = data;
           _isLoading = false;
         });
-        
+
         // Scroll to the end (most recent data) after the layout is built
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_scrollController.hasClients) {
             // Calculate scroll position based on timeframe
             // We want to show the selected timeframe at the end
             // But allow scrolling back further if data exists
-            
+
             // For now, just jump to end as requested, but we could calculate offset
             // based on item width * number of items in selected timeframe
-            _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+            _scrollController.jumpTo(
+              _scrollController.position.maxScrollExtent,
+            );
           }
         });
       }
@@ -143,9 +168,9 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading data: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
       }
     }
   }
@@ -198,12 +223,19 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final textTheme = context.appText;
+    final appColors = context.appColors;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: backgroundColor,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.xmark_circle_fill, color: Colors.grey),
+          icon: Icon(
+            CupertinoIcons.xmark_circle_fill,
+            color: appColors.textSecondary,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         elevation: 0,
@@ -211,12 +243,12 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
       body: Hero(
         tag: widget.heroTag ?? 'insight_card_${widget.title}',
         child: Material(
-          color: Colors.black,
+          color: backgroundColor,
           child: Column(
             children: [
               // Filters
               _buildFilters(),
-              
+
               Expanded(
                 child: _isLoading
                     ? const Center(child: CupertinoActivityIndicator())
@@ -228,14 +260,16 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
                             // Header
                             Row(
                               children: [
-                                Icon(widget.icon, color: widget.color, size: 24),
+                                Icon(
+                                  widget.icon,
+                                  color: widget.color,
+                                  size: 24,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
                                   widget.title,
-                                  style: TextStyle(
+                                  style: textTheme.titleLarge!.copyWith(
                                     color: widget.color,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ],
@@ -243,26 +277,24 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
                             const SizedBox(height: 24),
 
                             // Main Stats
-                      if (_data != null) ...[
-                        Text(
-                          widget.mainValueBuilder(_data),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 34,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        Text(
-                          widget.subLabelBuilder(_data),
-                          style: const TextStyle(
-                            color: AppConstants.TEXT_TERTIARY_COLOR,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                      ],
+                            if (_data != null) ...[
+                              Text(
+                                widget.mainValueBuilder(_data),
+                                style: textTheme.displaySmall!.copyWith(
+                                  color: appColors.textPrimary,
+                                  fontSize: 34,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                              Text(
+                                widget.subLabelBuilder(_data),
+                                style: textTheme.bodyLarge!.copyWith(
+                                  color: appColors.textTertiary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 32),
+                            ],
 
                             // Chart
                             if (_data != null)
@@ -274,15 +306,23 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
                                     if (widget.axisBuilder != null)
                                       Builder(
                                         builder: (context) {
-                                          final axisWidget = widget.axisBuilder!(context, _data, _selectedTimeframe, _selectedMonths);
-                                          if (axisWidget == null) return const SizedBox.shrink();
+                                          final axisWidget =
+                                              widget.axisBuilder!(
+                                                context,
+                                                _data,
+                                                _selectedTimeframe,
+                                                _selectedMonths,
+                                              );
+                                          if (axisWidget == null) {
+                                            return const SizedBox.shrink();
+                                          }
                                           return SizedBox(
                                             width: 40,
                                             child: axisWidget,
                                           );
                                         },
                                       ),
-                                    
+
                                     // Scrollable Chart
                                     Expanded(
                                       child: SingleChildScrollView(
@@ -290,15 +330,44 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
                                         scrollDirection: Axis.horizontal,
                                         child: Container(
                                           constraints: BoxConstraints(
-                                            minWidth: MediaQuery.of(context).size.width - 40 - (widget.axisBuilder?.call(context, _data, _selectedTimeframe, _selectedMonths) != null ? 40 : 0),
+                                            minWidth:
+                                                MediaQuery.of(
+                                                  context,
+                                                ).size.width -
+                                                40 -
+                                                (widget.axisBuilder?.call(
+                                                          context,
+                                                          _data,
+                                                          _selectedTimeframe,
+                                                          _selectedMonths,
+                                                        ) !=
+                                                        null
+                                                    ? 40
+                                                    : 0),
                                           ),
                                           alignment: Alignment.center,
                                           child: SizedBox(
-                                            width: widget.dataCountBuilder != null
-                                                ? widget.dataCountBuilder!(_data) * (widget.itemWidthBuilder?.call(_selectedTimeframe) ?? 50.0)
-                                                : MediaQuery.of(context).size.width - 40,
+                                            width:
+                                                widget.dataCountBuilder != null
+                                                ? widget.dataCountBuilder!(
+                                                        _data,
+                                                      ) *
+                                                      (widget.itemWidthBuilder
+                                                              ?.call(
+                                                                _selectedTimeframe,
+                                                              ) ??
+                                                          50.0)
+                                                : MediaQuery.of(
+                                                        context,
+                                                      ).size.width -
+                                                      40,
                                             height: 350,
-                                            child: widget.chartBuilder(context, _data, _selectedTimeframe, _selectedMonths),
+                                            child: widget.chartBuilder(
+                                              context,
+                                              _data,
+                                              _selectedTimeframe,
+                                              _selectedMonths,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -318,16 +387,21 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
   }
 
   Widget _buildFilters() {
+    final scheme = context.appScheme;
+    final appColors = context.appColors;
+    final dividerColor = Theme.of(context).dividerColor;
+
     final muscleGroups = AppMuscleGroup.values
         .where((group) => group != AppMuscleGroup.na)
         .map((group) => group.displayName)
         .toList();
-    
+
     final equipmentList = EquipmentType.values
         .map((equipment) => equipment.displayName)
         .toList();
 
-    final bool hasAnyFilter = _selectedWorkoutName != null ||
+    final bool hasAnyFilter =
+        _selectedWorkoutName != null ||
         _selectedMuscleGroup != null ||
         _selectedEquipment != null ||
         _selectedBodyWeight != null;
@@ -349,14 +423,14 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: AppConstants.WORKOUT_BUTTON_BG_COLOR,
+                        color: scheme.surface,
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
+                        border: Border.all(color: dividerColor, width: 0.5),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         CupertinoIcons.xmark,
                         size: 16,
-                        color: AppConstants.TEXT_SECONDARY_COLOR,
+                        color: appColors.textSecondary,
                       ),
                     ),
                   ),
@@ -380,7 +454,9 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
                   title: 'Workout',
                   isSelected: _selectedWorkoutName != null,
                   items: _availableWorkoutNames,
-                  onItemSelected: (val) => _onWorkoutFilterChanged(val == _selectedWorkoutName ? null : val),
+                  onItemSelected: (val) => _onWorkoutFilterChanged(
+                    val == _selectedWorkoutName ? null : val,
+                  ),
                   selectedItem: _selectedWorkoutName,
                 ),
                 const SizedBox(width: 8),
@@ -390,7 +466,9 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
                   title: 'Muscle',
                   isSelected: _selectedMuscleGroup != null,
                   items: muscleGroups,
-                  onItemSelected: (val) => _onMuscleFilterChanged(val == _selectedMuscleGroup ? null : val),
+                  onItemSelected: (val) => _onMuscleFilterChanged(
+                    val == _selectedMuscleGroup ? null : val,
+                  ),
                   selectedItem: _selectedMuscleGroup,
                 ),
                 const SizedBox(width: 8),
@@ -400,7 +478,9 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
                   title: 'Equipment',
                   isSelected: _selectedEquipment != null,
                   items: equipmentList,
-                  onItemSelected: (val) => _onEquipmentFilterChanged(val == _selectedEquipment ? null : val),
+                  onItemSelected: (val) => _onEquipmentFilterChanged(
+                    val == _selectedEquipment ? null : val,
+                  ),
                   selectedItem: _selectedEquipment,
                 ),
                 const SizedBox(width: 8),
@@ -427,13 +507,20 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
     required Function(String) onItemSelected,
     required String? selectedItem,
   }) {
+    final scheme = context.appScheme;
+    final textTheme = context.appText;
+    final appColors = context.appColors;
+    final dividerColor = Theme.of(context).dividerColor;
+
     return PullDownButton(
       itemBuilder: (context) => items
-          .map((item) => PullDownMenuItem.selectable(
-                title: item,
-                selected: selectedItem == item,
-                onTap: () => onItemSelected(item),
-              ))
+          .map(
+            (item) => PullDownMenuItem.selectable(
+              title: item,
+              selected: selectedItem == item,
+              onTap: () => onItemSelected(item),
+            ),
+          )
           .toList(),
       buttonBuilder: (context, showMenu) => CupertinoButton(
         padding: EdgeInsets.zero,
@@ -441,10 +528,10 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected ? AppConstants.ACCENT_COLOR : AppConstants.WORKOUT_BUTTON_BG_COLOR,
+            color: isSelected ? scheme.primary : scheme.surface,
             borderRadius: BorderRadius.circular(16.0),
             border: Border.all(
-              color: isSelected ? AppConstants.ACCENT_COLOR : AppConstants.DIVIDER_COLOR,
+              color: isSelected ? scheme.primary : dividerColor,
               width: 0.5,
             ),
           ),
@@ -453,8 +540,10 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
             children: [
               Text(
                 isSelected ? selectedItem! : title,
-                style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
-                  color: isSelected ? Colors.white : AppConstants.TEXT_SECONDARY_COLOR,
+                style: textTheme.bodyMedium!.copyWith(
+                  color: isSelected
+                      ? scheme.onPrimary
+                      : appColors.textSecondary,
                   fontWeight: isSelected ? FontWeight.w600 : null,
                   fontSize: 13,
                 ),
@@ -463,7 +552,7 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
               Icon(
                 CupertinoIcons.chevron_down,
                 size: 12,
-                color: isSelected ? Colors.white : AppConstants.TEXT_SECONDARY_COLOR,
+                color: isSelected ? scheme.onPrimary : appColors.textSecondary,
               ),
             ],
           ),
@@ -476,23 +565,28 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
     required BuildContext context,
     required bool isSelected,
   }) {
+    final scheme = context.appScheme;
+    final textTheme = context.appText;
+    final appColors = context.appColors;
+    final dividerColor = Theme.of(context).dividerColor;
+
     return CupertinoButton(
       padding: EdgeInsets.zero,
       onPressed: _onBodyWeightFilterChanged,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppConstants.ACCENT_COLOR : AppConstants.WORKOUT_BUTTON_BG_COLOR,
+          color: isSelected ? scheme.primary : scheme.surface,
           borderRadius: BorderRadius.circular(16.0),
           border: Border.all(
-            color: isSelected ? AppConstants.ACCENT_COLOR : AppConstants.DIVIDER_COLOR,
+            color: isSelected ? scheme.primary : dividerColor,
             width: 0.5,
           ),
         ),
         child: Text(
           'Bodyweight',
-          style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
-            color: isSelected ? Colors.white : AppConstants.TEXT_SECONDARY_COLOR,
+          style: textTheme.bodyMedium!.copyWith(
+            color: isSelected ? scheme.onPrimary : appColors.textSecondary,
             fontWeight: isSelected ? FontWeight.w600 : null,
             fontSize: 13,
           ),
@@ -502,13 +596,21 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
   }
 
   Widget _buildTimeframeDropdown(BuildContext context) {
+    final scheme = context.appScheme;
+    final textTheme = context.appText;
+    final appColors = context.appColors;
+    final dividerColor = Theme.of(context).dividerColor;
+
     return PullDownButton(
       itemBuilder: (context) => _timeframeOptions
-          .map((option) => PullDownMenuItem.selectable(
-                title: option['label'],
-                selected: _selectedTimeframe == option['label'],
-                onTap: () => _onTimeframeChanged(option['label'], option['months']),
-              ))
+          .map(
+            (option) => PullDownMenuItem.selectable(
+              title: option['label'],
+              selected: _selectedTimeframe == option['label'],
+              onTap: () =>
+                  _onTimeframeChanged(option['label'], option['months']),
+            ),
+          )
           .toList(),
       buttonBuilder: (context, showMenu) => CupertinoButton(
         padding: EdgeInsets.zero,
@@ -516,26 +618,26 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
           decoration: BoxDecoration(
-            color: AppConstants.WORKOUT_BUTTON_BG_COLOR,
+            color: scheme.surface,
             borderRadius: BorderRadius.circular(8.0),
-            border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
+            border: Border.all(color: dividerColor, width: 0.5),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 _selectedTimeframe,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: textTheme.bodyMedium!.copyWith(
+                  color: appColors.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(
+              Icon(
                 CupertinoIcons.chevron_down,
                 size: 16,
-                color: AppConstants.TEXT_SECONDARY_COLOR,
+                color: appColors.textSecondary,
               ),
             ],
           ),

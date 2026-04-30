@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../constants/app_constants.dart';
+import 'package:flutter/material.dart';
 import '../../models/weekly_bar_data.dart';
 import '../../services/insights_service.dart';
+import '../../theme/app_theme.dart';
 
 class SimpleBarChart extends StatelessWidget {
   final List<WeeklyBarData> weeklyData;
@@ -32,14 +32,24 @@ class SimpleBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final axisLabelStyle = textTheme.bodySmall?.copyWith(
+      color: colors.textTertiary,
+    );
+    final emphasisLabelStyle = textTheme.bodySmall?.copyWith(
+      color: colors.textSecondary,
+    );
+    final tooltipTextStyle =
+        textTheme.bodySmall?.copyWith(color: colorScheme.onSurface) ??
+        AppTextStyles.caption.copyWith(color: colorScheme.onSurface);
+
     if (weeklyData.isEmpty && !onlyAxis) {
-      return const Center(
+      return Center(
         child: Text(
           'No data',
-          style: TextStyle(
-            color: AppConstants.TEXT_TERTIARY_COLOR,
-            fontSize: 13,
-          ),
+          style: textTheme.bodySmall?.copyWith(color: colors.textTertiary),
         ),
       );
     }
@@ -52,14 +62,11 @@ class SimpleBarChart extends StatelessWidget {
         barTouchData: BarTouchData(
           enabled: touchEnabled && !onlyAxis,
           touchTooltipData: BarTouchTooltipData(
-            getTooltipColor: (_) => const Color(0xFF2C2C2E),
+            getTooltipColor: (_) => colors.field,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               return BarTooltipItem(
                 rod.toY.toStringAsFixed(1),
-                const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                tooltipTextStyle,
               );
             },
           ),
@@ -72,11 +79,13 @@ class SimpleBarChart extends StatelessWidget {
               reservedSize: 20,
               getTitlesWidget: (value, meta) {
                 final index = value.toInt();
-                if (index < 0 || index >= weeklyData.length) return const SizedBox.shrink();
-                
+                if (index < 0 || index >= weeklyData.length) {
+                  return const SizedBox.shrink();
+                }
+
                 final currentData = weeklyData[index];
                 final effectiveGrouping = grouping ?? InsightsGrouping.week;
-                
+
                 if (effectiveGrouping == InsightsGrouping.day) {
                   // If few days (1W), show every day
                   if (weeklyData.length <= 8) {
@@ -85,11 +94,7 @@ class SimpleBarChart extends StatelessWidget {
                       meta: meta,
                       child: Text(
                         days[currentData.weekStart.weekday - 1],
-                        style: const TextStyle(
-                          color: AppConstants.TEXT_TERTIARY_COLOR,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: axisLabelStyle,
                       ),
                     );
                   } else {
@@ -99,11 +104,7 @@ class SimpleBarChart extends StatelessWidget {
                         meta: meta,
                         child: Text(
                           "${currentData.weekStart.day}",
-                          style: const TextStyle(
-                            color: AppConstants.TEXT_TERTIARY_COLOR,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: axisLabelStyle,
                         ),
                       );
                     }
@@ -111,36 +112,49 @@ class SimpleBarChart extends StatelessWidget {
                 } else if (effectiveGrouping == InsightsGrouping.week) {
                   // Only show month name for the first week of the month
                   if (currentData.weekStart.day <= 7) {
-                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    const monthNames = [
+                      'Jan',
+                      'Feb',
+                      'Mar',
+                      'Apr',
+                      'May',
+                      'Jun',
+                      'Jul',
+                      'Aug',
+                      'Sep',
+                      'Oct',
+                      'Nov',
+                      'Dec',
+                    ];
                     final label = monthNames[currentData.weekStart.month - 1];
                     return SideTitleWidget(
                       meta: meta,
-                      child: Text(
-                        label,
-                        style: const TextStyle(
-                          color: AppConstants.TEXT_SECONDARY_COLOR,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: Text(label, style: emphasisLabelStyle),
                     );
                   }
                 } else {
                   // Month grouping
                   // Show Jan, May, Sep (every 4 months)
                   if (currentData.weekStart.month % 4 == 1) {
-                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                    final monthName = monthNames[currentData.weekStart.month - 1];
+                    const monthNames = [
+                      'Jan',
+                      'Feb',
+                      'Mar',
+                      'Apr',
+                      'May',
+                      'Jun',
+                      'Jul',
+                      'Aug',
+                      'Sep',
+                      'Oct',
+                      'Nov',
+                      'Dec',
+                    ];
+                    final monthName =
+                        monthNames[currentData.weekStart.month - 1];
                     return SideTitleWidget(
                       meta: meta,
-                      child: Text(
-                        monthName,
-                        style: const TextStyle(
-                          color: AppConstants.TEXT_TERTIARY_COLOR,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: Text(monthName, style: axisLabelStyle),
                     );
                   }
                 }
@@ -154,18 +168,16 @@ class SimpleBarChart extends StatelessWidget {
               reservedSize: 40,
               getTitlesWidget: (value, meta) {
                 if (value == 0) return const SizedBox.shrink();
-                return Text(
-                  value.toInt().toString(),
-                  style: const TextStyle(
-                    color: AppConstants.TEXT_TERTIARY_COLOR,
-                    fontSize: 10,
-                  ),
-                );
+                return Text(value.toInt().toString(), style: axisLabelStyle);
               },
             ),
           ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         gridData: FlGridData(
           show: showGrid && !onlyAxis,
@@ -173,8 +185,8 @@ class SimpleBarChart extends StatelessWidget {
           drawHorizontalLine: true,
           horizontalInterval: maxYValue > 0 ? maxYValue / 4 : 1,
           getDrawingHorizontalLine: (value) {
-            return FlLine(
-              color: AppConstants.DIVIDER_COLOR,
+            return const FlLine(
+              color: AppThemeColors.outline,
               strokeWidth: 0.5,
               dashArray: [5, 5],
             );
@@ -190,8 +202,9 @@ class SimpleBarChart extends StatelessWidget {
     return List.generate(weeklyData.length, (index) {
       final data = weeklyData[index];
       final double effectiveMin = data.minValue;
-      final double effectiveMax = data.maxValue == data.minValue && data.maxValue > 0 
-          ? data.maxValue + (maxYValue * 0.02) 
+      final double effectiveMax =
+          data.maxValue == data.minValue && data.maxValue > 0
+          ? data.maxValue + (maxYValue * 0.02)
           : data.maxValue;
 
       return BarChartGroupData(
@@ -200,13 +213,13 @@ class SimpleBarChart extends StatelessWidget {
           BarChartRodData(
             fromY: effectiveMin,
             toY: effectiveMax,
-            color: color.withOpacity(0.8),
+            color: color,
             width: barWidth ?? (showTitles ? 12 : 6),
             borderRadius: BorderRadius.circular(showTitles ? 4 : 3),
             backDrawRodData: BackgroundBarChartRodData(
               show: true,
               toY: maxYValue,
-              color: color.withOpacity(0.15),
+              color: AppThemeColors.outline,
             ),
           ),
         ],

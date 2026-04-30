@@ -1,10 +1,8 @@
-import 'dart:ui';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../constants/app_constants.dart';
 import '../../services/workout_timeline_grouping_service.dart';
+import '../../theme/app_theme.dart';
 
 class MonthSummaryCard extends StatefulWidget {
   final MonthlyWorkoutGroup group;
@@ -34,9 +32,13 @@ class _MonthSummaryCardState extends State<MonthSummaryCard> {
 
   @override
   Widget build(BuildContext context) {
-    // "Blueprint" Chapter Header styling
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
     final now = DateTime.now();
-    final isCurrentMonth = widget.group.key.year == now.year && widget.group.key.month == now.month;
+    final isCurrentMonth =
+        widget.group.key.year == now.year &&
+        widget.group.key.month == now.month;
     final title = isCurrentMonth ? 'Current Month' : widget.group.key.monthName;
 
     return GestureDetector(
@@ -63,32 +65,32 @@ class _MonthSummaryCardState extends State<MonthSummaryCard> {
               // Title
               Text(
                 title,
-                style: AppConstants.IOS_SUBTITLE_TEXT_STYLE.copyWith(
+                style: textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
                   fontSize: 15,
                 ),
               ),
-              
+
               const Spacer(),
 
               // Stats (Right justified)
               Text(
                 '${widget.group.workoutCount} workouts • ${_formatVolume(widget.group.totalVolume)} kg',
-                style: TextStyle(
-                  color: Colors.grey[600],
+                style: textTheme.bodySmall?.copyWith(
+                  color: colors.textSecondary,
                   fontSize: 12,
-                  fontFamily: 'monospace', // Use monospace if available
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              
+
               const SizedBox(width: 8),
-              
+
               // Chevron
               Icon(
-                widget.isExpanded ? CupertinoIcons.chevron_up : CupertinoIcons.chevron_down,
-                color: AppConstants.ACCENT_COLOR,
+                widget.isExpanded
+                    ? CupertinoIcons.chevron_up
+                    : CupertinoIcons.chevron_down,
+                color: colorScheme.primary,
                 size: 16,
               ),
             ],

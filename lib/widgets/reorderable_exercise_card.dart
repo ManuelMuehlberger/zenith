@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pull_down_button/pull_down_button.dart';
+
+import '../constants/app_constants.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
+import '../screens/exercise_info_screen.dart';
 import '../services/user_service.dart';
 import '../services/workout_session_service.dart';
-import '../screens/exercise_info_screen.dart';
-import '../constants/app_constants.dart';
+import '../theme/app_theme.dart';
 
 class ReorderableExerciseCard extends StatefulWidget {
   final WorkoutExercise exercise;
   final Function(String exerciseId) onAddSet;
   final Function(String exerciseId, String setId) onRemoveSet;
-  final Function(String exerciseId, String setId, {int? reps, double? weight}) onUpdateSet;
+  final Function(String exerciseId, String setId, {int? reps, double? weight})
+  onUpdateSet;
   final VoidCallback? onRemoveExercise;
   final VoidCallback? onDuplicateExercise;
   final bool isBeingDragged;
@@ -33,7 +36,8 @@ class ReorderableExerciseCard extends StatefulWidget {
   });
 
   @override
-  State<ReorderableExerciseCard> createState() => _ReorderableExerciseCardState();
+  State<ReorderableExerciseCard> createState() =>
+      _ReorderableExerciseCardState();
 }
 
 class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
@@ -47,27 +51,25 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
   @override
   void initState() {
     super.initState();
-    
+
     _dragController = AnimationController(
       duration: AppConstants.DRAG_ANIMATION_DURATION,
       vsync: this,
     );
 
-    _dragOpacityAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.7,
-    ).animate(CurvedAnimation(
-      parent: _dragController,
-      curve: AppConstants.DRAG_ANIMATION_CURVE,
-    ));
+    _dragOpacityAnimation = Tween<double>(begin: 1.0, end: 0.7).animate(
+      CurvedAnimation(
+        parent: _dragController,
+        curve: AppConstants.DRAG_ANIMATION_CURVE,
+      ),
+    );
 
-    _dragScaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.95,
-    ).animate(CurvedAnimation(
-      parent: _dragController,
-      curve: AppConstants.DRAG_ANIMATION_CURVE,
-    ));
+    _dragScaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(
+        parent: _dragController,
+        curve: AppConstants.DRAG_ANIMATION_CURVE,
+      ),
+    );
 
     // Initialize animation state
     if (widget.isOtherCardDragging) {
@@ -78,7 +80,7 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
   @override
   void didUpdateWidget(ReorderableExerciseCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     if (widget.isOtherCardDragging != oldWidget.isOtherCardDragging) {
       if (widget.isOtherCardDragging) {
         _dragController.forward();
@@ -98,15 +100,22 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
     super.dispose();
   }
 
-  TextEditingController _getController(String controllerKey, String textToInitializeWith) {
+  TextEditingController _getController(
+    String controllerKey,
+    String textToInitializeWith,
+  ) {
     if (!_controllers.containsKey(controllerKey)) {
-      _controllers[controllerKey] = TextEditingController(text: textToInitializeWith);
+      _controllers[controllerKey] = TextEditingController(
+        text: textToInitializeWith,
+      );
     }
     return _controllers[controllerKey]!;
   }
 
   String get _weightUnit {
-    return UserService.instance.currentProfile?.units == Units.imperial ? 'lbs' : 'kg';
+    return UserService.instance.currentProfile?.units == Units.imperial
+        ? 'lbs'
+        : 'kg';
   }
 
   void _toggleNotesExpansion() {
@@ -121,30 +130,31 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return AnimatedBuilder(
       animation: _dragController,
       builder: (context, child) {
         return Transform.scale(
           scale: _dragScaleAnimation.value,
           child: Opacity(
-            opacity: widget.isBeingDragged ? 0.5 : (_dragOpacityAnimation.value),
+            opacity: widget.isBeingDragged
+                ? 0.5
+                : (_dragOpacityAnimation.value),
             child: Container(
-              margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
+              margin: const EdgeInsets.only(
+                bottom: AppConstants.CARD_VERTICAL_GAP,
+              ),
               decoration: BoxDecoration(
-                color: AppConstants.EXERCISE_CARD_BG_COLOR,
+                color: colors.surfaceAlt,
                 borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
                 border: Border.all(
-                  color: Colors.grey[800]!.withAlpha((255 * 0.15).round()),
+                  color: colors.overlaySoft,
                   width: 1.5,
                   strokeAlign: BorderSide.strokeAlignInside,
                 ),
               ),
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  _buildSetsList(),
-                ],
-              ),
+              child: Column(children: [_buildHeader(), _buildSetsList()]),
             ),
           ),
         );
@@ -153,6 +163,10 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
   }
 
   Widget _buildHeader() {
+    final colors = context.appColors;
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
       child: Column(
@@ -165,9 +179,10 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.exercise.exerciseDetail?.name ?? widget.exercise.exerciseSlug,
-                      style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
-                        color: AppConstants.ACCENT_COLOR,
+                      widget.exercise.exerciseDetail?.name ??
+                          widget.exercise.exerciseSlug,
+                      style: textTheme.titleSmall?.copyWith(
+                        color: colorScheme.primary,
                         fontSize: 20,
                       ),
                     ),
@@ -182,16 +197,21 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
                       onPressed: _toggleNotesExpansion,
                       icon: Icon(
                         _expandedNotes.contains(widget.exerciseIndex)
-                          ? Icons.sticky_note_2
-                          : Icons.sticky_note_2_outlined,
+                            ? Icons.sticky_note_2
+                            : Icons.sticky_note_2_outlined,
                         color: _expandedNotes.contains(widget.exerciseIndex)
-                          ? Colors.amber
-                          : Colors.grey[500],
+                            ? colors.warning
+                            : colors.textTertiary,
                         size: 24,
                       ),
-                      tooltip: _expandedNotes.contains(widget.exerciseIndex) ? 'Hide notes' : 'Show notes',
+                      tooltip: _expandedNotes.contains(widget.exerciseIndex)
+                          ? 'Hide notes'
+                          : 'Show notes',
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                     ),
                   const SizedBox(width: 8),
                   PullDownButton(
@@ -211,11 +231,14 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
                     ],
                     buttonBuilder: (context, showMenu) => IconButton(
                       padding: const EdgeInsets.all(8),
-                      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
                       onPressed: showMenu,
                       icon: Icon(
                         Icons.more_horiz,
-                        color: AppConstants.TEXT_SECONDARY_COLOR,
+                        color: colors.textSecondary,
                         size: 28,
                       ),
                       tooltip: 'Exercise Options',
@@ -227,12 +250,12 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
                     height: 40,
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppConstants.ACCENT_COLOR_ORANGE.withAlpha((255 * 0.2).round()),
+                      color: colors.warning.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.drag_handle,
-                      color: AppConstants.ACCENT_COLOR_ORANGE,
+                      color: colors.warning,
                       size: 24,
                     ),
                   ),
@@ -241,19 +264,20 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
             ],
           ),
           if (_expandedNotes.contains(widget.exerciseIndex) &&
-              widget.exercise.notes != null && widget.exercise.notes!.isNotEmpty) ...[
+              widget.exercise.notes != null &&
+              widget.exercise.notes!.isNotEmpty) ...[
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey[800],
+                color: colors.field,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[600]!, width: 1),
+                border: Border.all(color: colors.textSecondary, width: 1),
               ),
               child: Text(
                 widget.exercise.notes ?? "",
-                style: AppConstants.IOS_SUBTEXT_STYLE,
+                style: textTheme.bodySmall,
               ),
             ),
           ],
@@ -263,7 +287,11 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
   }
 
   Widget _buildSetsList() {
-    final isBodyWeight = widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
+    final isBodyWeight =
+        widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
       child: Column(
@@ -279,7 +307,7 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
                   child: Text(
                     'Reps',
                     textAlign: TextAlign.center,
-                    style: AppConstants.IOS_SUBTEXT_STYLE,
+                    style: textTheme.bodySmall,
                   ),
                 ),
                 if (!isBodyWeight) ...[
@@ -288,7 +316,7 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
                     child: Text(
                       'Weight',
                       textAlign: TextAlign.center,
-                      style: AppConstants.IOS_SUBTEXT_STYLE,
+                      style: textTheme.bodySmall,
                     ),
                   ),
                 ],
@@ -316,7 +344,7 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
                 HapticFeedback.lightImpact();
               },
               style: TextButton.styleFrom(
-                backgroundColor: AppConstants.ACCENT_COLOR.withAlpha((255 * 0.8).round()),
+                backgroundColor: colorScheme.primary.withValues(alpha: 0.8),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -326,12 +354,12 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.add, color: Colors.white, size: 20),
+                  Icon(Icons.add, color: colorScheme.onPrimary, size: 20),
                   const SizedBox(width: 8),
                   Text(
                     'Add Set',
-                    style: AppConstants.HEADER_BUTTON_TEXT_STYLE.copyWith(
-                      color: Colors.white,
+                    style: textTheme.labelLarge?.copyWith(
+                      color: colorScheme.onPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -345,12 +373,16 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
   }
 
   Widget _buildSetRow(WorkoutSet set, int setNumber) {
-    final isBodyWeight = widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
+    final isBodyWeight =
+        widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
+    final colors = context.appColors;
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color: AppThemeColors.clear,
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: Row(
@@ -361,14 +393,14 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
             width: 28,
             height: 42,
             decoration: BoxDecoration(
-              color: Colors.grey[700],
+              color: colors.field,
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
                 setNumber.toString(),
-                style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
-                  color: AppConstants.TEXT_PRIMARY_COLOR,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.textPrimary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -379,10 +411,16 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
           Expanded(
             child: _buildSetInput(
               controllerKey: '${widget.exercise.id}_${set.id}_reps',
-              initialText: (set.targetReps ?? 0) > 0 ? set.targetReps.toString() : "",
+              initialText: (set.targetReps ?? 0) > 0
+                  ? set.targetReps.toString()
+                  : "",
               onChanged: (value) {
                 final reps = int.tryParse(value);
-                widget.onUpdateSet(widget.exercise.id, set.id, reps: reps ?? (value.isEmpty ? 0 : null));
+                widget.onUpdateSet(
+                  widget.exercise.id,
+                  set.id,
+                  reps: reps ?? (value.isEmpty ? 0 : null),
+                );
               },
             ),
           ),
@@ -392,12 +430,18 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
             Expanded(
               child: _buildSetInput(
                 controllerKey: '${widget.exercise.id}_${set.id}_weight',
-                initialText: (set.targetWeight ?? 0.0) > 0.0 
-                    ? WorkoutSessionService.instance.formatWeight(set.targetWeight!) 
+                initialText: (set.targetWeight ?? 0.0) > 0.0
+                    ? WorkoutSessionService.instance.formatWeight(
+                        set.targetWeight!,
+                      )
                     : "",
                 onChanged: (value) {
                   final weight = double.tryParse(value);
-                  widget.onUpdateSet(widget.exercise.id, set.id, weight: weight ?? (value.isEmpty ? 0.0 : null));
+                  widget.onUpdateSet(
+                    widget.exercise.id,
+                    set.id,
+                    weight: weight ?? (value.isEmpty ? 0.0 : null),
+                  );
                 },
                 showWeightSuffix: true,
               ),
@@ -410,7 +454,11 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
             height: 32,
             child: IconButton(
               padding: EdgeInsets.zero,
-              icon: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 24),
+              icon: Icon(
+                Icons.remove_circle_outline,
+                color: colorScheme.error,
+                size: 24,
+              ),
               onPressed: () {
                 widget.onRemoveSet(widget.exercise.id, set.id);
                 HapticFeedback.lightImpact();
@@ -428,23 +476,25 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
     required Function(String) onChanged,
     bool showWeightSuffix = false,
   }) {
+    final colors = context.appColors;
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+
     return TextField(
       controller: _getController(controllerKey, initialText),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
         FilteringTextInputFormatter.allow(
-          showWeightSuffix ? RegExp(r'^\d*\.?\d{0,2}') : RegExp(r'^\d*')
-        )
+          showWeightSuffix ? RegExp(r'^\d*\.?\d{0,2}') : RegExp(r'^\d*'),
+        ),
       ],
       textAlign: TextAlign.center,
-      style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
-        color: AppConstants.TEXT_PRIMARY_COLOR,
-      ),
+      style: textTheme.titleSmall?.copyWith(color: colors.textPrimary),
       decoration: InputDecoration(
         filled: true,
-        fillColor: Colors.grey[800]!.withAlpha((255 * 0.5).round()),
+        fillColor: colors.field.withValues(alpha: 0.5),
         suffixText: showWeightSuffix ? _weightUnit : null,
-        suffixStyle: AppConstants.IOS_SUBTEXT_STYLE,
+        suffixStyle: textTheme.bodySmall,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide.none,
@@ -456,11 +506,14 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-            color: Colors.blue.withAlpha((255 * 0.5).round()),
+            color: colorScheme.primary.withValues(alpha: 0.5),
             width: 1,
           ),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
       ),
       onChanged: onChanged,
       onTap: () {
@@ -484,15 +537,16 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ExerciseInfoScreen(
-            exercise: widget.exercise.exerciseDetail!,
-          ),
+          builder: (context) =>
+              ExerciseInfoScreen(exercise: widget.exercise.exerciseDetail!),
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Exercise details not available for ${widget.exercise.exerciseSlug}'),
+          content: Text(
+            'Exercise details not available for ${widget.exercise.exerciseSlug}',
+          ),
         ),
       );
     }

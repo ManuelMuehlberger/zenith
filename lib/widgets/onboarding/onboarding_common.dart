@@ -61,8 +61,6 @@ class OnboardingNavigationButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = context.appText;
-
     return Column(
       children: [
         SizedBox(
@@ -70,7 +68,7 @@ class OnboardingNavigationButtons extends StatelessWidget {
           height: 56,
           child: FilledButton(
             onPressed: canContinue ? onNext : null,
-            child: Text('Continue', style: textTheme.titleMedium),
+            child: const Text('Continue'),
           ),
         ),
         if (onBack != null) ...[
@@ -78,15 +76,7 @@ class OnboardingNavigationButtons extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             height: 56,
-            child: TextButton(
-              onPressed: onBack,
-              child: Text(
-                'Back',
-                style: textTheme.titleMedium?.copyWith(
-                  color: context.appScheme.onSurface.withValues(alpha: 0.72),
-                ),
-              ),
-            ),
+            child: TextButton(onPressed: onBack, child: const Text('Back')),
           ),
         ],
       ],
