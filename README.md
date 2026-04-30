@@ -14,3 +14,16 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+## Git Hooks
+
+This repo includes versioned git hooks in `.githooks/`.
+
+Run this once after cloning:
+
+```sh
+git config core.hooksPath .githooks
+```
+
+The hooks lint only changed `.dart` files so they stay usable while the wider
+codebase still has unrelated analyzer findings.
