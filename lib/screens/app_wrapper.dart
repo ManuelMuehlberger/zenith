@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import 'onboarding_screen.dart';
-import '../services/user_service.dart';
-import '../services/app_startup_service.dart';
 import '../main.dart';
+import '../services/app_startup_service.dart';
+import '../services/user_service.dart';
+import '../theme/app_theme.dart';
+import 'onboarding_screen.dart';
 
 class AppWrapper extends StatefulWidget {
   const AppWrapper({super.key, this.onboardingStatusLoader, this.bootstrapApp});
@@ -123,15 +124,23 @@ class _AppLoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(color: Colors.blue),
+            CircularProgressIndicator(color: colorScheme.primary),
             const SizedBox(height: 16),
-            Text(message, style: const TextStyle(color: Colors.white70)),
+            Text(
+              message,
+              style: textTheme.bodyMedium?.copyWith(
+                color: context.appColors.textTertiary,
+              ),
+            ),
           ],
         ),
       ),
@@ -147,28 +156,28 @@ class _AppStartupErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = context.appText;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 'The app could not finish starting up.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: textTheme.titleMedium,
               ),
               const SizedBox(height: 12),
               Text(
                 error?.toString() ?? 'Unknown startup error',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: context.appColors.textTertiary,
+                ),
               ),
               const SizedBox(height: 20),
               FilledButton(onPressed: onRetry, child: const Text('Retry')),

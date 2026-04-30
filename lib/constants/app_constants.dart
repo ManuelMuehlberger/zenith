@@ -1,6 +1,7 @@
- // ignore_for_file: constant_identifier_names
+// ignore_for_file: constant_identifier_names
 
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 /// Application-wide constants and enums
 class AppConstants {
@@ -18,10 +19,14 @@ class AppConstants {
   static const Units DEFAULT_UNITS = Units.metric;
 
   /// Spacing constants (unify card/list spacing across the app)
-  static const double CARD_VERTICAL_GAP = 12.0; // Gap between cards/items in lists
-  static const double SECTION_VERTICAL_GAP = 16.0; // Gap between sections/headers and lists
-  static const double ITEM_HORIZONTAL_GAP = 16.0; // Standard horizontal gap between icon/text
-  static const double SCROLL_HYSTERESIS_THRESHOLD = 150.0; // Scroll distance to trigger animations
+  static const double CARD_VERTICAL_GAP =
+      12.0; // Gap between cards/items in lists
+  static const double SECTION_VERTICAL_GAP =
+      16.0; // Gap between sections/headers and lists
+  static const double ITEM_HORIZONTAL_GAP =
+      16.0; // Standard horizontal gap between icon/text
+  static const double SCROLL_HYSTERESIS_THRESHOLD =
+      150.0; // Scroll distance to trigger animations
 
   /// Drag and Drop animations
   static const Duration DRAG_ANIMATION_DURATION = Duration(milliseconds: 200);
@@ -29,181 +34,115 @@ class AppConstants {
   static const double DRAG_ITEM_LIFT_SCALE = 1.05;
 
   /// iOS-style UI metrics
-  static const double CARD_RADIUS = 12.0; // Standard corner radius for cards/containers
-  static const double SHEET_RADIUS = 20.0; // Corner radius for bottom sheets/action sheets
-  static const double HEADER_EXTRA_HEIGHT = 60.0; // Extra header height below toolbar for controls
-  static const double HEADER_BLUR_SIGMA = 10.0; // Blur intensity for translucent headers
-  static const double PAGE_HORIZONTAL_PADDING = 16.0; // Standard page horizontal padding
-  static const double CARD_PADDING = 16.0; // Standard internal padding for cards/containers
+  static const double CARD_RADIUS =
+      12.0; // Standard corner radius for cards/containers
+  static const double SHEET_RADIUS =
+      20.0; // Corner radius for bottom sheets/action sheets
+  static const double HEADER_EXTRA_HEIGHT =
+      60.0; // Extra header height below toolbar for controls
+  static const double HEADER_BLUR_SIGMA =
+      10.0; // Blur intensity for translucent headers
+  static const double PAGE_HORIZONTAL_PADDING =
+      16.0; // Standard page horizontal padding
+  static const double CARD_PADDING =
+      16.0; // Standard internal padding for cards/containers
 
   // Glass header constants
-  static const double GLASS_BLUR_SIGMA = HEADER_BLUR_SIGMA; // Alias for consistency with "glass" components
-  static const Color HEADER_BG_COLOR_STRONG = Color(0xCC000000); // 80% black for strong glass headers
-  static const Color HEADER_BG_COLOR_MEDIUM = Color(0x8A000000); // ~54% black (like Colors.black54) for lighter headers
-  static const Color BOTTOM_BAR_BG_COLOR = Color(0x33000000); // ~20% black to keep blur clearly visible through content
-  static const double HEADER_STROKE_WIDTH = 0.5; // Thin separator stroke width for headers (if used)
-  static const Color HEADER_STROKE_COLOR = Color(0x59FFFFFF); // ~35% white stroke for subtle borders
+  static const double GLASS_BLUR_SIGMA =
+      HEADER_BLUR_SIGMA; // Alias for consistency with "glass" components
+  static const Color HEADER_BG_COLOR_STRONG = AppThemeColors.overlayStrong;
+  static const Color HEADER_BG_COLOR_MEDIUM = AppThemeColors.overlayMedium;
+  static const Color BOTTOM_BAR_BG_COLOR = AppThemeColors.overlaySoft;
+  static const double HEADER_STROKE_WIDTH =
+      0.5; // Thin separator stroke width for headers (if used)
+  static const Color HEADER_STROKE_COLOR = AppThemeColors.outline;
 
   // Card visual constants
   // Background: consistent dark surface for all cards (matching home screen)
-  static const Color CARD_BG_COLOR = Color(0xFF212121); // Colors.grey[900] equivalent
+  static const Color CARD_BG_COLOR = AppThemeColors.surface;
   // Exercise card background color to match home screen cards
-  static const Color EXERCISE_CARD_BG_COLOR = Color(0xFF1A1A1A); // Dark grey matching home screen
+  static const Color EXERCISE_CARD_BG_COLOR = AppThemeColors.surfaceAlt;
   // Subtle hairline stroke for glass/dark iOS aesthetics
   static const double CARD_STROKE_WIDTH = 0.5;
   static const Color CARD_STROKE_COLOR = HEADER_STROKE_COLOR;
 
-  // Header text styles (shared across screens)
-  static const double HEADER_TITLE_FONT_SIZE = 24.0;
-  static const FontWeight HEADER_TITLE_FONT_WEIGHT = FontWeight.bold;
-  static const Color HEADER_TITLE_COLOR = Color(0xFFFFFFFF);
-  static const TextStyle HEADER_TITLE_TEXT_STYLE = TextStyle(
-    fontSize: HEADER_TITLE_FONT_SIZE,
-    fontWeight: HEADER_TITLE_FONT_WEIGHT,
-    color: HEADER_TITLE_COLOR,
-  );
+  static const Color HEADER_TITLE_COLOR = AppThemeColors.textPrimary;
 
-  // Small header title (collapsed app bar)
-  static const double HEADER_SMALL_TITLE_FONT_SIZE = 18.0;
-  static const FontWeight HEADER_SMALL_TITLE_FONT_WEIGHT = FontWeight.w600;
-  static const TextStyle HEADER_SMALL_TITLE_TEXT_STYLE = TextStyle(
-    fontSize: HEADER_SMALL_TITLE_FONT_SIZE,
-    fontWeight: HEADER_SMALL_TITLE_FONT_WEIGHT,
-    color: HEADER_TITLE_COLOR,
-  );
+  static const Color TEXT_PRIMARY_COLOR = AppThemeColors.textPrimary;
+  static const Color TEXT_SECONDARY_COLOR = AppThemeColors.textSecondary;
+  static const Color TEXT_TERTIARY_COLOR = AppThemeColors.textTertiary;
 
-  // Large header title (expanded app bar)
-  static const double HEADER_LARGE_TITLE_FONT_SIZE = 34.0;
-  static const FontWeight HEADER_LARGE_TITLE_FONT_WEIGHT = FontWeight.w700;
-  static const TextStyle HEADER_LARGE_TITLE_TEXT_STYLE = TextStyle(
-    fontSize: HEADER_LARGE_TITLE_FONT_SIZE,
-    fontWeight: HEADER_LARGE_TITLE_FONT_WEIGHT,
-    color: HEADER_TITLE_COLOR,
-  );
-
-  // Extra large bold title (for workout names and prominent headers)
-  static const double HEADER_EXTRA_LARGE_TITLE_FONT_SIZE = 32.0;
-  static const FontWeight HEADER_EXTRA_LARGE_TITLE_FONT_WEIGHT = FontWeight.w800;
-  static const TextStyle HEADER_EXTRA_LARGE_TITLE_TEXT_STYLE = TextStyle(
-    fontSize: HEADER_EXTRA_LARGE_TITLE_FONT_SIZE,
-    fontWeight: HEADER_EXTRA_LARGE_TITLE_FONT_WEIGHT,
-    color: HEADER_TITLE_COLOR,
-  );
-
-  // Super large ultra bold title (for very prominent headers)
-  static const double HEADER_SUPER_LARGE_TITLE_FONT_SIZE = 36.0;
-  static const FontWeight HEADER_SUPER_LARGE_TITLE_FONT_WEIGHT = FontWeight.w900;
-  static const TextStyle HEADER_SUPER_LARGE_TITLE_TEXT_STYLE = TextStyle(
-    fontSize: HEADER_SUPER_LARGE_TITLE_FONT_SIZE,
-    fontWeight: HEADER_SUPER_LARGE_TITLE_FONT_WEIGHT,
-    color: HEADER_TITLE_COLOR,
-  );
-
-  // iOS-centric text styles for content
-  static const Color TEXT_PRIMARY_COLOR = Color(0xFFFFFFFF);
-  static const Color TEXT_SECONDARY_COLOR = Color(0xFFB0B0B0);
-  static const Color TEXT_TERTIARY_COLOR = Color(0xFF8A8A8A);
-
-  // Accent color used throughout the app
-  static const Color ACCENT_COLOR = Color.fromARGB(255, 16, 223, 226); // Standard iOS blue
-  static const Color ACCENT_COLOR_GREEN = Colors.green;
-  static const Color ACCENT_COLOR_ORANGE = Colors.orange;
+  static const Color ACCENT_COLOR = AppThemeColors.accent;
+  static const Color ACCENT_COLOR_GREEN = AppThemeColors.success;
+  static const Color ACCENT_COLOR_ORANGE = AppThemeColors.warning;
 
   // UI element colors
-  static const Color DIVIDER_COLOR = Color(0xFF424242); // Colors.grey[800]
-  static const Color WORKOUT_BUTTON_BG_COLOR = Color(0xFF222222);
-  static const Color FINISH_BUTTON_BG_COLOR = Color.fromARGB(255, 10, 18, 9);
+  static const Color DIVIDER_COLOR = AppThemeColors.outline;
+  static const Color WORKOUT_BUTTON_BG_COLOR = AppThemeColors.surface;
+  static const Color FINISH_BUTTON_BG_COLOR = AppThemeColors.surfaceAlt;
 
-  // Titles used in list items and section headers (e.g., exercise names)
+  static const double HEADER_TITLE_FONT_SIZE = 28.0;
+  static const FontWeight HEADER_TITLE_FONT_WEIGHT = FontWeight.w700;
+  static const TextStyle HEADER_TITLE_TEXT_STYLE = AppTextStyles.headline;
+
+  static const double HEADER_SMALL_TITLE_FONT_SIZE = 20.0;
+  static const FontWeight HEADER_SMALL_TITLE_FONT_WEIGHT = FontWeight.w600;
+  static const TextStyle HEADER_SMALL_TITLE_TEXT_STYLE =
+      AppTextStyles.appBarTitle;
+
+  static const double HEADER_LARGE_TITLE_FONT_SIZE = 32.0;
+  static const FontWeight HEADER_LARGE_TITLE_FONT_WEIGHT = FontWeight.w700;
+  static const TextStyle HEADER_LARGE_TITLE_TEXT_STYLE = AppTextStyles.display;
+
+  static const double HEADER_EXTRA_LARGE_TITLE_FONT_SIZE = 32.0;
+  static const FontWeight HEADER_EXTRA_LARGE_TITLE_FONT_WEIGHT =
+      FontWeight.w800;
+  static const TextStyle HEADER_EXTRA_LARGE_TITLE_TEXT_STYLE =
+      AppTextStyles.display;
+
+  static const double HEADER_SUPER_LARGE_TITLE_FONT_SIZE = 36.0;
+  static const FontWeight HEADER_SUPER_LARGE_TITLE_FONT_WEIGHT =
+      FontWeight.w800;
+  static const TextStyle HEADER_SUPER_LARGE_TITLE_TEXT_STYLE =
+      AppTextStyles.hero;
+
   static const double IOS_TITLE_FONT_SIZE = 18.0;
   static const FontWeight IOS_TITLE_FONT_WEIGHT = FontWeight.w600;
-  static const TextStyle IOS_TITLE_TEXT_STYLE = TextStyle(
-    fontSize: IOS_TITLE_FONT_SIZE,
-    fontWeight: IOS_TITLE_FONT_WEIGHT,
-    color: TEXT_PRIMARY_COLOR,
-  );
+  static const TextStyle IOS_TITLE_TEXT_STYLE = AppTextStyles.sectionTitle;
 
-  // Default body text for iOS
-  static const double IOS_BODY_FONT_SIZE = 17.0;
+  static const double IOS_BODY_FONT_SIZE = 16.0;
   static const FontWeight IOS_BODY_FONT_WEIGHT = FontWeight.w400;
-  static const TextStyle IOS_BODY_TEXT_STYLE = TextStyle(
-    fontSize: IOS_BODY_FONT_SIZE,
-    fontWeight: IOS_BODY_FONT_WEIGHT,
-    color: TEXT_PRIMARY_COLOR,
-  );
+  static const TextStyle IOS_BODY_TEXT_STYLE = AppTextStyles.body;
 
-  // Hint text style for text fields
-  static const TextStyle IOS_HINT_TEXT_STYLE = TextStyle(
-    fontSize: IOS_BODY_FONT_SIZE,
-    fontWeight: IOS_BODY_FONT_WEIGHT,
-    color: TEXT_SECONDARY_COLOR,
-  );
+  static const TextStyle IOS_HINT_TEXT_STYLE = AppTextStyles.bodySecondary;
 
-  // Secondary/label text (e.g., chips, meta)
-  static const double IOS_LABEL_FONT_SIZE = 13.0;
+  static const double IOS_LABEL_FONT_SIZE = 14.0;
   static const FontWeight IOS_LABEL_FONT_WEIGHT = FontWeight.w500;
-  static const TextStyle IOS_LABEL_TEXT_STYLE = TextStyle(
-    fontSize: IOS_LABEL_FONT_SIZE,
-    fontWeight: IOS_LABEL_FONT_WEIGHT,
-    color: TEXT_SECONDARY_COLOR,
-  );
+  static const TextStyle IOS_LABEL_TEXT_STYLE = AppTextStyles.label;
 
-  // Normal text style for general purpose
   static const double IOS_NORMAL_FONT_SIZE = 15.0;
-  static const FontWeight IOS_NORMAL_FONT_WEIGHT = FontWeight.w500;
-  static const TextStyle IOS_NORMAL_TEXT_STYLE = TextStyle(
-    fontSize: IOS_NORMAL_FONT_SIZE,
-    fontWeight: IOS_NORMAL_FONT_WEIGHT,
-    color: TEXT_SECONDARY_COLOR,
-  );
+  static const FontWeight IOS_NORMAL_FONT_WEIGHT = FontWeight.w400;
+  static const TextStyle IOS_NORMAL_TEXT_STYLE = AppTextStyles.bodySecondary;
 
-  // Subtitle text style (e.g., for workout details)
   static const double IOS_SUBTITLE_FONT_SIZE = 15.0;
   static const FontWeight IOS_SUBTITLE_FONT_WEIGHT = FontWeight.w400;
-  static const TextStyle IOS_SUBTITLE_TEXT_STYLE = TextStyle(
-    fontSize: IOS_SUBTITLE_FONT_SIZE,
-    fontWeight: IOS_SUBTITLE_FONT_WEIGHT,
-    color: TEXT_SECONDARY_COLOR,
-  );
+  static const TextStyle IOS_SUBTITLE_TEXT_STYLE = AppTextStyles.bodySecondary;
 
-  // Subtitle text style with accent color
-  static const TextStyle IOS_SUBTITLE_ACCENT_TEXT_STYLE = TextStyle(
-    fontSize: IOS_SUBTITLE_FONT_SIZE,
-    fontWeight: IOS_SUBTITLE_FONT_WEIGHT,
-    color: ACCENT_COLOR,
-  );
+  static const TextStyle IOS_SUBTITLE_ACCENT_TEXT_STYLE = AppTextStyles.action;
 
-  // Subtext style (smaller, grayer)
   static const double IOS_SUBTEXT_FONT_SIZE = 13.0;
   static const FontWeight IOS_SUBTEXT_FONT_WEIGHT = FontWeight.w400;
-  static const TextStyle IOS_SUBTEXT_STYLE = TextStyle(
-    fontSize: IOS_SUBTEXT_FONT_SIZE,
-    fontWeight: IOS_SUBTEXT_FONT_WEIGHT,
-    color: TEXT_TERTIARY_COLOR,
-  );
+  static const TextStyle IOS_SUBTEXT_STYLE = AppTextStyles.caption;
 
-  // Card-specific text styles
-  static const TextStyle CARD_TITLE_TEXT_STYLE = TextStyle(
-    fontSize: 17.0,
-    fontWeight: FontWeight.w600,
-    color: TEXT_PRIMARY_COLOR,
-  );
+  static const TextStyle CARD_TITLE_TEXT_STYLE = AppTextStyles.sectionTitle;
 
-  static const TextStyle CARD_SUBTITLE_TEXT_STYLE = TextStyle(
-    fontSize: 15.0,
-    fontWeight: FontWeight.w400,
-    color: TEXT_SECONDARY_COLOR,
-  );
+  static const TextStyle CARD_SUBTITLE_TEXT_STYLE = AppTextStyles.bodySecondary;
 
   // Button and action text constants
   static const String BACK_BUTTON_TOOLTIP = 'Back';
   static const String SELECT_EXERCISE_TITLE = 'Select Exercise';
   static const String DONE_BUTTON_TEXT = 'Done';
-  static const TextStyle HEADER_BUTTON_TEXT_STYLE = TextStyle(
-    color: ACCENT_COLOR,
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-  );
+  static const TextStyle HEADER_BUTTON_TEXT_STYLE = AppTextStyles.action;
 
   // Active Workout Screen specific text styles
   static const TextStyle WORKOUT_HEADER_PROGRESS_TEXT_STYLE = TextStyle(
@@ -211,7 +150,6 @@ class AppConstants {
     fontSize: 11,
     fontWeight: FontWeight.w600,
   );
-
 }
 
 /// Supported measurement units
@@ -317,7 +255,10 @@ class WorkoutIconItem {
     this.icon,
     this.emoji,
     required this.name,
-  }) : assert(icon != null || emoji != null, 'Either icon or emoji must be provided');
+  }) : assert(
+         icon != null || emoji != null,
+         'Either icon or emoji must be provided',
+       );
 
   bool get isEmoji => emoji != null;
   bool get isIcon => icon != null;
@@ -327,16 +268,32 @@ class WorkoutIconItem {
 class WorkoutIcons {
   static const List<WorkoutIconItem> items = [
     // Core workout icons (reduced to most relevant)
-    WorkoutIconItem(id: 'fitness_center', icon: Icons.fitness_center, name: 'Fitness'),
+    WorkoutIconItem(
+      id: 'fitness_center',
+      icon: Icons.fitness_center,
+      name: 'Fitness',
+    ),
     WorkoutIconItem(id: 'bolt', icon: Icons.bolt, name: 'Power'),
-    WorkoutIconItem(id: 'local_fire_department', icon: Icons.local_fire_department, name: 'Burn'),
+    WorkoutIconItem(
+      id: 'local_fire_department',
+      icon: Icons.local_fire_department,
+      name: 'Burn',
+    ),
     WorkoutIconItem(id: 'favorite', icon: Icons.favorite, name: 'Heart'),
     WorkoutIconItem(id: 'star', icon: Icons.star, name: 'Star'),
-    
+
     // Body part icons
-    WorkoutIconItem(id: 'accessibility_new', icon: Icons.accessibility_new, name: 'Full Body'),
-    WorkoutIconItem(id: 'directions_walk', icon: Icons.directions_walk, name: 'Legs'),
-    
+    WorkoutIconItem(
+      id: 'accessibility_new',
+      icon: Icons.accessibility_new,
+      name: 'Full Body',
+    ),
+    WorkoutIconItem(
+      id: 'directions_walk',
+      icon: Icons.directions_walk,
+      name: 'Legs',
+    ),
+
     // Workout-relevant emojis
     WorkoutIconItem(id: 'muscle', emoji: '💪', name: 'Muscle'),
     WorkoutIconItem(id: 'fire', emoji: '🔥', name: 'Fire'),
@@ -387,7 +344,7 @@ class WorkoutIcons {
   /// Convert from legacy icon code point to WorkoutIconItem
   static WorkoutIconItem fromCodePoint(int? codePoint) {
     if (codePoint == null) return defaultItem;
-    
+
     for (final item in items) {
       if (item.icon?.codePoint == codePoint) {
         return item;
@@ -399,7 +356,7 @@ class WorkoutIcons {
   /// Get IconData from code point, ensuring const invocation for tree shaking
   static IconData getIconDataFromCodePoint(int? codePoint) {
     if (codePoint == null) return Icons.fitness_center;
-    
+
     // Check WorkoutIcons.items first
     for (final item in items) {
       if (item.icon?.codePoint == codePoint) {

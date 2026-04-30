@@ -1,15 +1,18 @@
+import 'dart:ui';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
-import 'screens/home_screen.dart';
-import 'screens/workout_builder_screen.dart';
-import 'screens/insights_screen.dart';
+
+import 'constants/app_constants.dart';
 import 'screens/app_wrapper.dart';
+import 'screens/home_screen.dart';
+import 'screens/insights_screen.dart';
+import 'screens/workout_builder_screen.dart';
 import 'services/app_navigation_service.dart';
 import 'services/workout_session_service.dart';
-import 'dart:ui';
-import 'constants/app_constants.dart';
+import 'theme/app_theme.dart';
 import 'utils/app_logger.dart';
 
 void main() {
@@ -29,34 +32,9 @@ class WorkoutTrackerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Workout Tracker',
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.dark,
-          surface: Colors.black,
-        ),
-        scaffoldBackgroundColor: Colors.black,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-          elevation: 0,
+      theme: AppTheme.dark.copyWith(
+        appBarTheme: AppTheme.dark.appBarTheme.copyWith(
           systemOverlayStyle: SystemUiOverlayStyle.light,
-        ),
-        bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          backgroundColor: Colors.transparent,
-          selectedItemColor: Colors.blue,
-          unselectedItemColor: Colors.grey,
-          type: BottomNavigationBarType.fixed,
-        ),
-        cardTheme: CardThemeData(color: Colors.grey[900], elevation: 2),
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(color: Colors.white),
-          bodyMedium: TextStyle(color: Colors.white),
-          titleLarge: TextStyle(color: Colors.white),
-          titleMedium: TextStyle(color: Colors.white),
-          titleSmall: TextStyle(color: Colors.white),
         ),
       ),
       home: const AppWrapper(),
@@ -75,8 +53,8 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   List<Widget> get _screens => const [
     HomeScreen(),
-    const WorkoutBuilderScreen(),
-    const InsightsScreen(),
+    WorkoutBuilderScreen(),
+    InsightsScreen(),
   ];
 
   @override
@@ -111,7 +89,7 @@ class _MainScreenState extends State<MainScreen> {
                 sigmaY: AppConstants.GLASS_BLUR_SIGMA,
               ),
               child: Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: AppConstants.BOTTOM_BAR_BG_COLOR,
                   border: Border(
                     top: BorderSide(

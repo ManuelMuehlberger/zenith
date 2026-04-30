@@ -1,14 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import '../services/user_service.dart';
-import '../services/export_import_service.dart';
+
+import '../constants/app_constants.dart';
 import '../models/user_data.dart';
 import '../screens/app_wrapper.dart';
-import '../widgets/onboarding/welcome_page.dart';
-import '../widgets/onboarding/profile_setup_pages.dart';
+import '../services/export_import_service.dart';
+import '../services/user_service.dart';
 import '../widgets/onboarding/completion_page.dart';
-import '../constants/app_constants.dart';
+import '../widgets/onboarding/profile_setup_pages.dart';
+import '../widgets/onboarding/welcome_page.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -49,7 +52,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: PageView(
           controller: _pageController,
@@ -130,18 +133,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _handleRestoreBackup() async {
     _logger.info('Starting onboarding backup restore flow');
     //full-screen loading indicator
-    showCupertinoModalPopup(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const CupertinoAlertDialog(
-          title: Text('Restoring Backup'),
-          content: Padding(
-            padding: EdgeInsets.only(top: 20.0),
-            child: CupertinoActivityIndicator(radius: 15.0),
-          ),
-        );
-      },
+    unawaited(
+      showCupertinoModalPopup(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const CupertinoAlertDialog(
+            title: Text('Restoring Backup'),
+            content: Padding(
+              padding: EdgeInsets.only(top: 20.0),
+              child: CupertinoActivityIndicator(radius: 15.0),
+            ),
+          );
+        },
+      ),
     );
 
     try {
@@ -158,9 +163,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         // If a profile exists, isOnboardingComplete will be true.
 
         if (mounted) {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const AppWrapper()),
-            (Route<dynamic> route) => false, // Remove all previous routes
+          unawaited(
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const AppWrapper()),
+              (Route<dynamic> route) => false,
+            ),
           );
         }
       } else {
@@ -192,18 +199,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _logger.info(
       'Completing onboarding with name=${_nameController.text.trim()} age=$_age units=$_units',
     );
-    showCupertinoModalPopup(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return const CupertinoAlertDialog(
-          title: Text('Setting up your profile...'),
-          content: Padding(
-            padding: EdgeInsets.only(top: 20.0),
-            child: CupertinoActivityIndicator(radius: 15.0),
-          ),
-        );
-      },
+    unawaited(
+      showCupertinoModalPopup(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const CupertinoAlertDialog(
+            title: Text('Setting up your profile...'),
+            content: Padding(
+              padding: EdgeInsets.only(top: 20.0),
+              child: CupertinoActivityIndicator(radius: 15.0),
+            ),
+          );
+        },
+      ),
     );
 
     try {
@@ -226,9 +235,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _logger.info('Onboarding completed successfully for ${profile.name}');
       if (mounted) {
         Navigator.of(context).pop();
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const AppWrapper()),
-          (Route<dynamic> route) => false, // Remove all previous routes
+        unawaited(
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const AppWrapper()),
+            (Route<dynamic> route) => false,
+          ),
         );
       }
     } catch (e, stackTrace) {

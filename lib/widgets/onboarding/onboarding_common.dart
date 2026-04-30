@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 
 class OnboardingProgressIndicator extends StatelessWidget {
   final int current;
@@ -14,11 +15,13 @@ class OnboardingProgressIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+
     return Row(
       children: [
         IconButton(
           onPressed: onBack,
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios, color: colorScheme.onSurface),
         ),
         Expanded(
           child: Row(
@@ -29,7 +32,9 @@ class OnboardingProgressIndicator extends StatelessWidget {
                 width: 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: index < current ? Colors.blue : Colors.grey[700],
+                  color: index < current
+                      ? colorScheme.primary
+                      : context.appColors.textTertiary,
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
@@ -56,28 +61,16 @@ class OnboardingNavigationButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = context.appText;
+
     return Column(
       children: [
         SizedBox(
           width: double.infinity,
           height: 56,
-          child: ElevatedButton(
+          child: FilledButton(
             onPressed: canContinue ? onNext : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 0,
-            ),
-            child: const Text(
-              'Continue',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child: Text('Continue', style: textTheme.titleMedium),
           ),
         ),
         if (onBack != null) ...[
@@ -87,17 +80,10 @@ class OnboardingNavigationButtons extends StatelessWidget {
             height: 56,
             child: TextButton(
               onPressed: onBack,
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey[400],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Text(
+              child: Text(
                 'Back',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
+                style: textTheme.titleMedium?.copyWith(
+                  color: context.appScheme.onSurface.withValues(alpha: 0.72),
                 ),
               ),
             ),
