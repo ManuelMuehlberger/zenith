@@ -65,7 +65,11 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
       
       if (mounted) {
         setState(() {
-          _data = _trimData(data);
+          if (timeframe == 'All') {
+            _data = _trimData(data);
+          } else {
+            _data = data;
+          }
           _isLoading = false;
         });
       }
@@ -145,6 +149,10 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
         if (_isLoading) return const Center(child: CupertinoActivityIndicator());
         final weeklyData = _prepareWeeklyData(data);
         final maxY = _calculateMaxY(weeklyData);
+        
+        final timeframe = widget.filters['timeframe'] ?? '6M';
+        final grouping = InsightsService.getGroupingForTimeframe(timeframe);
+
         return SimpleBarChart(
           weeklyData: weeklyData,
           maxYValue: maxY,
@@ -152,6 +160,7 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
           showTitles: false,
           showGrid: false,
           showBorder: false,
+          grouping: grouping,
         );
       },
       expandedContentBuilder: (context, data, timeframe, months) {

@@ -5,6 +5,7 @@ import '../models/workout_set.dart';
 import '../services/workout_session_service.dart';
 import '../screens/exercise_info_screen.dart';
 import '../constants/app_constants.dart';
+import '../utils/weight_text_input_formatter.dart';
 
 class ReorderableActiveExerciseCard extends StatefulWidget {
   final WorkoutExercise exercise;
@@ -442,6 +443,22 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
     );
   }
 
+  int _decimalPlacesFor(double value) {
+    // Keep up to 2 decimals, but don't force trailing zeros (e.g. 100 -> "100", 30.5 -> "30.5").
+    final scaled = (value * 100).round();
+    if (scaled % 100 == 0) return 0;
+    if (scaled % 10 == 0) return 1;
+    return 2;
+  }
+
+  String _formatGoalValue(String? goalValue) {
+    if (goalValue == null || goalValue.isEmpty) return '';
+    final parsed = double.tryParse(goalValue);
+    if (parsed == null) return goalValue;
+    final decimalPlaces = _decimalPlacesFor(parsed);
+    return parsed.toStringAsFixed(decimalPlaces);
+  }
+
   Widget _buildDecoratedSetInput({
     required String controllerKey,
     required String initialText,
@@ -450,7 +467,6 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
     required bool enabled,
     bool showKgSuffix = false,
   }) {
-    const double mainTextFontSize = 18.0;
     const double goalTextFontSize = 10.0;
     const double verticalPaddingAboveMainText = 2.0;
     const double spaceBetweenMainAndGoal = 1.0;
@@ -459,6 +475,7 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
     final double bottomPaddingForGoal = goalTextLineHeight + spaceBetweenMainAndGoal + verticalPaddingBelowGoalText;
 
     final bool showFullGoalText = widget.workoutStartedAt == null || DateTime.now().difference(widget.workoutStartedAt!).inSeconds < 5;
+    final String formattedGoalValue = _formatGoalValue(goalValue);
 
     return Stack(
       alignment: Alignment.center,
@@ -467,7 +484,12 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
           controller: _getController(controllerKey, initialText),
           enabled: enabled,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(showKgSuffix ? r'^\d*\.?\d{0,2}' : r'^\d*'))],
+          inputFormatters: [
+            if (showKgSuffix)
+              WeightTextInputFormatter()
+            else
+              FilteringTextInputFormatter.digitsOnly,
+          ],
           textAlign: TextAlign.center,
           textAlignVertical: TextAlignVertical.top,
           style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(color: enabled ? AppConstants.TEXT_PRIMARY_COLOR : AppConstants.TEXT_TERTIARY_COLOR),
@@ -491,7 +513,7 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
             }
           },
         ),
-        if (goalValue != null && goalValue.isNotEmpty)
+        if (formattedGoalValue.isNotEmpty)
           Positioned(
             bottom: verticalPaddingBelowGoalText,
             child: AnimatedSwitcher(
@@ -508,8 +530,8 @@ class _ReorderableActiveExerciseCardState extends State<ReorderableActiveExercis
               },
               child: Text(
                 showFullGoalText
-                    ? 'Goal: $goalValue${showKgSuffix && !(widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false) ? " ${widget.weightUnit}" : ""}'
-                    : goalValue,
+                    ? 'Goal: $formattedGoalValue${showKgSuffix && !(widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false) ? " ${widget.weightUnit}" : ""}'
+                    : formattedGoalValue,
                 key: ValueKey<bool>(showFullGoalText), // Key is crucial for AnimatedSwitcher to work correctly
                 textAlign: TextAlign.center,
                 style: AppConstants.IOS_SUBTEXT_STYLE,

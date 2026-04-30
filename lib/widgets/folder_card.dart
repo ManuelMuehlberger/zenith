@@ -57,8 +57,8 @@ class FolderCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: showDropHint
                 ? AppConstants.ACCENT_COLOR.withAlpha((255 * 0.25).round())
-                : AppConstants.CARD_BG_COLOR,
-            borderRadius: BorderRadius.circular(showDropHint ? 16.0 : AppConstants.CARD_RADIUS),
+                : const Color(0xFF1C1C1E),
+            borderRadius: BorderRadius.circular(16.0),
             border: Border.all(
               color: showDropHint
                   ? AppConstants.ACCENT_COLOR.withAlpha((255 * 0.8).round())
@@ -76,16 +76,16 @@ class FolderCard extends StatelessWidget {
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withAlpha((255 * 0.15).round()),
-                      blurRadius: 8.0,
-                      offset: const Offset(0, 2),
+                      color: Colors.black.withAlpha((255 * 0.18).round()),
+                      blurRadius: 10.0,
+                      offset: const Offset(0, 4),
                     ),
                   ],
           ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(showDropHint ? 16.0 : AppConstants.CARD_RADIUS),
+              borderRadius: BorderRadius.circular(16.0),
               onTap: onTap,
               child: Padding(
                 padding: const EdgeInsets.all(AppConstants.CARD_PADDING),
@@ -120,7 +120,10 @@ class FolderCard extends StatelessWidget {
                         children: [
                           Text(
                             folder.name,
-                            style: AppConstants.CARD_TITLE_TEXT_STYLE,
+                            style: AppConstants.CARD_TITLE_TEXT_STYLE.copyWith(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 18,
+                            ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
