@@ -8,11 +8,8 @@ import '../models/workout_set.dart';
 import '../models/exercise.dart';
 import '../services/workout_template_service.dart';
 import '../services/user_service.dart';
-import '../widgets/edit_workout_name_section.dart';
-import '../widgets/edit_exercise_card.dart';
-import '../widgets/edit_workout_action_buttons.dart';
 import '../widgets/workout_customization_sheet.dart';
-import '../widgets/workout_metrics_widget.dart';
+import '../widgets/create_workout/create_workout_editor_sections.dart';
 import 'exercise_picker_screen.dart';
 import '../constants/app_constants.dart';
 import '../services/exercise_service.dart';
@@ -92,7 +89,24 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           body: Stack(
             children: [
               Positioned.fill(
-                child: _buildMainContent(headerHeight, weightUnit),
+                child: CreateWorkoutContent(
+                  headerHeight: headerHeight,
+                  nameController: _nameController,
+                  selectedColor: _selectedColor,
+                  selectedIcon: _selectedIcon,
+                  onIconTap: _showWorkoutCustomization,
+                  exercises: _exercises,
+                  expandedNotes: _expandedNotes,
+                  weightUnit: weightUnit,
+                  onToggleNotes: _toggleNotesExpansion,
+                  onRemoveExercise: _removeExercise,
+                  onAddSet: _addSetToExercise,
+                  onRemoveSet: _removeSetFromExercise,
+                  onUpdateSet: _updateSet,
+                  onUpdateNotes: _updateExerciseNotes,
+                  onToggleRepRange: _toggleRepRange,
+                  onReorderExercises: _reorderExercises,
+                ),
               ),
               Positioned(
                 top: 0,
@@ -106,7 +120,13 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                       color: AppConstants.HEADER_BG_COLOR_MEDIUM,
                       child: SafeArea(
                         bottom: false,
-                        child: _buildHeaderContent(),
+                        child: CreateWorkoutHeader(
+                          isEditing: widget.workoutTemplate != null,
+                          exerciseCount: _exercises.length,
+                          isLoading: _isLoading,
+                          onClose: () => Navigator.of(context).pop(),
+                          onSave: _saveWorkout,
+                        ),
                       ),
                     ),
                   ),
@@ -116,162 +136,10 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.black,
-                    border: Border(top: BorderSide(color: Color(0xFF222222))),
-                  ),
-                  child: SafeArea(
-                    top: false,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 5.0, bottom: 5.0),
-                      child: EditWorkoutActionButtons(
-                        onAddExercise: _addExercise,
-                      ),
-                    ),
-                  ),
-                ),
+                child: CreateWorkoutBottomBar(onAddExercise: _addExercise),
               ),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildHeaderContent() {
-    final isEditing = widget.workoutTemplate != null;
-    
-    return SizedBox(
-      height: kToolbarHeight,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Row(
-          children: [
-            IconButton(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.close, color: Colors.white, size: 28),
-            ),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    isEditing ? 'Edit Workout' : 'Create Workout',
-                    style: AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE,
-                  ),
-                  if (_exercises.isNotEmpty)
-                  Text(
-                    '${_exercises.length} ${_exercises.length == 1 ? 'exercise' : 'exercises'}',
-                    style: AppConstants.IOS_SUBTEXT_STYLE,
-                  ),
-                ],
-              ),
-            ),
-            TextButton(
-              onPressed: _isLoading ? null : _saveWorkout,
-              style: TextButton.styleFrom(
-                backgroundColor: AppConstants.FINISH_BUTTON_BG_COLOR,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                  side: BorderSide(
-                    color: AppConstants.ACCENT_COLOR_GREEN.withAlpha((255 * 0.3).round()),
-                    width: 1,
-                  ),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                minimumSize: Size.zero,
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 14,
-                      height: 14,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppConstants.ACCENT_COLOR_GREEN,
-                      ),
-                    )
-                  : Text(
-                      'Save',
-                      style: AppConstants.HEADER_BUTTON_TEXT_STYLE.copyWith(color: AppConstants.ACCENT_COLOR_GREEN),
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMainContent(double headerHeight, String weightUnit) {
-    return CustomScrollView(
-      slivers: [
-        // Space for header
-        SliverToBoxAdapter(
-          child: SizedBox(height: headerHeight),
-        ),
-        
-        // Workout name section
-        SliverToBoxAdapter(
-          child: EditWorkoutNameSection(
-            nameController: _nameController,
-            selectedColor: _selectedColor,
-            selectedIcon: _selectedIcon,
-            onIconTap: _showWorkoutCustomization,
-          ),
-        ),
-        
-        // Workout metrics
-        SliverToBoxAdapter(
-          child: WorkoutMetricsWidget(
-            exercises: _exercises,
-          ),
-        ),
-        
-        // Exercises content
-        SliverToBoxAdapter(
-          child: _buildExercisesContent(weightUnit),
-        ),
-        // Add padding at the bottom for the action button
-        SliverToBoxAdapter(
-          child: SizedBox(height: 150.0),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildExercisesContent(String weightUnit) {
-    if (_exercises.isEmpty) {
-      return Column(
-        children: [
-          SizedBox(
-            height: 400,
-            child: _buildEmptyState(),
-          ),
-        ],
-      );
-    }
-
-    return ReorderableListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(20),
-      itemCount: _exercises.length,
-      onReorder: _reorderExercises,
-      itemBuilder: (context, index) {
-        
-        return EditExerciseCard(
-          key: ValueKey(_exercises[index].id),
-          exercise: _exercises[index],
-          exerciseIndex: index,
-          isNotesExpanded: _expandedNotes.contains(index),
-          onToggleNotes: _toggleNotesExpansion,
-          onRemoveExercise: _removeExercise,
-          onAddSet: _addSetToExercise,
-          onRemoveSet: _removeSetFromExercise,
-          onUpdateSet: _updateSet,
-          onUpdateNotes: _updateExerciseNotes,
-          onToggleRepRange: _toggleRepRange,
-          weightUnit: weightUnit,
         );
       },
     );
@@ -633,37 +501,4 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: AppConstants.WORKOUT_BUTTON_BG_COLOR,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Icon(
-              Icons.fitness_center,
-              size: 40,
-              color: AppConstants.TEXT_TERTIARY_COLOR,
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Text(
-            'No exercises added yet',
-            style: AppConstants.IOS_TITLE_TEXT_STYLE,
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Add exercises to build your workout',
-            style: AppConstants.IOS_SUBTITLE_TEXT_STYLE,
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
 }
