@@ -19,11 +19,7 @@ class CreateWorkoutScreen extends StatefulWidget {
   final WorkoutTemplate? workoutTemplate;
   final String? folderId;
 
-  const CreateWorkoutScreen({
-    super.key,
-    this.workoutTemplate,
-    this.folderId,
-  });
+  const CreateWorkoutScreen({super.key, this.workoutTemplate, this.folderId});
 
   @override
   State<CreateWorkoutScreen> createState() => _CreateWorkoutScreenState();
@@ -35,11 +31,11 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   List<WorkoutExercise> _exercises = [];
   bool _isLoading = false;
   final Set<int> _expandedNotes = {};
-  
+
   // Workout customization
   Color _selectedColor = Colors.blue;
   IconData _selectedIcon = Icons.fitness_center;
-  
+
   final List<Color> _availableColors = [
     Colors.blue,
     Colors.green,
@@ -59,10 +55,12 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       // WorkoutTemplate doesn't have exercises directly, we'll need to load them separately
       // For now, initialize as empty and load exercises in a separate method if needed
       _exercises = [];
-      _selectedColor = widget.workoutTemplate!.colorValue != null 
-          ? Color(widget.workoutTemplate!.colorValue!) 
+      _selectedColor = widget.workoutTemplate!.colorValue != null
+          ? Color(widget.workoutTemplate!.colorValue!)
           : Colors.blue;
-      _selectedIcon = WorkoutIcons.getIconDataFromCodePoint(widget.workoutTemplate!.iconCodePoint);
+      _selectedIcon = WorkoutIcons.getIconDataFromCodePoint(
+        widget.workoutTemplate!.iconCodePoint,
+      );
 
       // Load template exercises and attach details
       _loadTemplateExercises();
@@ -83,7 +81,10 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     return AnimatedBuilder(
       animation: UserService.instance,
       builder: (context, _) {
-        final String weightUnit = (UserService.instance.currentProfile?.units == Units.imperial) ? 'lbs' : 'kg';
+        final String weightUnit =
+            (UserService.instance.currentProfile?.units == Units.imperial)
+            ? 'lbs'
+            : 'kg';
         return Scaffold(
           backgroundColor: Colors.black,
           body: Stack(
@@ -114,7 +115,10 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 right: 0,
                 child: ClipRRect(
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+                    filter: ImageFilter.blur(
+                      sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+                      sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                    ),
                     child: Container(
                       height: headerHeight,
                       color: AppConstants.HEADER_BG_COLOR_MEDIUM,
@@ -168,17 +172,26 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           iconCodePoint: _selectedIcon.codePoint,
           colorValue: _selectedColor.toARGB32(),
         );
-        await WorkoutTemplateService.instance.updateWorkoutTemplate(updatedTemplate);
-        await WorkoutTemplateService.instance.saveTemplateExercises(updatedTemplate.id, _exercises);
+        await WorkoutTemplateService.instance.updateWorkoutTemplate(
+          updatedTemplate,
+        );
+        await WorkoutTemplateService.instance.saveTemplateExercises(
+          updatedTemplate.id,
+          _exercises,
+        );
       } else {
         // Create new workout template and persist its exercises
-        final newTemplate = await WorkoutTemplateService.instance.createWorkoutTemplate(
-          name: _nameController.text.trim(),
-          folderId: widget.folderId,
-          iconCodePoint: _selectedIcon.codePoint,
-          colorValue: _selectedColor.toARGB32(),
+        final newTemplate = await WorkoutTemplateService.instance
+            .createWorkoutTemplate(
+              name: _nameController.text.trim(),
+              folderId: widget.folderId,
+              iconCodePoint: _selectedIcon.codePoint,
+              colorValue: _selectedColor.toARGB32(),
+            );
+        await WorkoutTemplateService.instance.saveTemplateExercises(
+          newTemplate.id,
+          _exercises,
         );
-        await WorkoutTemplateService.instance.saveTemplateExercises(newTemplate.id, _exercises);
       }
 
       if (mounted) {
@@ -202,7 +215,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     });
     try {
       final templateId = widget.workoutTemplate!.id;
-      final exercises = await WorkoutTemplateService.instance.getTemplateExercises(templateId);
+      final exercises = await WorkoutTemplateService.instance
+          .getTemplateExercises(templateId);
 
       // Ensure ExerciseService has data to attach details for UI
       if (ExerciseService.instance.exercises.isEmpty) {
@@ -216,10 +230,19 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
         return e.copyWith(exerciseDetail: detail);
       }).toList();
 
-      _logger.fine('Loaded ${withDetails.length} exercises for template $templateId');
+      _logger.fine(
+        'Loaded ${withDetails.length} exercises for template $templateId',
+      );
       for (final ex in withDetails) {
-        final setsInfo = ex.sets.map((s) => 'idx=${s.setIndex},reps=${s.targetReps},wt=${s.targetWeight}').join('; ');
-        _logger.finer('Exercise ${ex.exerciseSlug} (${ex.id}) sets: [$setsInfo]');
+        final setsInfo = ex.sets
+            .map(
+              (s) =>
+                  'idx=${s.setIndex},reps=${s.targetReps},wt=${s.targetWeight}',
+            )
+            .join('; ');
+        _logger.finer(
+          'Exercise ${ex.exerciseSlug} (${ex.id}) sets: [$setsInfo]',
+        );
       }
 
       if (mounted) {
@@ -266,7 +289,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     if (result is List<Exercise>) {
       final newWorkoutExercises = result.map((selectedExercise) {
         var workoutExercise = WorkoutExercise(
-          workoutTemplateId: widget.workoutTemplate?.id ?? "PENDING_TEMPLATE_ID",
+          workoutTemplateId:
+              widget.workoutTemplate?.id ?? "PENDING_TEMPLATE_ID",
           exerciseSlug: selectedExercise.slug,
           exerciseDetail: selectedExercise,
           sets: const [],
@@ -347,7 +371,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   void _addSetToExercise(int exerciseIndex) {
     final exercise = _exercises[exerciseIndex];
     final lastSet = exercise.sets.isNotEmpty ? exercise.sets.last : null;
-    
+
     final newSet = WorkoutSet(
       workoutExerciseId: exercise.id,
       setIndex: exercise.sets.length,
@@ -368,7 +392,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     if (exercise.sets.length > 1) {
       final updatedSets = List<WorkoutSet>.from(exercise.sets);
       updatedSets.removeAt(setIndex);
-      
+
       setState(() {
         _exercises[exerciseIndex] = exercise.copyWith(sets: updatedSets);
       });
@@ -376,11 +400,18 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     }
   }
 
-  void _updateSet(int exerciseIndex, int setIndex, {int? targetReps, double? targetWeight, String? type, int? targetRestSeconds}) {
+  void _updateSet(
+    int exerciseIndex,
+    int setIndex, {
+    int? targetReps,
+    double? targetWeight,
+    String? type,
+    int? targetRestSeconds,
+  }) {
     final exercise = _exercises[exerciseIndex];
     final updatedSets = List<WorkoutSet>.from(exercise.sets);
     final currentSet = updatedSets[setIndex];
-    
+
     // Only update the fields that are provided, preserve existing values for others
     updatedSets[setIndex] = currentSet.copyWith(
       targetReps: targetReps ?? currentSet.targetReps,
@@ -388,7 +419,9 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       targetRestSeconds: targetRestSeconds ?? currentSet.targetRestSeconds,
     );
 
-    _logger.fine('Update set: exIdx=$exerciseIndex setIdx=$setIndex targetReps=$targetReps targetWeight=$targetWeight rest=$targetRestSeconds');
+    _logger.fine(
+      'Update set: exIdx=$exerciseIndex setIdx=$setIndex targetReps=$targetReps targetWeight=$targetWeight rest=$targetRestSeconds',
+    );
 
     setState(() {
       _exercises[exerciseIndex] = exercise.copyWith(sets: updatedSets);
@@ -397,19 +430,25 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   void _updateExerciseNotes(int exerciseIndex, String notes) {
     setState(() {
-      _exercises[exerciseIndex] = _exercises[exerciseIndex].copyWith(notes: notes);
+      _exercises[exerciseIndex] = _exercises[exerciseIndex].copyWith(
+        notes: notes,
+      );
     });
   }
 
   void _toggleRepRange(int exerciseIndex, int setIndex) {
+    _logger.warning(
+      'Rep range toggling is not supported for template set '
+      'exerciseIndex=$exerciseIndex setIndex=$setIndex',
+    );
+
     // final exercise = _exercises[exerciseIndex];
     // final set = exercise.sets[setIndex];
-    
+
     // isRepRange, repRangeMin, repRangeMax were removed from WorkoutSet.
     // This functionality needs to be re-evaluated or removed.
     // For now, making it a no-op to fix compilation.
-    debugPrint("Toggling rep range is currently not supported for template sets.");
-    
+
     // if (set.isRepRange) {
     //   // Convert from rep range to single reps
     //   final updatedSets = List<WorkoutSet>.from(exercise.sets);
@@ -420,7 +459,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     //     // repRangeMin: null,
     //     // repRangeMax: null,
     //   );
-      
+
     //   setState(() {
     //     _exercises[exerciseIndex] = exercise.copyWith(sets: updatedSets);
     //   });
@@ -434,7 +473,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     //     // repRangeMin: set.targetReps,
     //     // repRangeMax: (set.targetReps ?? 0) + 2,
     //   );
-      
+
     //   setState(() {
     //     _exercises[exerciseIndex] = exercise.copyWith(sets: updatedSets);
     //   });
@@ -460,7 +499,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       exerciseDetail: exercise,
       sets: [
         WorkoutSet(
-          workoutExerciseId: 'temp_id', // This will be replaced by the actual ID
+          workoutExerciseId:
+              'temp_id', // This will be replaced by the actual ID
           setIndex: 0,
           targetReps: 10,
           targetWeight: 0.0,
@@ -473,8 +513,18 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   // Method to be called from tests to update a set
-  void updateSetForTest(int exerciseIndex, int setIndex, {int? targetReps, double? targetWeight}) {
-    _updateSet(exerciseIndex, setIndex, targetReps: targetReps, targetWeight: targetWeight);
+  void updateSetForTest(
+    int exerciseIndex,
+    int setIndex, {
+    int? targetReps,
+    double? targetWeight,
+  }) {
+    _updateSet(
+      exerciseIndex,
+      setIndex,
+      targetReps: targetReps,
+      targetWeight: targetWeight,
+    );
   }
 
   void _showWorkoutCustomization() {
@@ -486,7 +536,10 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
         selectedColor: _selectedColor,
         selectedIcon: _selectedIcon,
         availableColors: _availableColors,
-        availableIcons: WorkoutIcons.items.where((item) => item.isIcon).map((item) => item.icon!).toList(),
+        availableIcons: WorkoutIcons.items
+            .where((item) => item.isIcon)
+            .map((item) => item.icon!)
+            .toList(),
         onColorChanged: (color) {
           setState(() {
             _selectedColor = color;
@@ -500,5 +553,4 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       ),
     );
   }
-
 }

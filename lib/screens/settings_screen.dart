@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:io';
+import 'package:logging/logging.dart';
 import '../services/database_service.dart';
 import '../services/user_service.dart';
 import '../services/workout_service.dart';
@@ -22,6 +23,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  static final Logger _logger = Logger('SettingsScreen');
   UserData? _userProfile;
   bool _isLoading = true;
   bool _showDebugMenu = true;
@@ -30,23 +32,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _logger.info('Opening settings screen');
     _loadUserProfile();
   }
 
   Future<void> _loadUserProfile() async {
+    _logger.info('Loading settings profile data');
     try {
       final profile = UserService.instance.currentProfile;
       if (profile != null) {
+        _logger.fine('Loaded settings profile for ${profile.name}');
         setState(() {
           _userProfile = profile;
           _isLoading = false;
         });
       } else {
+        _logger.warning('No profile available for settings screen');
         setState(() {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _logger.severe('Failed to load settings profile data', e, stackTrace);
       setState(() {
         _isLoading = false;
       });
@@ -55,9 +62,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _updateUnits(Units newUnits) async {
-    if (_userProfile == null) return;
+    if (_userProfile == null) {
+      _logger.warning('Skipping unit update because no profile is loaded');
+      return;
+    }
 
     try {
+      _logger.info('Updating units from ${_userProfile!.units} to $newUnits');
       final updatedProfile = _userProfile!.copyWith(units: newUnits);
       await UserService.instance.saveUserProfile(updatedProfile);
       setState(() {
@@ -67,9 +78,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) {
         _showCupertinoToast('Units updated');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      _logger.severe('Failed to update units', e, stackTrace);
       if (mounted) {
-         _showErrorDialog('Failed to update units: ${e.toString()}');
+        _showErrorDialog('Failed to update units: ${e.toString()}');
       }
     }
   }
@@ -86,7 +98,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             opacity: 1.0,
             duration: const Duration(milliseconds: 200),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 12.0,
+              ),
               decoration: BoxDecoration(
                 color: CupertinoColors.systemGrey.withOpacity(0.92),
                 borderRadius: BorderRadius.circular(16.0),
@@ -120,7 +135,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       overlayEntry.remove();
     });
   }
-  
+
   void _showErrorDialog(String message) {
     showCupertinoDialog(
       context: context,
@@ -138,6 +153,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _clearAllData() async {
+    _logger.warning('Showing clear-all-data confirmation');
     final TextEditingController confirmController = TextEditingController();
     String confirmationText = '';
     const String requiredText = 'DELETE MY DATA';
@@ -168,7 +184,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: confirmController,
                     placeholder: requiredText,
                     autocorrect: false,
-                    style: TextStyle(color: CupertinoColors.label.resolveFrom(context)),
+                    style: TextStyle(
+                      color: CupertinoColors.label.resolveFrom(context),
+                    ),
                     onChanged: (value) {
                       setStateDialog(() {
                         confirmationText = value;
@@ -206,6 +224,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     confirmController.dispose();
 
     if (confirmed == true) {
+      _logger.warning('Confirmed full local data deletion');
       await DatabaseService.instance.clearAllData();
       await UserService.instance.clearUserData();
       await WorkoutService.instance.clearUserWorkouts();
@@ -215,6 +234,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         await Future.delayed(const Duration(seconds: 1));
         exit(0);
       }
+    } else {
+      _logger.fine('Cancelled full local data deletion');
     }
   }
 
@@ -222,28 +243,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final double topPadding = MediaQuery.of(context).padding.top;
     final double headerHeight = topPadding + kToolbarHeight;
-    
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          Positioned.fill(
-            child: _buildMainContent(headerHeight),
-          ),
+          Positioned.fill(child: _buildMainContent(headerHeight)),
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             child: ClipRRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+                filter: ImageFilter.blur(
+                  sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+                  sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                ),
                 child: Container(
                   height: headerHeight,
                   color: AppConstants.HEADER_BG_COLOR_MEDIUM,
-                  child: SafeArea(
-                    bottom: false,
-                    child: _buildHeaderContent(),
-                  ),
+                  child: SafeArea(bottom: false, child: _buildHeaderContent()),
                 ),
               ),
             ),
@@ -263,7 +282,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             CupertinoButton(
               padding: EdgeInsets.zero,
               onPressed: () => Navigator.of(context).pop(),
-              child: const Icon(CupertinoIcons.back, color: Colors.white, size: 28),
+              child: const Icon(
+                CupertinoIcons.back,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
             const SizedBox(width: 8),
             const Expanded(
@@ -288,9 +311,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           SizedBox(height: headerHeight),
           const Expanded(
-            child: Center(
-              child: CupertinoActivityIndicator(radius: 15),
-            ),
+            child: Center(child: CupertinoActivityIndicator(radius: 15)),
           ),
         ],
       );
@@ -314,9 +335,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(
-          child: SizedBox(height: headerHeight),
-        ),
+        SliverToBoxAdapter(child: SizedBox(height: headerHeight)),
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -373,7 +392,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             ListTile(
-              leading: const Icon(CupertinoIcons.hammer_fill, color: Colors.orange, size: 22),
+              leading: const Icon(
+                CupertinoIcons.hammer_fill,
+                color: Colors.orange,
+                size: 22,
+              ),
               title: const Text(
                 'Generate History Data',
                 style: TextStyle(color: Colors.white),
@@ -396,11 +419,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _generateDebugData() async {
+    _logger.info('Showing debug data generation confirmation');
     final confirmed = await showCupertinoDialog<bool>(
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: const Text('Generate Data'),
-        content: const Text('This will add ~300-400 workouts to your history over the last 2 years. This operation cannot be easily undone.'),
+        content: const Text(
+          'This will add ~300-400 workouts to your history over the last 2 years. This operation cannot be easily undone.',
+        ),
         actions: [
           CupertinoDialogAction(
             child: const Text('Cancel'),
@@ -415,13 +441,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (confirmed == true) {
+      _logger.info('Starting debug data generation');
       setState(() => _isLoading = true);
       try {
         await DebugDataService.instance.generateDebugData();
+        _logger.info('Debug data generation completed successfully');
         if (mounted) {
           _showCupertinoToast('Debug data generated');
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
+        _logger.severe('Failed to generate debug data', e, stackTrace);
         if (mounted) {
           _showErrorDialog('Failed to generate data: $e');
         }
@@ -430,6 +459,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           setState(() => _isLoading = false);
         }
       }
+    } else {
+      _logger.fine('Cancelled debug data generation');
     }
   }
 
@@ -455,7 +486,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             ListTile(
-              leading: const Icon(CupertinoIcons.trash_fill, color: Colors.red, size: 22),
+              leading: const Icon(
+                CupertinoIcons.trash_fill,
+                color: Colors.red,
+                size: 22,
+              ),
               title: const Text(
                 'Clear All Data',
                 style: TextStyle(color: Colors.red),
@@ -496,7 +531,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             Row(
               children: [
-                Icon(CupertinoIcons.lock_shield_fill, color: Colors.green, size: 22),
+                Icon(
+                  CupertinoIcons.lock_shield_fill,
+                  color: Colors.green,
+                  size: 22,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -520,16 +559,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () {
                 setState(() {
                   _versionTapCount++;
+                  _logger.finer(
+                    'Version easter-egg tap count=$_versionTapCount',
+                  );
                   if (_versionTapCount >= 5) {
                     _showDebugMenu = !_showDebugMenu;
                     _versionTapCount = 0;
-                    _showCupertinoToast(_showDebugMenu ? 'Debug menu enabled' : 'Debug menu disabled');
+                    _logger.info('Debug menu toggled: enabled=$_showDebugMenu');
+                    _showCupertinoToast(
+                      _showDebugMenu
+                          ? 'Debug menu enabled'
+                          : 'Debug menu disabled',
+                    );
                   }
                 });
               },
               child: Row(
                 children: [
-                  Icon(CupertinoIcons.info_circle_fill, color: Colors.blue, size: 22),
+                  Icon(
+                    CupertinoIcons.info_circle_fill,
+                    color: Colors.blue,
+                    size: 22,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -552,7 +603,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             Row(
               children: [
-                Icon(CupertinoIcons.flame_fill, color: Colors.grey[400], size: 22),
+                Icon(
+                  CupertinoIcons.flame_fill,
+                  color: Colors.grey[400],
+                  size: 22,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(

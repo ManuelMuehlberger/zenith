@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
@@ -9,16 +10,13 @@ import 'services/app_navigation_service.dart';
 import 'services/workout_session_service.dart';
 import 'dart:ui';
 import 'constants/app_constants.dart';
+import 'utils/app_logger.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Set up logging
-  Logger.root.level = Level.INFO; // Set log level to INFO
-  Logger.root.onRecord.listen((record) {
-    debugPrint('${record.level.name}: ${record.time}: ${record.message}');
-  });
-  
+
+  configureAppLogging(level: kDebugMode ? Level.FINE : Level.INFO);
+
   final logger = Logger('ZenithApp');
   logger.info('Starting application shell');
   runApp(const WorkoutTrackerApp());
@@ -52,10 +50,7 @@ class WorkoutTrackerApp extends StatelessWidget {
           unselectedItemColor: Colors.grey,
           type: BottomNavigationBarType.fixed,
         ),
-        cardTheme: CardThemeData(
-          color: Colors.grey[900],
-          elevation: 2,
-        ),
+        cardTheme: CardThemeData(color: Colors.grey[900], elevation: 2),
         textTheme: const TextTheme(
           bodyLarge: TextStyle(color: Colors.white),
           bodyMedium: TextStyle(color: Colors.white),
@@ -90,7 +85,6 @@ class _MainScreenState extends State<MainScreen> {
     _checkForActiveWorkout();
   }
 
-
   void _checkForActiveWorkout() {
     // If there's an active workout session, navigate to the workouts tab
     if (WorkoutSessionService.instance.hasActiveSession) {
@@ -109,18 +103,21 @@ class _MainScreenState extends State<MainScreen> {
 
         return Scaffold(
           extendBody: true,
-          body: IndexedStack(
-            index: currentIndex,
-            children: _screens,
-          ),
+          body: IndexedStack(index: currentIndex, children: _screens),
           bottomNavigationBar: ClipRRect(
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+              filter: ImageFilter.blur(
+                sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+                sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+              ),
               child: Container(
                 decoration: BoxDecoration(
                   color: AppConstants.BOTTOM_BAR_BG_COLOR,
                   border: Border(
-                    top: BorderSide(color: AppConstants.HEADER_STROKE_COLOR, width: AppConstants.HEADER_STROKE_WIDTH),
+                    top: BorderSide(
+                      color: AppConstants.HEADER_STROKE_COLOR,
+                      width: AppConstants.HEADER_STROKE_WIDTH,
+                    ),
                   ),
                 ),
                 child: BottomNavigationBar(

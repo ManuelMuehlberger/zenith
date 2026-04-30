@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:logging/logging.dart';
 import '../models/exercise.dart';
 import '../widgets/exercise_list_widget.dart';
 import '../constants/app_constants.dart';
@@ -14,14 +15,17 @@ class ExercisePickerScreen extends StatefulWidget {
 }
 
 class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
+  static final Logger _logger = Logger('ExercisePickerScreen');
   final List<Exercise> _selectedExercises = [];
 
   void _toggleExerciseSelection(Exercise exercise) {
     setState(() {
       if (_selectedExercises.contains(exercise)) {
         _selectedExercises.remove(exercise);
+        _logger.fine('Deselected exercise ${exercise.slug}');
       } else {
         _selectedExercises.add(exercise);
+        _logger.fine('Selected exercise ${exercise.slug}');
       }
     });
   }
@@ -30,11 +34,15 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
     if (widget.multiSelect) {
       _toggleExerciseSelection(exercise);
     } else {
+      _logger.info('Picked exercise ${exercise.slug} in single-select mode');
       Navigator.of(context).pop(exercise);
     }
   }
 
   void _done() {
+    _logger.info(
+      'Completing multi-select exercise picker with ${_selectedExercises.length} exercise(s)',
+    );
     Navigator.of(context).pop(_selectedExercises);
   }
 
@@ -49,7 +57,8 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
         fit: StackFit.expand,
         children: [
           ExerciseListWidget(
-            onExerciseSelected: (exercise) => _selectExercise(context, exercise),
+            onExerciseSelected: (exercise) =>
+                _selectExercise(context, exercise),
             selectedExercises: widget.multiSelect ? _selectedExercises : null,
             additionalTopPadding: screenHeaderHeight,
           ),
@@ -60,7 +69,10 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
             height: screenHeaderHeight,
             child: ClipRRect(
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+                filter: ImageFilter.blur(
+                  sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+                  sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                ),
                 child: Container(
                   color: AppConstants.HEADER_BG_COLOR_MEDIUM,
                   child: SafeArea(
@@ -72,7 +84,10 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
                           Padding(
                             padding: const EdgeInsets.only(left: 8.0),
                             child: IconButton(
-                              icon: const Icon(Icons.arrow_back_ios_new, color: AppConstants.HEADER_TITLE_COLOR),
+                              icon: const Icon(
+                                Icons.arrow_back_ios_new,
+                                color: AppConstants.HEADER_TITLE_COLOR,
+                              ),
                               onPressed: () => Navigator.of(context).pop(),
                               tooltip: AppConstants.BACK_BUTTON_TOOLTIP,
                             ),
