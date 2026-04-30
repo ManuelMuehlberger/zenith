@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart'; // Import for kDebugMode
-import 'package:pull_down_button/pull_down_button.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../services/user_service.dart';
@@ -9,6 +8,7 @@ import '../services/workout_session_service.dart';
 import '../screens/exercise_info_screen.dart';
 import '../constants/app_constants.dart';
 import '../utils/weight_text_input_formatter.dart';
+import 'edit_exercise/edit_exercise_card_sections.dart';
 
 class EditExerciseCard extends StatefulWidget {
   final WorkoutExercise exercise;
@@ -262,45 +262,11 @@ class _EditExerciseCardState extends State<EditExerciseCard>
           clipBehavior: Clip.none,
           children: [
             Column(children: [_buildHeader(), _buildSetsList()]),
-            Positioned(bottom: -15, right: 15, child: _buildAddSetButton()),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddSetButton() {
-    return GestureDetector(
-      onTap: () {
-        widget.onAddSet(widget.exerciseIndex);
-        HapticFeedback.lightImpact();
-      },
-      child: Container(
-        width: 110,
-        height: 36,
-        decoration: BoxDecoration(
-          color: AppConstants.ACCENT_COLOR_ORANGE,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.black, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              spreadRadius: 1,
-              blurRadius: 3,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.add, color: Colors.white, size: 18),
-            const SizedBox(width: 2),
-            Text(
-              'Add',
-              style: AppConstants.HEADER_BUTTON_TEXT_STYLE.copyWith(
-                color: Colors.white,
-                fontSize: 14,
+            Positioned(
+              bottom: -15,
+              right: 15,
+              child: EditExerciseAddSetButton(
+                onPressed: () => widget.onAddSet(widget.exerciseIndex),
               ),
             ),
           ],
@@ -310,189 +276,26 @@ class _EditExerciseCardState extends State<EditExerciseCard>
   }
 
   Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.exercise.exerciseDetail?.name ??
-                          widget.exercise.exerciseSlug,
-                      style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(
-                        color: AppConstants.ACCENT_COLOR,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    onPressed: () => widget.onToggleNotes(widget.exerciseIndex),
-                    icon: Icon(
-                      widget.isNotesExpanded
-                          ? Icons.sticky_note_2
-                          : Icons.sticky_note_2_outlined,
-                      color: widget.isNotesExpanded
-                          ? Colors.amber
-                          : (widget.exercise.notes?.isNotEmpty ?? false)
-                          ? Colors.amber.withAlpha(150)
-                          : Colors.grey[500],
-                      size: 24,
-                    ),
-                    tooltip: widget.isNotesExpanded
-                        ? 'Hide notes'
-                        : 'Show notes',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  PullDownButton(
-                    itemBuilder: (context) => [
-                      PullDownMenuItem(
-                        onTap: () => _showExerciseInfo(context),
-                        title: 'Exercise Info',
-                        icon: Icons.info_outline,
-                      ),
-                      PullDownMenuItem(
-                        onTap: () =>
-                            widget.onRemoveExercise(widget.exerciseIndex),
-                        title: 'Remove Exercise',
-                        icon: Icons.delete_outline,
-                        isDestructive: true,
-                      ),
-                    ],
-                    buttonBuilder: (context, showMenu) => IconButton(
-                      padding: const EdgeInsets.all(8),
-                      constraints: const BoxConstraints(
-                        minWidth: 40,
-                        minHeight: 40,
-                      ),
-                      onPressed: showMenu,
-                      icon: Icon(
-                        Icons.more_horiz,
-                        color: AppConstants.TEXT_SECONDARY_COLOR,
-                        size: 28,
-                      ),
-                      tooltip: 'Exercise Options',
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ReorderableDragStartListener(
-                    index: widget.exerciseIndex,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppConstants.ACCENT_COLOR_ORANGE.withAlpha(
-                          (255 * 0.2).round(),
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.drag_handle,
-                        color: AppConstants.ACCENT_COLOR_ORANGE,
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          if (widget.isNotesExpanded)
-            Padding(
-              padding: const EdgeInsets.only(top: 12.0),
-              child: TextFormField(
-                controller: _notesController,
-                style: AppConstants.IOS_BODY_TEXT_STYLE,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.grey[800],
-                  hintText: 'Add notes for this exercise...',
-                  hintStyle: AppConstants.IOS_HINT_TEXT_STYLE,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: Colors.blue.withAlpha((255 * 0.5).round()),
-                      width: 1,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.all(12),
-                ),
-                onChanged: (value) =>
-                    widget.onUpdateNotes(widget.exerciseIndex, value),
-              ),
-            ),
-        ],
-      ),
+    return EditExerciseHeader(
+      exercise: widget.exercise,
+      exerciseIndex: widget.exerciseIndex,
+      isNotesExpanded: widget.isNotesExpanded,
+      notesController: _notesController,
+      onToggleNotes: widget.onToggleNotes,
+      onRemoveExercise: widget.onRemoveExercise,
+      onShowExerciseInfo: () => _showExerciseInfo(context),
+      onUpdateNotes: (value) =>
+          widget.onUpdateNotes(widget.exerciseIndex, value),
     );
   }
 
   Widget _buildSetsList() {
     final isBodyWeight =
         widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
-      child: Column(
-        children: [
-          // Header row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
-            child: Row(
-              children: [
-                const SizedBox(width: 28), // Set number space
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    'Reps',
-                    textAlign: TextAlign.center,
-                    style: AppConstants.IOS_SUBTEXT_STYLE,
-                  ),
-                ),
-                if (!isBodyWeight) ...[
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      'Weight',
-                      textAlign: TextAlign.center,
-                      style: AppConstants.IOS_SUBTEXT_STYLE,
-                    ),
-                  ),
-                ],
-                const SizedBox(width: 16),
-                const SizedBox(width: 32), // Action button space
-              ],
-            ),
-          ),
-          // Sets
-          ...widget.exercise.sets.asMap().entries.map((entry) {
-            final setIndex = entry.key;
-            final set = entry.value;
-            return Container(
-              margin: const EdgeInsets.only(bottom: 4.0),
-              child: _buildSetRow(set, setIndex),
-            );
-          }),
-        ],
-      ),
+    return EditExerciseSetsList(
+      isBodyWeight: isBodyWeight,
+      sets: widget.exercise.sets,
+      rowBuilder: _buildSetRow,
     );
   }
 
@@ -500,96 +303,47 @@ class _EditExerciseCardState extends State<EditExerciseCard>
     final isBodyWeight =
         widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(8.0),
+    return EditExerciseSetRow(
+      setIndex: setIndex,
+      isBodyWeight: isBodyWeight,
+      repsInput: _buildSetInput(
+        controllerKey: 'reps_${widget.exercise.id}_${set.id}',
+        initialText: set.targetReps?.toString() ?? '',
+        onChanged: (value) {
+          final reps = int.tryParse(value);
+          widget.onUpdateSet(
+            widget.exerciseIndex,
+            setIndex,
+            targetReps: reps ?? (value.isEmpty ? 0 : null),
+          );
+        },
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Set number
-          Container(
-            width: 28,
-            height: 42,
-            decoration: BoxDecoration(
-              color: Colors.grey[700],
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                '${setIndex + 1}',
-                style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
-                  color: AppConstants.TEXT_PRIMARY_COLOR,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Reps input
-          Flexible(
-            child: _buildSetInput(
-              controllerKey: 'reps_${widget.exercise.id}_${set.id}',
-              initialText: set.targetReps?.toString() ?? "",
+      weightInput: isBodyWeight
+          ? null
+          : _buildSetInput(
+              controllerKey: 'weight_${widget.exercise.id}_${set.id}',
+              initialText: set.targetWeight != null
+                  ? WorkoutSessionService.instance.formatWeight(
+                      set.targetWeight!,
+                    )
+                  : '',
               onChanged: (value) {
-                final reps = int.tryParse(value);
+                final weight = double.tryParse(value);
                 widget.onUpdateSet(
                   widget.exerciseIndex,
                   setIndex,
-                  targetReps: reps ?? (value.isEmpty ? 0 : null),
+                  targetWeight: weight ?? (value.isEmpty ? 0.0 : null),
                 );
               },
+              showWeightSuffix: true,
             ),
-          ),
-          const SizedBox(width: 16),
-          // Weight input (if not bodyweight)
-          if (!isBodyWeight) ...[
-            Flexible(
-              child: _buildSetInput(
-                controllerKey: 'weight_${widget.exercise.id}_${set.id}',
-                initialText: set.targetWeight != null
-                    ? WorkoutSessionService.instance.formatWeight(
-                        set.targetWeight!,
-                      )
-                    : "",
-                onChanged: (value) {
-                  final weight = double.tryParse(value);
-                  widget.onUpdateSet(
-                    widget.exerciseIndex,
-                    setIndex,
-                    targetWeight: weight ?? (value.isEmpty ? 0.0 : null),
-                  );
-                },
-                showWeightSuffix: true,
-              ),
-            ),
-            const SizedBox(width: 16),
-          ],
-          // Remove set button
-          SizedBox(
-            width: 32,
-            height: 32,
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              icon: const Icon(
-                Icons.remove_circle_outline,
-                color: Colors.red,
-                size: 24,
-              ),
-              onPressed: () {
-                if (widget.exercise.sets.length > 1) {
-                  widget.onRemoveSet(widget.exerciseIndex, setIndex);
-                } else {
-                  widget.onRemoveExercise(widget.exerciseIndex);
-                }
-                HapticFeedback.lightImpact();
-              },
-            ),
-          ),
-        ],
-      ),
+      onRemove: () {
+        if (widget.exercise.sets.length > 1) {
+          widget.onRemoveSet(widget.exerciseIndex, setIndex);
+        } else {
+          widget.onRemoveExercise(widget.exerciseIndex);
+        }
+      },
     );
   }
 
@@ -600,10 +354,6 @@ class _EditExerciseCardState extends State<EditExerciseCard>
     bool showWeightSuffix = false,
   }) {
     final controller = _getController(controllerKey, initialText);
-
-    final FocusNode? focusNode = showWeightSuffix
-        ? (_weightFocusNodes[controllerKey] ??= FocusNode())
-        : null;
 
     // Normalize + clamp weight and commit to model on blur.
     void commitWeightIfNeeded() {
@@ -620,7 +370,7 @@ class _EditExerciseCardState extends State<EditExerciseCard>
       if (parsed == null) return;
 
       // Clamp and round to 2 decimals.
-      final clamped = parsed.clamp(0.0, 999.0) as double;
+      final clamped = parsed.clamp(0.0, 999.0);
       final rounded = (clamped * 100).roundToDouble() / 100;
 
       final formatted = rounded.toStringAsFixed(_decimalPlacesFor(rounded));
@@ -636,13 +386,17 @@ class _EditExerciseCardState extends State<EditExerciseCard>
       onChanged(formatted);
     }
 
-    if (focusNode != null && !focusNode.hasListeners) {
-      focusNode.addListener(() {
-        if (!focusNode.hasFocus) {
-          commitWeightIfNeeded();
-        }
-      });
-    }
+    final FocusNode? focusNode = showWeightSuffix
+        ? _weightFocusNodes.putIfAbsent(controllerKey, () {
+            final node = FocusNode();
+            node.addListener(() {
+              if (!node.hasFocus) {
+                commitWeightIfNeeded();
+              }
+            });
+            return node;
+          })
+        : null;
 
     return TextFormField(
       controller: controller,
