@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:async';
 
 import '../models/workout.dart';
 import '../models/workout_template.dart';
@@ -20,17 +19,13 @@ import '../constants/app_constants.dart';
 class ActiveWorkoutScreen extends StatefulWidget {
   final Workout session;
 
-  const ActiveWorkoutScreen({
-    super.key,
-    required this.session,
-  });
+  const ActiveWorkoutScreen({super.key, required this.session});
 
   @override
   State<ActiveWorkoutScreen> createState() => _ActiveWorkoutScreenState();
 }
 
 class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
-  Timer? _timer;
   final Set<int> _expandedNotes = {};
   late Workout _currentSession;
   int? _draggingIndex;
@@ -41,10 +36,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     // Use the latest active session if available, otherwise fall back to widget.session
     final activeSession = WorkoutSessionService.instance.currentSession;
     _currentSession = activeSession ?? widget.session;
-    _startTimer();
     ReorderService.instance.addListener(_onReorderServiceChange);
   }
-  
+
   void _onReorderServiceChange() {
     if (mounted) {
       setState(() {});
@@ -53,20 +47,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
   @override
   void dispose() {
-    _timer?.cancel();
     ReorderService.instance.removeListener(_onReorderServiceChange);
     if (ReorderService.instance.isReorderMode) {
       ReorderService.instance.toggleReorderMode();
     }
     super.dispose();
-  }
-
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {});
-      }
-    });
   }
 
   void _toggleNotesExpansion(int exerciseIndex) {
@@ -85,7 +70,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final String weightUnit = (UserService.instance.currentProfile?.units == Units.imperial) ? 'lbs' : 'kg';
+    final String weightUnit =
+        (UserService.instance.currentProfile?.units == Units.imperial)
+        ? 'lbs'
+        : 'kg';
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -123,7 +111,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     );
   }
 
-  void _updateSet(String exerciseId, String setId, {int? reps, double? weight, bool? isCompleted}) async {
+  void _updateSet(
+    String exerciseId,
+    String setId, {
+    int? reps,
+    double? weight,
+    bool? isCompleted,
+  }) async {
     await WorkoutSessionService.instance.updateSet(
       exerciseId,
       setId,
@@ -146,7 +140,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   }
 
   void _addSet(String exerciseId) async {
-    final exerciseIndex = _currentSession.exercises.indexWhere((e) => e.id == exerciseId);
+    final exerciseIndex = _currentSession.exercises.indexWhere(
+      (e) => e.id == exerciseId,
+    );
     if (exerciseIndex == -1) return;
 
     final exercise = _currentSession.exercises[exerciseIndex];
@@ -161,9 +157,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
     final updatedSets = List<WorkoutSet>.from(exercise.sets)..add(newSet);
     final updatedExercise = exercise.copyWith(sets: updatedSets);
-    final updatedExercises = List<WorkoutExercise>.from(_currentSession.exercises)
-      ..[exerciseIndex] = updatedExercise;
-    final updatedSession = _currentSession.copyWith(exercises: updatedExercises);
+    final updatedExercises = List<WorkoutExercise>.from(
+      _currentSession.exercises,
+    )..[exerciseIndex] = updatedExercise;
+    final updatedSession = _currentSession.copyWith(
+      exercises: updatedExercises,
+    );
 
     await WorkoutSessionService.instance.updateSession(updatedSession);
     if (mounted) {
@@ -172,16 +171,21 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   }
 
   void _removeSet(String exerciseId, String setId) async {
-    final exerciseIndex = _currentSession.exercises.indexWhere((e) => e.id == exerciseId);
+    final exerciseIndex = _currentSession.exercises.indexWhere(
+      (e) => e.id == exerciseId,
+    );
     if (exerciseIndex == -1) return;
 
     final exercise = _currentSession.exercises[exerciseIndex];
-    
+
     // If this is the last set, remove the entire exercise instead
     if (exercise.sets.length <= 1) {
-      final updatedExercises = List<WorkoutExercise>.from(_currentSession.exercises)
-        ..removeAt(exerciseIndex);
-      final updatedSession = _currentSession.copyWith(exercises: updatedExercises);
+      final updatedExercises = List<WorkoutExercise>.from(
+        _currentSession.exercises,
+      )..removeAt(exerciseIndex);
+      final updatedSession = _currentSession.copyWith(
+        exercises: updatedExercises,
+      );
 
       await WorkoutSessionService.instance.updateSession(updatedSession);
       if (mounted) {
@@ -191,11 +195,15 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     }
 
     // Remove the specific set
-    final updatedSets = List<WorkoutSet>.from(exercise.sets)..removeWhere((s) => s.id == setId);
+    final updatedSets = List<WorkoutSet>.from(exercise.sets)
+      ..removeWhere((s) => s.id == setId);
     final updatedExercise = exercise.copyWith(sets: updatedSets);
-    final updatedExercises = List<WorkoutExercise>.from(_currentSession.exercises)
-      ..[exerciseIndex] = updatedExercise;
-    final updatedSession = _currentSession.copyWith(exercises: updatedExercises);
+    final updatedExercises = List<WorkoutExercise>.from(
+      _currentSession.exercises,
+    )..[exerciseIndex] = updatedExercise;
+    final updatedSession = _currentSession.copyWith(
+      exercises: updatedExercises,
+    );
 
     await WorkoutSessionService.instance.updateSession(updatedSession);
     if (mounted) {
@@ -224,13 +232,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   void _addExercise() async {
     final selectedExercises = await Navigator.push<List<Exercise>>(
       context,
-      MaterialPageRoute(builder: (context) => const ExercisePickerScreen(multiSelect: true)),
+      MaterialPageRoute(
+        builder: (context) => const ExercisePickerScreen(multiSelect: true),
+      ),
     );
 
     if (selectedExercises != null && selectedExercises.isNotEmpty) {
       final newWorkoutExercises = selectedExercises.map((selectedExercise) {
-        final newWorkoutExerciseId = "${DateTime.now().millisecondsSinceEpoch}_${selectedExercise.slug}_wex";
-        
+        final newWorkoutExerciseId =
+            "${DateTime.now().millisecondsSinceEpoch}_${selectedExercise.slug}_wex";
+
         final templateSet = WorkoutSet(
           workoutExerciseId: newWorkoutExerciseId,
           setIndex: 0,
@@ -247,10 +258,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
           notes: '',
         );
       }).toList();
-      
-      final updatedExercises = List<WorkoutExercise>.from(_currentSession.exercises)..addAll(newWorkoutExercises);
-      final updatedSession = _currentSession.copyWith(exercises: updatedExercises);
-      
+
+      final updatedExercises = List<WorkoutExercise>.from(
+        _currentSession.exercises,
+      )..addAll(newWorkoutExercises);
+      final updatedSession = _currentSession.copyWith(
+        exercises: updatedExercises,
+      );
+
       await WorkoutSessionService.instance.updateSession(updatedSession);
       if (mounted) {
         setState(() => _currentSession = updatedSession);
@@ -265,7 +280,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         title: const Text('Finish Workout'),
         content: const Text('Are you sure you want to finish this workout?'),
         actions: <CupertinoDialogAction>[
-          CupertinoDialogAction(child: const Text('Cancel'), onPressed: () => Navigator.of(context).pop()),
+          CupertinoDialogAction(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
           CupertinoDialogAction(
             isDefaultAction: true,
             child: const Text('Finish'),
@@ -286,16 +304,23 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         title: const Text('Abort Workout'),
         content: const Text('Are you sure? All progress will be lost.'),
         actions: <CupertinoDialogAction>[
-          CupertinoDialogAction(child: const Text('Cancel'), onPressed: () => Navigator.of(context).pop()),
+          CupertinoDialogAction(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
           CupertinoDialogAction(
             isDestructiveAction: true,
             child: const Text('Abort'),
             onPressed: () async {
               Navigator.pop(context);
-              await WorkoutSessionService.instance.clearActiveSession(deleteFromDb: true);
+              await WorkoutSessionService.instance.clearActiveSession(
+                deleteFromDb: true,
+              );
               if (mounted) {
                 // Navigate back to home and clear the entire navigation stack
-                Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/', (route) => false);
                 // Ensure we go to the home tab
                 NavigationHelper.goToHomeTab();
               }
@@ -308,16 +333,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
   Future<void> _checkForRoutineUpdatesAndFinish() async {
     WorkoutTemplate? originalTemplate;
-    
+
     if (_currentSession.templateId != null) {
-      originalTemplate = await WorkoutTemplateService.instance.getWorkoutTemplateById(_currentSession.templateId!);
+      originalTemplate = await WorkoutTemplateService.instance
+          .getWorkoutTemplateById(_currentSession.templateId!);
     }
-    
+
     if (originalTemplate == null) {
       _finishWorkout();
       return;
     }
-    
+
     // TODO: Implement template comparison logic
     // This would require loading the template's exercises from WorkoutExerciseDao
     // and comparing them with the current session's exercises
@@ -333,7 +359,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     if (!mounted) return;
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => WorkoutCompletionScreen(session: _currentSession)),
+      MaterialPageRoute(
+        builder: (context) => WorkoutCompletionScreen(session: _currentSession),
+      ),
     );
   }
 }

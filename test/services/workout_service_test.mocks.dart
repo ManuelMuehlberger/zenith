@@ -29,6 +29,7 @@ import 'package:zenith/services/dao/workout_set_dao.dart' as _i11;
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
 class _FakeLogger_0 extends _i1.SmartFake implements _i2.Logger {
   _FakeLogger_0(Object parent, Invocation parentInvocation)
@@ -367,6 +368,18 @@ class MockWorkoutExerciseDao extends _i1.Mock
           as _i9.Future<List<_i5.WorkoutExercise>>);
 
   @override
+  _i9.Future<List<_i5.WorkoutExercise>> getWorkoutExercisesByWorkoutIds(
+    List<String>? workoutIds,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getWorkoutExercisesByWorkoutIds, [workoutIds]),
+            returnValue: _i9.Future<List<_i5.WorkoutExercise>>.value(
+              <_i5.WorkoutExercise>[],
+            ),
+          )
+          as _i9.Future<List<_i5.WorkoutExercise>>);
+
+  @override
   _i9.Future<List<_i5.WorkoutExercise>> getWorkoutExercisesByWorkoutTemplateId(
     String? workoutTemplateId,
   ) =>
@@ -429,6 +442,14 @@ class MockWorkoutExerciseDao extends _i1.Mock
             returnValue: _i9.Future<int>.value(0),
           )
           as _i9.Future<int>);
+
+  @override
+  _i9.Future<Map<String, int>> getExerciseFrequency() =>
+      (super.noSuchMethod(
+            Invocation.method(#getExerciseFrequency, []),
+            returnValue: _i9.Future<Map<String, int>>.value(<String, int>{}),
+          )
+          as _i9.Future<Map<String, int>>);
 
   @override
   _i9.Future<int> insert(_i5.WorkoutExercise? model) =>
@@ -592,6 +613,20 @@ class MockWorkoutSetDao extends _i1.Mock implements _i11.WorkoutSetDao {
       (super.noSuchMethod(
             Invocation.method(#getWorkoutSetsByWorkoutExerciseId, [
               workoutExerciseId,
+            ]),
+            returnValue: _i9.Future<List<_i6.WorkoutSet>>.value(
+              <_i6.WorkoutSet>[],
+            ),
+          )
+          as _i9.Future<List<_i6.WorkoutSet>>);
+
+  @override
+  _i9.Future<List<_i6.WorkoutSet>> getWorkoutSetsByWorkoutExerciseIds(
+    List<String>? workoutExerciseIds,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#getWorkoutSetsByWorkoutExerciseIds, [
+              workoutExerciseIds,
             ]),
             returnValue: _i9.Future<List<_i6.WorkoutSet>>.value(
               <_i6.WorkoutSet>[],

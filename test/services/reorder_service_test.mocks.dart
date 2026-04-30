@@ -3,16 +3,19 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i7;
+import 'dart:async' as _i9;
+import 'dart:ui' as _i12;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:zenith/models/exercise.dart' as _i8;
-import 'package:zenith/models/workout.dart' as _i2;
-import 'package:zenith/models/workout_exercise.dart' as _i9;
-import 'package:zenith/services/dao/workout_dao.dart' as _i4;
-import 'package:zenith/services/dao/workout_exercise_dao.dart' as _i5;
-import 'package:zenith/services/dao/workout_set_dao.dart' as _i6;
-import 'package:zenith/services/workout_service.dart' as _i3;
+import 'package:zenith/models/exercise.dart' as _i10;
+import 'package:zenith/models/workout.dart' as _i3;
+import 'package:zenith/models/workout_exercise.dart' as _i11;
+import 'package:zenith/models/workout_folder.dart' as _i2;
+import 'package:zenith/services/dao/workout_dao.dart' as _i5;
+import 'package:zenith/services/dao/workout_exercise_dao.dart' as _i6;
+import 'package:zenith/services/dao/workout_folder_dao.dart' as _i8;
+import 'package:zenith/services/dao/workout_set_dao.dart' as _i7;
+import 'package:zenith/services/workout_service.dart' as _i4;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -27,70 +30,172 @@ import 'package:zenith/services/workout_service.dart' as _i3;
 // ignore_for_file: unnecessary_parenthesis
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
+// ignore_for_file: invalid_use_of_internal_member
 
-class _FakeWorkout_0 extends _i1.SmartFake implements _i2.Workout {
-  _FakeWorkout_0(Object parent, Invocation parentInvocation)
+class _FakeWorkoutFolder_0 extends _i1.SmartFake implements _i2.WorkoutFolder {
+  _FakeWorkoutFolder_0(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeWorkout_1 extends _i1.SmartFake implements _i3.Workout {
+  _FakeWorkout_1(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
 /// A class which mocks [WorkoutService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockWorkoutService extends _i1.Mock implements _i3.WorkoutService {
+class MockWorkoutService extends _i1.Mock implements _i4.WorkoutService {
   MockWorkoutService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  List<_i2.Workout> get workouts =>
+  List<_i3.Workout> get workouts =>
       (super.noSuchMethod(
             Invocation.getter(#workouts),
-            returnValue: <_i2.Workout>[],
+            returnValue: <_i3.Workout>[],
           )
-          as List<_i2.Workout>);
+          as List<_i3.Workout>);
 
   @override
-  set workoutDao(_i4.WorkoutDao? dao) => super.noSuchMethod(
+  List<_i2.WorkoutFolder> get folders =>
+      (super.noSuchMethod(
+            Invocation.getter(#folders),
+            returnValue: <_i2.WorkoutFolder>[],
+          )
+          as List<_i2.WorkoutFolder>);
+
+  @override
+  set workoutDao(_i5.WorkoutDao? dao) => super.noSuchMethod(
     Invocation.setter(#workoutDao, dao),
     returnValueForMissingStub: null,
   );
 
   @override
-  set workoutExerciseDao(_i5.WorkoutExerciseDao? dao) => super.noSuchMethod(
+  set workoutExerciseDao(_i6.WorkoutExerciseDao? dao) => super.noSuchMethod(
     Invocation.setter(#workoutExerciseDao, dao),
     returnValueForMissingStub: null,
   );
 
   @override
-  set workoutSetDao(_i6.WorkoutSetDao? dao) => super.noSuchMethod(
+  set workoutSetDao(_i7.WorkoutSetDao? dao) => super.noSuchMethod(
     Invocation.setter(#workoutSetDao, dao),
     returnValueForMissingStub: null,
   );
 
   @override
-  _i7.Future<void> loadData() =>
+  set workoutFolderDao(_i8.WorkoutFolderDao? dao) => super.noSuchMethod(
+    Invocation.setter(#workoutFolderDao, dao),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  bool get hasListeners =>
+      (super.noSuchMethod(Invocation.getter(#hasListeners), returnValue: false)
+          as bool);
+
+  @override
+  _i9.Future<void> loadData() =>
       (super.noSuchMethod(
             Invocation.method(#loadData, []),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i9.Future<void>);
 
   @override
-  _i7.Future<void> saveData() =>
+  _i9.Future<List<_i3.Workout>> getWorkoutsSortedByStartedAt() =>
+      (super.noSuchMethod(
+            Invocation.method(#getWorkoutsSortedByStartedAt, []),
+            returnValue: _i9.Future<List<_i3.Workout>>.value(<_i3.Workout>[]),
+          )
+          as _i9.Future<List<_i3.Workout>>);
+
+  @override
+  _i9.Future<List<_i3.Workout>> getWorkoutsForDate(DateTime? date) =>
+      (super.noSuchMethod(
+            Invocation.method(#getWorkoutsForDate, [date]),
+            returnValue: _i9.Future<List<_i3.Workout>>.value(<_i3.Workout>[]),
+          )
+          as _i9.Future<List<_i3.Workout>>);
+
+  @override
+  _i9.Future<List<DateTime>> getDatesWithWorkouts() =>
+      (super.noSuchMethod(
+            Invocation.method(#getDatesWithWorkouts, []),
+            returnValue: _i9.Future<List<DateTime>>.value(<DateTime>[]),
+          )
+          as _i9.Future<List<DateTime>>);
+
+  @override
+  _i9.Future<_i3.Workout?> getLastWorkoutForExercise(String? exerciseSlug) =>
+      (super.noSuchMethod(
+            Invocation.method(#getLastWorkoutForExercise, [exerciseSlug]),
+            returnValue: _i9.Future<_i3.Workout?>.value(),
+          )
+          as _i9.Future<_i3.Workout?>);
+
+  @override
+  _i9.Future<void> saveData() =>
       (super.noSuchMethod(
             Invocation.method(#saveData, []),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i9.Future<void>);
 
   @override
-  _i7.Future<_i2.Workout> createWorkout(String? name, {String? folderId}) =>
+  _i9.Future<void> loadFolders() =>
+      (super.noSuchMethod(
+            Invocation.method(#loadFolders, []),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
+          )
+          as _i9.Future<void>);
+
+  @override
+  _i9.Future<_i2.WorkoutFolder> createFolder(String? name) =>
+      (super.noSuchMethod(
+            Invocation.method(#createFolder, [name]),
+            returnValue: _i9.Future<_i2.WorkoutFolder>.value(
+              _FakeWorkoutFolder_0(
+                this,
+                Invocation.method(#createFolder, [name]),
+              ),
+            ),
+          )
+          as _i9.Future<_i2.WorkoutFolder>);
+
+  @override
+  _i9.Future<void> updateFolder(_i2.WorkoutFolder? folder) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateFolder, [folder]),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
+          )
+          as _i9.Future<void>);
+
+  @override
+  _i9.Future<void> deleteFolder(String? folderId) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteFolder, [folderId]),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
+          )
+          as _i9.Future<void>);
+
+  @override
+  _i2.WorkoutFolder? getFolderById(String? id) =>
+      (super.noSuchMethod(Invocation.method(#getFolderById, [id]))
+          as _i2.WorkoutFolder?);
+
+  @override
+  _i9.Future<_i3.Workout> createWorkout(String? name, {String? folderId}) =>
       (super.noSuchMethod(
             Invocation.method(#createWorkout, [name], {#folderId: folderId}),
-            returnValue: _i7.Future<_i2.Workout>.value(
-              _FakeWorkout_0(
+            returnValue: _i9.Future<_i3.Workout>.value(
+              _FakeWorkout_1(
                 this,
                 Invocation.method(
                   #createWorkout,
@@ -100,37 +205,37 @@ class MockWorkoutService extends _i1.Mock implements _i3.WorkoutService {
               ),
             ),
           )
-          as _i7.Future<_i2.Workout>);
+          as _i9.Future<_i3.Workout>);
 
   @override
-  _i7.Future<void> updateWorkout(_i2.Workout? workout) =>
+  _i9.Future<void> updateWorkout(_i3.Workout? workout) =>
       (super.noSuchMethod(
             Invocation.method(#updateWorkout, [workout]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i9.Future<void>);
 
   @override
-  _i7.Future<void> deleteWorkout(String? workoutId) =>
+  _i9.Future<void> deleteWorkout(String? workoutId) =>
       (super.noSuchMethod(
             Invocation.method(#deleteWorkout, [workoutId]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i9.Future<void>);
 
   @override
-  _i7.Future<void> moveWorkoutToFolder(String? workoutId, String? folderId) =>
+  _i9.Future<void> moveWorkoutToFolder(String? workoutId, String? folderId) =>
       (super.noSuchMethod(
             Invocation.method(#moveWorkoutToFolder, [workoutId, folderId]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i9.Future<void>);
 
   @override
-  _i7.Future<void> reorderWorkoutsInFolder(
+  _i9.Future<void> reorderWorkoutsInFolder(
     String? folderId,
     int? oldIndex,
     int? newIndex,
@@ -141,13 +246,13 @@ class MockWorkoutService extends _i1.Mock implements _i3.WorkoutService {
               oldIndex,
               newIndex,
             ]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i9.Future<void>);
 
   @override
-  _i7.Future<void> reorderExercisesInWorkout(
+  _i9.Future<void> reorderExercisesInWorkout(
     String? workoutId,
     int? oldIndex,
     int? newIndex,
@@ -158,28 +263,28 @@ class MockWorkoutService extends _i1.Mock implements _i3.WorkoutService {
               oldIndex,
               newIndex,
             ]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i9.Future<void>);
 
   @override
-  _i7.Future<void> addExerciseToWorkout(
+  _i9.Future<void> addExerciseToWorkout(
     String? workoutId,
-    _i8.Exercise? exerciseDetail,
+    _i10.Exercise? exerciseDetail,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#addExerciseToWorkout, [
               workoutId,
               exerciseDetail,
             ]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i9.Future<void>);
 
   @override
-  _i7.Future<void> removeExerciseFromWorkout(
+  _i9.Future<void> removeExerciseFromWorkout(
     String? workoutId,
     String? exerciseId,
   ) =>
@@ -188,25 +293,25 @@ class MockWorkoutService extends _i1.Mock implements _i3.WorkoutService {
               workoutId,
               exerciseId,
             ]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i9.Future<void>);
 
   @override
-  _i7.Future<void> updateWorkoutExercise(
+  _i9.Future<void> updateWorkoutExercise(
     String? workoutId,
-    _i9.WorkoutExercise? exercise,
+    _i11.WorkoutExercise? exercise,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#updateWorkoutExercise, [workoutId, exercise]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i9.Future<void>);
 
   @override
-  _i7.Future<void> addSetToExercise(
+  _i9.Future<void> addSetToExercise(
     String? workoutId,
     String? exerciseId, {
     int? targetReps = 10,
@@ -218,13 +323,13 @@ class MockWorkoutService extends _i1.Mock implements _i3.WorkoutService {
               [workoutId, exerciseId],
               {#targetReps: targetReps, #targetWeight: targetWeight},
             ),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i9.Future<void>);
 
   @override
-  _i7.Future<void> removeSetFromExercise(
+  _i9.Future<void> removeSetFromExercise(
     String? workoutId,
     String? exerciseId,
     String? setId,
@@ -235,13 +340,13 @@ class MockWorkoutService extends _i1.Mock implements _i3.WorkoutService {
               exerciseId,
               setId,
             ]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i9.Future<void>);
 
   @override
-  _i7.Future<void> updateSet(
+  _i9.Future<void> updateSet(
     String? workoutId,
     String? exerciseId,
     String? setId, {
@@ -259,38 +364,62 @@ class MockWorkoutService extends _i1.Mock implements _i3.WorkoutService {
                 #targetRestSeconds: targetRestSeconds,
               },
             ),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i9.Future<void>);
 
   @override
-  List<_i2.Workout> getWorkoutsInFolder(String? folderId) =>
+  List<_i3.Workout> getWorkoutsInFolder(String? folderId) =>
       (super.noSuchMethod(
             Invocation.method(#getWorkoutsInFolder, [folderId]),
-            returnValue: <_i2.Workout>[],
+            returnValue: <_i3.Workout>[],
           )
-          as List<_i2.Workout>);
+          as List<_i3.Workout>);
 
   @override
-  List<_i2.Workout> getWorkoutsNotInFolder() =>
+  List<_i3.Workout> getWorkoutsNotInFolder() =>
       (super.noSuchMethod(
             Invocation.method(#getWorkoutsNotInFolder, []),
-            returnValue: <_i2.Workout>[],
+            returnValue: <_i3.Workout>[],
           )
-          as List<_i2.Workout>);
+          as List<_i3.Workout>);
 
   @override
-  _i2.Workout? getWorkoutById(String? id) =>
+  _i3.Workout? getWorkoutById(String? id) =>
       (super.noSuchMethod(Invocation.method(#getWorkoutById, [id]))
-          as _i2.Workout?);
+          as _i3.Workout?);
 
   @override
-  _i7.Future<void> clearUserWorkouts() =>
+  _i9.Future<void> clearUserWorkouts() =>
       (super.noSuchMethod(
             Invocation.method(#clearUserWorkouts, []),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i9.Future<void>.value(),
+            returnValueForMissingStub: _i9.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i9.Future<void>);
+
+  @override
+  void addListener(_i12.VoidCallback? listener) => super.noSuchMethod(
+    Invocation.method(#addListener, [listener]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void removeListener(_i12.VoidCallback? listener) => super.noSuchMethod(
+    Invocation.method(#removeListener, [listener]),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void dispose() => super.noSuchMethod(
+    Invocation.method(#dispose, []),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  void notifyListeners() => super.noSuchMethod(
+    Invocation.method(#notifyListeners, []),
+    returnValueForMissingStub: null,
+  );
 }
