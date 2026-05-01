@@ -1,5 +1,5 @@
-import '../../models/workout_template.dart';
 import '../../models/typedefs.dart';
+import '../../models/workout_template.dart';
 import 'base_dao.dart';
 
 class WorkoutTemplateDao extends BaseDao<WorkoutTemplate> {
@@ -44,7 +44,9 @@ class WorkoutTemplateDao extends BaseDao<WorkoutTemplate> {
   }
 
   /// Get all workout templates in a specific folder ordered by orderIndex
-  Future<List<WorkoutTemplate>> getWorkoutTemplatesByFolderId(WorkoutFolderId folderId) async {
+  Future<List<WorkoutTemplate>> getWorkoutTemplatesByFolderId(
+    WorkoutFolderId folderId,
+  ) async {
     final db = await database;
     logger.fine('Getting workout templates for folder: $folderId');
     try {
@@ -55,7 +57,9 @@ class WorkoutTemplateDao extends BaseDao<WorkoutTemplate> {
         orderBy: 'orderIndex ASC',
       );
       final templates = maps.map((map) => fromMap(map)).toList();
-      logger.fine('Found ${templates.length} workout templates in folder $folderId');
+      logger.fine(
+        'Found ${templates.length} workout templates in folder $folderId',
+      );
       return templates;
     } catch (e) {
       logger.severe('Failed to get workout templates for folder $folderId: $e');
@@ -130,7 +134,9 @@ class WorkoutTemplateDao extends BaseDao<WorkoutTemplate> {
   }
 
   /// Get workout templates ordered by last used (most recent first)
-  Future<List<WorkoutTemplate>> getWorkoutTemplatesByLastUsed({int? limit}) async {
+  Future<List<WorkoutTemplate>> getWorkoutTemplatesByLastUsed({
+    int? limit,
+  }) async {
     final db = await database;
     logger.fine('Getting workout templates ordered by lastUsed');
     try {

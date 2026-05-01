@@ -1,7 +1,10 @@
 class UnitConverter {
-
   // Format weight with appropriate unit label
-  static String formatWeight(double weightInKg, String units, {int decimals = 1}) {
+  static String formatWeight(
+    double weightInKg,
+    String units, {
+    int decimals = 1,
+  }) {
     final unit = units == 'metric' ? 'kg' : 'lbs';
     return '${weightInKg.toStringAsFixed(decimals)} $unit';
   }

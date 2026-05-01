@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/main.dart';
-import 'package:zenith/constants/app_constants.dart';
 import 'package:zenith/services/app_navigation_service.dart';
+import 'package:zenith/theme/app_theme.dart';
 import 'package:zenith/utils/navigation_helper.dart';
 
 void main() {
@@ -13,7 +13,7 @@ void main() {
   testWidgets('MainScreen bottom bar is glass and transparent', (tester) async {
     // Pump MainScreen inside a MaterialApp
     await tester.pumpWidget(
-      const MaterialApp(home: MainScreen()),
+      MaterialApp(theme: AppTheme.dark, home: const MainScreen()),
     );
     // Avoid pumpAndSettle; app has timers/post-frame callbacks that never settle in tests
     await tester.pump();
@@ -26,31 +26,49 @@ void main() {
     // BackdropFilter should exist for the glass blur effect
     expect(find.byType(BackdropFilter), findsWidgets);
 
-    // Container with the BOTTOM_BAR_BG_COLOR (the translucent tint for bottom bar) should exist
-    final containerWidgets = tester.widgetList(find.byType(Container)).whereType<Container>().toList();
+    // Container with the themed translucent overlay should exist.
+    final containerWidgets = tester
+        .widgetList(find.byType(Container))
+        .whereType<Container>()
+        .toList();
     final hasBottomBarTintContainer = containerWidgets.any((c) {
       final decoration = c.decoration;
       if (decoration is BoxDecoration) {
-        return decoration.color == AppConstants.BOTTOM_BAR_BG_COLOR;
+        return decoration.color == AppTheme.darkTokens.overlaySoft;
       }
       return false;
     });
-    expect(hasBottomBarTintContainer, isTrue, reason: 'Expected a Container using AppConstants.BOTTOM_BAR_BG_COLOR as the bottom bar tint');
+    expect(
+      hasBottomBarTintContainer,
+      isTrue,
+      reason:
+          'Expected a Container using the theme overlay tint for the bottom bar',
+    );
 
-    // BottomNavigationBar background should be transparent
+    // BottomNavigationBar background should come from the transparent theme token.
     final barFinder = find.byType(BottomNavigationBar);
     expect(barFinder, findsOneWidget);
     final bar = tester.widget<BottomNavigationBar>(barFinder);
-    expect(bar.backgroundColor, equals(Colors.transparent));
+    expect(
+      Theme.of(
+        tester.element(barFinder),
+      ).bottomNavigationBarTheme.backgroundColor,
+      AppThemeColors.clear,
+    );
+    expect(bar.backgroundColor, isNull);
   });
 
-  testWidgets('NavigationHelper switches tabs through AppNavigationService', (tester) async {
+  testWidgets('NavigationHelper switches tabs through AppNavigationService', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      const MaterialApp(home: MainScreen()),
+      MaterialApp(theme: AppTheme.dark, home: const MainScreen()),
     );
     await tester.pump();
 
-    BottomNavigationBar bar = tester.widget<BottomNavigationBar>(find.byType(BottomNavigationBar));
+    BottomNavigationBar bar = tester.widget<BottomNavigationBar>(
+      find.byType(BottomNavigationBar),
+    );
     expect(bar.currentIndex, 0);
 
     NavigationHelper.goToTab(1);

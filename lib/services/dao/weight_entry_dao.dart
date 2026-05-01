@@ -1,6 +1,6 @@
 import 'package:sqflite/sqflite.dart';
-import '../../models/user_data.dart';
 import '../../models/typedefs.dart';
+import '../../models/user_data.dart';
 import 'base_dao.dart';
 
 class WeightEntryDao extends BaseDao<WeightEntry> {
@@ -29,7 +29,8 @@ class WeightEntryDao extends BaseDao<WeightEntry> {
 
   /// Get weight entries by user data ID
   Future<List<WeightEntry>> getWeightEntriesByUserId(
-      UserDataId userDataId) async {
+    UserDataId userDataId,
+  ) async {
     final db = await database;
     logger.fine('Getting weight entries for user: $userDataId');
     try {
@@ -40,7 +41,9 @@ class WeightEntryDao extends BaseDao<WeightEntry> {
       );
       final entries = maps.map((map) => fromMap(map)).toList()
         ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-      logger.fine('Found ${entries.length} weight entries for user: $userDataId');
+      logger.fine(
+        'Found ${entries.length} weight entries for user: $userDataId',
+      );
       return entries;
     } catch (e) {
       logger.severe('Failed to get weight entries for user $userDataId: $e');
@@ -50,7 +53,9 @@ class WeightEntryDao extends BaseDao<WeightEntry> {
 
   /// Add a weight entry for a user
   Future<int> addWeightEntryForUser(
-      UserDataId userDataId, WeightEntry weightEntry) async {
+    UserDataId userDataId,
+    WeightEntry weightEntry,
+  ) async {
     final db = await database;
     final map = toMap(weightEntry);
     map['userDataId'] = userDataId; // Set the user ID
@@ -71,7 +76,9 @@ class WeightEntryDao extends BaseDao<WeightEntry> {
 
   /// Update a weight entry
   Future<int> updateWeightEntry(
-      UserDataId userDataId, WeightEntry weightEntry) async {
+    UserDataId userDataId,
+    WeightEntry weightEntry,
+  ) async {
     final db = await database;
     final map = toMap(weightEntry);
     map['userDataId'] = userDataId; // Ensure the user ID is set

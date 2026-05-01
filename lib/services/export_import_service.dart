@@ -1,20 +1,80 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:zenith/services/database_helper.dart';
+
+// policy: allow-public-api test seam for file sharing integration.
+typedef ShareFilesCallback =
+    Future<void> Function(List<XFile> files, {String? subject});
+// policy: allow-public-api test seam for picker integration.
+typedef PickFilesCallback =
+    Future<FilePickerResult?> Function({
+      required FileType type,
+      required bool allowMultiple,
+    });
 
 class ExportImportService {
   static ExportImportService? _instance;
   final Logger _logger = Logger('ExportImportService');
   final DatabaseHelper _databaseHelper;
+  final ShareFilesCallback _shareFiles;
+  final PickFilesCallback _pickFiles;
+  final Directory Function() _tempDirectoryProvider;
+  final DateTime Function() _nowProvider;
 
-  ExportImportService._internal(this._databaseHelper);
+  ExportImportService._internal(
+    this._databaseHelper, {
+    ShareFilesCallback? shareFiles,
+    PickFilesCallback? pickFiles,
+    Directory Function()? tempDirectoryProvider,
+    DateTime Function()? nowProvider,
+  }) : _shareFiles = shareFiles ?? _defaultShareFiles,
+       _pickFiles = pickFiles ?? _defaultPickFiles,
+       _tempDirectoryProvider = tempDirectoryProvider ?? _defaultTempDirectory,
+       _nowProvider = nowProvider ?? DateTime.now;
 
   static ExportImportService get instance {
     _instance ??= ExportImportService._internal(DatabaseHelper());
     return _instance!;
   }
+
+  @visibleForTesting
+  factory ExportImportService.withDependencies({
+    required DatabaseHelper databaseHelper,
+    ShareFilesCallback? shareFiles,
+    PickFilesCallback? pickFiles,
+    Directory Function()? tempDirectoryProvider,
+    DateTime Function()? nowProvider,
+  }) {
+    return ExportImportService._internal(
+      databaseHelper,
+      shareFiles: shareFiles,
+      pickFiles: pickFiles,
+      tempDirectoryProvider: tempDirectoryProvider,
+      nowProvider: nowProvider,
+    );
+  }
+
+  static Future<void> _defaultShareFiles(
+    List<XFile> files, {
+    String? subject,
+  }) async {
+    await SharePlus.instance.share(ShareParams(files: files, subject: subject));
+  }
+
+  static Future<FilePickerResult?> _defaultPickFiles({
+    required FileType type,
+    required bool allowMultiple,
+  }) {
+    return FilePicker.platform.pickFiles(
+      type: type,
+      allowMultiple: allowMultiple,
+    );
+  }
+
+  static Directory _defaultTempDirectory() => Directory.systemTemp;
 
   Future<void> exportData() async {
     _logger.info('Starting database export');
@@ -33,21 +93,20 @@ class ExportImportService {
       try {
         // Share the database file directly
         // We use the original file path. SharePlus copies it internally usually.
-        // If we wanted to be extra safe we could copy to a temp dir first, 
+        // If we wanted to be extra safe we could copy to a temp dir first,
         // but closing the DB should be enough.
-        
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
+
+        final timestamp = _nowProvider().millisecondsSinceEpoch;
         final exportName = 'zenith_backup_$timestamp.db';
-        
+
         // Create a temporary copy with the timestamped name for sharing
-        final tempDir = Directory.systemTemp;
+        final tempDir = _tempDirectoryProvider();
         final tempFile = await dbFile.copy('${tempDir.path}/$exportName');
 
-        await Share.shareXFiles(
-          [XFile(tempFile.path)],
-          subject: 'Zenith Workout Tracker Backup',
-        );
-        
+        await _shareFiles([
+          XFile(tempFile.path),
+        ], subject: 'Zenith Workout Tracker Backup');
+
         // Clean up temp file
         if (await tempFile.exists()) {
           await tempFile.delete();
@@ -56,7 +115,7 @@ class ExportImportService {
         // Re-open the database (accessing the property triggers init)
         await _databaseHelper.database;
       }
-      
+
       _logger.info('Database export completed');
     } catch (e) {
       _logger.severe('Failed to export database: $e');
@@ -64,19 +123,23 @@ class ExportImportService {
       try {
         await _databaseHelper.database;
       } catch (dbError) {
-        _logger.severe('Failed to re-open database after export error: $dbError');
+        _logger.severe(
+          'Failed to re-open database after export error: $dbError',
+        );
       }
       rethrow;
     }
   }
 
   Future<bool> importData() async {
+    // policy: allow-complexity coordinates picker results, file replacement,
+    // and database reopen guarantees in one user-facing transaction.
     _logger.info('Starting database import');
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await _pickFiles(
         type: FileType.any,
-        // We use FileType.any because on some Android devices/versions, 
-        // filtering by extension (custom) can prevent selecting files 
+        // We use FileType.any because on some Android devices/versions,
+        // filtering by extension (custom) can prevent selecting files
         // that don't have the exact MIME type registered.
         // However, if the user reports issues, we might need to adjust this.
         allowMultiple: false,
@@ -89,31 +152,30 @@ class ExportImportService {
 
       final pickedPath = result.files.single.path!;
       final pickedFile = File(pickedPath);
-      
-      // Basic validation - check if it's a valid SQLite file? 
-      // Or just trust the user. Let's check extension at least if possible, 
+
+      // Basic validation - check if it's a valid SQLite file?
+      // Or just trust the user. Let's check extension at least if possible,
       // but on mobile extensions can be hidden or weird.
       // We'll just try to use it.
 
       // Get current DB path
       final dbPath = await _databaseHelper.databasePath;
-      final dbFile = File(dbPath);
 
       // Close current database
       await _databaseHelper.close();
 
       try {
-        // Backup current DB just in case? 
+        // Backup current DB just in case?
         // For now, we'll just overwrite as requested.
-        
+
         // Copy picked file to DB path
         await pickedFile.copy(dbPath);
-        
+
         _logger.info('Database file overwritten with imported file');
       } catch (e) {
         _logger.severe('Error copying imported file: $e');
         // If copy fails, we might be in a bad state if we deleted the original.
-        // But copy overwrites, so if it fails mid-way... 
+        // But copy overwrites, so if it fails mid-way...
         // Ideally we should have backed up.
         rethrow;
       } finally {
@@ -129,7 +191,9 @@ class ExportImportService {
       try {
         await _databaseHelper.database;
       } catch (dbError) {
-        _logger.severe('Failed to re-open database after import error: $dbError');
+        _logger.severe(
+          'Failed to re-open database after import error: $dbError',
+        );
       }
       rethrow;
     }

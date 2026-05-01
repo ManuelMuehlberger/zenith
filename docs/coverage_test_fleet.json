@@ -1,0 +1,254 @@
+{
+  "command": "dispatch_workers",
+  "model": "GPT-5.4 low",
+  "objective": "Raise non-frontend changed-file coverage toward an 80% per-file threshold by extending or creating focused unit tests.",
+  "rules": [
+    "Work only on the assigned source file and its related test file unless a tiny support change is required for testability.",
+    "Prefer extending an existing test file when one already exists.",
+    "Do not refactor production code unless required to make the behavior testable.",
+    "Target meaningful branch and failure-path coverage, not trivial smoke tests.",
+    "If the assigned file has no executable lines or is abstract-only, do not add a trivial test; return a policy-exception recommendation instead."
+  ],
+  "workers": [
+    {
+      "id": "coverage-01",
+      "priority_rank": 1,
+      "weight_score": 189.0,
+      "target_file": "lib/services/database_helper.dart",
+      "suggested_test_file": "test/services/database_helper_test.dart",
+      "current_coverage_percent": 8.22,
+      "delta_to_80": 105,
+      "task": "Create or extend tests covering database bootstrap, schema creation, migrations, and failure handling for lib/services/database_helper.dart. Aim to move the file toward at least 80% line coverage."
+    },
+    {
+      "id": "coverage-02",
+      "priority_rank": 2,
+      "weight_score": 156.4,
+      "target_file": "lib/services/live_workout_notification_service.dart",
+      "suggested_test_file": "test/services/live_workout_notification_service_test.dart",
+      "current_coverage_percent": 5.69,
+      "delta_to_80": 92,
+      "task": "Create tests for notification lifecycle behavior, update paths, and guard clauses in lib/services/live_workout_notification_service.dart. Use fakes or mocks rather than device integration."
+    },
+    {
+      "id": "coverage-03",
+      "priority_rank": 3,
+      "weight_score": 107.25,
+      "target_file": "lib/services/dao/base_dao.dart",
+      "suggested_test_file": "test/services/dao/base_dao_test.dart",
+      "current_coverage_percent": 4.65,
+      "delta_to_80": 65,
+      "task": "Extend the base DAO test suite to cover shared CRUD helpers, mapping hooks, error propagation, and generic query helpers in lib/services/dao/base_dao.dart."
+    },
+    {
+      "id": "coverage-04",
+      "priority_rank": 4,
+      "weight_score": 91.35,
+      "target_file": "lib/services/dao/workout_exercise_dao.dart",
+      "suggested_test_file": "test/services/dao/workout_exercise_dao_test.dart",
+      "current_coverage_percent": 16.33,
+      "delta_to_80": 63,
+      "task": "Add focused DAO tests for lib/services/dao/workout_exercise_dao.dart covering inserts, lookups, joins, ordering, and empty-state behavior."
+    },
+    {
+      "id": "coverage-05",
+      "priority_rank": 5,
+      "weight_score": 68.15,
+      "target_file": "lib/services/dao/workout_set_dao.dart",
+      "suggested_test_file": "test/services/dao/workout_set_dao_test.dart",
+      "current_coverage_percent": 19.48,
+      "delta_to_80": 47,
+      "task": "Expand tests for lib/services/dao/workout_set_dao.dart with persistence, retrieval, sorting, updates, and deletion edge cases."
+    },
+    {
+      "id": "coverage-06",
+      "priority_rank": 6,
+      "weight_score": 63.8,
+      "target_file": "lib/services/dao/workout_dao.dart",
+      "suggested_test_file": "test/services/dao/workout_dao_test.dart",
+      "current_coverage_percent": 25.93,
+      "delta_to_80": 44,
+      "task": "Add meaningful persistence and query tests for lib/services/dao/workout_dao.dart, including filters, mapping, and failure paths."
+    },
+    {
+      "id": "coverage-07",
+      "priority_rank": 7,
+      "weight_score": 62.9,
+      "target_file": "lib/services/workout_session_service.dart",
+      "suggested_test_file": "test/services/workout_session_service_test.dart",
+      "current_coverage_percent": 67.68,
+      "delta_to_80": 37,
+      "task": "Extend the existing workout session tests to cover uncovered branches, resume/reset flows, invalid transitions, and persistence interactions in lib/services/workout_session_service.dart."
+    },
+    {
+      "id": "coverage-08",
+      "priority_rank": 8,
+      "weight_score": 53.75,
+      "target_file": "lib/services/debug_data_service.dart",
+      "suggested_test_file": "test/services/debug_data_service_test.dart",
+      "current_coverage_percent": 0.0,
+      "delta_to_80": 43,
+      "task": "Create tests for lib/services/debug_data_service.dart covering happy paths, guard clauses, and generated data shape without depending on UI."
+    },
+    {
+      "id": "coverage-09",
+      "priority_rank": 9,
+      "weight_score": 49.3,
+      "target_file": "lib/services/dao/exercise_dao.dart",
+      "suggested_test_file": "test/services/dao/exercise_dao_test.dart",
+      "current_coverage_percent": 28.12,
+      "delta_to_80": 34,
+      "task": "Extend lib/services/dao/exercise_dao.dart tests with search, lookup, mapping, and empty-result scenarios."
+    },
+    {
+      "id": "coverage-10",
+      "priority_rank": 10,
+      "weight_score": 49.3,
+      "target_file": "lib/services/dao/workout_template_dao.dart",
+      "suggested_test_file": "test/services/dao/workout_template_dao_test.dart",
+      "current_coverage_percent": 33.33,
+      "delta_to_80": 34,
+      "task": "Expand tests for lib/services/dao/workout_template_dao.dart to cover CRUD behavior, mapping, ordering, and edge cases."
+    },
+    {
+      "id": "coverage-11",
+      "priority_rank": 11,
+      "weight_score": 46.2,
+      "target_file": "lib/services/export_import_service.dart",
+      "suggested_test_file": "test/services/export_import_service_test.dart",
+      "current_coverage_percent": 0.0,
+      "delta_to_80": 33,
+      "task": "Create service tests for lib/services/export_import_service.dart that cover export formatting, import validation, failure cases, and malformed input handling."
+    },
+    {
+      "id": "coverage-12",
+      "priority_rank": 12,
+      "weight_score": 44.2,
+      "target_file": "lib/services/workout_service.dart",
+      "suggested_test_file": "test/services/workout_service_test.dart",
+      "current_coverage_percent": 72.14,
+      "delta_to_80": 26,
+      "task": "Extend lib/services/workout_service.dart tests with uncovered branches in creation, history reads, aggregation, and deletion/update flows."
+    },
+    {
+      "id": "coverage-13",
+      "priority_rank": 13,
+      "weight_score": 34.8,
+      "target_file": "lib/services/dao/weight_entry_dao.dart",
+      "suggested_test_file": "test/services/dao/weight_entry_dao_test.dart",
+      "current_coverage_percent": 26.67,
+      "delta_to_80": 24,
+      "task": "Add DAO tests for lib/services/dao/weight_entry_dao.dart covering inserts, updates, filters, and empty-state behavior."
+    },
+    {
+      "id": "coverage-14",
+      "priority_rank": 14,
+      "weight_score": 14.3,
+      "target_file": "lib/constants/app_constants.dart",
+      "suggested_test_file": "test/constants/app_constants_test.dart",
+      "current_coverage_percent": 55.1,
+      "delta_to_80": 13,
+      "task": "Extend constant-level tests for lib/constants/app_constants.dart to cover remaining enums, parsing helpers, icon items, and assertion behavior."
+    },
+    {
+      "id": "coverage-15",
+      "priority_rank": 15,
+      "weight_score": 10.15,
+      "target_file": "lib/services/dao/muscle_group_dao.dart",
+      "suggested_test_file": "test/services/dao/muscle_group_dao_test.dart",
+      "current_coverage_percent": 45.0,
+      "delta_to_80": 7,
+      "task": "Fill uncovered DAO branches in lib/services/dao/muscle_group_dao.dart with a small number of targeted tests."
+    },
+    {
+      "id": "coverage-16",
+      "priority_rank": 16,
+      "weight_score": 10.15,
+      "target_file": "lib/services/dao/workout_folder_dao.dart",
+      "suggested_test_file": "test/services/dao/workout_folder_dao_test.dart",
+      "current_coverage_percent": 53.85,
+      "delta_to_80": 7,
+      "task": "Fill uncovered CRUD and mapping branches in lib/services/dao/workout_folder_dao.dart."
+    },
+    {
+      "id": "coverage-17",
+      "priority_rank": 17,
+      "weight_score": 8.0,
+      "target_file": "lib/utils/app_logger.dart",
+      "suggested_test_file": "test/utils/app_logger_test.dart",
+      "current_coverage_percent": 0.0,
+      "delta_to_80": 8,
+      "task": "Create small utility tests for lib/utils/app_logger.dart covering idempotent configuration and log listener setup behavior."
+    },
+    {
+      "id": "coverage-18",
+      "priority_rank": 18,
+      "weight_score": 6.25,
+      "target_file": "lib/services/app_startup_service.dart",
+      "suggested_test_file": "test/services/app_startup_service_test.dart",
+      "current_coverage_percent": 63.33,
+      "delta_to_80": 5,
+      "task": "Extend the existing startup service tests to cover remaining branches and failure handling in lib/services/app_startup_service.dart."
+    },
+    {
+      "id": "coverage-19",
+      "priority_rank": 19,
+      "weight_score": 2.7,
+      "target_file": "lib/models/muscle_group.dart",
+      "suggested_test_file": "test/models/muscle_group_test.dart",
+      "current_coverage_percent": 50.0,
+      "delta_to_80": 3,
+      "task": "Add a few direct model tests for lib/models/muscle_group.dart to cover parsing and fallback branches."
+    },
+    {
+      "id": "coverage-20",
+      "priority_rank": 20,
+      "weight_score": 2.0,
+      "target_file": "lib/utils/unit_converter.dart",
+      "suggested_test_file": "test/utils/unit_converter_test.dart",
+      "current_coverage_percent": 40.0,
+      "delta_to_80": 2,
+      "task": "Create simple utility tests for formatting and unit label selection in lib/utils/unit_converter.dart."
+    },
+    {
+      "id": "coverage-21",
+      "priority_rank": 21,
+      "weight_score": 1.45,
+      "target_file": "lib/services/dao/user_dao.dart",
+      "suggested_test_file": "test/services/dao/user_dao_test.dart",
+      "current_coverage_percent": 75.0,
+      "delta_to_80": 1,
+      "task": "Add one or two tests to push lib/services/dao/user_dao.dart over the 80% threshold."
+    },
+    {
+      "id": "coverage-22",
+      "priority_rank": 22,
+      "weight_score": 0.9,
+      "target_file": "lib/models/weekly_bar_data.dart",
+      "suggested_test_file": "test/models/weekly_bar_data_test.dart",
+      "current_coverage_percent": 0.0,
+      "delta_to_80": 1,
+      "task": "Create a minimal model test for lib/models/weekly_bar_data.dart to exercise its executable line."
+    },
+    {
+      "id": "coverage-23",
+      "priority_rank": 23,
+      "weight_score": 0.0,
+      "target_file": "lib/models/typedefs.dart",
+      "suggested_test_file": "test/models/typedefs_test.dart",
+      "current_coverage_percent": null,
+      "delta_to_80": 0,
+      "task": "Do not create a trivial test. Confirm whether lib/models/typedefs.dart is non-instrumentable typedef-only code and return a policy-exception recommendation for the coverage gate."
+    },
+    {
+      "id": "coverage-24",
+      "priority_rank": 24,
+      "weight_score": 0.0,
+      "target_file": "lib/services/insights/insight_data_provider.dart",
+      "suggested_test_file": "test/services/insights/insight_data_provider_test.dart",
+      "current_coverage_percent": null,
+      "delta_to_80": 0,
+      "task": "Do not create a trivial test. Confirm whether lib/services/insights/insight_data_provider.dart is abstract interface-only code and return a policy-exception recommendation for the coverage gate."
+    }
+  ]
+}
