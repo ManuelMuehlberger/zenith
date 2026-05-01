@@ -3,7 +3,14 @@
 set -euo pipefail
 
 repo_root=$(git rev-parse --show-toplevel)
-"$repo_root/scripts/lint_changed_dart.sh" --staged
-"$repo_root/scripts/check_changed_dart_policy.sh" --staged
-"$repo_root/scripts/check_changed_dart_maintainability.py" --staged
-"$repo_root/scripts/check_changed_dart_coverage.sh" --staged
+source "$repo_root/scripts/hook_ui.sh"
+
+hook_ui_section 'Pre-Commit'
+hook_ui_run 'format + analyze' "$(hook_ui_cyan)" \
+	"$repo_root/scripts/lint_changed_dart.sh" --staged
+hook_ui_run 'ui policy' "$(hook_ui_magenta)" \
+	"$repo_root/scripts/check_changed_dart_policy.sh" --staged
+hook_ui_run 'maintainability' "$(hook_ui_blue)" \
+	"$repo_root/scripts/check_changed_dart_maintainability.py" --staged
+hook_ui_run 'coverage gate' "$(hook_ui_yellow)" \
+	"$repo_root/scripts/check_changed_dart_coverage.sh" --staged
