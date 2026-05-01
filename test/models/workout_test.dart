@@ -131,6 +131,25 @@ void main() {
       },
     );
 
+    group('copyWith nullable fields', () {
+      test('sets nullable field to null when null is passed explicitly', () {
+        final startedWorkout = workout.copyWith(startedAt: DateTime(2024));
+
+        final copiedWorkout = startedWorkout.copyWith(startedAt: null);
+
+        expect(copiedWorkout.startedAt, isNull);
+      });
+
+      test('preserves nullable field when omitted', () {
+        final startedAt = DateTime(2024);
+        final startedWorkout = workout.copyWith(startedAt: startedAt);
+
+        final copiedWorkout = startedWorkout.copyWith(name: 'Updated Workout');
+
+        expect(copiedWorkout.startedAt, startedAt);
+      });
+    });
+
     test('should calculate total sets', () {
       final exercise1 = WorkoutExercise(
         workoutId: workout.id,
@@ -249,10 +268,10 @@ void main() {
     });
 
     test('should get color', () {
-      expect(workout.color.value, 0xFF2196F3);
+      expect(workout.color.toARGB32(), 0xFF2196F3);
 
       final workoutWithoutColor = Workout(name: 'Test');
-      expect(workoutWithoutColor.color.value, 0xFF2196F3); // Default
+      expect(workoutWithoutColor.color.toARGB32(), 0xFF2196F3); // Default
     });
 
     test('should handle different icon code points', () {
@@ -306,7 +325,7 @@ void main() {
     });
 
     test('should create workout with templateId', () {
-      final templateId = 'template-123';
+      const templateId = 'template-123';
       final sessionWorkout = Workout(
         name: 'Session',
         status: WorkoutStatus.inProgress,
@@ -318,7 +337,7 @@ void main() {
     });
 
     test('should create workout with startedAt and completedAt', () {
-      final startedAt = DateTime.now().subtract(Duration(hours: 1));
+      final startedAt = DateTime.now().subtract(const Duration(hours: 1));
       final completedAt = DateTime.now();
 
       final completedWorkout = Workout(

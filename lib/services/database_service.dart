@@ -8,10 +8,9 @@ class DatabaseService {
   DatabaseService._internal();
 
   final Logger _logger = Logger('DatabaseService');
-  
+
   static DatabaseService get instance => _instance;
 
-  static const String _legacyWorkoutHistoryKey = 'workouts';
   static const String _activeWorkoutKey = 'active_workout';
   static const String _settingsKey = 'app_settings';
 
@@ -32,7 +31,7 @@ class DatabaseService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final stateJson = prefs.getString(_activeWorkoutKey);
-      
+
       if (stateJson != null) {
         _logger.fine('Active workout state found');
         return jsonDecode(stateJson);
@@ -62,23 +61,22 @@ class DatabaseService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final settingsJson = prefs.getString(_settingsKey);
-      
+
       if (settingsJson != null) {
         _logger.fine('App settings found');
         return jsonDecode(settingsJson);
       }
-      
+
       _logger.fine('No app settings found, returning default settings');
       return {
         'units': 'metric', // 'metric' or 'imperial'
         'theme': 'dark',
       };
     } catch (e) {
-      _logger.severe('Failed to get app settings, returning default settings: $e');
-      return {
-        'units': 'metric',
-        'theme': 'dark',
-      };
+      _logger.severe(
+        'Failed to get app settings, returning default settings: $e',
+      );
+      return {'units': 'metric', 'theme': 'dark'};
     }
   }
 
@@ -97,7 +95,6 @@ class DatabaseService {
     _logger.warning('Clearing all data from SharedPreferences');
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_legacyWorkoutHistoryKey);
       await prefs.remove(_activeWorkoutKey);
       await prefs.remove(_settingsKey);
       _logger.info('All data cleared successfully');

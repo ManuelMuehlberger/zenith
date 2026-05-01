@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
+import '../models/exercise.dart';
 import '../models/workout.dart';
 import '../models/workout_exercise.dart';
+import '../models/workout_folder.dart';
 import '../models/workout_set.dart';
-import '../models/exercise.dart';
 import 'dao/workout_dao.dart';
 import 'dao/workout_exercise_dao.dart';
-import 'dao/workout_set_dao.dart';
-import '../models/workout_folder.dart';
 import 'dao/workout_folder_dao.dart';
+import 'dao/workout_set_dao.dart';
 
 class WorkoutService extends ChangeNotifier {
   static final WorkoutService _instance = WorkoutService._internal();
@@ -160,11 +160,6 @@ class WorkoutService extends ChangeNotifier {
     }
 
     return null;
-  }
-
-  Future<void> saveData() async {
-    // Data is saved directly to the database through DAO operations
-    // This method is kept for compatibility but doesn't need to do anything
   }
 
   // Folder operations

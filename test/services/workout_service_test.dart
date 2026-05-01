@@ -496,13 +496,6 @@ void main() {
       });
     });
 
-    group('saveData', () {
-      test('should complete without errors', () async {
-        // Act & Assert
-        expect(() => workoutService.saveData(), returnsNormally);
-      });
-    });
-
     group('Workout Operations', () {
       group('createWorkout', () {
         test('should create workout successfully', () async {

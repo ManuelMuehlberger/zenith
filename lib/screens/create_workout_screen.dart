@@ -1,20 +1,21 @@
 import 'dart:async';
 import 'dart:ui';
-import 'package:flutter/cupertino.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
+
 import '../constants/app_constants.dart';
 import '../models/exercise.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../models/workout_template.dart';
-import '../services/exercise_service.dart';
 import '../services/user_service.dart';
-import '../services/workout_template_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/create_workout/create_workout_editor_sections.dart';
-import '../widgets/workout_customization_sheet.dart';
+import '../widgets/create_workout/create_workout_content.dart';
+import '../widgets/create_workout/create_workout_exercise_picker_section.dart';
+import '../widgets/create_workout/create_workout_header.dart';
+import '../widgets/create_workout/create_workout_screen_helpers.dart';
 import 'exercise_picker_screen.dart';
 
 class CreateWorkoutScreen extends StatefulWidget {
@@ -30,11 +31,9 @@ class CreateWorkoutScreen extends StatefulWidget {
 class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   final Logger _logger = Logger('CreateWorkoutScreen');
   final _nameController = TextEditingController();
-  List<WorkoutExercise> _exercises = [];
-  bool _isLoading = false;
+  final List<WorkoutExercise> _exercises = [];
   final Set<int> _expandedNotes = {};
-
-  // Workout customization
+  bool _isLoading = false;
   late Color _selectedColor;
   IconData _selectedIcon = Icons.fitness_center;
   bool _hasInitializedSelectedColor = false;
@@ -52,9 +51,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   Color _resolveTemplateColor(BuildContext context, int? colorValue) {
     final availableColors = _availableColors(context);
     final defaultColor = _defaultSelectedColor(context);
-    if (colorValue == null) {
-      return defaultColor;
-    }
+    if (colorValue == null) return defaultColor;
 
     return availableColors.firstWhere(
       (color) => color.toARGB32() == colorValue,
@@ -66,18 +63,13 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   void initState() {
     super.initState();
     final template = widget.workoutTemplate;
-    if (template != null) {
-      _nameController.text = template.name;
-      // WorkoutTemplate doesn't have exercises directly, we'll need to load them separately
-      // For now, initialize as empty and load exercises in a separate method if needed
-      _exercises = [];
-      _selectedIcon = WorkoutIcons.getIconDataFromCodePoint(
-        template.iconCodePoint,
-      );
+    if (template == null) return;
 
-      // Load template exercises and attach details
-      unawaited(_loadTemplateExercises());
-    }
+    _nameController.text = template.name;
+    _selectedIcon = WorkoutIcons.getIconDataFromCodePoint(
+      template.iconCodePoint,
+    );
+    unawaited(_loadTemplateExercises());
   }
 
   @override
@@ -101,16 +93,17 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final double topPadding = MediaQuery.of(context).padding.top;
-    final double headerHeight = topPadding + kToolbarHeight + 24.0;
+    final topPadding = MediaQuery.of(context).padding.top;
+    final headerHeight = topPadding + kToolbarHeight + 24.0;
 
     return AnimatedBuilder(
       animation: UserService.instance,
       builder: (context, _) {
-        final String weightUnit =
-            (UserService.instance.currentProfile?.units == Units.imperial)
+        final weightUnit =
+            UserService.instance.currentProfile?.units == Units.imperial
             ? 'lbs'
             : 'kg';
+
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: Stack(
@@ -121,10 +114,10 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                   nameController: _nameController,
                   selectedColor: _selectedColor,
                   selectedIcon: _selectedIcon,
-                  onIconTap: _showWorkoutCustomization,
                   exercises: _exercises,
                   expandedNotes: _expandedNotes,
                   weightUnit: weightUnit,
+                  onIconTap: _showWorkoutCustomization,
                   onToggleNotes: _toggleNotesExpansion,
                   onRemoveExercise: _removeExercise,
                   onAddSet: _addSetToExercise,
@@ -166,7 +159,9 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: CreateWorkoutBottomBar(onAddExercise: _addExercise),
+                child: CreateWorkoutExercisePickerSection(
+                  onAddExercise: _addExercise,
+                ),
               ),
             ],
           ),
@@ -177,134 +172,62 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   Future<void> _saveWorkout() async {
     if (_nameController.text.trim().isEmpty) {
-      _showErrorDialog('Please enter a workout template name');
+      showCreateWorkoutErrorDialog(
+        context,
+        'Please enter a workout template name',
+      );
       return;
     }
-
     if (_exercises.isEmpty) {
-      _showErrorDialog('Please add at least one exercise');
+      showCreateWorkoutErrorDialog(context, 'Please add at least one exercise');
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
+    setState(() => _isLoading = true);
     try {
-      final template = widget.workoutTemplate;
-      if (template != null) {
-        // Update existing workout template metadata and exercises
-        final updatedTemplate = template.copyWith(
-          name: _nameController.text.trim(),
-          iconCodePoint: _selectedIcon.codePoint,
-          colorValue: _selectedColor.toARGB32(),
-        );
-        await WorkoutTemplateService.instance.updateWorkoutTemplate(
-          updatedTemplate,
-        );
-        await WorkoutTemplateService.instance.saveTemplateExercises(
-          updatedTemplate.id,
-          _exercises,
-        );
-      } else {
-        // Create new workout template and persist its exercises
-        final newTemplate = await WorkoutTemplateService.instance
-            .createWorkoutTemplate(
-              name: _nameController.text.trim(),
-              folderId: widget.folderId,
-              iconCodePoint: _selectedIcon.codePoint,
-              colorValue: _selectedColor.toARGB32(),
-            );
-        await WorkoutTemplateService.instance.saveTemplateExercises(
-          newTemplate.id,
-          _exercises,
-        );
-      }
-
-      if (mounted) {
-        Navigator.of(context).pop(true);
-      }
+      await saveCreateWorkoutTemplate(
+        workoutTemplate: widget.workoutTemplate,
+        folderId: widget.folderId,
+        name: _nameController.text.trim(),
+        selectedIcon: _selectedIcon,
+        selectedColor: _selectedColor,
+        exercises: _exercises,
+      );
+      if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) {
-        _showErrorDialog('Error saving workout template: $e');
+        showCreateWorkoutErrorDialog(
+          context,
+          'Error saving workout template: $e',
+        );
       }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
   Future<void> _loadTemplateExercises() async {
     final template = widget.workoutTemplate;
     if (template == null) return;
-    setState(() {
-      _isLoading = true;
-    });
+
+    setState(() => _isLoading = true);
     try {
-      final templateId = template.id;
-      final exercises = await WorkoutTemplateService.instance
-          .getTemplateExercises(templateId);
-
-      // Ensure ExerciseService has data to attach details for UI
-      if (ExerciseService.instance.exercises.isEmpty) {
-        await ExerciseService.instance.loadExercises();
-      }
-      final allExercises = ExerciseService.instance.exercises;
-
-      final withDetails = exercises.map((e) {
-        final matches = allExercises.where((ex) => ex.slug == e.exerciseSlug);
-        final detail = matches.isNotEmpty ? matches.first : null;
-        return e.copyWith(exerciseDetail: detail);
-      }).toList();
-
-      _logger.fine(
-        'Loaded ${withDetails.length} exercises for template $templateId',
+      final exercises = await loadCreateWorkoutTemplateExercises(
+        template: template,
+        logger: _logger,
       );
-      for (final ex in withDetails) {
-        final setsInfo = ex.sets
-            .map(
-              (s) =>
-                  'idx=${s.setIndex},reps=${s.targetReps},wt=${s.targetWeight}',
-            )
-            .join('; ');
-        _logger.finer(
-          'Exercise ${ex.exerciseSlug} (${ex.id}) sets: [$setsInfo]',
-        );
-      }
-
       if (mounted) {
         setState(() {
-          _exercises = withDetails;
+          _exercises
+            ..clear()
+            ..addAll(exercises);
         });
       }
     } catch (_) {
-      // Silently ignore for now; UI will still allow editing
+      // Silently ignore for now; UI will still allow editing.
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  void _showErrorDialog(String message) {
-    showCupertinoDialog<void>(
-      context: context,
-      builder: (BuildContext context) => CupertinoAlertDialog(
-        title: const Text('Error'),
-        content: Text(message),
-        actions: <CupertinoDialogAction>[
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _addExercise() async {
@@ -313,64 +236,25 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
         builder: (context) => const ExercisePickerScreen(multiSelect: true),
       ),
     );
+    final selectedExercises = selectedExercisesFromResult(result);
+    if (selectedExercises.isEmpty) return;
 
-    if (result is List<Exercise>) {
-      final newWorkoutExercises = result.map((selectedExercise) {
-        final workoutExercise = WorkoutExercise(
+    setState(() {
+      _exercises.addAll(
+        createWorkoutExercisesFromExercises(
+          exercises: selectedExercises,
           workoutTemplateId:
-              widget.workoutTemplate?.id ?? "PENDING_TEMPLATE_ID",
-          exerciseSlug: selectedExercise.slug,
-          exerciseDetail: selectedExercise,
-          sets: const [],
-        );
-
-        final defaultSet = WorkoutSet(
-          workoutExerciseId: workoutExercise.id,
-          setIndex: 0,
-          targetReps: 10,
-          targetWeight: 0.0,
-        );
-
-        return workoutExercise.copyWith(sets: [defaultSet]);
-      }).toList();
-
-      setState(() {
-        _exercises.addAll(newWorkoutExercises);
-      });
-
-      unawaited(HapticFeedback.lightImpact());
-    } else if (result is Exercise) {
-      // Handle single exercise selection for backward compatibility
-      final selectedExercise = result;
-      final workoutExercise = WorkoutExercise(
-        workoutTemplateId: widget.workoutTemplate?.id ?? "PENDING_TEMPLATE_ID",
-        exerciseSlug: selectedExercise.slug,
-        exerciseDetail: selectedExercise,
-        sets: const [],
+              widget.workoutTemplate?.id ?? 'PENDING_TEMPLATE_ID',
+        ),
       );
-
-      final defaultSet = WorkoutSet(
-        workoutExerciseId: workoutExercise.id,
-        setIndex: 0,
-        targetReps: 10,
-        targetWeight: 0.0,
-      );
-
-      final exerciseWithSet = workoutExercise.copyWith(sets: [defaultSet]);
-
-      setState(() {
-        _exercises.add(exerciseWithSet);
-      });
-
-      unawaited(HapticFeedback.lightImpact());
-    }
+    });
+    unawaited(HapticFeedback.lightImpact());
   }
 
   void _removeExercise(int index) {
     setState(() {
       _exercises.removeAt(index);
       _expandedNotes.remove(index);
-      // Adjust expanded notes indices
       final newExpandedNotes = <int>{};
       for (final expandedIndex in _expandedNotes) {
         if (expandedIndex > index) {
@@ -379,17 +263,16 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
           newExpandedNotes.add(expandedIndex);
         }
       }
-      _expandedNotes.clear();
-      _expandedNotes.addAll(newExpandedNotes);
+      _expandedNotes
+        ..clear()
+        ..addAll(newExpandedNotes);
     });
     unawaited(HapticFeedback.lightImpact());
   }
 
   void _reorderExercises(int oldIndex, int newIndex) {
     setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
+      if (newIndex > oldIndex) newIndex -= 1;
       final exercise = _exercises.removeAt(oldIndex);
       _exercises.insert(newIndex, exercise);
     });
@@ -399,7 +282,6 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   void _addSetToExercise(int exerciseIndex) {
     final exercise = _exercises[exerciseIndex];
     final lastSet = exercise.sets.isNotEmpty ? exercise.sets.last : null;
-
     final newSet = WorkoutSet(
       workoutExerciseId: exercise.id,
       setIndex: exercise.sets.length,
@@ -417,15 +299,14 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
 
   void _removeSetFromExercise(int exerciseIndex, int setIndex) {
     final exercise = _exercises[exerciseIndex];
-    if (exercise.sets.length > 1) {
-      final updatedSets = List<WorkoutSet>.from(exercise.sets);
-      updatedSets.removeAt(setIndex);
+    if (exercise.sets.length <= 1) return;
 
-      setState(() {
-        _exercises[exerciseIndex] = exercise.copyWith(sets: updatedSets);
-      });
-      unawaited(HapticFeedback.lightImpact());
-    }
+    final updatedSets = List<WorkoutSet>.from(exercise.sets)
+      ..removeAt(setIndex);
+    setState(() {
+      _exercises[exerciseIndex] = exercise.copyWith(sets: updatedSets);
+    });
+    unawaited(HapticFeedback.lightImpact());
   }
 
   void _updateSet(
@@ -439,8 +320,6 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     final exercise = _exercises[exerciseIndex];
     final updatedSets = List<WorkoutSet>.from(exercise.sets);
     final currentSet = updatedSets[setIndex];
-
-    // Only update the fields that are provided, preserve existing values for others
     updatedSets[setIndex] = currentSet.copyWith(
       targetReps: targetReps ?? currentSet.targetReps,
       targetWeight: targetWeight ?? currentSet.targetWeight,
@@ -448,7 +327,9 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     );
 
     _logger.fine(
-      'Update set: exIdx=$exerciseIndex setIdx=$setIndex targetReps=$targetReps targetWeight=$targetWeight rest=$targetRestSeconds',
+      'Update set: exIdx=$exerciseIndex setIdx=$setIndex '
+      'targetReps=$targetReps targetWeight=$targetWeight '
+      'rest=$targetRestSeconds',
     );
 
     setState(() {
@@ -469,44 +350,6 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       'Rep range toggling is not supported for template set '
       'exerciseIndex=$exerciseIndex setIndex=$setIndex',
     );
-
-    // final exercise = _exercises[exerciseIndex];
-    // final set = exercise.sets[setIndex];
-
-    // isRepRange, repRangeMin, repRangeMax were removed from WorkoutSet.
-    // This functionality needs to be re-evaluated or removed.
-    // For now, making it a no-op to fix compilation.
-
-    // if (set.isRepRange) {
-    //   // Convert from rep range to single reps
-    //   final updatedSets = List<WorkoutSet>.from(exercise.sets);
-    //   updatedSets[setIndex] = WorkoutSet(
-    //     id: set.id,
-    //     targetReps: set.targetReps ?? 10, // Was repRangeMin
-    //     targetWeight: set.targetWeight,
-    //     // repRangeMin: null,
-    //     // repRangeMax: null,
-    //   );
-
-    //   setState(() {
-    //     _exercises[exerciseIndex] = exercise.copyWith(sets: updatedSets);
-    //   });
-    // } else {
-    //   // Convert from single reps to rep range
-    //   final updatedSets = List<WorkoutSet>.from(exercise.sets);
-    //   updatedSets[setIndex] = WorkoutSet(
-    //     id: set.id,
-    //     targetReps: set.targetReps,
-    //     targetWeight: set.targetWeight,
-    //     // repRangeMin: set.targetReps,
-    //     // repRangeMax: (set.targetReps ?? 0) + 2,
-    //   );
-
-    //   setState(() {
-    //     _exercises[exerciseIndex] = exercise.copyWith(sets: updatedSets);
-    //   });
-    // }
-    // HapticFeedback.lightImpact();
   }
 
   void _toggleNotesExpansion(int exerciseIndex) {
@@ -519,28 +362,18 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     });
   }
 
-  // Method to be called from tests to add an exercise
   void addExerciseForTest(Exercise exercise) {
-    final workoutExercise = WorkoutExercise(
-      workoutTemplateId: widget.workoutTemplate?.id ?? "PENDING_TEMPLATE_ID",
-      exerciseSlug: exercise.slug,
-      exerciseDetail: exercise,
-      sets: [
-        WorkoutSet(
-          workoutExerciseId:
-              'temp_id', // This will be replaced by the actual ID
-          setIndex: 0,
-          targetReps: 10,
-          targetWeight: 0.0,
-        ),
-      ],
-    );
     setState(() {
-      _exercises.add(workoutExercise);
+      _exercises.addAll(
+        createWorkoutExercisesFromExercises(
+          exercises: [exercise],
+          workoutTemplateId:
+              widget.workoutTemplate?.id ?? 'PENDING_TEMPLATE_ID',
+        ),
+      );
     });
   }
 
-  // Method to be called from tests to update a set
   void updateSetForTest(
     int exerciseIndex,
     int setIndex, {
@@ -556,30 +389,14 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   }
 
   void _showWorkoutCustomization() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(
-        context,
-      ).scaffoldBackgroundColor.withValues(alpha: 0),
-      isScrollControlled: true,
-      builder: (context) => WorkoutCustomizationSheet(
+    unawaited(
+      showCreateWorkoutCustomizationSheet(
+        context: context,
         selectedColor: _selectedColor,
         selectedIcon: _selectedIcon,
         availableColors: _availableColors(context),
-        availableIcons: WorkoutIcons.items
-            .map((item) => item.icon)
-            .whereType<IconData>()
-            .toList(),
-        onColorChanged: (color) {
-          setState(() {
-            _selectedColor = color;
-          });
-        },
-        onIconChanged: (icon) {
-          setState(() {
-            _selectedIcon = icon;
-          });
-        },
+        onColorChanged: (color) => setState(() => _selectedColor = color),
+        onIconChanged: (icon) => setState(() => _selectedIcon = icon),
       ),
     );
   }

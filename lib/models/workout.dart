@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../constants/app_constants.dart';
-import 'workout_exercise.dart';
 import 'typedefs.dart';
+import 'workout_exercise.dart';
 
 enum WorkoutStatus { template, inProgress, completed }
 
@@ -164,7 +164,10 @@ class Workout {
   }
 }
 
-// Sentinel object to distinguish between null and undefined
+// `copyWith` needs to tell the difference between "leave this nullable field
+// alone because the caller omitted it" and "clear this field because the caller
+// explicitly passed null". This sentinel marks omitted arguments so copyWith
+// does not accidentally wipe stored nullable values when a parameter is absent.
 const Object _undefined = Object();
 
 String _readRequiredString(Map<String, dynamic> map, String key) {
@@ -212,5 +215,5 @@ WorkoutStatus _readWorkoutStatus(Object? value) {
   if (value is int && value >= 0 && value < WorkoutStatus.values.length) {
     return WorkoutStatus.values[value];
   }
-  throw FormatException('Invalid "status" for Workout');
+  throw const FormatException('Invalid "status" for Workout');
 }

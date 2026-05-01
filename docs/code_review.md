@@ -314,3 +314,97 @@ These are changes that should be relatively easy and offer immediate value.
 The app design is not fundamentally broken, but it is not cleanly scaled. The persistence layer and tests are solid enough that the project has a good base. The main problems are architectural drift, overgrown screen files, and implicit state coordination.
 
 This is not a rewrite situation. It is a prioritization situation. If the team addresses the state flow, model immutability, and dead persistence code first, the rest of the cleanup becomes much cheaper and safer.
+
+---
+
+## Progress Update — 2026-05-01
+
+A significant round of improvements has been completed since the initial review. Nine of the thirteen identified issues are fully resolved. Four remain, three of which are partial rather than open.
+
+### Resolved
+
+| # | Issue | Resolution |
+|---|---|---|
+| 2 | GlobalKey / static callback state management | All core services now extend `ChangeNotifier`. `HomeScreen` observes `WorkoutService` directly. `NavigationHelper` and `GlobalKey<HomeScreenState>` removed. |
+| 5 | Active workout timer full-tree rebuild | `Timer.periodic` + `setState` removed. Elapsed time driven by `WorkoutSessionService` (`ChangeNotifier`). |
+| 6 | N+1 database queries on workout load | `WorkoutService.loadData` now issues 3 batched queries and assembles results in memory. |
+| 7 | Startup work before `runApp` | `main()` contains only `WidgetsFlutterBinding.ensureInitialized()` and `runApp`. All data loading is deferred to `AppWrapper`. |
+| 8 | `debugPrint` / dual logging systems | Zero `debugPrint` calls remain. All logging goes through `Logger` from the `logging` package. |
+| 9 | Deprecated `withOpacity` usage | Zero usages remain. Opacity is now expressed through `AppThemeColors` constants. |
+| 10 | Weak lint rules | `analysis_options.yaml` now enforces 10 additional rules including `avoid_print`, `prefer_const_constructors`, `unawaited_futures`, and `use_build_context_synchronously`. |
+| 11 | Bang-operator null safety | Zero `!` null-assertions on nullable values in hot paths (`WorkoutSessionService`, `CreateWorkoutScreen`). |
+| 12 | Theme not centralized | `AppTheme`, `AppThemeColors`, and `AppTextStyles` introduced. Zero inline `Colors.black` or ad hoc style construction in screens. |
+
+---
+
+## Open Items
+
+### 1. Dead constant in DatabaseService
+
+File: [lib/services/database_service.dart](lib/services/database_service.dart)
+
+The private constant `_legacyWorkoutHistoryKey = 'workouts'` is declared but only referenced in `clearAllData()`, which never reads data using it. It is a leftover from the original SharedPreferences persistence path and has no functional purpose.
+
+**Action required:**
+
+- Remove `_legacyWorkoutHistoryKey` and any other legacy SharedPreferences workout key references that are not actively read anywhere.
+- Confirm whether `DatabaseService` is still needed at all, or whether it can be further reduced to just settings and active-session storage.
+
+---
+
+### 2. `_undefined` sentinel in Workout model
+
+File: [lib/models/workout.dart](lib/models/workout.dart)
+
+The model now has `final` fields, which is correct. However the `copyWith` implementation still relies on a private `const Object _undefined = Object()` sentinel to distinguish between "set field to null" and "leave field unchanged" for nullable fields. This is a hand-rolled reimplementation of the pattern that `freezed` generates automatically.
+
+**Why this is still a problem:**
+
+- The sentinel is not type-safe. Passing any `Object` to a field accidentally would not be caught at compile time.
+- The pattern is unfamiliar to developers not already aware of it.
+- It will need to be replicated in any new model that has nullable fields and requires a `copyWith`.
+
+**Action required:**
+
+Option A (recommended): Adopt `freezed`. Add `freezed` and `build_runner` to `pubspec.yaml` and migrate `Workout`, `WorkoutExercise`, and `WorkoutSet` first, then remaining models. `freezed` generates `copyWith` with correct nullable semantics, `==`, `hashCode`, and `toString` for free.
+
+Option B (acceptable short-term): Keep the sentinel but add a code comment explaining the pattern at the declaration site, and add a unit test that explicitly covers `copyWith(nullableField: null)` to guard against regressions.
+
+---
+
+### 3. home_screen.dart and create_workout_screen.dart are still large
+
+Files:
+- [lib/screens/home_screen.dart](lib/screens/home_screen.dart) — currently ~748 lines
+- [lib/screens/create_workout_screen.dart](lib/screens/create_workout_screen.dart) — currently ~586 lines
+
+Both files were substantially reduced in the last round of work (home screen down from ~1300, create screen down from ~673). The extraction work is visible: new subdirectories `lib/widgets/home/` and `lib/screens/home/` exist. However both files remain large enough to present the same risks as before, just to a lesser degree.
+
+**What remains in home_screen.dart:**
+
+The file likely still contains scroll physics logic, animation coordination, section build methods, and state management that could be pushed into subwidgets or a dedicated controller. Aim for the screen to be a composition root of ~200–350 lines.
+
+**What remains in create_workout_screen.dart:**
+
+At 586 lines this file is still the largest screen after home. Typical extraction targets are the exercise-picker section, the template-configuration form, and any reorder or drag-drop logic embedded in the screen state.
+
+**Action required:**
+
+- Continue extracting logical sections of `home_screen.dart` into `lib/widgets/home/` subwidgets. Treat any `_build*` private method that returns a `Widget` as an extraction candidate.
+- Apply the same to `create_workout_screen.dart`. Identify the largest `build` sub-trees or the most independent pieces of state and extract them.
+- Target: no screen or service file should exceed ~400 lines.
+
+---
+
+### 4. WorkoutService.saveData is a preserved no-op
+
+File: [lib/services/workout_service.dart](lib/services/workout_service.dart)
+
+`saveData()` is an explicit no-op kept with a comment saying it is retained for compatibility. This means callers of `saveData()` exist somewhere in the codebase and are silently doing nothing, which is misleading.
+
+**Action required:**
+
+- Find all callers of `saveData()` using IDE references.
+- Remove each call site.
+- Once all callers are removed, delete the `saveData()` method itself.
+- If any caller genuinely needed to trigger persistence, identify the correct replacement call (e.g. the DAO write that is already happening) and verify data is not being lost.
