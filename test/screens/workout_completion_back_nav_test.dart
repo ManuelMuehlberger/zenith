@@ -10,11 +10,15 @@ class _LauncherPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(child: Text('Active placeholder', key: const Key('active_placeholder'))),
+      body: const Center(
+        child: Text('Active placeholder', key: Key('active_placeholder')),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => WorkoutCompletionScreen(session: session)),
+            MaterialPageRoute(
+              builder: (_) => WorkoutCompletionScreen(session: session),
+            ),
           );
         },
         child: const Icon(Icons.play_arrow),
@@ -24,7 +28,9 @@ class _LauncherPage extends StatelessWidget {
 }
 
 void main() {
-  testWidgets('Back to Workout returns to previous screen (no black page)', (WidgetTester tester) async {
+  testWidgets('Back to Workout returns to previous screen (no black page)', (
+    WidgetTester tester,
+  ) async {
     final session = Workout(
       name: 'Test Workout',
       status: WorkoutStatus.inProgress,
@@ -32,11 +38,7 @@ void main() {
       exercises: const [],
     );
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: _LauncherPage(session: session),
-      ),
-    );
+    await tester.pumpWidget(MaterialApp(home: _LauncherPage(session: session)));
 
     // Ensure initial page is visible
     expect(find.byKey(const Key('active_placeholder')), findsOneWidget);

@@ -1,16 +1,14 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart' as p; // Alias to avoid conflict with path_provider's Directory
 import 'package:toml/toml.dart';
-import 'package:logging/logging.dart';
 
 import 'package:zenith/models/muscle_group.dart';
-
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -21,11 +19,12 @@ class DatabaseHelper {
   static final Logger _logger = Logger('DatabaseHelper');
 
   static const String _dbName = 'workout_tracker.db';
-  static const int _dbVersion = 6; // Added Exercise.equipment column and TOML bodyweight mapping
+  static const int _dbVersion =
+      6; // Added Exercise.equipment column and TOML bodyweight mapping
 
   Future<String> get databasePath async {
     final documentsDirectory = await getApplicationDocumentsDirectory();
-    return p.join(documentsDirectory.path, _dbName);
+    return _joinPath(documentsDirectory.path, _dbName);
   }
 
   Future<Database> get database async {
@@ -47,10 +46,11 @@ class DatabaseHelper {
   Future<Database> _initDB() async {
     try {
       _logger.info('Getting application documents directory');
-      Directory documentsDirectory = await getApplicationDocumentsDirectory();
-      String path = p.join(documentsDirectory.path, _dbName);
+      final Directory documentsDirectory =
+          await getApplicationDocumentsDirectory();
+      final String path = _joinPath(documentsDirectory.path, _dbName);
       _logger.info('Database path: $path');
-      
+
       _logger.info('Opening database with version $_dbVersion');
       return await openDatabase(
         path,
@@ -64,9 +64,16 @@ class DatabaseHelper {
     }
   }
 
+  String _joinPath(String directoryPath, String fileName) {
+    if (directoryPath.endsWith(Platform.pathSeparator)) {
+      return '$directoryPath$fileName';
+    }
+    return '$directoryPath${Platform.pathSeparator}$fileName';
+  }
+
   Future<void> _onCreate(Database db, int version) async {
     _logger.info('Creating new database with version $version');
-    
+
     try {
       // Create MuscleGroup table
       _logger.info('Creating MuscleGroup table');
@@ -204,7 +211,7 @@ class DatabaseHelper {
       // Insert default muscle groups
       _logger.info('Inserting default muscle groups');
       final muscleGroups = MuscleGroup.values.map((e) => e.name).toList();
-      
+
       for (final muscleGroup in muscleGroups) {
         await db.insert('MuscleGroup', {'name': muscleGroup});
       }
@@ -212,9 +219,11 @@ class DatabaseHelper {
 
       // Seed exercises from TOML file
       _logger.info('Loading exercises from TOML file');
-      final tomlString = await rootBundle.loadString('assets/gym_exercises_complete.toml');
+      final tomlString = await rootBundle.loadString(
+        'assets/gym_exercises_complete.toml',
+      );
       await _seedExercisesFromToml(db, tomlString);
-      
+
       _logger.info('Database creation completed successfully');
     } catch (e) {
       _logger.severe('Error during database creation: $e');
@@ -224,27 +233,37 @@ class DatabaseHelper {
 
   // Handle database upgrades
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    _logger.warning('Upgrading database from version $oldVersion to $newVersion');
-    
+    _logger.warning(
+      'Upgrading database from version $oldVersion to $newVersion',
+    );
+
     try {
       if (oldVersion < 2) {
         _logger.info('Applying version 2 upgrades');
         // Add new columns to Workouts table
-        await db.execute('ALTER TABLE Workout ADD COLUMN status INTEGER DEFAULT 0');
+        await db.execute(
+          'ALTER TABLE Workout ADD COLUMN status INTEGER DEFAULT 0',
+        );
         await db.execute('ALTER TABLE Workout ADD COLUMN templateId TEXT');
         await db.execute('ALTER TABLE Workout ADD COLUMN startedAt TEXT');
         await db.execute('ALTER TABLE Workout ADD COLUMN completedAt TEXT');
-        
+
         // Add new columns to WorkoutSets table
-        await db.execute('ALTER TABLE WorkoutSet ADD COLUMN actualReps INTEGER');
+        await db.execute(
+          'ALTER TABLE WorkoutSet ADD COLUMN actualReps INTEGER',
+        );
         await db.execute('ALTER TABLE WorkoutSet ADD COLUMN actualWeight REAL');
-        await db.execute('ALTER TABLE WorkoutSet ADD COLUMN isCompleted INTEGER DEFAULT 0');
-        
+        await db.execute(
+          'ALTER TABLE WorkoutSet ADD COLUMN isCompleted INTEGER DEFAULT 0',
+        );
+
         // Update existing WorkoutSets to set isCompleted to 0 (false) for all existing records
-        await db.rawUpdate('UPDATE WorkoutSet SET isCompleted = 0 WHERE isCompleted IS NULL');
+        await db.rawUpdate(
+          'UPDATE WorkoutSet SET isCompleted = 0 WHERE isCompleted IS NULL',
+        );
         _logger.info('Version 2 upgrades completed');
       }
-      
+
       if (oldVersion < 3) {
         _logger.info('Applying version 3 upgrades');
         // Create new tables for full schema implementation
@@ -304,14 +323,15 @@ class DatabaseHelper {
 
         // Insert default muscle groups if they don't exist
         final muscleGroups = MuscleGroup.values.map((e) => e.name).toList();
-        
+
         for (final muscleGroup in muscleGroups) {
-          await db.insert('MuscleGroup', {'name': muscleGroup}, 
-              conflictAlgorithm: ConflictAlgorithm.ignore);
+          await db.insert('MuscleGroup', {
+            'name': muscleGroup,
+          }, conflictAlgorithm: ConflictAlgorithm.ignore);
         }
         _logger.info('Version 3 upgrades completed');
       }
-      
+
       if (oldVersion < 4) {
         _logger.info('Applying version 4 upgrades');
         // Create WorkoutTemplate table
@@ -329,21 +349,29 @@ class DatabaseHelper {
             FOREIGN KEY (folderId) REFERENCES WorkoutFolder (id) ON DELETE SET NULL
           )
         ''');
-        
+
         // Add workoutTemplateId column to WorkoutExercise table
         try {
-          await db.execute('ALTER TABLE WorkoutExercise ADD COLUMN workoutTemplateId TEXT');
-          _logger.info('Added workoutTemplateId column to WorkoutExercise table');
+          await db.execute(
+            'ALTER TABLE WorkoutExercise ADD COLUMN workoutTemplateId TEXT',
+          );
+          _logger.info(
+            'Added workoutTemplateId column to WorkoutExercise table',
+          );
         } catch (e) {
-          _logger.info('workoutTemplateId column already exists in WorkoutExercise table');
+          _logger.info(
+            'workoutTemplateId column already exists in WorkoutExercise table',
+          );
         }
-        
+
         // Update workoutId column to be nullable (this is a schema change that requires recreation)
         // For existing data, we'll keep workoutId as NOT NULL since existing records should have it
-        _logger.info('WorkoutExercise table schema updated for template support');
+        _logger.info(
+          'WorkoutExercise table schema updated for template support',
+        );
         _logger.info('Version 4 upgrades completed');
       }
-      
+
       if (oldVersion < 5) {
         _logger.info('Applying version 5 upgrades');
         // Add equipment column to Exercise table if it doesn't exist
@@ -355,15 +383,17 @@ class DatabaseHelper {
         }
         _logger.info('Version 5 upgrades completed');
       }
-      
+
       if (oldVersion < 6) {
         _logger.info('Applying version 6 upgrades');
         // Recreate Exercise table with proper schema and re-seed data
-        _logger.info('Recreating Exercise table for proper bodyweight handling');
+        _logger.info(
+          'Recreating Exercise table for proper bodyweight handling',
+        );
         try {
           // Drop the existing Exercise table
           await db.execute('DROP TABLE IF EXISTS Exercise');
-          
+
           // Recreate the Exercise table with the correct schema
           await db.execute('''
             CREATE TABLE Exercise (
@@ -379,11 +409,13 @@ class DatabaseHelper {
               FOREIGN KEY (primaryMuscleGroup) REFERENCES MuscleGroup (name)
             )
           ''');
-          
+
           // Re-seed exercises from TOML file
-          final tomlString = await rootBundle.loadString('assets/gym_exercises_complete.toml');
+          final tomlString = await rootBundle.loadString(
+            'assets/gym_exercises_complete.toml',
+          );
           await _seedExercisesFromToml(db, tomlString);
-          
+
           _logger.info('Exercise table recreated and re-seeded successfully');
         } catch (e) {
           _logger.severe('Error during Exercise table recreation: $e');
@@ -391,7 +423,7 @@ class DatabaseHelper {
         }
         _logger.info('Version 6 upgrades completed');
       }
-      
+
       _logger.info('Database upgrade completed successfully');
     } catch (e) {
       _logger.severe('Error during database upgrade: $e');
@@ -404,81 +436,104 @@ class DatabaseHelper {
       _logger.info('Closing database connection');
       final db = await database;
       await db.close();
-      _database = null; // Reset the static instance so it can be re-initialized if needed
+      _database =
+          null; // Reset the static instance so it can be re-initialized if needed
       _logger.info('Database connection closed successfully');
     } catch (e) {
       _logger.severe('Error closing database: $e');
       rethrow;
     }
   }
-  
+
   // Helper method to seed exercises from TOML file
   Future<void> _seedExercisesFromToml(Database db, String tomlContent) async {
     _logger.info('Starting to seed exercises from TOML content');
     int exerciseCount = 0;
     int errorCount = 0;
-    
+
     try {
       // Parse the TOML content using the toml package
       final tomlDocument = TomlDocument.parse(tomlContent);
       final tomlMap = tomlDocument.toMap();
       _logger.info('TOML content parsed successfully');
-      
+
       // Iterate through the parsed TOML data
       for (final entry in tomlMap.entries) {
         if (entry.key.startsWith('exercise_')) {
           final exerciseData = entry.value as Map<String, dynamic>;
-          
+
           try {
-            final primaryMuscleGroup = exerciseData['primary_muscle_group'] ?? '';
+            final primaryMuscleGroup =
+                exerciseData['primary_muscle_group'] ?? '';
             final slug = exerciseData['slug'] ?? '';
-            
+
             // Skip exercises with empty or invalid primary muscle groups
             if (primaryMuscleGroup.toString().trim().isEmpty) {
               errorCount++;
-              _logger.warning('Skipping exercise $slug: empty primary muscle group');
+              _logger.warning(
+                'Skipping exercise $slug: empty primary muscle group',
+              );
               continue;
             }
-            
+
             // Validate that the primary muscle group exists in our enum
-            final muscleGroupNames = MuscleGroup.values.map((e) => e.name).toList();
-            
-            if (!muscleGroupNames.any((mg) => mg.toLowerCase() == primaryMuscleGroup.toString().toLowerCase())) {
+            final muscleGroupNames = MuscleGroup.values
+                .map((e) => e.name)
+                .toList();
+
+            if (!muscleGroupNames.any(
+              (mg) =>
+                  mg.toLowerCase() ==
+                  primaryMuscleGroup.toString().toLowerCase(),
+            )) {
               errorCount++;
-              _logger.warning('Skipping exercise $slug: invalid primary muscle group "$primaryMuscleGroup"');
+              _logger.warning(
+                'Skipping exercise $slug: invalid primary muscle group "$primaryMuscleGroup"',
+              );
               continue;
             }
-            
+
             // Create a map for the exercise data
             final exerciseMap = <String, dynamic>{
               'slug': slug,
               'name': exerciseData['name'] ?? '',
               'primaryMuscleGroup': primaryMuscleGroup,
-              'secondaryMuscleGroups': jsonEncode(exerciseData['secondary_muscle_groups'] ?? []),
+              'secondaryMuscleGroups': jsonEncode(
+                exerciseData['secondary_muscle_groups'] ?? [],
+              ),
               'instructions': jsonEncode(exerciseData['instructions'] ?? []),
               'equipment': exerciseData['equipment'] ?? '',
               'image': exerciseData['image'] ?? '',
               'animation': exerciseData['animation'] ?? '',
-              'isBodyWeightExercise': (exerciseData['bodyweight'] is bool 
+              'isBodyWeightExercise': (exerciseData['bodyweight'] is bool
                   ? (exerciseData['bodyweight'] ? 1 : 0)
                   : (exerciseData['bodyweight'] is int
-                      ? exerciseData['bodyweight']
-                      : (exerciseData['bodyweight'] ?? false) ? 1 : 0)),
+                        ? exerciseData['bodyweight']
+                        : (exerciseData['bodyweight'] ?? false)
+                        ? 1
+                        : 0)),
             };
-            
+
             // Insert the exercise into the database
-            await db.insert('Exercise', exerciseMap,
-                conflictAlgorithm: ConflictAlgorithm.ignore);
+            await db.insert(
+              'Exercise',
+              exerciseMap,
+              conflictAlgorithm: ConflictAlgorithm.ignore,
+            );
             exerciseCount++;
           } catch (e) {
             // Handle any errors during insertion
             errorCount++;
-            _logger.warning('Error inserting exercise ${exerciseData['slug']}: $e');
+            _logger.warning(
+              'Error inserting exercise ${exerciseData['slug']}: $e',
+            );
           }
         }
       }
-      
-      _logger.info('Exercise seeding completed: $exerciseCount exercises inserted, $errorCount errors');
+
+      _logger.info(
+        'Exercise seeding completed: $exerciseCount exercises inserted, $errorCount errors',
+      );
     } catch (e) {
       _logger.severe('Critical error during exercise seeding: $e');
       rethrow;

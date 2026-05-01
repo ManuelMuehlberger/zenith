@@ -3,16 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/screens/home_screen.dart';
 
 void main() {
-  testWidgets('HomeScreen includes bottom spacer to avoid glass tab bar overlap', (tester) async {
+  testWidgets('HomeScreen includes bottom spacer to avoid glass tab bar overlap', (
+    tester,
+  ) async {
     // Simulate a device with a bottom safe area (e.g., iPhone with home indicator)
     const double bottomSafe = 24.0;
-    const expectedHeight = bottomSafe + kBottomNavigationBarHeight;
 
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         home: MediaQuery(
-          data: const MediaQueryData(padding: EdgeInsets.only(bottom: bottomSafe)),
-          child: const HomeScreen(),
+          data: MediaQueryData(padding: EdgeInsets.only(bottom: bottomSafe)),
+          child: HomeScreen(),
         ),
       ),
     );
@@ -30,7 +31,11 @@ void main() {
       return false;
     });
 
-    expect(sliverFinder, findsOneWidget,
-        reason: 'Expected a bottom SliverToBoxAdapter with SizedBox(height: bottomSafe + kBottomNavigationBarHeight)');
+    expect(
+      sliverFinder,
+      findsOneWidget,
+      reason:
+          'Expected a bottom SliverToBoxAdapter with SizedBox(height: bottomSafe + kBottomNavigationBarHeight)',
+    );
   });
 }

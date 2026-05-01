@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
-import 'package:meta/meta.dart';
 
 class AppNavigationService extends ChangeNotifier {
   static final AppNavigationService _instance =

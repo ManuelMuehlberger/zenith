@@ -1,6 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:async';
 import 'package:logging/logging.dart';
 
 import 'workout_service.dart';
@@ -56,13 +56,13 @@ class ReorderService extends ChangeNotifier {
         _logger.info('Drag confirmed for index: $index');
         _isDragConfirmed = true;
         HapticFeedback.selectionClick();
-        
+
         _dragCompletionTimeoutTimer?.cancel();
         _dragCompletionTimeoutTimer = Timer(_completionTimeout, () {
           _logger.warning('Drag completion timeout reached. Resetting state.');
           _resetDragState();
         });
-        
+
         notifyListeners();
       }
     });
@@ -73,17 +73,21 @@ class ReorderService extends ChangeNotifier {
     if (_isDragConfirmed) {
       _dragCompletionTimeoutTimer?.cancel();
       _dragCompletionTimeoutTimer = Timer(_completionTimeout, () {
-        _logger.warning('Drag completion timeout reached during update. Resetting state.');
+        _logger.warning(
+          'Drag completion timeout reached during update. Resetting state.',
+        );
         _resetDragState();
       });
     }
   }
 
   void onReorderCompleted(String workoutId, int oldIndex, int newIndex) {
-    _logger.info('Reorder completed for workout: $workoutId, from $oldIndex to $newIndex');
+    _logger.info(
+      'Reorder completed for workout: $workoutId, from $oldIndex to $newIndex',
+    );
     if (_isDragConfirmed) {
       HapticFeedback.mediumImpact();
-      
+
       _logger.fine('Persisting reorder to database');
       _workoutService.reorderExercisesInWorkout(workoutId, oldIndex, newIndex);
     }
@@ -97,7 +101,7 @@ class ReorderService extends ChangeNotifier {
 
   void _resetDragState() {
     _logger.fine('Resetting drag state');
-    bool needsNotify = _draggingIndex != null || _isDragConfirmed;
+    final bool needsNotify = _draggingIndex != null || _isDragConfirmed;
     _dragStartDelayTimer?.cancel();
     _dragCompletionTimeoutTimer?.cancel();
     _draggingIndex = null;
@@ -114,7 +118,9 @@ class ReorderService extends ChangeNotifier {
 
   // Helper to check if any item is being dragged (for styling other items)
   bool isAnotherItemBeingActivelyDragged(int currentIndex) {
-    return _isDragConfirmed && _draggingIndex != null && _draggingIndex != currentIndex;
+    return _isDragConfirmed &&
+        _draggingIndex != null &&
+        _draggingIndex != currentIndex;
   }
 
   @override

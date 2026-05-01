@@ -1,7 +1,7 @@
 import 'package:uuid/uuid.dart';
 import 'exercise.dart'; // Still needed for in-memory representation if fetched
-import 'workout_set.dart'; // Still needed for in-memory representation
 import 'typedefs.dart';
+import 'workout_set.dart'; // Still needed for in-memory representation
 
 // Sentinel object to distinguish between null and undefined
 const Object _undefined = Object();

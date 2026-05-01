@@ -6,10 +6,7 @@ void main() {
     late WorkoutFolder workoutFolder;
 
     setUp(() {
-      workoutFolder = WorkoutFolder(
-        name: 'Test Folder',
-        orderIndex: 1,
-      );
+      workoutFolder = WorkoutFolder(name: 'Test Folder', orderIndex: 1);
     });
 
     test('should create a workout folder with default values', () {
@@ -26,24 +23,16 @@ void main() {
     });
 
     test('should create a workout folder with specified id', () {
-      final id = 'test-id';
-      final folder = WorkoutFolder(
-        id: id,
-        name: 'Test Folder',
-        orderIndex: 1,
-      );
-      
+      const id = 'test-id';
+      final folder = WorkoutFolder(id: id, name: 'Test Folder', orderIndex: 1);
+
       expect(folder.id, id);
       expect(folder.name, 'Test Folder');
       expect(folder.orderIndex, 1);
     });
 
     test('should create a workout folder from map', () {
-      final map = {
-        'id': 'test-id',
-        'name': 'Test Folder',
-        'orderIndex': 1,
-      };
+      final map = {'id': 'test-id', 'name': 'Test Folder', 'orderIndex': 1};
 
       final folderFromMap = WorkoutFolder.fromMap(map);
 
@@ -53,10 +42,7 @@ void main() {
     });
 
     test('should create a workout folder from map without orderIndex', () {
-      final map = {
-        'id': 'test-id',
-        'name': 'Test Folder',
-      };
+      final map = {'id': 'test-id', 'name': 'Test Folder'};
 
       final folderFromMap = WorkoutFolder.fromMap(map);
 
@@ -95,7 +81,7 @@ void main() {
     });
 
     test('should copy with new id', () {
-      final newId = 'new-id';
+      const newId = 'new-id';
       final copiedFolder = workoutFolder.copyWith(
         id: newId,
         name: 'Copied Folder',
@@ -107,9 +93,7 @@ void main() {
     });
 
     test('should copy with explicitly null orderIndex', () {
-      final copiedFolder = workoutFolder.copyWith(
-        orderIndex: null,
-      );
+      final copiedFolder = workoutFolder.copyWith(orderIndex: null);
 
       expect(copiedFolder.name, workoutFolder.name);
       expect(copiedFolder.orderIndex, isNull);

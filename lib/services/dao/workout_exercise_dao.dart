@@ -1,5 +1,5 @@
-import '../../models/workout_exercise.dart';
 import '../../models/typedefs.dart';
+import '../../models/workout_exercise.dart';
 import 'base_dao.dart';
 
 class WorkoutExerciseDao extends BaseDao<WorkoutExercise> {

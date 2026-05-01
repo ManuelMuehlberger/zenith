@@ -1,7 +1,7 @@
-import '../../models/workout.dart';
-import '../insights_service.dart';
-import '../exercise_service.dart';
 import '../../models/exercise.dart';
+import '../../models/workout.dart';
+import '../exercise_service.dart';
+import '../insights_service.dart';
 
 class WorkoutInsightsProvider {
   Future<WorkoutInsights> getData({
@@ -11,11 +11,15 @@ class WorkoutInsightsProvider {
     InsightsGrouping? grouping,
     Map<String, dynamic> filters = const {},
   }) async {
-    final finalGrouping = grouping ?? (timeframe != null ? InsightsService.getGroupingForTimeframe(timeframe) : _determineGrouping(monthsBack, weeksBack));
+    final finalGrouping =
+        grouping ??
+        (timeframe != null
+            ? InsightsService.getGroupingForTimeframe(timeframe)
+            : _determineGrouping(monthsBack, weeksBack));
     final finalWeeksBack = weeksBack ?? (timeframe == '1W' ? 1 : null);
-    
+
     final workouts = await InsightsService.instance.getWorkouts();
-    
+
     final workoutName = filters['workoutName'] as String?;
     final muscleGroup = filters['muscleGroup'] as String?;
     final equipment = filters['equipment'] as String?;
@@ -23,7 +27,9 @@ class WorkoutInsightsProvider {
 
     final now = DateTime.now();
     final workoutsWithDates = workouts
-        .where((w) => w.startedAt != null && w.status == WorkoutStatus.completed)
+        .where(
+          (w) => w.startedAt != null && w.status == WorkoutStatus.completed,
+        )
         .toList();
 
     final DateTime referenceDate;
@@ -35,17 +41,24 @@ class WorkoutInsightsProvider {
     } else {
       referenceDate = now;
     }
-    
+
     final DateTime cutoffDate;
     if (finalWeeksBack != null && finalWeeksBack > 0) {
       cutoffDate = referenceDate.subtract(Duration(days: finalWeeksBack * 7));
     } else {
-      cutoffDate = DateTime(referenceDate.year, referenceDate.month - (monthsBack - 1), 1);
+      cutoffDate = DateTime(
+        referenceDate.year,
+        referenceDate.month - (monthsBack - 1),
+        1,
+      );
     }
 
     final recentWorkouts = workouts.where((workout) {
-      if (workout.startedAt == null || workout.status != WorkoutStatus.completed) return false;
-      
+      if (workout.startedAt == null ||
+          workout.status != WorkoutStatus.completed) {
+        return false;
+      }
+
       final startedAt = workout.startedAt!;
       if (startedAt.isBefore(cutoffDate)) return false;
       if (startedAt.isAfter(now)) return false;
@@ -56,15 +69,26 @@ class WorkoutInsightsProvider {
       if (muscleGroup != null || equipment != null || isBodyWeight != null) {
         hasMatchingExercise = workout.exercises.any((exercise) {
           final exerciseDetail = _getExerciseDetail(exercise.exerciseSlug);
-          if (exerciseDetail == null) return false;
+          if (exerciseDetail == null) {
+            return false;
+          }
 
           bool matches = true;
-          if (muscleGroup != null && exerciseDetail.primaryMuscleGroup.name != muscleGroup) matches = false;
-          if (equipment != null) {
-             final normalizedExerciseEquipment = exerciseDetail.equipment == 'Dumbell' ? 'Dumbbell' : exerciseDetail.equipment;
-             if (normalizedExerciseEquipment != equipment) matches = false;
+          if (muscleGroup != null &&
+              exerciseDetail.primaryMuscleGroup.name != muscleGroup) {
+            matches = false;
           }
-          if (isBodyWeight != null && exerciseDetail.isBodyWeightExercise != isBodyWeight) matches = false;
+          if (equipment != null) {
+            final normalizedExerciseEquipment =
+                exerciseDetail.equipment == 'Dumbell'
+                ? 'Dumbbell'
+                : exerciseDetail.equipment;
+            if (normalizedExerciseEquipment != equipment) matches = false;
+          }
+          if (isBodyWeight != null &&
+              exerciseDetail.isBodyWeightExercise != isBodyWeight) {
+            matches = false;
+          }
           return matches;
         });
       }
@@ -72,31 +96,62 @@ class WorkoutInsightsProvider {
     }).toList();
 
     final totalWorkouts = recentWorkouts.length;
-    final totalHours = recentWorkouts.fold<double>(0, (sum, workout) => 
-        sum + ((workout.completedAt != null && workout.startedAt != null 
-            ? workout.completedAt!.difference(workout.startedAt!).inMinutes 
-            : 0) / 60.0));
-    
-    final totalWeight = recentWorkouts.fold<double>(0, (sum, workout) => 
-        sum + workout.exercises.fold(0.0, (exerciseSum, exercise) {
-          if (muscleGroup != null || equipment != null || isBodyWeight != null) {
-            final exerciseDetail = _getExerciseDetail(exercise.exerciseSlug);
-            if (exerciseDetail == null) return exerciseSum;
+    final totalHours = recentWorkouts.fold<double>(
+      0,
+      (sum, workout) =>
+          sum +
+          ((workout.completedAt != null && workout.startedAt != null
+                  ? workout.completedAt!
+                        .difference(workout.startedAt!)
+                        .inMinutes
+                  : 0) /
+              60.0),
+    );
 
-            if (muscleGroup != null && exerciseDetail.primaryMuscleGroup.name != muscleGroup) return exerciseSum;
-            if (equipment != null) {
-               final normalizedExerciseEquipment = exerciseDetail.equipment == 'Dumbell' ? 'Dumbbell' : exerciseDetail.equipment;
-               if (normalizedExerciseEquipment != equipment) return exerciseSum;
+    final totalWeight = recentWorkouts.fold<double>(
+      0,
+      (sum, workout) =>
+          sum +
+          workout.exercises.fold(0.0, (exerciseSum, exercise) {
+            if (muscleGroup != null ||
+                equipment != null ||
+                isBodyWeight != null) {
+              final exerciseDetail = _getExerciseDetail(exercise.exerciseSlug);
+              if (exerciseDetail == null) {
+                return exerciseSum;
+              }
+
+              if (muscleGroup != null &&
+                  exerciseDetail.primaryMuscleGroup.name != muscleGroup) {
+                return exerciseSum;
+              }
+              if (equipment != null) {
+                final normalizedExerciseEquipment =
+                    exerciseDetail.equipment == 'Dumbell'
+                    ? 'Dumbbell'
+                    : exerciseDetail.equipment;
+                if (normalizedExerciseEquipment != equipment) {
+                  return exerciseSum;
+                }
+              }
+              if (isBodyWeight != null &&
+                  exerciseDetail.isBodyWeightExercise != isBodyWeight) {
+                return exerciseSum;
+              }
             }
-            if (isBodyWeight != null && exerciseDetail.isBodyWeightExercise != isBodyWeight) return exerciseSum;
-          }
 
-          return exerciseSum + exercise.sets.fold(0.0, (setSum, set) => 
-                setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0));
-        }));
+            return exerciseSum +
+                exercise.sets.fold(
+                  0.0,
+                  (setSum, set) =>
+                      setSum +
+                      (set.actualWeight ?? 0.0) * (set.actualReps ?? 0),
+                );
+          }),
+    );
 
     final trendData = _calculateTrendData(
-      recentWorkouts, 
+      recentWorkouts,
       monthsBack,
       finalWeeksBack,
       finalGrouping,
@@ -113,8 +168,12 @@ class WorkoutInsightsProvider {
       trendWorkouts: trendData['workouts']!,
       trendHours: trendData['hours']!,
       trendWeight: trendData['weight']!,
-      averageWorkoutDuration: totalWorkouts > 0 ? totalHours / totalWorkouts : 0,
-      averageWeightPerWorkout: totalWorkouts > 0 ? totalWeight / totalWorkouts : 0,
+      averageWorkoutDuration: totalWorkouts > 0
+          ? totalHours / totalWorkouts
+          : 0,
+      averageWeightPerWorkout: totalWorkouts > 0
+          ? totalWeight / totalWorkouts
+          : 0,
       lastUpdated: DateTime.now(),
     );
   }
@@ -133,25 +192,27 @@ class WorkoutInsightsProvider {
 
   Exercise? _getExerciseDetail(String slug) {
     try {
-      return ExerciseService.instance.exercises.firstWhere((e) => e.slug == slug);
+      return ExerciseService.instance.exercises.firstWhere(
+        (e) => e.slug == slug,
+      );
     } catch (e) {
       return null;
     }
   }
 
   Map<String, List<InsightDataPoint>> _calculateTrendData(
-      List<Workout> workouts, 
-      int monthsBack,
-      int? weeksBack,
-      InsightsGrouping grouping, {
-      DateTime? referenceDate,
-      String? muscleGroup,
-      String? equipment,
-      bool? isBodyWeight,
+    List<Workout> workouts,
+    int monthsBack,
+    int? weeksBack,
+    InsightsGrouping grouping, {
+    DateTime? referenceDate,
+    String? muscleGroup,
+    String? equipment,
+    bool? isBodyWeight,
   }) {
     final now = DateTime.now();
     final DateTime refDate = referenceDate ?? now;
-    
+
     final trendWorkouts = <InsightDataPoint>[];
     final trendHours = <InsightDataPoint>[];
     final trendWeight = <InsightDataPoint>[];
@@ -172,7 +233,7 @@ class WorkoutInsightsProvider {
     for (int i = slots - 1; i >= 0; i--) {
       final DateTime slotStart;
       final DateTime slotEnd;
-      
+
       if (grouping == InsightsGrouping.month) {
         slotStart = DateTime(refDate.year, refDate.month - i, 1);
         slotEnd = DateTime(slotStart.year, slotStart.month + 1, 1);
@@ -188,47 +249,72 @@ class WorkoutInsightsProvider {
 
       final slotWorkouts = workouts.where((workout) {
         final workoutDate = workout.startedAt!;
-        return !workoutDate.isBefore(slotStart) && workoutDate.isBefore(slotEnd);
+        return !workoutDate.isBefore(slotStart) &&
+            workoutDate.isBefore(slotEnd);
       }).toList();
 
       final workoutCount = slotWorkouts.length;
-      final totalHours = slotWorkouts.fold<double>(0, (sum, workout) => 
-          sum + ((workout.completedAt != null && workout.startedAt != null 
-              ? workout.completedAt!.difference(workout.startedAt!).inMinutes 
-              : 0) / 60.0));
-      
-      final totalWeight = slotWorkouts.fold<double>(0, (sum, workout) => 
-          sum + workout.exercises.fold(0.0, (exerciseSum, exercise) {
-            if (muscleGroup != null || equipment != null || isBodyWeight != null) {
-              final exerciseDetail = _getExerciseDetail(exercise.exerciseSlug);
-              if (exerciseDetail == null) return exerciseSum;
+      final totalHours = slotWorkouts.fold<double>(
+        0,
+        (sum, workout) =>
+            sum +
+            ((workout.completedAt != null && workout.startedAt != null
+                    ? workout.completedAt!
+                          .difference(workout.startedAt!)
+                          .inMinutes
+                    : 0) /
+                60.0),
+      );
 
-              if (muscleGroup != null && exerciseDetail.primaryMuscleGroup.name != muscleGroup) return exerciseSum;
-              if (equipment != null) {
-                 final normalizedExerciseEquipment = exerciseDetail.equipment == 'Dumbell' ? 'Dumbbell' : exerciseDetail.equipment;
-                 if (normalizedExerciseEquipment != equipment) return exerciseSum;
+      final totalWeight = slotWorkouts.fold<double>(
+        0,
+        (sum, workout) =>
+            sum +
+            workout.exercises.fold(0.0, (exerciseSum, exercise) {
+              if (muscleGroup != null ||
+                  equipment != null ||
+                  isBodyWeight != null) {
+                final exerciseDetail = _getExerciseDetail(
+                  exercise.exerciseSlug,
+                );
+                if (exerciseDetail == null) return exerciseSum;
+
+                if (muscleGroup != null &&
+                    exerciseDetail.primaryMuscleGroup.name != muscleGroup) {
+                  return exerciseSum;
+                }
+                if (equipment != null) {
+                  final normalizedExerciseEquipment =
+                      exerciseDetail.equipment == 'Dumbell'
+                      ? 'Dumbbell'
+                      : exerciseDetail.equipment;
+                  if (normalizedExerciseEquipment != equipment) {
+                    return exerciseSum;
+                  }
+                }
+                if (isBodyWeight != null &&
+                    exerciseDetail.isBodyWeightExercise != isBodyWeight) {
+                  return exerciseSum;
+                }
               }
-              if (isBodyWeight != null && exerciseDetail.isBodyWeightExercise != isBodyWeight) return exerciseSum;
-            }
 
-            return exerciseSum + exercise.sets.fold(0.0, (setSum, set) => 
-                  setSum + (set.actualWeight ?? 0.0) * (set.actualReps ?? 0));
-          }));
+              return exerciseSum +
+                  exercise.sets.fold(
+                    0.0,
+                    (setSum, set) =>
+                        setSum +
+                        (set.actualWeight ?? 0.0) * (set.actualReps ?? 0),
+                  );
+            }),
+      );
 
-      trendWorkouts.add(InsightDataPoint(
-        date: slotStart,
-        value: workoutCount.toDouble(),
-      ));
-      
-      trendHours.add(InsightDataPoint(
-        date: slotStart,
-        value: totalHours,
-      ));
-      
-      trendWeight.add(InsightDataPoint(
-        date: slotStart,
-        value: totalWeight,
-      ));
+      trendWorkouts.add(
+        InsightDataPoint(date: slotStart, value: workoutCount.toDouble()),
+      );
+
+      trendHours.add(InsightDataPoint(date: slotStart, value: totalHours));
+
+      trendWeight.add(InsightDataPoint(date: slotStart, value: totalWeight));
     }
 
     return {
@@ -240,6 +326,10 @@ class WorkoutInsightsProvider {
 
   DateTime _getWeekStart(DateTime date) {
     final daysFromMonday = date.weekday - 1;
-    return DateTime(date.year, date.month, date.day).subtract(Duration(days: daysFromMonday));
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).subtract(Duration(days: daysFromMonday));
   }
 }

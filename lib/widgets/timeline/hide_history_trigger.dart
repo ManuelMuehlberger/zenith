@@ -1,14 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class HideHistoryTrigger extends StatelessWidget {
   final VoidCallback onTrigger;
 
-  const HideHistoryTrigger({
-    super.key,
-    required this.onTrigger,
-  });
+  const HideHistoryTrigger({super.key, required this.onTrigger});
 
   @override
   Widget build(BuildContext context) {

@@ -1,16 +1,17 @@
 import 'package:logging/logging.dart';
-import '../models/workout_template.dart';
-import '../models/workout_folder.dart';
 import '../models/typedefs.dart';
 import '../models/workout_exercise.dart';
+import '../models/workout_folder.dart';
 import '../models/workout_set.dart';
-import 'dao/workout_template_dao.dart';
-import 'dao/workout_folder_dao.dart';
+import '../models/workout_template.dart';
 import 'dao/workout_exercise_dao.dart';
+import 'dao/workout_folder_dao.dart';
 import 'dao/workout_set_dao.dart';
+import 'dao/workout_template_dao.dart';
 
 class WorkoutTemplateService {
-  static final WorkoutTemplateService _instance = WorkoutTemplateService._internal();
+  static final WorkoutTemplateService _instance =
+      WorkoutTemplateService._internal();
   factory WorkoutTemplateService({
     WorkoutTemplateDao? workoutTemplateDao,
     WorkoutFolderDao? workoutFolderDao,
@@ -46,7 +47,8 @@ class WorkoutTemplateService {
   Future<List<WorkoutTemplate>> getAllWorkoutTemplates() async {
     _logger.fine('Getting all workout templates');
     try {
-      final templates = await _workoutTemplateDao.getAllWorkoutTemplatesOrdered();
+      final templates = await _workoutTemplateDao
+          .getAllWorkoutTemplatesOrdered();
       _logger.fine('Retrieved ${templates.length} workout templates');
       return templates;
     } catch (e) {
@@ -56,14 +58,22 @@ class WorkoutTemplateService {
   }
 
   /// Get workout templates in a specific folder
-  Future<List<WorkoutTemplate>> getWorkoutTemplatesByFolder(WorkoutFolderId folderId) async {
+  Future<List<WorkoutTemplate>> getWorkoutTemplatesByFolder(
+    WorkoutFolderId folderId,
+  ) async {
     _logger.fine('Getting workout templates for folder: $folderId');
     try {
-      final templates = await _workoutTemplateDao.getWorkoutTemplatesByFolderId(folderId);
-      _logger.fine('Retrieved ${templates.length} workout templates for folder $folderId');
+      final templates = await _workoutTemplateDao.getWorkoutTemplatesByFolderId(
+        folderId,
+      );
+      _logger.fine(
+        'Retrieved ${templates.length} workout templates for folder $folderId',
+      );
       return templates;
     } catch (e) {
-      _logger.severe('Failed to get workout templates for folder $folderId: $e');
+      _logger.severe(
+        'Failed to get workout templates for folder $folderId: $e',
+      );
       rethrow;
     }
   }
@@ -72,8 +82,11 @@ class WorkoutTemplateService {
   Future<List<WorkoutTemplate>> getWorkoutTemplatesWithoutFolder() async {
     _logger.fine('Getting workout templates without folder');
     try {
-      final templates = await _workoutTemplateDao.getWorkoutTemplatesWithoutFolder();
-      _logger.fine('Retrieved ${templates.length} workout templates without folder');
+      final templates = await _workoutTemplateDao
+          .getWorkoutTemplatesWithoutFolder();
+      _logger.fine(
+        'Retrieved ${templates.length} workout templates without folder',
+      );
       return templates;
     } catch (e) {
       _logger.severe('Failed to get workout templates without folder: $e');
@@ -135,12 +148,18 @@ class WorkoutTemplateService {
     try {
       final count = await _workoutTemplateDao.updateWorkoutTemplate(template);
       if (count > 0) {
-        _logger.fine('Successfully updated workout template with id: ${template.id}');
+        _logger.fine(
+          'Successfully updated workout template with id: ${template.id}',
+        );
       } else {
-        _logger.warning('No workout template found to update with id: ${template.id}');
+        _logger.warning(
+          'No workout template found to update with id: ${template.id}',
+        );
       }
     } catch (e) {
-      _logger.severe('Failed to update workout template with id ${template.id}: $e');
+      _logger.severe(
+        'Failed to update workout template with id ${template.id}: $e',
+      );
       rethrow;
     }
   }
@@ -170,7 +189,9 @@ class WorkoutTemplateService {
       if (count > 0) {
         _logger.fine('Successfully updated lastUsed for workout template: $id');
       } else {
-        _logger.warning('No workout template found to update lastUsed with id: $id');
+        _logger.warning(
+          'No workout template found to update lastUsed with id: $id',
+        );
       }
     } catch (e) {
       _logger.severe('Failed to update lastUsed for workout template $id: $e');
@@ -179,11 +200,17 @@ class WorkoutTemplateService {
   }
 
   /// Get recently used workout templates
-  Future<List<WorkoutTemplate>> getRecentlyUsedTemplates({int limit = 10}) async {
+  Future<List<WorkoutTemplate>> getRecentlyUsedTemplates({
+    int limit = 10,
+  }) async {
     _logger.fine('Getting recently used workout templates (limit: $limit)');
     try {
-      final templates = await _workoutTemplateDao.getWorkoutTemplatesByLastUsed(limit: limit);
-      _logger.fine('Retrieved ${templates.length} recently used workout templates');
+      final templates = await _workoutTemplateDao.getWorkoutTemplatesByLastUsed(
+        limit: limit,
+      );
+      _logger.fine(
+        'Retrieved ${templates.length} recently used workout templates',
+      );
       return templates;
     } catch (e) {
       _logger.severe('Failed to get recently used workout templates: $e');
@@ -192,7 +219,10 @@ class WorkoutTemplateService {
   }
 
   /// Move a workout template to a different folder
-  Future<void> moveTemplateToFolder(WorkoutTemplateId templateId, WorkoutFolderId? folderId) async {
+  Future<void> moveTemplateToFolder(
+    WorkoutTemplateId templateId,
+    WorkoutFolderId? folderId,
+  ) async {
     _logger.fine('Moving workout template $templateId to folder: $folderId');
     try {
       final template = await getWorkoutTemplateById(templateId);
@@ -202,15 +232,22 @@ class WorkoutTemplateService {
 
       final updatedTemplate = template.copyWith(folderId: folderId);
       await updateWorkoutTemplate(updatedTemplate);
-      _logger.fine('Successfully moved workout template $templateId to folder: $folderId');
+      _logger.fine(
+        'Successfully moved workout template $templateId to folder: $folderId',
+      );
     } catch (e) {
-      _logger.severe('Failed to move workout template $templateId to folder $folderId: $e');
+      _logger.severe(
+        'Failed to move workout template $templateId to folder $folderId: $e',
+      );
       rethrow;
     }
   }
 
   /// Duplicate a workout template
-  Future<WorkoutTemplate> duplicateTemplate(WorkoutTemplateId templateId, {String? newName}) async {
+  Future<WorkoutTemplate> duplicateTemplate(
+    WorkoutTemplateId templateId, {
+    String? newName,
+  }) async {
     _logger.fine('Duplicating workout template: $templateId');
     try {
       final originalTemplate = await getWorkoutTemplateById(templateId);
@@ -229,7 +266,9 @@ class WorkoutTemplateService {
       );
 
       await _workoutTemplateDao.insert(duplicatedTemplate);
-      _logger.fine('Successfully duplicated workout template. New id: ${duplicatedTemplate.id}');
+      _logger.fine(
+        'Successfully duplicated workout template. New id: ${duplicatedTemplate.id}',
+      );
       return duplicatedTemplate;
     } catch (e) {
       _logger.severe('Failed to duplicate workout template $templateId: $e');
@@ -248,7 +287,9 @@ class WorkoutTemplateService {
         countMap[template.folderId] = (countMap[template.folderId] ?? 0) + 1;
       }
 
-      _logger.fine('Template count by folder calculated: ${countMap.length} folders');
+      _logger.fine(
+        'Template count by folder calculated: ${countMap.length} folders',
+      );
       return countMap;
     } catch (e) {
       _logger.severe('Failed to get template count by folder: $e');
@@ -274,7 +315,7 @@ class WorkoutTemplateService {
   Future<WorkoutFolder> createFolder(String name) async {
     _logger.info('Creating new folder with name: $name');
     final folder = WorkoutFolder(name: name);
-    
+
     await _workoutFolderDao.insert(folder);
     _folders.add(folder);
     _logger.fine('Folder created with id: ${folder.id}');
@@ -295,7 +336,7 @@ class WorkoutTemplateService {
   /// Delete a folder and move its templates to no folder
   Future<void> deleteFolder(String folderId) async {
     _logger.info('Deleting folder with id: $folderId');
-    
+
     // Move all templates in this folder to no folder
     final templatesInFolder = await getWorkoutTemplatesByFolder(folderId);
     for (final template in templatesInFolder) {
@@ -303,7 +344,7 @@ class WorkoutTemplateService {
       await updateWorkoutTemplate(updatedTemplate);
       _logger.finer('Moved template ${template.id} out of folder');
     }
-    
+
     await _workoutFolderDao.deleteWorkoutFolder(folderId);
     _folders.removeWhere((f) => f.id == folderId);
     _logger.fine('Folder deleted from database and cache');
@@ -312,8 +353,10 @@ class WorkoutTemplateService {
   /// Reorder folders
   Future<void> reorderFolders(int oldIndex, int newIndex) async {
     _logger.info('Reordering folders from $oldIndex to $newIndex');
-    if (oldIndex < 0 || oldIndex >= _folders.length || 
-        newIndex < 0 || newIndex >= _folders.length) {
+    if (oldIndex < 0 ||
+        oldIndex >= _folders.length ||
+        newIndex < 0 ||
+        newIndex >= _folders.length) {
       _logger.warning('Invalid reorder indices for folders');
       return;
     }
@@ -332,14 +375,22 @@ class WorkoutTemplateService {
   }
 
   /// Reorder templates within a folder
-  Future<void> reorderTemplatesInFolder(String? folderId, int oldIndex, int newIndex) async {
-    _logger.info('Reordering templates in folder $folderId from $oldIndex to $newIndex');
-    final templatesInFolder = folderId == null 
+  Future<void> reorderTemplatesInFolder(
+    String? folderId,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    _logger.info(
+      'Reordering templates in folder $folderId from $oldIndex to $newIndex',
+    );
+    final templatesInFolder = folderId == null
         ? await getWorkoutTemplatesWithoutFolder()
         : await getWorkoutTemplatesByFolder(folderId);
-        
-    if (oldIndex < 0 || oldIndex >= templatesInFolder.length || 
-        newIndex < 0 || newIndex >= templatesInFolder.length) {
+
+    if (oldIndex < 0 ||
+        oldIndex >= templatesInFolder.length ||
+        newIndex < 0 ||
+        newIndex >= templatesInFolder.length) {
       _logger.warning('Invalid reorder indices');
       return;
     }
@@ -377,16 +428,16 @@ class WorkoutTemplateService {
   /// Clear all user templates and folders
   Future<void> clearUserTemplatesAndFolders() async {
     _logger.warning('Clearing all user templates and folders');
-    
+
     final allTemplates = await getAllWorkoutTemplates();
     for (final template in allTemplates) {
       await deleteWorkoutTemplate(template.id);
     }
-    
+
     for (final folder in _folders) {
       await _workoutFolderDao.deleteWorkoutFolder(folder.id);
     }
-    
+
     _folders = [];
     _logger.info('All user templates and folders cleared');
   }
@@ -394,16 +445,23 @@ class WorkoutTemplateService {
   // TEMPLATE EXERCISE MANAGEMENT
 
   /// Returns the exercises (with sets) defined for a given workout template.
-  Future<List<WorkoutExercise>> getTemplateExercises(WorkoutTemplateId templateId) async {
+  Future<List<WorkoutExercise>> getTemplateExercises(
+    WorkoutTemplateId templateId,
+  ) async {
     _logger.fine('Loading template exercises for template: $templateId');
     try {
-      final exercises = await _workoutExerciseDao.getWorkoutExercisesByWorkoutTemplateId(templateId);
+      final exercises = await _workoutExerciseDao
+          .getWorkoutExercisesByWorkoutTemplateId(templateId);
       final result = <WorkoutExercise>[];
       for (final ex in exercises) {
-        final sets = await _workoutSetDao.getWorkoutSetsByWorkoutExerciseId(ex.id);
+        final sets = await _workoutSetDao.getWorkoutSetsByWorkoutExerciseId(
+          ex.id,
+        );
         result.add(ex.copyWith(sets: sets));
       }
-      _logger.fine('Loaded ${result.length} template exercises for template: $templateId');
+      _logger.fine(
+        'Loaded ${result.length} template exercises for template: $templateId',
+      );
       return result;
     } catch (e) {
       _logger.severe('Failed to load template exercises for $templateId: $e');
@@ -413,11 +471,18 @@ class WorkoutTemplateService {
 
   /// Replaces all exercises/sets for the given template with the provided list.
   /// This performs a simple "replace-all" to keep logic straightforward.
-  Future<void> saveTemplateExercises(WorkoutTemplateId templateId, List<WorkoutExercise> exercises) async {
-    _logger.fine('Saving ${exercises.length} template exercises for template: $templateId');
+  Future<void> saveTemplateExercises(
+    WorkoutTemplateId templateId,
+    List<WorkoutExercise> exercises,
+  ) async {
+    _logger.fine(
+      'Saving ${exercises.length} template exercises for template: $templateId',
+    );
     try {
       // Remove existing template exercises (WorkoutSet rows will cascade delete)
-      await _workoutExerciseDao.deleteWorkoutExercisesByWorkoutTemplateId(templateId);
+      await _workoutExerciseDao.deleteWorkoutExercisesByWorkoutTemplateId(
+        templateId,
+      );
 
       // Insert provided exercises and their sets in order, regenerating IDs to avoid collisions
       for (int i = 0; i < exercises.length; i++) {
@@ -446,7 +511,9 @@ class WorkoutTemplateService {
           await _workoutSetDao.insert(set);
         }
       }
-      _logger.fine('Template exercises saved successfully for template: $templateId');
+      _logger.fine(
+        'Template exercises saved successfully for template: $templateId',
+      );
     } catch (e) {
       _logger.severe('Failed to save template exercises for $templateId: $e');
       rethrow;

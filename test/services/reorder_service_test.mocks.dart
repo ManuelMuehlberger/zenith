@@ -136,7 +136,6 @@ class MockWorkoutService extends _i1.Mock implements _i4.WorkoutService {
           )
           as _i9.Future<_i3.Workout?>);
 
-  @override
   _i9.Future<void> saveData() =>
       (super.noSuchMethod(
             Invocation.method(#saveData, []),

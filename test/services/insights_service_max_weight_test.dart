@@ -14,8 +14,8 @@ void main() {
     });
 
     test('Max weight should be cumulative (PR progression)', () async {
-      final exerciseSlug = 'bench_press';
-      
+      const exerciseSlug = 'bench_press';
+
       final workout1 = Workout(
         id: '1',
         name: 'W1',
@@ -100,34 +100,47 @@ void main() {
       // Month 1: 2 months ago
       // Month 2: 1 month ago
       // Month 3: This month
-      
+
       final dateMonth1 = DateTime(now.year, now.month - 2, 15);
       final dateMonth2 = DateTime(now.year, now.month - 1, 15);
       final dateMonth3 = DateTime(now.year, now.month, 15);
-      
-      final w1 = workout1.copyWith(startedAt: dateMonth1, completedAt: dateMonth1.add(const Duration(hours: 1)));
-      final w2 = workout2.copyWith(startedAt: dateMonth2, completedAt: dateMonth2.add(const Duration(hours: 1)));
-      final w3 = workout3.copyWith(startedAt: dateMonth3, completedAt: dateMonth3.add(const Duration(hours: 1)));
-      
+
+      final w1 = workout1.copyWith(
+        startedAt: dateMonth1,
+        completedAt: dateMonth1.add(const Duration(hours: 1)),
+      );
+      final w2 = workout2.copyWith(
+        startedAt: dateMonth2,
+        completedAt: dateMonth2.add(const Duration(hours: 1)),
+      );
+      final w3 = workout3.copyWith(
+        startedAt: dateMonth3,
+        completedAt: dateMonth3.add(const Duration(hours: 1)),
+      );
+
       service.setWorkoutsProvider(() async => [w1, w2, w3]);
-      
+
       final insights = await service.getExerciseInsights(
         exerciseName: exerciseSlug,
         monthsBack: 3,
         grouping: InsightsGrouping.month,
       );
-      
+
       final maxWeights = insights.monthlyMaxWeight;
-      
+
       // Expect 3 data points
       expect(maxWeights.length, 3);
-      
+
       // Month 1: 100kg
       expect(maxWeights[0].value, 100.0, reason: 'Month 1 max should be 100');
-      
+
       // Month 2: Should be 100kg (cumulative), even though lifted 63kg
-      expect(maxWeights[1].value, 100.0, reason: 'Month 2 max should be 100 (cumulative)');
-      
+      expect(
+        maxWeights[1].value,
+        100.0,
+        reason: 'Month 2 max should be 100 (cumulative)',
+      );
+
       // Month 3: 105kg (new PR)
       expect(maxWeights[2].value, 105.0, reason: 'Month 3 max should be 105');
     });

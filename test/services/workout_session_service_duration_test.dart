@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zenith/models/workout.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
-import 'package:zenith/services/workout_session_service.dart';
 import 'package:zenith/services/dao/workout_dao.dart';
 import 'package:zenith/services/dao/workout_exercise_dao.dart';
 import 'package:zenith/services/dao/workout_set_dao.dart';
 import 'package:zenith/services/live_workout_notification_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zenith/services/workout_session_service.dart';
 
 // Local fakes (duplicated here for isolation)
 class FakeWorkoutDao extends WorkoutDao {
@@ -27,7 +27,9 @@ class FakeWorkoutDao extends WorkoutDao {
 
   @override
   Future<List<Workout>> getInProgressWorkouts() async {
-    return _store.values.where((w) => w.status == WorkoutStatus.inProgress).toList();
+    return _store.values
+        .where((w) => w.status == WorkoutStatus.inProgress)
+        .toList();
   }
 
   @override
@@ -43,13 +45,27 @@ class FakeWorkoutDao extends WorkoutDao {
 class FakeWorkoutExerciseDao extends WorkoutExerciseDao {
   final Map<String, WorkoutExercise> _byId = {};
   @override
-  Future<int> insert(WorkoutExercise model) async { _byId[model.id] = model; return 1; }
+  Future<int> insert(WorkoutExercise model) async {
+    _byId[model.id] = model;
+    return 1;
+  }
+
   @override
-  Future<int> deleteWorkoutExercise(String id) async { _byId.remove(id); return 1; }
+  Future<int> deleteWorkoutExercise(String id) async {
+    _byId.remove(id);
+    return 1;
+  }
+
   @override
-  Future<int> updateWorkoutExercise(WorkoutExercise workoutExercise) async { _byId[workoutExercise.id] = workoutExercise; return 1; }
+  Future<int> updateWorkoutExercise(WorkoutExercise workoutExercise) async {
+    _byId[workoutExercise.id] = workoutExercise;
+    return 1;
+  }
+
   @override
-  Future<List<WorkoutExercise>> getWorkoutExercisesByWorkoutId(String workoutId) async {
+  Future<List<WorkoutExercise>> getWorkoutExercisesByWorkoutId(
+    String workoutId,
+  ) async {
     final list = _byId.values.where((e) => e.workoutId == workoutId).toList()
       ..sort((a, b) => (a.orderIndex ?? 0).compareTo(b.orderIndex ?? 0));
     return list;
@@ -59,15 +75,32 @@ class FakeWorkoutExerciseDao extends WorkoutExerciseDao {
 class FakeWorkoutSetDao extends WorkoutSetDao {
   final Map<String, WorkoutSet> _byId = {};
   @override
-  Future<int> insert(WorkoutSet model) async { _byId[model.id] = model; return 1; }
+  Future<int> insert(WorkoutSet model) async {
+    _byId[model.id] = model;
+    return 1;
+  }
+
   @override
-  Future<int> updateWorkoutSet(WorkoutSet workoutSet) async { _byId[workoutSet.id] = workoutSet; return 1; }
+  Future<int> updateWorkoutSet(WorkoutSet workoutSet) async {
+    _byId[workoutSet.id] = workoutSet;
+    return 1;
+  }
+
   @override
-  Future<int> deleteWorkoutSet(String id) async { _byId.remove(id); return 1; }
+  Future<int> deleteWorkoutSet(String id) async {
+    _byId.remove(id);
+    return 1;
+  }
+
   @override
-  Future<List<WorkoutSet>> getWorkoutSetsByWorkoutExerciseId(String workoutExerciseId) async {
-    final list = _byId.values.where((s) => s.workoutExerciseId == workoutExerciseId).toList()
-      ..sort((a, b) => a.setIndex.compareTo(b.setIndex));
+  Future<List<WorkoutSet>> getWorkoutSetsByWorkoutExerciseId(
+    String workoutExerciseId,
+  ) async {
+    final list =
+        _byId.values
+            .where((s) => s.workoutExerciseId == workoutExerciseId)
+            .toList()
+          ..sort((a, b) => a.setIndex.compareTo(b.setIndex));
     return list;
   }
 }
@@ -81,13 +114,31 @@ class FakeNotificationService implements NotificationServiceAPI {
   @override
   void setNextSetCallback(Function() callback) {}
   @override
-  Future<void> startService(Workout session, int currentExerciseIndex, int currentSetIndex) async { _running = true; }
+  Future<void> startService(
+    Workout session,
+    int currentExerciseIndex,
+    int currentSetIndex,
+  ) async {
+    _running = true;
+  }
+
   @override
-  Future<void> updateNotification(Workout session, int currentExerciseIndex, int currentSetIndex) async {}
+  Future<void> updateNotification(
+    Workout session,
+    int currentExerciseIndex,
+    int currentSetIndex,
+  ) async {}
   @override
-  Future<void> stopService() async { _running = false; }
+  Future<void> stopService() async {
+    _running = false;
+  }
+
   @override
-  Future<void> restartServiceIfNeeded(Workout? session, int currentExerciseIndex, int currentSetIndex) async {}
+  Future<void> restartServiceIfNeeded(
+    Workout? session,
+    int currentExerciseIndex,
+    int currentSetIndex,
+  ) async {}
 }
 
 void main() {
@@ -99,8 +150,8 @@ void main() {
     late FakeNotificationService notificationService;
 
     Workout buildTemplate() {
-      final templateExerciseId = 'ex-template-1';
-      final templateSetId = 'set-template-1';
+      const templateExerciseId = 'ex-template-1';
+      const templateSetId = 'set-template-1';
       final templateExercise = WorkoutExercise(
         id: templateExerciseId,
         workoutTemplateId: 'template-1',
@@ -148,25 +199,34 @@ void main() {
       final customStart = DateTime(2025, 1, 1, 12, 0, 0);
       service.currentSession = session.copyWith(startedAt: customStart);
 
-      final override = const Duration(minutes: 1, seconds: 3);
-      final completed = await service.completeWorkout(durationOverride: override);
+      const override = Duration(minutes: 1, seconds: 3);
+      final completed = await service.completeWorkout(
+        durationOverride: override,
+      );
 
       expect(completed.completedAt, customStart.add(override));
     });
 
-    test('falls back to rounded behavior when durationOverride is null', () async {
-      final template = buildTemplate();
-      final session = await service.startWorkout(template);
+    test(
+      'falls back to rounded behavior when durationOverride is null',
+      () async {
+        final template = buildTemplate();
+        final session = await service.startWorkout(template);
 
-      final customStart = DateTime(2025, 1, 1, 12, 0, 0);
-      service.currentSession = session.copyWith(startedAt: customStart);
+        final customStart = DateTime(2025, 1, 1, 12, 0, 0);
+        service.currentSession = session.copyWith(startedAt: customStart);
 
-      // Simulate a short elapsed time that would round up to 1 minute
-      final completed = await service.completeWorkout(durationOverride: null);
+        // Simulate a short elapsed time that would round up to 1 minute
+        final completed = await service.completeWorkout(durationOverride: null);
 
-      // We cannot know exact "now" but duration must be a multiple of minutes due to rounding.
-      final duration = completed.completedAt!.difference(customStart);
-      expect(duration.inSeconds % 60, 0, reason: 'Should be rounded to full minute when no override provided');
-    });
+        // We cannot know exact "now" but duration must be a multiple of minutes due to rounding.
+        final duration = completed.completedAt!.difference(customStart);
+        expect(
+          duration.inSeconds % 60,
+          0,
+          reason: 'Should be rounded to full minute when no override provided',
+        );
+      },
+    );
   });
 }
