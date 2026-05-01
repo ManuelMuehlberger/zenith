@@ -1,6 +1,6 @@
 import 'package:uuid/uuid.dart';
-import 'typedefs.dart';
 import '../constants/app_constants.dart';
+import 'typedefs.dart';
 
 class WeightEntry {
   final String id;

@@ -49,8 +49,10 @@ if [ "${#changed_files[@]}" -eq 0 ]; then
   exit 0
 fi
 
-echo "Linting changed Dart files:"
+echo "Formatting and analyzing changed Dart files:"
 printf '  %s\n' "${changed_files[@]}"
+
+echo "Changed Dart files must pass flutter analyze with zero findings."
 
 dart format --output=none --set-exit-if-changed "${changed_files[@]}"
 flutter analyze "${changed_files[@]}"

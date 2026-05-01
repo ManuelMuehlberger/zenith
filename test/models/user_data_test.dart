@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zenith/models/user_data.dart';
 import 'package:zenith/constants/app_constants.dart';
+import 'package:zenith/models/user_data.dart';
 
 void main() {
   group('WeightEntry', () {

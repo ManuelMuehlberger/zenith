@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'package:logging/logging.dart';
-import '../models/workout.dart';
 import '../models/insights.dart';
-import 'workout_service.dart';
+import '../models/workout.dart';
 import 'insights/cache/insights_cache_store.dart';
-import 'insights/workout_insights_provider.dart';
-import 'insights/workout_trend_provider.dart';
 import 'insights/exercise_insights_provider.dart';
 import 'insights/insights_timeframe_resolver.dart';
+import 'insights/workout_insights_provider.dart';
+import 'insights/workout_trend_provider.dart';
+import 'workout_service.dart';
 
 export '../models/insights.dart';
 
@@ -115,7 +115,7 @@ class InsightsService {
       completer.completeError(e, s);
       rethrow;
     } finally {
-      _ongoingRequests.remove(key);
+      unawaited(_ongoingRequests.remove(key));
     }
   }
 

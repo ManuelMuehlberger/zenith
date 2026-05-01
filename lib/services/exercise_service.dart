@@ -1,5 +1,5 @@
-import 'package:logging/logging.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
+import 'package:logging/logging.dart';
 import '../models/exercise.dart';
 import 'dao/exercise_dao.dart';
 import 'dao/muscle_group_dao.dart';
@@ -11,7 +11,7 @@ class ExerciseService {
   ExerciseService._internal();
 
   final Logger _logger = Logger('ExerciseService');
-  
+
   static ExerciseService get instance => _instance;
 
   // Inject DAOs - now can be overridden for testing
@@ -47,7 +47,7 @@ class ExerciseService {
       _logger.severe('Failed to load exercises: $e');
       _exercises = [];
     }
-    
+
     try {
       final muscleGroups = await _muscleGroupDao.getAllMuscleGroups();
       _muscleGroups = muscleGroups.map((mg) => mg.name).toList()..sort();
@@ -64,7 +64,9 @@ class ExerciseService {
     _logger.info('Loading exercise frequency');
     try {
       _exerciseFrequency = await _workoutExerciseDao.getExerciseFrequency();
-      _logger.info('Successfully loaded frequency for ${_exerciseFrequency.length} exercises');
+      _logger.info(
+        'Successfully loaded frequency for ${_exerciseFrequency.length} exercises',
+      );
     } catch (e) {
       _logger.severe('Failed to load exercise frequency: $e');
       _exerciseFrequency = {};
@@ -80,34 +82,50 @@ class ExerciseService {
     }
 
     final lowerQuery = trimmedQuery.toLowerCase();
-    _logger.fine('searchExercises: processing query="$trimmedQuery" (lowercased="$lowerQuery")');
+    _logger.fine(
+      'searchExercises: processing query="$trimmedQuery" (lowercased="$lowerQuery")',
+    );
 
     // Start with strict contains matches to prioritize exact/substring hits
     final containsMatches = _exercises.where((exercise) {
       final name = exercise.name.toLowerCase();
       final primary = exercise.primaryMuscleGroup.name.toLowerCase();
-      final secondaries = exercise.secondaryMuscleGroups.map((mg) => mg.name.toLowerCase());
+      final secondaries = exercise.secondaryMuscleGroups.map(
+        (mg) => mg.name.toLowerCase(),
+      );
       final equipment = exercise.equipment.toLowerCase();
-      final normalizedEquipment = equipment == 'dumbell' ? 'dumbbell' : equipment;
+      final normalizedEquipment = equipment == 'dumbell'
+          ? 'dumbbell'
+          : equipment;
       return name.contains(lowerQuery) ||
           primary.contains(lowerQuery) ||
           secondaries.any((mg) => mg.contains(lowerQuery)) ||
-          (normalizedEquipment.isNotEmpty && normalizedEquipment.contains(lowerQuery)) ||
+          (normalizedEquipment.isNotEmpty &&
+              normalizedEquipment.contains(lowerQuery)) ||
           (lowerQuery.contains('bodyweight') && exercise.isBodyWeightExercise);
     }).toList();
-    _logger.fine('searchExercises: found ${containsMatches.length} contains matches');
+    _logger.fine(
+      'searchExercises: found ${containsMatches.length} contains matches',
+    );
 
     // Fuzzy matches across name, muscle groups, equipment, and bodyweight
-    _logger.fine('searchExercises: running fuzzy search on ${_exercises.length} exercises');
+    _logger.fine(
+      'searchExercises: running fuzzy search on ${_exercises.length} exercises',
+    );
     final fuzzyResults = extractAllSorted<Exercise>(
       query: lowerQuery,
       choices: _exercises,
       getter: (e) => _buildSearchBlob(e),
       cutoff: 70, // stricter primary cutoff to avoid noisy false positives
     );
-    _logger.fine('searchExercises: containsMatches=${containsMatches.length}, fuzzyCandidates=${fuzzyResults.length}');
+    _logger.fine(
+      'searchExercises: containsMatches=${containsMatches.length}, fuzzyCandidates=${fuzzyResults.length}',
+    );
     // Log up to 5 top fuzzy candidates (name:score)
-    final topFuzzySample = fuzzyResults.take(5).map((r) => '${r.choice.name}:${r.score}').join(', ');
+    final topFuzzySample = fuzzyResults
+        .take(5)
+        .map((r) => '${r.choice.name}:${r.score}')
+        .join(', ');
     if (topFuzzySample.isNotEmpty) {
       _logger.finer('searchExercises top fuzzy candidates: $topFuzzySample');
     }
@@ -120,14 +138,20 @@ class ExerciseService {
     for (final e in containsMatches) {
       scored[e] = 100;
     }
-    _logger.finer('searchExercises: merged scored entries count=${scored.length}');
+    _logger.finer(
+      'searchExercises: merged scored entries count=${scored.length}',
+    );
 
     // If there are NO direct contains matches and too few results, add top fuzzy
     // suggestions based on NAME only (to avoid tokens like "bodyweight" dominating).
     const int minResults = 6;
     const int fallbackLimit = 12;
-    if (containsMatches.isEmpty && scored.length < minResults && _exercises.length > scored.length) {
-      _logger.fine('searchExercises: No direct contains matches and scored.length=${scored.length} < minResults=$minResults — running name-only fallback');
+    if (containsMatches.isEmpty &&
+        scored.length < minResults &&
+        _exercises.length > scored.length) {
+      _logger.fine(
+        'searchExercises: No direct contains matches and scored.length=${scored.length} < minResults=$minResults — running name-only fallback',
+      );
       final top = extractTop<Exercise>(
         query: lowerQuery,
         choices: _exercises,
@@ -136,21 +160,31 @@ class ExerciseService {
         cutoff: 50, // allow more candidates but still keep a floor
       );
       final int bestScore = top.isNotEmpty ? top.first.score : 0;
-      _logger.finer('searchExercises fallback: topCandidates=${top.length}, bestScore=$bestScore');
-      final fallbackSample = top.take(8).map((r) => '${r.choice.name}:${r.score}').join(', ');
+      _logger.finer(
+        'searchExercises fallback: topCandidates=${top.length}, bestScore=$bestScore',
+      );
+      final fallbackSample = top
+          .take(8)
+          .map((r) => '${r.choice.name}:${r.score}')
+          .join(', ');
       if (fallbackSample.isNotEmpty) {
         _logger.finer('searchExercises fallback candidates: $fallbackSample');
       }
-      if (bestScore >= 70) { // guard against unrelated queries
+      if (bestScore >= 70) {
+        // guard against unrelated queries
         for (final t in top) {
           if (!scored.containsKey(t.choice)) {
             scored[t.choice] = t.score;
-            _logger.fine('searchExercises fallback: adding ${t.choice.name} with score ${t.score}');
+            _logger.fine(
+              'searchExercises fallback: adding ${t.choice.name} with score ${t.score}',
+            );
             if (scored.length >= minResults) break;
           }
         }
       } else {
-        _logger.fine('searchExercises fallback: bestScore $bestScore below guard threshold, not adding fallback results');
+        _logger.fine(
+          'searchExercises fallback: bestScore $bestScore below guard threshold, not adding fallback results',
+        );
       }
     }
 
@@ -159,31 +193,40 @@ class ExerciseService {
       ..sort((a, b) {
         final scoreCmp = b.value.compareTo(a.value);
         if (scoreCmp != 0) return scoreCmp;
-        
+
         // If scores are equal, prioritize by frequency
         final freqA = _exerciseFrequency[a.key.slug] ?? 0;
         final freqB = _exerciseFrequency[b.key.slug] ?? 0;
         final freqCmp = freqB.compareTo(freqA);
         if (freqCmp != 0) return freqCmp;
-        
+
         return a.key.name.compareTo(b.key.name);
       });
 
     final results = sorted.map((e) => e.key).toList();
     // Log top result names for easier debugging
     final topNames = results.take(10).map((ex) => ex.name).toList();
-    _logger.fine('searchExercises result count=${results.length} for query="$trimmedQuery" (contains=${containsMatches.length}, fuzzyCandidates=${fuzzyResults.length}) top=${topNames.join(", ")}');
+    _logger.fine(
+      'searchExercises result count=${results.length} for query="$trimmedQuery" (contains=${containsMatches.length}, fuzzyCandidates=${fuzzyResults.length}) top=${topNames.join(", ")}',
+    );
     return results;
   }
 
   // Build a lowercased searchable string for an exercise for fuzzy matching
   String _buildSearchBlob(Exercise e) {
-    final equipment = e.equipment.toLowerCase() == 'dumbell' ? 'dumbbell' : e.equipment.toLowerCase();
-    final secondaries = e.secondaryMuscleGroups.map((mg) => mg.name.toLowerCase()).join(' ');
+    final equipment = e.equipment.toLowerCase() == 'dumbell'
+        ? 'dumbbell'
+        : e.equipment.toLowerCase();
+    final secondaries = e.secondaryMuscleGroups
+        .map((mg) => mg.name.toLowerCase())
+        .join(' ');
     final bodyweight = e.isBodyWeightExercise ? 'bodyweight' : '';
-    final blob = '${e.name.toLowerCase()} ${e.primaryMuscleGroup.name.toLowerCase()} $secondaries $equipment $bodyweight';
+    final blob =
+        '${e.name.toLowerCase()} ${e.primaryMuscleGroup.name.toLowerCase()} $secondaries $equipment $bodyweight';
     // Use a very fine-grained log level because this is called many times during fuzzy evaluation.
-    _logger.finest('buildSearchBlob(${e.name}) => "$blob" (len=${blob.length})');
+    _logger.finest(
+      'buildSearchBlob(${e.name}) => "$blob" (len=${blob.length})',
+    );
     return blob;
   }
 
@@ -194,12 +237,15 @@ class ExerciseService {
       _logger.fine('Muscle group is empty, returning all exercises');
       return _exercises;
     }
-    
+
     final results = _exercises.where((exercise) {
-      return exercise.primaryMuscleGroup.name.toLowerCase() == trimmedMuscleGroup.toLowerCase();
+      return exercise.primaryMuscleGroup.name.toLowerCase() ==
+          trimmedMuscleGroup.toLowerCase();
     }).toList();
-    
-    _logger.fine('Found ${results.length} exercises for muscle group: "$trimmedMuscleGroup"');
+
+    _logger.fine(
+      'Found ${results.length} exercises for muscle group: "$trimmedMuscleGroup"',
+    );
     return results;
   }
 
@@ -217,14 +263,18 @@ class ExerciseService {
       _logger.fine('Equipment filter is empty, returning all exercises');
       return _exercises;
     }
-    
+
     // Handle the spelling variation in the data ("Dumbell" vs "Dumbbell")
     final normalizedEquipment = eq == 'dumbbell' ? 'dumbell' : eq;
-    _logger.fine('filterByEquipment: searching for normalized equipment="$normalizedEquipment"');
+    _logger.fine(
+      'filterByEquipment: searching for normalized equipment="$normalizedEquipment"',
+    );
     final results = _exercises
         .where((e) => (e.equipment).toLowerCase() == normalizedEquipment)
         .toList();
-    _logger.fine('filterByEquipment: matched ${results.length} exercises for equipment="$equipment" (normalized="$normalizedEquipment")');
+    _logger.fine(
+      'filterByEquipment: matched ${results.length} exercises for equipment="$equipment" (normalized="$normalizedEquipment")',
+    );
     return results;
   }
 
@@ -236,8 +286,12 @@ class ExerciseService {
       return _exercises;
     }
     _logger.fine('Filtering exercises by bodyweight: $isBodyweight');
-    final results = _exercises.where((e) => e.isBodyWeightExercise == isBodyweight).toList();
-    _logger.fine('filterByBodyweight: matched ${results.length} exercises for isBodyweight=$isBodyweight');
+    final results = _exercises
+        .where((e) => e.isBodyWeightExercise == isBodyweight)
+        .toList();
+    _logger.fine(
+      'filterByBodyweight: matched ${results.length} exercises for isBodyweight=$isBodyweight',
+    );
     return results;
   }
 
@@ -259,11 +313,15 @@ class ExerciseService {
     }
     if (seedExercises != null) {
       _exercises = seedExercises;
-      _logger.fine('setDependenciesForTesting: seeded ${_exercises.length} exercises');
+      _logger.fine(
+        'setDependenciesForTesting: seeded ${_exercises.length} exercises',
+      );
     }
     if (seedMuscleGroups != null) {
       _muscleGroups = seedMuscleGroups;
-      _logger.fine('setDependenciesForTesting: seeded ${_muscleGroups.length} muscle groups');
+      _logger.fine(
+        'setDependenciesForTesting: seeded ${_muscleGroups.length} muscle groups',
+      );
     }
   }
 

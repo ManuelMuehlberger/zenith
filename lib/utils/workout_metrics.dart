@@ -1,5 +1,5 @@
-import '../models/workout_exercise.dart';
 import '../constants/app_constants.dart';
+import '../models/workout_exercise.dart';
 
 /// Utility class for calculating workout metrics
 class WorkoutMetrics {
@@ -31,7 +31,7 @@ class WorkoutMetrics {
   }
 
   /// Estimate workout duration in minutes with precise equipment-based calculations
-  /// Formula: 
+  /// Formula:
   /// - Base time per set: 3 minutes
   /// - Equipment setup time: varies by type (Barbell: 3min, Dumbbell/Cable: 2min, Machine/None: 1min)
   /// - High rep bonus: +1 minute if reps > 10
@@ -39,14 +39,16 @@ class WorkoutMetrics {
   /// - Transition time: +1 minute between exercises for walking/moving
   static int estimateWorkoutDuration(List<WorkoutExercise> exercises) {
     if (exercises.isEmpty) return 0;
-    
+
     int totalDuration = 0;
 
     for (int i = 0; i < exercises.length; i++) {
       final exercise = exercises[i];
-      
+
       // Equipment setup time per exercise
-      final setupTime = _getEquipmentSetupTime(exercise.exerciseDetail?.equipment ?? '');
+      final setupTime = _getEquipmentSetupTime(
+        exercise.exerciseDetail?.equipment ?? '',
+      );
       totalDuration += setupTime;
 
       // Calculate time for each set

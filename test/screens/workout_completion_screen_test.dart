@@ -5,8 +5,12 @@ import 'package:zenith/screens/workout_completion_screen.dart';
 
 void main() {
   group('WorkoutCompletionScreen', () {
-    testWidgets('shows elapsed duration when completedAt is null', (WidgetTester tester) async {
-      final startedAt = DateTime.now().subtract(const Duration(minutes: 1, seconds: 10));
+    testWidgets('shows elapsed duration when completedAt is null', (
+      WidgetTester tester,
+    ) async {
+      final startedAt = DateTime.now().subtract(
+        const Duration(minutes: 1, seconds: 10),
+      );
       final session = Workout(
         name: 'Test Workout',
         status: WorkoutStatus.inProgress,
@@ -14,18 +18,18 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: WorkoutCompletionScreen(session: session),
-        ),
+        MaterialApp(home: WorkoutCompletionScreen(session: session)),
       );
 
       // Expect the duration text to show minutes only (no seconds), e.g., '1m'
       expect(find.text('1m'), findsOneWidget);
     });
 
-    testWidgets('uses completedAt when present to display duration', (WidgetTester tester) async {
+    testWidgets('uses completedAt when present to display duration', (
+      WidgetTester tester,
+    ) async {
       final startedAt = DateTime.now().subtract(const Duration(minutes: 30));
-      final duration = const Duration(minutes: 12, seconds: 34);
+      const duration = Duration(minutes: 12, seconds: 34);
       final completedAt = startedAt.add(duration);
 
       final session = Workout(
@@ -36,16 +40,16 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: WorkoutCompletionScreen(session: session),
-        ),
+        MaterialApp(home: WorkoutCompletionScreen(session: session)),
       );
 
       // Minutes only (no seconds) since we ignore seconds
       expect(find.text('12m'), findsOneWidget);
     });
 
-    testWidgets('mood labels are not shown (only emojis)', (WidgetTester tester) async {
+    testWidgets('mood labels are not shown (only emojis)', (
+      WidgetTester tester,
+    ) async {
       final startedAt = DateTime.now().subtract(const Duration(minutes: 1));
       final session = Workout(
         name: 'No Labels',
@@ -54,9 +58,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: WorkoutCompletionScreen(session: session),
-        ),
+        MaterialApp(home: WorkoutCompletionScreen(session: session)),
       );
 
       // Ensure old mood labels are not present

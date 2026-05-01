@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
-import 'package:zenith/models/user_data.dart';
+import 'package:mockito/mockito.dart';
 import 'package:zenith/constants/app_constants.dart';
-import 'package:zenith/services/user_service.dart';
+import 'package:zenith/models/user_data.dart';
 import 'package:zenith/services/dao/user_dao.dart';
 import 'package:zenith/services/dao/weight_entry_dao.dart';
+import 'package:zenith/services/user_service.dart';
 
 // Generate mocks
 @GenerateMocks([UserDao, WeightEntryDao])
@@ -13,7 +13,7 @@ import 'user_service_test.mocks.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   group('UserService Tests', () {
     late UserService userService;
     late MockUserDao mockUserDao;
@@ -25,9 +25,12 @@ void main() {
       // Create mock DAOs
       mockUserDao = MockUserDao();
       mockWeightEntryDao = MockWeightEntryDao();
-      
+
       // Initialize the user service with mock DAOs
-      userService = UserService(userDao: mockUserDao, weightEntryDao: mockWeightEntryDao);
+      userService = UserService(
+        userDao: mockUserDao,
+        weightEntryDao: mockWeightEntryDao,
+      );
       userService.resetForTesting();
 
       // Create test data
@@ -68,24 +71,30 @@ void main() {
     });
 
     group('loadUserProfile', () {
-      test('should load user profile successfully with weight history', () async {
-        // Arrange
-        when(mockUserDao.getAll()).thenAnswer((_) async => [testUser]);
-        when(mockWeightEntryDao.getWeightEntriesByUserId('user123'))
-            .thenAnswer((_) async => testWeightEntries);
+      test(
+        'should load user profile successfully with weight history',
+        () async {
+          // Arrange
+          when(mockUserDao.getAll()).thenAnswer((_) async => [testUser]);
+          when(
+            mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+          ).thenAnswer((_) async => testWeightEntries);
 
-        // Act
-        await userService.loadUserProfile();
+          // Act
+          await userService.loadUserProfile();
 
-        // Assert
-        verify(mockUserDao.getAll()).called(1);
-        verify(mockWeightEntryDao.getWeightEntriesByUserId('user123')).called(1);
-        expect(userService.currentProfile, isNotNull);
-        expect(userService.currentProfile!.id, equals('user123'));
-        expect(userService.currentProfile!.name, equals('John Doe'));
-        expect(userService.currentProfile!.weightHistory, hasLength(2));
-        expect(userService.hasProfile, isTrue);
-      });
+          // Assert
+          verify(mockUserDao.getAll()).called(1);
+          verify(
+            mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+          ).called(1);
+          expect(userService.currentProfile, isNotNull);
+          expect(userService.currentProfile!.id, equals('user123'));
+          expect(userService.currentProfile!.name, equals('John Doe'));
+          expect(userService.currentProfile!.weightHistory, hasLength(2));
+          expect(userService.hasProfile, isTrue);
+        },
+      );
 
       test('should handle empty user list', () async {
         // Arrange
@@ -117,15 +126,18 @@ void main() {
       test('should handle exception when loading weight entries', () async {
         // Arrange
         when(mockUserDao.getAll()).thenAnswer((_) async => [testUser]);
-        when(mockWeightEntryDao.getWeightEntriesByUserId('user123'))
-            .thenThrow(Exception('Database error'));
+        when(
+          mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+        ).thenThrow(Exception('Database error'));
 
         // Act
         await userService.loadUserProfile();
 
         // Assert
         verify(mockUserDao.getAll()).called(1);
-        verify(mockWeightEntryDao.getWeightEntriesByUserId('user123')).called(1);
+        verify(
+          mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+        ).called(1);
         expect(userService.currentProfile, isNull);
         expect(userService.hasProfile, isFalse);
       });
@@ -141,9 +153,12 @@ void main() {
           createdAt: DateTime(2023, 2, 1),
           theme: 'light',
         );
-        when(mockUserDao.getAll()).thenAnswer((_) async => [testUser, secondUser]);
-        when(mockWeightEntryDao.getWeightEntriesByUserId('user123'))
-            .thenAnswer((_) async => testWeightEntries);
+        when(
+          mockUserDao.getAll(),
+        ).thenAnswer((_) async => [testUser, secondUser]);
+        when(
+          mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+        ).thenAnswer((_) async => testWeightEntries);
 
         // Act
         await userService.loadUserProfile();
@@ -157,10 +172,13 @@ void main() {
     group('saveUserProfile', () {
       test('should create new user profile', () async {
         // Arrange
-        when(mockUserDao.getUserDataById('user123')).thenAnswer((_) async => null);
+        when(
+          mockUserDao.getUserDataById('user123'),
+        ).thenAnswer((_) async => null);
         when(mockUserDao.insert(any)).thenAnswer((_) async => 1);
-        when(mockWeightEntryDao.addWeightEntryForUser(any, any))
-            .thenAnswer((_) async => 1);
+        when(
+          mockWeightEntryDao.addWeightEntryForUser(any, any),
+        ).thenAnswer((_) async => 1);
 
         // Act
         await userService.saveUserProfile(testUser);
@@ -168,17 +186,30 @@ void main() {
         // Assert
         verify(mockUserDao.getUserDataById('user123')).called(1);
         verify(mockUserDao.insert(testUser)).called(1);
-        verify(mockWeightEntryDao.addWeightEntryForUser('user123', testWeightEntries[0])).called(1);
-        verify(mockWeightEntryDao.addWeightEntryForUser('user123', testWeightEntries[1])).called(1);
+        verify(
+          mockWeightEntryDao.addWeightEntryForUser(
+            'user123',
+            testWeightEntries[0],
+          ),
+        ).called(1);
+        verify(
+          mockWeightEntryDao.addWeightEntryForUser(
+            'user123',
+            testWeightEntries[1],
+          ),
+        ).called(1);
         expect(userService.currentProfile, equals(testUser));
       });
 
       test('should update existing user profile', () async {
         // Arrange
-        when(mockUserDao.getUserDataById('user123')).thenAnswer((_) async => testUser);
+        when(
+          mockUserDao.getUserDataById('user123'),
+        ).thenAnswer((_) async => testUser);
         when(mockUserDao.updateUserData(any)).thenAnswer((_) async => 1);
-        when(mockWeightEntryDao.addWeightEntryForUser(any, any))
-            .thenAnswer((_) async => 1);
+        when(
+          mockWeightEntryDao.addWeightEntryForUser(any, any),
+        ).thenAnswer((_) async => 1);
 
         // Act
         await userService.saveUserProfile(testUser);
@@ -192,23 +223,48 @@ void main() {
 
       test('should update existing weight entries when add fails', () async {
         // Arrange
-        when(mockUserDao.getUserDataById('user123')).thenAnswer((_) async => testUser);
+        when(
+          mockUserDao.getUserDataById('user123'),
+        ).thenAnswer((_) async => testUser);
         when(mockUserDao.updateUserData(any)).thenAnswer((_) async => 1);
-        when(mockWeightEntryDao.addWeightEntryForUser('user123', testWeightEntries[0]))
-            .thenThrow(Exception('Entry already exists'));
-        when(mockWeightEntryDao.updateWeightEntry('user123', testWeightEntries[0]))
-            .thenAnswer((_) async => 1);
-        when(mockWeightEntryDao.addWeightEntryForUser('user123', testWeightEntries[1]))
-            .thenAnswer((_) async => 1);
+        when(
+          mockWeightEntryDao.addWeightEntryForUser(
+            'user123',
+            testWeightEntries[0],
+          ),
+        ).thenThrow(Exception('Entry already exists'));
+        when(
+          mockWeightEntryDao.updateWeightEntry('user123', testWeightEntries[0]),
+        ).thenAnswer((_) async => 1);
+        when(
+          mockWeightEntryDao.addWeightEntryForUser(
+            'user123',
+            testWeightEntries[1],
+          ),
+        ).thenAnswer((_) async => 1);
 
         // Act
         await userService.saveUserProfile(testUser);
 
         // Assert
-        verify(mockWeightEntryDao.addWeightEntryForUser('user123', testWeightEntries[0])).called(1);
-        verify(mockWeightEntryDao.updateWeightEntry('user123', testWeightEntries[0])).called(1);
-        verify(mockWeightEntryDao.addWeightEntryForUser('user123', testWeightEntries[1])).called(1);
-        verifyNever(mockWeightEntryDao.updateWeightEntry('user123', testWeightEntries[1]));
+        verify(
+          mockWeightEntryDao.addWeightEntryForUser(
+            'user123',
+            testWeightEntries[0],
+          ),
+        ).called(1);
+        verify(
+          mockWeightEntryDao.updateWeightEntry('user123', testWeightEntries[0]),
+        ).called(1);
+        verify(
+          mockWeightEntryDao.addWeightEntryForUser(
+            'user123',
+            testWeightEntries[1],
+          ),
+        ).called(1);
+        verifyNever(
+          mockWeightEntryDao.updateWeightEntry('user123', testWeightEntries[1]),
+        );
       });
 
       test('should throw exception when user name is empty', () async {
@@ -218,49 +274,62 @@ void main() {
         // Act & Assert
         expect(
           () => userService.saveUserProfile(invalidUser),
-          throwsA(isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            'User name cannot be empty',
-          )),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              'User name cannot be empty',
+            ),
+          ),
         );
         verifyNever(mockUserDao.getUserDataById(any));
       });
 
-      test('should throw exception when user name is only whitespace', () async {
-        // Arrange
-        final invalidUser = testUser.copyWith(name: '   ');
+      test(
+        'should throw exception when user name is only whitespace',
+        () async {
+          // Arrange
+          final invalidUser = testUser.copyWith(name: '   ');
 
-        // Act & Assert
-        expect(
-          () => userService.saveUserProfile(invalidUser),
-          throwsA(isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            'User name cannot be empty',
-          )),
-        );
-      });
+          // Act & Assert
+          expect(
+            () => userService.saveUserProfile(invalidUser),
+            throwsA(
+              isA<ArgumentError>().having(
+                (e) => e.message,
+                'message',
+                'User name cannot be empty',
+              ),
+            ),
+          );
+        },
+      );
 
       test('should handle exception when saving user profile', () async {
         // Arrange
-        when(mockUserDao.getUserDataById('user123')).thenThrow(Exception('Database error'));
+        when(
+          mockUserDao.getUserDataById('user123'),
+        ).thenThrow(Exception('Database error'));
 
         // Act & Assert
         expect(
           () => userService.saveUserProfile(testUser),
-          throwsA(isA<Exception>().having(
-            (e) => e.toString(),
-            'message',
-            contains('Failed to save user profile'),
-          )),
+          throwsA(
+            isA<Exception>().having(
+              (e) => e.toString(),
+              'message',
+              contains('Failed to save user profile'),
+            ),
+          ),
         );
       });
 
       test('should save user with empty weight history', () async {
         // Arrange
         final userWithoutWeights = testUser.copyWith(weightHistory: []);
-        when(mockUserDao.getUserDataById('user123')).thenAnswer((_) async => null);
+        when(
+          mockUserDao.getUserDataById('user123'),
+        ).thenAnswer((_) async => null);
         when(mockUserDao.insert(any)).thenAnswer((_) async => 1);
 
         // Act
@@ -314,10 +383,13 @@ void main() {
     group('updateProfile', () {
       test('should call saveUserProfile', () async {
         // Arrange
-        when(mockUserDao.getUserDataById('user123')).thenAnswer((_) async => null);
+        when(
+          mockUserDao.getUserDataById('user123'),
+        ).thenAnswer((_) async => null);
         when(mockUserDao.insert(any)).thenAnswer((_) async => 1);
-        when(mockWeightEntryDao.addWeightEntryForUser(any, any))
-            .thenAnswer((_) async => 1);
+        when(
+          mockWeightEntryDao.addWeightEntryForUser(any, any),
+        ).thenAnswer((_) async => 1);
 
         // Act
         await userService.updateProfile(testUser);
@@ -330,7 +402,9 @@ void main() {
 
       test('should propagate exceptions from saveUserProfile', () async {
         // Arrange
-        when(mockUserDao.getUserDataById('user123')).thenThrow(Exception('Database error'));
+        when(
+          mockUserDao.getUserDataById('user123'),
+        ).thenThrow(Exception('Database error'));
 
         // Act & Assert
         expect(
@@ -400,11 +474,13 @@ void main() {
         // Act & Assert
         expect(
           () => userService.clearUserData(),
-          throwsA(isA<Exception>().having(
-            (e) => e.toString(),
-            'message',
-            contains('Failed to clear user data'),
-          )),
+          throwsA(
+            isA<Exception>().having(
+              (e) => e.toString(),
+              'message',
+              contains('Failed to clear user data'),
+            ),
+          ),
         );
       });
 
@@ -413,8 +489,9 @@ void main() {
         userService.resetForTesting();
         // Simulate having a loaded profile
         when(mockUserDao.getAll()).thenAnswer((_) async => [testUser]);
-        when(mockWeightEntryDao.getWeightEntriesByUserId('user123'))
-            .thenAnswer((_) async => testWeightEntries);
+        when(
+          mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+        ).thenAnswer((_) async => testWeightEntries);
         await userService.loadUserProfile();
         expect(userService.hasProfile, isTrue);
 
@@ -446,47 +523,50 @@ void main() {
       test('should return morning greeting', () {
         // Arrange
         userService.resetForTesting();
-        // Simulate having a profile loaded
-        final mockDateTime = DateTime(2023, 1, 1, 8, 0); // 8:00 AM
-        
+
         // We can't easily mock DateTime.now(), so we'll test the logic indirectly
         // by setting up a profile and checking that a greeting is returned
         when(mockUserDao.getAll()).thenAnswer((_) async => [testUser]);
-        when(mockWeightEntryDao.getWeightEntriesByUserId('user123'))
-            .thenAnswer((_) async => testWeightEntries);
+        when(
+          mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+        ).thenAnswer((_) async => testWeightEntries);
 
         // Act - load profile first
         return userService.loadUserProfile().then((_) {
           final greeting = userService.getGreeting();
-          
+
           // Assert - should contain the user's name
           expect(greeting, contains('John Doe'));
           expect(greeting, isNot(equals('Welcome')));
         });
       });
 
-      test('should include user name in greeting when profile exists', () async {
-        // Arrange
-        userService.resetForTesting();
-        when(mockUserDao.getAll()).thenAnswer((_) async => [testUser]);
-        when(mockWeightEntryDao.getWeightEntriesByUserId('user123'))
-            .thenAnswer((_) async => testWeightEntries);
-        await userService.loadUserProfile();
+      test(
+        'should include user name in greeting when profile exists',
+        () async {
+          // Arrange
+          userService.resetForTesting();
+          when(mockUserDao.getAll()).thenAnswer((_) async => [testUser]);
+          when(
+            mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+          ).thenAnswer((_) async => testWeightEntries);
+          await userService.loadUserProfile();
 
-        // Act
-        final greeting = userService.getGreeting();
+          // Act
+          final greeting = userService.getGreeting();
 
-        // Assert
-        expect(greeting, contains('John Doe'));
-        expect(greeting, isNot(equals('Welcome')));
-        // Should contain one of the time-based greetings
-        expect(
-          greeting.contains('Good morning') ||
-          greeting.contains('Good afternoon') ||
-          greeting.contains('Good evening'),
-          isTrue,
-        );
-      });
+          // Assert
+          expect(greeting, contains('John Doe'));
+          expect(greeting, isNot(equals('Welcome')));
+          // Should contain one of the time-based greetings
+          expect(
+            greeting.contains('Good morning') ||
+                greeting.contains('Good afternoon') ||
+                greeting.contains('Good evening'),
+            isTrue,
+          );
+        },
+      );
     });
 
     group('formatWeight', () {
@@ -505,8 +585,9 @@ void main() {
         // Arrange
         userService.resetForTesting();
         when(mockUserDao.getAll()).thenAnswer((_) async => [testUser]);
-        when(mockWeightEntryDao.getWeightEntriesByUserId('user123'))
-            .thenAnswer((_) async => testWeightEntries);
+        when(
+          mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+        ).thenAnswer((_) async => testWeightEntries);
         await userService.loadUserProfile();
 
         // Act
@@ -521,8 +602,9 @@ void main() {
         final imperialUser = testUser.copyWith(units: Units.imperial);
         userService.resetForTesting();
         when(mockUserDao.getAll()).thenAnswer((_) async => [imperialUser]);
-        when(mockWeightEntryDao.getWeightEntriesByUserId('user123'))
-            .thenAnswer((_) async => testWeightEntries);
+        when(
+          mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+        ).thenAnswer((_) async => testWeightEntries);
         await userService.loadUserProfile();
 
         // Act
@@ -536,8 +618,9 @@ void main() {
         // Arrange
         userService.resetForTesting();
         when(mockUserDao.getAll()).thenAnswer((_) async => [testUser]);
-        when(mockWeightEntryDao.getWeightEntriesByUserId('user123'))
-            .thenAnswer((_) async => testWeightEntries);
+        when(
+          mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+        ).thenAnswer((_) async => testWeightEntries);
         await userService.loadUserProfile();
 
         // Act
@@ -569,8 +652,9 @@ void main() {
         // Arrange
         userService.resetForTesting();
         when(mockUserDao.getAll()).thenAnswer((_) async => [testUser]);
-        when(mockWeightEntryDao.getWeightEntriesByUserId('user123'))
-            .thenAnswer((_) async => testWeightEntries);
+        when(
+          mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+        ).thenAnswer((_) async => testWeightEntries);
 
         // Act
         await userService.loadUserProfile();
@@ -586,8 +670,9 @@ void main() {
       test('should reset current profile to null', () async {
         // Arrange - load a profile first
         when(mockUserDao.getAll()).thenAnswer((_) async => [testUser]);
-        when(mockWeightEntryDao.getWeightEntriesByUserId('user123'))
-            .thenAnswer((_) async => testWeightEntries);
+        when(
+          mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+        ).thenAnswer((_) async => testWeightEntries);
         await userService.loadUserProfile();
         expect(userService.hasProfile, isTrue);
 
@@ -604,8 +689,9 @@ void main() {
       test('should handle null weight entries list', () async {
         // Arrange
         when(mockUserDao.getAll()).thenAnswer((_) async => [testUser]);
-        when(mockWeightEntryDao.getWeightEntriesByUserId('user123'))
-            .thenAnswer((_) async => []);
+        when(
+          mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+        ).thenAnswer((_) async => []);
 
         // Act
         await userService.loadUserProfile();
@@ -618,10 +704,13 @@ void main() {
       test('should handle user with different theme', () async {
         // Arrange
         final lightThemeUser = testUser.copyWith(theme: 'light');
-        when(mockUserDao.getUserDataById('user123')).thenAnswer((_) async => null);
+        when(
+          mockUserDao.getUserDataById('user123'),
+        ).thenAnswer((_) async => null);
         when(mockUserDao.insert(any)).thenAnswer((_) async => 1);
-        when(mockWeightEntryDao.addWeightEntryForUser(any, any))
-            .thenAnswer((_) async => 1);
+        when(
+          mockWeightEntryDao.addWeightEntryForUser(any, any),
+        ).thenAnswer((_) async => 1);
 
         // Act
         await userService.saveUserProfile(lightThemeUser);
@@ -635,10 +724,13 @@ void main() {
         final futureBirthdateUser = testUser.copyWith(
           birthdate: DateTime.now().add(const Duration(days: 365)),
         );
-        when(mockUserDao.getUserDataById('user123')).thenAnswer((_) async => null);
+        when(
+          mockUserDao.getUserDataById('user123'),
+        ).thenAnswer((_) async => null);
         when(mockUserDao.insert(any)).thenAnswer((_) async => 1);
-        when(mockWeightEntryDao.addWeightEntryForUser(any, any))
-            .thenAnswer((_) async => 1);
+        when(
+          mockWeightEntryDao.addWeightEntryForUser(any, any),
+        ).thenAnswer((_) async => 1);
 
         // Act
         await userService.saveUserProfile(futureBirthdateUser);

@@ -25,8 +25,8 @@ Run this once after cloning:
 git config core.hooksPath .githooks
 ```
 
-The hooks lint only changed `.dart` files so they stay usable while the wider
-codebase still has unrelated analyzer findings.
+The hooks only operate on changed `.dart` files, and they block commit/push if
+that changed set does not pass a clean `flutter analyze`.
 
 If you want to run the same UI policy against the full app instead of just the
 delta, use:
@@ -37,7 +37,7 @@ scripts/check_changed_dart_policy.sh --all
 
 The hook chain now does several things on changed Dart files:
 
-- Runs formatting and analyzer checks.
+- Runs formatting and requires a clean `flutter analyze` on changed Dart files.
 - Runs a UI policy scan that enforces theme-only styling.
 - Runs a maintainability gate for changed production Dart files.
 - Runs a changed-file coverage gate for non-frontend Dart files.
