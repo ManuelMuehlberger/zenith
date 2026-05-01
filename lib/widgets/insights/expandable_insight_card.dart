@@ -41,7 +41,7 @@ class ExpandableInsightCard extends StatelessWidget {
       child: Hero(
         tag: heroTag ?? 'insight_card_$title',
         child: Material(
-          color: AppThemeColors.clear,
+          type: MaterialType.transparency,
           child: Container(
             padding: const EdgeInsets.all(12.0),
             decoration: BoxDecoration(
@@ -91,7 +91,7 @@ class ExpandableInsightCard extends StatelessWidget {
   }
 
   void _openExpandedView(BuildContext context) {
-    const backgroundColor = AppThemeColors.background;
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
 
     Navigator.of(context).push(
       PageRouteBuilder(
@@ -146,7 +146,7 @@ class _ExpandedInsightView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const backgroundColor = AppThemeColors.background;
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
     final textTheme = context.appText;
     final colors = context.appColors;
     final colorScheme = context.appScheme;

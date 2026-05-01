@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show Theme;
 
-import '../../constants/app_constants.dart';
+import '../../theme/app_theme.dart';
 
 /// Simple award model for the timeline card.
 ///
@@ -10,13 +10,9 @@ import '../../constants/app_constants.dart';
 class Award {
   final String title;
   final IconData icon;
-  final Color color;
+  final Color? color;
 
-  const Award({
-    required this.title,
-    required this.icon,
-    this.color = AppConstants.ACCENT_COLOR,
-  });
+  const Award({required this.title, required this.icon, this.color});
 }
 
 /// Stacked award icons (up to 3 visible) that opens a Cupertino modal
@@ -48,10 +44,7 @@ class AwardStack extends StatelessWidget {
               Navigator.pop(context);
             },
             trailingIcon: award.icon,
-            child: Text(
-              award.title,
-              style: const TextStyle(color: Colors.black),
-            ),
+            child: Text(award.title),
           ),
       ],
       child: SizedBox(
@@ -80,16 +73,23 @@ class _AwardIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final scheme = context.appScheme;
+
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: const Color(0xFF2C2C2E),
-        border: Border.all(color: AppConstants.CARD_STROKE_COLOR, width: 0.5),
+        color: colors.field,
+        border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
       ),
       child: Center(
-        child: Icon(award.icon, color: award.color, size: size * 0.62),
+        child: Icon(
+          award.icon,
+          color: award.color ?? scheme.primary,
+          size: size * 0.62,
+        ),
       ),
     );
   }

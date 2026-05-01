@@ -28,6 +28,7 @@ class _NamePageState extends State<NamePage> {
   Widget build(BuildContext context) {
     final textTheme = context.appText;
     final colors = context.appColors;
+    final theme = Theme.of(context);
 
     return Padding(
       padding: const EdgeInsets.all(24.0),
@@ -59,7 +60,7 @@ class _NamePageState extends State<NamePage> {
             decoration: BoxDecoration(
               color: colors.field,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppThemeColors.outline),
+              border: Border.all(color: theme.dividerColor),
             ),
             padding: const EdgeInsets.all(16),
             controller: widget.nameController,
@@ -346,6 +347,7 @@ class UnitOption extends StatelessWidget {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
+    final theme = Theme.of(context);
 
     return Container(
       width: double.infinity,
@@ -355,12 +357,12 @@ class UnitOption extends StatelessWidget {
             : colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isSelected ? colorScheme.primary : AppThemeColors.outline,
+          color: isSelected ? colorScheme.primary : theme.dividerColor,
           width: isSelected ? 2 : 1,
         ),
       ),
       child: Material(
-        color: AppThemeColors.clear,
+        type: MaterialType.transparency,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),

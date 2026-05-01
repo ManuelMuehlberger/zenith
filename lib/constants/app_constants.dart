@@ -1,7 +1,6 @@
 // ignore_for_file: constant_identifier_names
 
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
 
 /// Application-wide constants and enums
 class AppConstants {
@@ -31,7 +30,6 @@ class AppConstants {
   /// Drag and Drop animations
   static const Duration DRAG_ANIMATION_DURATION = Duration(milliseconds: 200);
   static const Curve DRAG_ANIMATION_CURVE = Curves.easeInOut;
-  static const double DRAG_ITEM_LIFT_SCALE = 1.05;
 
   /// iOS-style UI metrics
   static const double CARD_RADIUS =
@@ -40,8 +38,6 @@ class AppConstants {
       20.0; // Corner radius for bottom sheets/action sheets
   static const double HEADER_EXTRA_HEIGHT =
       60.0; // Extra header height below toolbar for controls
-  static const double HEADER_BLUR_SIGMA =
-      10.0; // Blur intensity for translucent headers
   static const double PAGE_HORIZONTAL_PADDING =
       16.0; // Standard page horizontal padding
   static const double CARD_PADDING =
@@ -49,56 +45,18 @@ class AppConstants {
 
   // Glass header constants
   static const double GLASS_BLUR_SIGMA =
-      HEADER_BLUR_SIGMA; // Alias for consistency with "glass" components
-  static const Color HEADER_BG_COLOR_STRONG = AppThemeColors.overlayStrong;
-  static const Color HEADER_BG_COLOR_MEDIUM = AppThemeColors.overlayMedium;
-  static const Color BOTTOM_BAR_BG_COLOR = AppThemeColors.overlaySoft;
+      10.0; // Blur intensity for translucent headers
   static const double HEADER_STROKE_WIDTH =
       0.5; // Thin separator stroke width for headers (if used)
-  static const Color HEADER_STROKE_COLOR = AppThemeColors.outline;
 
   // Card visual constants
-  // Background: consistent dark surface for all cards (matching home screen)
-  static const Color CARD_BG_COLOR = AppThemeColors.surface;
-  // Exercise card background color to match home screen cards
-  static const Color EXERCISE_CARD_BG_COLOR = AppThemeColors.surfaceAlt;
   // Subtle hairline stroke for glass/dark iOS aesthetics
   static const double CARD_STROKE_WIDTH = 0.5;
-  static const Color CARD_STROKE_COLOR = HEADER_STROKE_COLOR;
-
-  static const Color TEXT_PRIMARY_COLOR = AppThemeColors.textPrimary;
-  static const Color TEXT_SECONDARY_COLOR = AppThemeColors.textSecondary;
-  static const Color TEXT_TERTIARY_COLOR = AppThemeColors.textTertiary;
-
-  static const Color ACCENT_COLOR = AppThemeColors.accent;
-  static const Color ACCENT_COLOR_GREEN = AppThemeColors.success;
-  static const Color ACCENT_COLOR_ORANGE = AppThemeColors.warning;
-
-  // UI element colors
-  static const Color DIVIDER_COLOR = AppThemeColors.outline;
-  static const Color WORKOUT_BUTTON_BG_COLOR = AppThemeColors.surface;
-  static const Color FINISH_BUTTON_BG_COLOR = AppThemeColors.surfaceAlt;
-
-  static const TextStyle HEADER_TITLE_TEXT_STYLE = AppTextStyles.headline;
-
-  static const TextStyle HEADER_SMALL_TITLE_TEXT_STYLE =
-      AppTextStyles.appBarTitle;
-  static const TextStyle HEADER_EXTRA_LARGE_TITLE_TEXT_STYLE =
-      AppTextStyles.display;
-  static const TextStyle IOS_TITLE_TEXT_STYLE = AppTextStyles.sectionTitle;
-
-  static const TextStyle IOS_LABEL_TEXT_STYLE = AppTextStyles.label;
-
-  static const double IOS_SUBTITLE_FONT_SIZE = 15.0;
-  static const TextStyle IOS_SUBTITLE_TEXT_STYLE = AppTextStyles.bodySecondary;
-
-  static const TextStyle IOS_SUBTEXT_STYLE = AppTextStyles.caption;
 
   // Button and action text constants
   static const String BACK_BUTTON_TOOLTIP = 'Back';
   static const String SELECT_EXERCISE_TITLE = 'Select Exercise';
   static const String DONE_BUTTON_TEXT = 'Done';
-  static const TextStyle HEADER_BUTTON_TEXT_STYLE = AppTextStyles.action;
 }
 
 /// Supported measurement units

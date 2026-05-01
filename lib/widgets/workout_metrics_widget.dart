@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 import '../models/workout_exercise.dart';
+import '../theme/app_theme.dart';
 import '../utils/workout_metrics.dart';
-import '../constants/app_constants.dart';
 
 class WorkoutMetricsWidget extends StatelessWidget {
   final List<WorkoutExercise> exercises;
 
-  const WorkoutMetricsWidget({
-    super.key,
-    required this.exercises,
-  });
+  const WorkoutMetricsWidget({super.key, required this.exercises});
 
   @override
   Widget build(BuildContext context) {
     if (exercises.isEmpty) {
       return const SizedBox.shrink();
     }
+
+    final appColors = context.appColors;
+    final appScheme = context.appScheme;
+    final metricValueStyle = context.appText.labelMedium!.copyWith(
+      fontWeight: FontWeight.w600,
+      color: appColors.textPrimary,
+    );
 
     final exerciseCount = WorkoutMetrics.calculateExerciseCount(exercises);
     final totalSets = WorkoutMetrics.calculateTotalSets(exercises);
@@ -29,7 +33,7 @@ class WorkoutMetricsWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.1).round()),
+              color: appColors.textTertiary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -38,17 +42,10 @@ class WorkoutMetricsWidget extends StatelessWidget {
                 Icon(
                   Icons.fitness_center_outlined,
                   size: 14,
-                  color: AppConstants.TEXT_SECONDARY_COLOR,
+                  color: appColors.textSecondary,
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  '$exerciseCount',
-                  style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppConstants.TEXT_PRIMARY_COLOR,
-                  ),
-                ),
+                Text('$exerciseCount', style: metricValueStyle),
               ],
             ),
           ),
@@ -57,7 +54,7 @@ class WorkoutMetricsWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.1).round()),
+              color: appColors.textTertiary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -66,17 +63,10 @@ class WorkoutMetricsWidget extends StatelessWidget {
                 Icon(
                   Icons.layers_outlined,
                   size: 14,
-                  color: AppConstants.TEXT_SECONDARY_COLOR,
+                  color: appColors.textSecondary,
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  '$totalSets',
-                  style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppConstants.TEXT_PRIMARY_COLOR,
-                  ),
-                ),
+                Text('$totalSets', style: metricValueStyle),
               ],
             ),
           ),
@@ -85,7 +75,7 @@ class WorkoutMetricsWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: AppConstants.ACCENT_COLOR.withAlpha((255 * 0.1).round()),
+              color: appScheme.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -94,16 +84,12 @@ class WorkoutMetricsWidget extends StatelessWidget {
                 Icon(
                   Icons.schedule_outlined,
                   size: 14,
-                  color: AppConstants.ACCENT_COLOR,
+                  color: appScheme.primary,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   duration,
-                  style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppConstants.ACCENT_COLOR,
-                  ),
+                  style: metricValueStyle.copyWith(color: appScheme.primary),
                 ),
               ],
             ),

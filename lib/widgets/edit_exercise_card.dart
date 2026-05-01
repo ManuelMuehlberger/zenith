@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../constants/app_constants.dart';
+import '../constants/app_constants.dart' show Units;
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../screens/exercise_info_screen.dart';
@@ -57,6 +57,8 @@ class _EditExerciseCardState extends State<EditExerciseCard>
   late TextEditingController _notesController;
   late AnimationController _reorderModeController;
   late Animation<Color?> _borderColorAnimation;
+  Color? _lastOutlineColor;
+  Color? _lastWarningColor;
 
   // Track focus for each weight field to avoid overwriting user input mid-typing.
   final Map<String, FocusNode> _weightFocusNodes = {};
@@ -69,9 +71,25 @@ class _EditExerciseCardState extends State<EditExerciseCard>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+    _borderColorAnimation = const AlwaysStoppedAnimation<Color?>(null);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final colors = context.appColors;
+    final dividerColor = Theme.of(context).dividerColor;
+    if (_lastOutlineColor == dividerColor &&
+        _lastWarningColor == colors.warning) {
+      return;
+    }
+
+    _lastOutlineColor = dividerColor;
+    _lastWarningColor = colors.warning;
     _borderColorAnimation = ColorTween(
-      begin: AppConstants.CARD_STROKE_COLOR,
-      end: AppConstants.ACCENT_COLOR_ORANGE.withAlpha((255 * 0.6).round()),
+      begin: dividerColor,
+      end: colors.warning.withValues(alpha: 0.6),
     ).animate(_reorderModeController);
   }
 
@@ -247,10 +265,10 @@ class _EditExerciseCardState extends State<EditExerciseCard>
           return Container(
             decoration: BoxDecoration(
               color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: _borderColorAnimation.value!,
-                width: AppConstants.CARD_STROKE_WIDTH,
+                width: 0.5,
                 strokeAlign: BorderSide.strokeAlignInside,
               ),
               boxShadow: [

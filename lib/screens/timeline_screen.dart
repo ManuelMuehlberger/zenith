@@ -4,7 +4,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
-import '../constants/app_constants.dart';
 import '../theme/app_theme.dart';
 
 class TimelineScreen extends StatefulWidget {
@@ -34,6 +33,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     final colors = context.appColors;
     final double topPadding = MediaQuery.of(context).padding.top;
     final double headerHeight = topPadding + kToolbarHeight;
+    const double glassBlurSigma = 10.0;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -47,8 +47,8 @@ class _TimelineScreenState extends State<TimelineScreen> {
             child: ClipRRect(
               child: BackdropFilter(
                 filter: ImageFilter.blur(
-                  sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                  sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                  sigmaX: glassBlurSigma,
+                  sigmaY: glassBlurSigma,
                 ),
                 child: Container(
                   height: headerHeight,
@@ -343,7 +343,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                 border: Border.all(
                   color: status == TimelineStatus.inProgress
                       ? color.withValues(alpha: 0.5)
-                      : AppThemeColors.clear,
+                      : colorScheme.surface.withValues(alpha: 0),
                   width: 1,
                 ),
               ),

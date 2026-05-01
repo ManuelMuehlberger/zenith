@@ -43,7 +43,12 @@ class SimpleBarChart extends StatelessWidget {
     );
     final tooltipTextStyle =
         textTheme.bodySmall?.copyWith(color: colorScheme.onSurface) ??
-        AppTextStyles.caption.copyWith(color: colorScheme.onSurface);
+        Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: colorScheme.onSurface) ??
+        DefaultTextStyle.of(
+          context,
+        ).style.copyWith(color: colorScheme.onSurface);
 
     if (weeklyData.isEmpty && !onlyAxis) {
       return Center(
@@ -185,20 +190,20 @@ class SimpleBarChart extends StatelessWidget {
           drawHorizontalLine: true,
           horizontalInterval: maxYValue > 0 ? maxYValue / 4 : 1,
           getDrawingHorizontalLine: (value) {
-            return const FlLine(
-              color: AppThemeColors.outline,
+            return FlLine(
+              color: colorScheme.outline,
               strokeWidth: 0.5,
-              dashArray: [5, 5],
+              dashArray: const [5, 5],
             );
           },
         ),
         borderData: FlBorderData(show: false),
-        barGroups: onlyAxis ? [] : _buildBarGroups(),
+        barGroups: onlyAxis ? [] : _buildBarGroups(colorScheme.outline),
       ),
     );
   }
 
-  List<BarChartGroupData> _buildBarGroups() {
+  List<BarChartGroupData> _buildBarGroups(Color backgroundBarColor) {
     return List.generate(weeklyData.length, (index) {
       final data = weeklyData[index];
       final double effectiveMin = data.minValue;
@@ -219,7 +224,7 @@ class SimpleBarChart extends StatelessWidget {
             backDrawRodData: BackgroundBarChartRodData(
               show: true,
               toY: maxYValue,
-              color: AppThemeColors.outline,
+              color: backgroundBarColor,
             ),
           ),
         ],

@@ -423,7 +423,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               child: Text('Units', style: textTheme.titleLarge),
             ),
             Material(
-              color: AppThemeColors.clear,
+              type: MaterialType.transparency,
               child: ListTile(
                 leading: Icon(
                   CupertinoIcons.gauge,
@@ -512,7 +512,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final colors = context.appColors;
 
     return Material(
-      color: AppThemeColors.clear,
+      type: MaterialType.transparency,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         child: Column(

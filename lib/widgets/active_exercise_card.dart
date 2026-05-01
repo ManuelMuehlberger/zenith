@@ -244,6 +244,7 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
   Widget _buildSetRow(WorkoutSet set, int setNumber) {
     final colors = context.appColors;
     final textTheme = context.appText;
+    final theme = Theme.of(context);
     final isCompleted = set.isCompleted;
     final canComplete = _canCompleteSet(widget.exercise.id, setNumber);
     final originalSet = setNumber <= widget.exercise.sets.length
@@ -255,7 +256,7 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
       decoration: BoxDecoration(
         color: isCompleted
             ? colors.success.withValues(alpha: 0.08)
-            : AppThemeColors.clear,
+            : theme.colorScheme.surface.withValues(alpha: 0),
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: Row(
@@ -350,7 +351,7 @@ class _ActiveExerciseCardState extends State<ActiveExerciseCard> {
                 color: isCompleted
                     ? colors.success
                     : canComplete
-                    ? AppThemeColors.clear
+                    ? theme.colorScheme.surface.withValues(alpha: 0)
                     : colors.field,
                 border: Border.all(
                   color: isCompleted

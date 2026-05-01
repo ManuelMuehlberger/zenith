@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../constants/app_constants.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../screens/exercise_info_screen.dart';
@@ -55,6 +54,8 @@ class _ReorderableActiveExerciseCardState
   final Map<String, TextEditingController> _controllers = {};
   late AnimationController _reorderModeController;
   late Animation<Color?> _borderColorAnimation;
+  Color? _lastOutlineColor;
+  Color? _lastWarningColor;
 
   @override
   void initState() {
@@ -63,14 +64,30 @@ class _ReorderableActiveExerciseCardState
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _borderColorAnimation = ColorTween(
-      begin: AppConstants.CARD_STROKE_COLOR,
-      end: AppConstants.ACCENT_COLOR_ORANGE.withAlpha((255 * 0.6).round()),
-    ).animate(_reorderModeController);
+    _borderColorAnimation = const AlwaysStoppedAnimation<Color?>(null);
 
     if (widget.isReorderMode) {
       _reorderModeController.value = 1.0;
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final colors = context.appColors;
+    final dividerColor = Theme.of(context).dividerColor;
+    if (_lastOutlineColor == dividerColor &&
+        _lastWarningColor == colors.warning) {
+      return;
+    }
+
+    _lastOutlineColor = dividerColor;
+    _lastWarningColor = colors.warning;
+    _borderColorAnimation = ColorTween(
+      begin: dividerColor,
+      end: colors.warning.withValues(alpha: 0.6),
+    ).animate(_reorderModeController);
   }
 
   @override
@@ -135,12 +152,10 @@ class _ReorderableActiveExerciseCardState
         return Container(
           decoration: BoxDecoration(
             color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: _borderColorAnimation.value!,
-              width: widget.isReorderMode
-                  ? 1.5
-                  : AppConstants.CARD_STROKE_WIDTH,
+              width: widget.isReorderMode ? 1.5 : 0.5,
               strokeAlign: BorderSide.strokeAlignInside,
             ),
             boxShadow: [
@@ -376,6 +391,7 @@ class _ReorderableActiveExerciseCardState
 
   Widget _buildSetRow(WorkoutSet set, int setNumber) {
     final colors = context.appColors;
+    final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final isCompleted = set.isCompleted;
     final canComplete = _canCompleteSet(widget.exercise.id, setNumber);
@@ -388,7 +404,7 @@ class _ReorderableActiveExerciseCardState
       decoration: BoxDecoration(
         color: isCompleted
             ? colors.success.withValues(alpha: 0.08)
-            : AppThemeColors.clear,
+            : colorScheme.surface.withValues(alpha: 0),
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: Row(
@@ -501,7 +517,7 @@ class _ReorderableActiveExerciseCardState
                           color: isCompleted
                               ? colors.success
                               : canComplete
-                              ? AppThemeColors.clear
+                              ? colorScheme.surface.withValues(alpha: 0)
                               : colors.field,
                           border: Border.all(
                             color: isCompleted

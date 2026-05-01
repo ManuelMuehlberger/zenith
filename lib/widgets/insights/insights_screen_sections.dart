@@ -30,11 +30,12 @@ class InsightsAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
     final smallTitleStyle = textTheme.titleLarge;
-    const transparentSurface = AppThemeColors.clear;
+    final transparentSurface = theme.colorScheme.surface.withValues(alpha: 0);
 
     final smallTitle = AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../../theme/app_theme.dart';
 import 'award_stack.dart';
 
 class AwardBalloons extends StatefulWidget {
@@ -10,7 +12,8 @@ class AwardBalloons extends StatefulWidget {
   State<AwardBalloons> createState() => _AwardBalloonsState();
 }
 
-class _AwardBalloonsState extends State<AwardBalloons> with SingleTickerProviderStateMixin {
+class _AwardBalloonsState extends State<AwardBalloons>
+    with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
 
   @override
@@ -35,30 +38,43 @@ class _AwardBalloonsState extends State<AwardBalloons> with SingleTickerProvider
   Widget _buildCollapsed() {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: widget.awards.map((a) => Padding(
-        padding: const EdgeInsets.only(left: 4),
-        child: _AwardIcon(award: a, size: 20),
-      )).toList(),
+      children: widget.awards
+          .map(
+            (a) => Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: _AwardIcon(award: a, size: 20),
+            ),
+          )
+          .toList(),
     );
   }
 
   Widget _buildExpanded() {
+    final colors = context.appColors;
+    final appText = context.appText;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
-      children: widget.awards.map((a) => Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              a.title,
-              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+      children: widget.awards
+          .map(
+            (a) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    a.title,
+                    style: appText.labelMedium?.copyWith(
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _AwardIcon(award: a, size: 28),
+                ],
+              ),
             ),
-            const SizedBox(width: 8),
-            _AwardIcon(award: a, size: 28),
-          ],
-        ),
-      )).toList(),
+          )
+          .toList(),
     );
   }
 }
@@ -71,13 +87,18 @@ class _AwardIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
+
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: const Color(0xFF2C2C2E),
-        border: Border.all(color: Colors.white24, width: 0.5),
+        color: colors.field,
+        border: Border.all(
+          color: colors.textPrimary.withValues(alpha: 0.24),
+          width: 0.5,
+        ),
       ),
       child: Center(
         child: Icon(award.icon, color: award.color, size: size * 0.6),

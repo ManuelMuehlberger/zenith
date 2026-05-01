@@ -93,16 +93,17 @@ class WelcomePage extends StatelessWidget {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
+    final theme = Theme.of(context);
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppThemeColors.outline),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Material(
-        color: AppThemeColors.clear,
+        type: MaterialType.transparency,
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),

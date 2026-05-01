@@ -15,6 +15,9 @@ repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 
 changed_files=()
+scan_mode=""
+range_from=""
+range_to=""
 theme_definition_roots=(
   "lib/theme/"
 )
@@ -54,22 +57,69 @@ report_matches() {
   done <<< "$matches"
 }
 
+policy_matches() {
+  local file_path="$1"
+  local pattern="$2"
+
+  if [ "$scan_mode" = "all" ]; then
+    grep -nE "$pattern" "$file_path" || true
+    return
+  fi
+
+  local diff_cmd=()
+  case "$scan_mode" in
+    staged)
+      diff_cmd=(git diff --cached --unified=0 -- "$file_path")
+      ;;
+    range)
+      diff_cmd=(git diff --unified=0 "$range_from" "$range_to" -- "$file_path")
+      ;;
+    *)
+      return
+      ;;
+  esac
+
+  "${diff_cmd[@]}" | awk '
+    /^@@ / {
+      if (match($0, /\+[0-9]+/)) {
+        line = substr($0, RSTART + 1, RLENGTH - 1) + 0
+      }
+      next
+    }
+    /^\+\+\+/ { next }
+    /^\+/ {
+      print line ":" substr($0, 2)
+      line++
+      next
+    }
+    /^ / {
+      line++
+      next
+    }
+  ' | grep -E "$pattern" || true
+}
+
 case "$1" in
   --staged)
+    scan_mode="staged"
     shift
     collect_changed_files < <(
       git diff --cached --name-only --diff-filter=ACMR -- '*.dart'
     )
     ;;
   --range)
+    scan_mode="range"
     if [ "$#" -ne 3 ]; then
       usage
     fi
+    range_from="$2"
+    range_to="$3"
     collect_changed_files < <(
-      git diff --name-only --diff-filter=ACMR "$2" "$3" -- '*.dart'
+      git diff --name-only --diff-filter=ACMR "$range_from" "$range_to" -- '*.dart'
     )
     ;;
   --all)
+    scan_mode="all"
     shift
     collect_changed_files < <(find lib -name '*.dart' -type f | sort)
     ;;
@@ -129,9 +179,19 @@ for file_path in "${changed_files[@]}"; do
     if [ -n "$raw_style_matches" ]; then
       report_matches \
         "ERROR" \
-        "New text style and theme definitions must live in lib/theme/" \
+        "Theme-only styling: text and theme definitions must live in lib/theme/" \
         "$file_path" \
         "$raw_style_matches"
+      error_count=$((error_count + 1))
+    fi
+
+    compatibility_alias_matches=$(policy_matches "$file_path" '(^|[^[:alnum:]_])(AppThemeColors|AppTextStyles)\.')
+    if [ -n "$compatibility_alias_matches" ]; then
+      report_matches \
+        "ERROR" \
+        "Direct AppThemeColors/AppTextStyles usage is blocked outside lib/theme/; use context.appScheme/appText/appColors" \
+        "$file_path" \
+        "$compatibility_alias_matches"
       error_count=$((error_count + 1))
     fi
   fi

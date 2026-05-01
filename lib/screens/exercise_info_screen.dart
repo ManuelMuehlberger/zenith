@@ -190,11 +190,12 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
   Widget _buildAppBar() {
     final textTheme = context.appText;
     final colors = context.appColors;
+    final transparentSurface = context.appScheme.surface.withValues(alpha: 0);
 
     return SliverAppBar(
       pinned: true,
       stretch: true,
-      backgroundColor: AppThemeColors.clear,
+      backgroundColor: transparentSurface,
       elevation: 0,
       expandedHeight: 120.0,
       leading: IconButton(
@@ -219,7 +220,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
                 centerTitle: true,
                 titlePadding: const EdgeInsets.only(bottom: 16),
                 title: Text(widget.exercise.name, style: textTheme.titleMedium),
-                background: Container(color: AppThemeColors.clear),
+                background: Container(color: transparentSurface),
               ),
             ],
           );
@@ -514,7 +515,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
                   value: _exerciseInsights!.averageSets.toStringAsFixed(1),
                   unit: 'sessions',
                   icon: CupertinoIcons.graph_square_fill,
-                  color: AppConstants.ACCENT_COLOR_GREEN,
+                  color: colors.success,
                   data: _exerciseInsights!.monthlyFrequency,
                 ),
               ),
@@ -524,7 +525,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
         const SizedBox(height: 16),
         TrendInsightCard(
           title: 'Volume',
-          color: AppConstants.ACCENT_COLOR,
+          color: colorScheme.primary,
           unit: _useKg ? 'kg' : 'lbs',
           icon: CupertinoIcons.chart_bar_fill,
           filters: filters,
@@ -537,7 +538,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
         const SizedBox(height: 16),
         TrendInsightCard(
           title: 'Max Weight',
-          color: AppConstants.ACCENT_COLOR_ORANGE,
+          color: colors.warning,
           unit: _useKg ? 'kg' : 'lbs',
           icon: CupertinoIcons.arrow_up_circle_fill,
           filters: filters,

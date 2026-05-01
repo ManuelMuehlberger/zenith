@@ -18,7 +18,7 @@ class SettingsTimelineSection extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Material(
-        color: AppThemeColors.clear,
+        type: MaterialType.transparency,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () {

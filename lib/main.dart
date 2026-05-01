@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
-import 'constants/app_constants.dart';
 import 'screens/app_wrapper.dart';
 import 'screens/home_screen.dart';
 import 'screens/insights_screen.dart';
@@ -32,10 +31,10 @@ class WorkoutTrackerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Workout Tracker',
-      theme: AppTheme.dark.copyWith(
-        appBarTheme: AppTheme.dark.appBarTheme.copyWith(
-          systemOverlayStyle: SystemUiOverlayStyle.light,
-        ),
+      theme: AppTheme.dark,
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: child ?? const SizedBox.shrink(),
       ),
       home: const AppWrapper(),
       debugShowCheckedModeBanner: false,
@@ -84,22 +83,18 @@ class _MainScreenState extends State<MainScreen> {
           body: IndexedStack(index: currentIndex, children: _screens),
           bottomNavigationBar: ClipRRect(
             child: BackdropFilter(
-              filter: ImageFilter.blur(
-                sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-              ),
+              filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
               child: Container(
-                decoration: const BoxDecoration(
-                  color: AppConstants.BOTTOM_BAR_BG_COLOR,
+                decoration: BoxDecoration(
+                  color: context.appColors.overlaySoft,
                   border: Border(
                     top: BorderSide(
-                      color: AppConstants.HEADER_STROKE_COLOR,
-                      width: AppConstants.HEADER_STROKE_WIDTH,
+                      color: Theme.of(context).dividerColor,
+                      width: 0.5,
                     ),
                   ),
                 ),
                 child: BottomNavigationBar(
-                  backgroundColor: Colors.transparent,
                   currentIndex: currentIndex,
                   onTap: (index) {
                     HapticFeedback.selectionClick();

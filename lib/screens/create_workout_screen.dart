@@ -35,8 +35,12 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   final Set<int> _expandedNotes = {};
 
   // Workout customization
-  Color _selectedColor = AppThemeColors.accent;
+  late Color _selectedColor;
   IconData _selectedIcon = Icons.fitness_center;
+  bool _hasInitializedSelectedColor = false;
+
+  Color _defaultSelectedColor(BuildContext context) =>
+      context.appScheme.primary;
 
   List<Color> _availableColors(BuildContext context) => <Color>[
     context.appScheme.primary,
@@ -45,21 +49,16 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     context.appScheme.error,
   ];
 
-  Color _resolveTemplateColor(int? colorValue) {
-    const availableColors = <Color>[
-      AppThemeColors.accent,
-      AppThemeColors.success,
-      AppThemeColors.warning,
-      AppThemeColors.danger,
-    ];
-
+  Color _resolveTemplateColor(BuildContext context, int? colorValue) {
+    final availableColors = _availableColors(context);
+    final defaultColor = _defaultSelectedColor(context);
     if (colorValue == null) {
-      return AppThemeColors.accent;
+      return defaultColor;
     }
 
     return availableColors.firstWhere(
       (color) => color.toARGB32() == colorValue,
-      orElse: () => AppThemeColors.accent,
+      orElse: () => defaultColor,
     );
   }
 
@@ -72,7 +71,6 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       // WorkoutTemplate doesn't have exercises directly, we'll need to load them separately
       // For now, initialize as empty and load exercises in a separate method if needed
       _exercises = [];
-      _selectedColor = _resolveTemplateColor(template.colorValue);
       _selectedIcon = WorkoutIcons.getIconDataFromCodePoint(
         template.iconCodePoint,
       );
@@ -80,6 +78,19 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       // Load template exercises and attach details
       unawaited(_loadTemplateExercises());
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hasInitializedSelectedColor) return;
+
+    _selectedColor = _defaultSelectedColor(context);
+    final template = widget.workoutTemplate;
+    if (template != null) {
+      _selectedColor = _resolveTemplateColor(context, template.colorValue);
+    }
+    _hasInitializedSelectedColor = true;
   }
 
   @override
@@ -101,7 +112,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
             ? 'lbs'
             : 'kg';
         return Scaffold(
-          backgroundColor: AppThemeColors.background,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: Stack(
             children: [
               Positioned.fill(
@@ -547,7 +558,9 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   void _showWorkoutCustomization() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppThemeColors.clear,
+      backgroundColor: Theme.of(
+        context,
+      ).scaffoldBackgroundColor.withValues(alpha: 0),
       isScrollControlled: true,
       builder: (context) => WorkoutCustomizationSheet(
         selectedColor: _selectedColor,

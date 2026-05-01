@@ -139,7 +139,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
             }
           },
           child: Scaffold(
-            backgroundColor: AppThemeColors.background,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             body: CustomScrollView(
               controller: _scrollController,
               slivers: [
@@ -331,7 +331,9 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                 decoration: BoxDecoration(
                   color: showAnimation
                       ? appScheme.primary.withValues(alpha: 0.25)
-                      : AppThemeColors.background.withValues(alpha: 0.3),
+                      : Theme.of(
+                          context,
+                        ).scaffoldBackgroundColor.withValues(alpha: 0.3),
                   border: Border.all(
                     color: showAnimation
                         ? appScheme.primary.withValues(alpha: 0.6)

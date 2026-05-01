@@ -38,17 +38,18 @@ scripts/check_changed_dart_policy.sh --all
 The hook chain now does two things on changed Dart files:
 
 - Runs formatting and analyzer checks.
-- Runs a UI policy scan that enforces theme-centralized styling.
+- Runs a UI policy scan that enforces theme-only styling.
 
 Blocking policy checks:
 
 - `withOpacity(...)` usage in `lib/`.
 - Raw `Colors.*` or `CupertinoColors.*` usage outside `lib/theme/`.
 - Hardcoded color constructors outside `lib/theme/`.
-- `TextStyle(...)`, `ColorScheme(...)`, or `ThemeData(...)` definitions outside `lib/theme/`.
+- `TextStyle(...)`, `TextTheme(...)`, `ColorScheme(...)`, or `ThemeData(...)` definitions outside `lib/theme/`.
+- Newly added direct `AppThemeColors.*` or `AppTextStyles.*` usage outside `lib/theme/` on changed-file scans (`--all` blocks any remaining usage).
 
 Warning-only policy checks:
 
 - Likely inline user-facing strings.
 
-Theme and token definitions now belong in `lib/theme/`. UI code should consume them through `context.appScheme`, `context.appText`, `context.appColors`, or existing `AppTheme`/`AppConstants` compatibility aliases only when necessary.
+Theme and token definitions now belong in `lib/theme/`. UI code should consume them through `context.appScheme`, `context.appText`, and `context.appColors`. Direct `AppThemeColors` and `AppTextStyles` references are compatibility aliases that should only shrink over time, not be added back into non-theme UI code.

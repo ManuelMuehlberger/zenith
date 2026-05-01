@@ -51,7 +51,7 @@ class InsightsStatCard extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: color.withAlpha((255 * 0.15).round()),
+                  color: color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 18),
@@ -160,6 +160,7 @@ class ActivityRingCard extends StatelessWidget {
     const double cardRadius = 16.0;
     final textTheme = context.appText;
     final colorScheme = context.appScheme;
+    final transparentColor = colorScheme.surface.withValues(alpha: 0);
 
     final progress = (value / goal).clamp(0.0, 1.0);
     final percentage = (progress * 100).toInt();
@@ -186,7 +187,7 @@ class ActivityRingCard extends StatelessWidget {
                   child: CircularProgressIndicator(
                     value: 1.0,
                     strokeWidth: 10,
-                    backgroundColor: AppThemeColors.clear,
+                    backgroundColor: transparentColor,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       color.withValues(alpha: 0.15),
                     ),
@@ -204,7 +205,7 @@ class ActivityRingCard extends StatelessWidget {
                       return CircularProgressIndicator(
                         value: value,
                         strokeWidth: 10,
-                        backgroundColor: AppThemeColors.clear,
+                        backgroundColor: transparentColor,
                         valueColor: AlwaysStoppedAnimation<Color>(color),
                         strokeCap: StrokeCap.round,
                       );
@@ -291,7 +292,7 @@ class MetricTile extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: color.withAlpha((255 * 0.15).round()),
+                color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: color, size: 20),

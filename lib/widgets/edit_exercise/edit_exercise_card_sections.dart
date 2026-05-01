@@ -294,13 +294,14 @@ class EditExerciseSetRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
     final colors = context.appColors;
     final textTheme = context.appText;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       decoration: BoxDecoration(
-        color: AppThemeColors.clear,
+        color: colorScheme.surface.withValues(alpha: 0),
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: Row(

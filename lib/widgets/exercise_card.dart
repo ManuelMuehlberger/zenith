@@ -55,7 +55,7 @@ class ExerciseCard extends StatelessWidget {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppThemeColors.clear,
+      backgroundColor: context.appScheme.surface.withValues(alpha: 0),
       builder: (context) => SetEditOptionsSheet(
         set: set,
         setIndex: setIndex,

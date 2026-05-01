@@ -15,6 +15,7 @@ class ArchiveWorkoutRow extends StatelessWidget {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
+    final theme = Theme.of(context);
 
     // Compact Layout:
     // [Date] [Card]
@@ -56,7 +57,7 @@ class ArchiveWorkoutRow extends StatelessWidget {
                 color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppThemeColors.outline,
+                  color: theme.dividerColor,
                   width: AppConstants.CARD_STROKE_WIDTH,
                 ),
                 boxShadow: [

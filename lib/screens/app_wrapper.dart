@@ -124,11 +124,12 @@ class _AppLoadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
 
     return Scaffold(
-      backgroundColor: AppThemeColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -156,10 +157,11 @@ class _AppStartupErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final textTheme = context.appText;
 
     return Scaffold(
-      backgroundColor: AppThemeColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),

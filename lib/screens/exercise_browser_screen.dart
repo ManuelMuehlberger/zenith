@@ -23,13 +23,13 @@ class ExerciseBrowserScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final double topPadding = MediaQuery.of(context).padding.top;
     final double screenHeaderHeight = topPadding + kToolbarHeight;
+    final theme = Theme.of(context);
     final textTheme = context.appText;
     final colorScheme = context.appScheme;
     final colors = context.appColors;
-    const backgroundColor = AppThemeColors.background;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         fit: StackFit.expand,
         children: [

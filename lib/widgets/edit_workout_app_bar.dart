@@ -29,11 +29,12 @@ class EditWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
+    final appBarTheme = Theme.of(context).appBarTheme;
 
     return PreferredSize(
       preferredSize: const Size.fromHeight(100),
       child: AppBar(
-        backgroundColor: AppThemeColors.background,
+        backgroundColor: appBarTheme.backgroundColor,
         elevation: 0,
         automaticallyImplyLeading: false,
         flexibleSpace: SafeArea(

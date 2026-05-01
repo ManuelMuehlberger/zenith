@@ -381,10 +381,7 @@ class _ReorderableExerciseCardState extends State<ReorderableExerciseCard>
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      decoration: BoxDecoration(
-        color: AppThemeColors.clear,
-        borderRadius: BorderRadius.circular(8.0),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8.0)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [

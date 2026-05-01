@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import '../screens/settings_screen.dart';
-import '../constants/app_constants.dart';
+import '../theme/app_theme.dart';
 
 class ProfileIconButton extends StatelessWidget {
   const ProfileIconButton({super.key});
@@ -20,12 +20,12 @@ class ProfileIconButton extends StatelessWidget {
         height: 32,
         margin: const EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
-          color: AppConstants.ACCENT_COLOR.withAlpha((255 * 0.2).round()),
+          color: context.appScheme.primary.withValues(alpha: 0.2),
           shape: BoxShape.circle,
         ),
-        child: const Icon(
+        child: Icon(
           CupertinoIcons.person_fill,
-          color: AppConstants.ACCENT_COLOR,
+          color: context.appScheme.primary,
           size: 20,
         ),
       ),
