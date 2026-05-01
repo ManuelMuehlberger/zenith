@@ -5,11 +5,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../constants/app_constants.dart';
 import '../../models/workout.dart';
 import '../../models/workout_exercise.dart';
 import '../../services/reorder_service.dart';
 import '../../services/workout_session_service.dart';
+import '../../theme/app_theme.dart';
 import '../active_workout_action_buttons.dart';
 import '../active_workout_app_bar.dart';
 import '../reorderable_active_exercise_card.dart';
@@ -63,6 +63,7 @@ class ActiveWorkoutScaffoldBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
     final headerHeight = topPadding + ActiveWorkoutAppBar.getContentHeight();
+    final appColors = context.appColors;
 
     return Stack(
       children: [
@@ -91,13 +92,10 @@ class ActiveWorkoutScaffoldBody extends StatelessWidget {
           right: 0,
           child: ClipRRect(
             child: BackdropFilter(
-              filter: ImageFilter.blur(
-                sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-              ),
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 height: headerHeight,
-                color: AppConstants.HEADER_BG_COLOR_MEDIUM,
+                color: appColors.overlayMedium,
                 child: SafeArea(
                   bottom: false,
                   child: ActiveWorkoutHeader(
@@ -135,6 +133,10 @@ class ActiveWorkoutHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = context.appColors;
+    final appScheme = context.appScheme;
+    final appText = context.appText;
+    final dividerColor = Theme.of(context).dividerColor;
     final totalSets = session.totalSets;
     final progress = totalSets > 0 ? session.completedSets / totalSets : 0.0;
     final isCompleted = progress >= 1.0;
@@ -169,7 +171,7 @@ class ActiveWorkoutHeader extends StatelessWidget {
                 Expanded(
                   child: Text(
                     session.name,
-                    style: AppConstants.HEADER_TITLE_TEXT_STYLE,
+                    style: appText.headlineSmall,
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -184,13 +186,13 @@ class ActiveWorkoutHeader extends StatelessWidget {
                         HapticFeedback.lightImpact();
                       },
                       style: IconButton.styleFrom(
-                        backgroundColor: AppConstants.WORKOUT_BUTTON_BG_COLOR,
+                        backgroundColor: appScheme.surface,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
                           side: BorderSide(
                             color: isReorderMode
                                 ? workoutColor.withAlpha((255 * 0.3).round())
-                                : AppConstants.TEXT_TERTIARY_COLOR.withAlpha(
+                                : appColors.textTertiary.withAlpha(
                                     (255 * 0.3).round(),
                                   ),
                             width: 1,
@@ -203,7 +205,7 @@ class ActiveWorkoutHeader extends StatelessWidget {
                         Icons.reorder,
                         color: isReorderMode
                             ? workoutColor
-                            : AppConstants.TEXT_TERTIARY_COLOR,
+                            : appColors.textTertiary,
                         size: 22,
                       ),
                       tooltip: isReorderMode
@@ -215,15 +217,16 @@ class ActiveWorkoutHeader extends StatelessWidget {
                       onPressed: onFinishWorkout,
                       style: TextButton.styleFrom(
                         backgroundColor: isCompleted
-                            ? AppConstants.ACCENT_COLOR_GREEN
-                            : AppConstants.FINISH_BUTTON_BG_COLOR,
+                            ? appColors.success
+                            : appColors.surfaceAlt,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
                           side: isCompleted
                               ? BorderSide.none
                               : BorderSide(
-                                  color: AppConstants.ACCENT_COLOR_GREEN
-                                      .withAlpha((255 * 0.3).round()),
+                                  color: appColors.success.withAlpha(
+                                    (255 * 0.3).round(),
+                                  ),
                                   width: 1,
                                 ),
                         ),
@@ -235,10 +238,10 @@ class ActiveWorkoutHeader extends StatelessWidget {
                       ),
                       child: Text(
                         'Finish',
-                        style: AppConstants.HEADER_BUTTON_TEXT_STYLE.copyWith(
+                        style: appText.labelLarge?.copyWith(
                           color: isCompleted
-                              ? Colors.white
-                              : AppConstants.ACCENT_COLOR_GREEN,
+                              ? appScheme.onPrimary
+                              : appColors.success,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -257,13 +260,13 @@ class ActiveWorkoutHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 _WorkoutDurationStat(session: session, color: workoutColor),
-                _buildDivider(),
+                _buildDivider(dividerColor),
                 _InlineStat(
                   value: '${session.completedSets}/${session.totalSets}',
                   icon: Icons.fitness_center_outlined,
                   color: workoutColor,
                 ),
-                _buildDivider(),
+                _buildDivider(dividerColor),
                 _InlineStat(
                   value:
                       '${WorkoutSessionService.instance.formatWeight(session.totalWeight)}$weightUnit',
@@ -276,7 +279,7 @@ class ActiveWorkoutHeader extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: progress,
-                      backgroundColor: AppConstants.DIVIDER_COLOR,
+                      backgroundColor: dividerColor,
                       valueColor: AlwaysStoppedAnimation<Color>(
                         semiTransparentWorkoutColor,
                       ),
@@ -287,10 +290,9 @@ class ActiveWorkoutHeader extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   '${(progress * 100).toInt()}%',
-                  style: TextStyle(
-                    fontSize: AppConstants.IOS_SUBTITLE_FONT_SIZE,
-                    fontWeight: FontWeight.bold,
+                  style: appText.bodyMedium?.copyWith(
                     color: semiTransparentWorkoutColor,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
@@ -301,11 +303,11 @@ class ActiveWorkoutHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildDivider() {
+  Widget _buildDivider(Color color) {
     return Container(
       width: 1,
       height: 20,
-      color: AppConstants.DIVIDER_COLOR,
+      color: color,
       margin: const EdgeInsets.symmetric(horizontal: 8),
     );
   }
@@ -476,6 +478,9 @@ class _InlineStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = context.appColors;
+    final appText = context.appText;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -483,9 +488,9 @@ class _InlineStat extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           value,
-          style: AppConstants.IOS_SUBTITLE_TEXT_STYLE.copyWith(
+          style: appText.bodyMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppConstants.TEXT_PRIMARY_COLOR,
+            color: appColors.textPrimary,
           ),
         ),
       ],
@@ -521,17 +526,17 @@ class _ActiveWorkoutProxyCard extends StatelessWidget {
       isReorderMode: true,
       isDragging: true,
       isOtherDragging: false,
-      onToggleNotes: (_) {},
-      onUpdateSet: (_, __, {reps, weight, isCompleted}) {},
-      onToggleSetCompletion: (_, __) {},
+      onToggleNotes: (exerciseId) {},
+      onUpdateSet: (workoutId, setId, {reps, weight, isCompleted}) {},
+      onToggleSetCompletion: (workoutId, setId) {},
       onAddSet: () {},
-      onRemoveSet: (_) {},
+      onRemoveSet: (setId) {},
       workoutColor: session.color,
       workoutStartedAt: session.startedAt,
     );
 
     return Material(
-      color: Colors.transparent,
+      color: context.appColors.overlayStrong.withValues(alpha: 0),
       child: AnimatedBuilder(
         animation: animation,
         builder: (context, child) {

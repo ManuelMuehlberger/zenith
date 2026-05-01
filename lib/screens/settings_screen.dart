@@ -1,19 +1,22 @@
+import 'dart:io';
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:ui';
-import 'dart:io';
 import 'package:logging/logging.dart';
+
+import '../constants/app_constants.dart';
+import '../models/user_data.dart';
 import '../services/database_service.dart';
+import '../services/debug_data_service.dart';
 import '../services/user_service.dart';
 import '../services/workout_service.dart';
 import '../services/workout_template_service.dart';
-import '../services/debug_data_service.dart';
-import '../models/user_data.dart';
-import '../widgets/settings/settings_timeline_section.dart';
-import '../widgets/settings/settings_profile_section.dart';
-import '../widgets/settings/settings_units_section.dart';
+import '../theme/app_theme.dart';
 import '../widgets/settings/settings_data_section.dart';
-import '../constants/app_constants.dart';
+import '../widgets/settings/settings_profile_section.dart';
+import '../widgets/settings/settings_timeline_section.dart';
+import '../widgets/settings/settings_units_section.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -87,6 +90,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showCupertinoToast(String message) {
+    final colors = context.appColors;
+    final textTheme = context.appText;
     final overlay = Overlay.of(context);
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
@@ -103,11 +108,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 vertical: 12.0,
               ),
               decoration: BoxDecoration(
-                color: CupertinoColors.systemGrey.withOpacity(0.92),
+                color: colors.surfaceAlt.withValues(alpha: 0.92),
                 borderRadius: BorderRadius.circular(16.0),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.18),
+                    color: colors.shadow.withValues(alpha: 0.18),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -115,10 +120,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: Text(
                 message,
-                style: const TextStyle(
-                  color: CupertinoColors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.normal,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
                   decoration: TextDecoration.none,
                   letterSpacing: 0.1,
                 ),
@@ -161,6 +164,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await showCupertinoModalPopup<bool>(
       context: context,
       builder: (BuildContext context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        final textTheme = Theme.of(context).textTheme;
+        final colors = context.appColors;
+
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setStateDialog) {
             return CupertinoAlertDialog(
@@ -174,9 +181,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 16),
                   Text(
                     'Please type "$requiredText" below to confirm:',
-                    style: TextStyle(
-                      color: CupertinoColors.systemGrey.resolveFrom(context),
-                      fontSize: 13,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colors.textTertiary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -184,8 +190,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: confirmController,
                     placeholder: requiredText,
                     autocorrect: false,
-                    style: TextStyle(
-                      color: CupertinoColors.label.resolveFrom(context),
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurface,
                     ),
                     onChanged: (value) {
                       setStateDialog(() {
@@ -207,10 +213,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       : null,
                   child: Text(
                     'Delete All',
-                    style: TextStyle(
+                    style: textTheme.bodyLarge?.copyWith(
                       color: confirmationText == requiredText
-                          ? CupertinoColors.destructiveRed
-                          : CupertinoColors.systemGrey.resolveFrom(context),
+                          ? colorScheme.error
+                          : colors.textTertiary,
                     ),
                   ),
                 ),
@@ -245,7 +251,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final double headerHeight = topPadding + kToolbarHeight;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           Positioned.fill(child: _buildMainContent(headerHeight)),
@@ -261,7 +267,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 child: Container(
                   height: headerHeight,
-                  color: AppConstants.HEADER_BG_COLOR_MEDIUM,
+                  color: context.appColors.overlayMedium,
                   child: SafeArea(bottom: false, child: _buildHeaderContent()),
                 ),
               ),
@@ -273,6 +279,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildHeaderContent() {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+
     return SizedBox(
       height: kToolbarHeight,
       child: Padding(
@@ -282,23 +291,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             CupertinoButton(
               padding: EdgeInsets.zero,
               onPressed: () => Navigator.of(context).pop(),
-              child: const Icon(
+              child: Icon(
                 CupertinoIcons.back,
-                color: Colors.white,
+                color: colorScheme.onSurface,
                 size: 28,
               ),
             ),
             const SizedBox(width: 8),
-            const Expanded(
-              child: Text(
-                'Settings',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
+            Expanded(child: Text('Settings', style: textTheme.titleLarge)),
           ],
         ),
       ),
@@ -318,15 +318,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     if (_userProfile == null) {
+      final textTheme = context.appText;
+
       return Column(
         children: [
           SizedBox(height: headerHeight),
-          const Expanded(
+          Expanded(
             child: Center(
-              child: Text(
-                'No profile found',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: Text('No profile found', style: textTheme.bodyLarge),
             ),
           ),
         ],
@@ -371,8 +370,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildDebugSection() {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Card(
-      color: Colors.grey[900],
+      color: colorScheme.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -380,34 +383,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 4.0),
-              child: Text(
-                'Debug Menu',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 4.0),
+              child: Text('Debug Menu', style: textTheme.titleLarge),
             ),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 CupertinoIcons.hammer_fill,
-                color: Colors.orange,
+                color: colors.warning,
                 size: 22,
               ),
-              title: const Text(
-                'Generate History Data',
-                style: TextStyle(color: Colors.white),
-              ),
-              subtitle: const Text(
+              title: Text('Generate History Data', style: textTheme.bodyLarge),
+              subtitle: Text(
                 'Fill last 2 years with random workouts',
-                style: TextStyle(color: Colors.grey),
+                style: textTheme.bodyMedium,
               ),
               trailing: Icon(
                 CupertinoIcons.chevron_right,
-                color: Colors.grey[400],
+                color: colors.textSecondary,
                 size: 16,
               ),
               onTap: _generateDebugData,
@@ -465,8 +458,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildDataManagementSection() {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+
     return Card(
-      color: Colors.grey[900],
+      color: colorScheme.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -474,34 +470,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 4.0),
-              child: Text(
-                'Danger Zone',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 4.0),
+              child: Text('Danger Zone', style: textTheme.titleLarge),
             ),
             ListTile(
-              leading: const Icon(
+              leading: Icon(
                 CupertinoIcons.trash_fill,
-                color: Colors.red,
+                color: colorScheme.error,
                 size: 22,
               ),
-              title: const Text(
+              title: Text(
                 'Clear All Data',
-                style: TextStyle(color: Colors.red),
+                style: textTheme.bodyLarge?.copyWith(color: colorScheme.error),
               ),
-              subtitle: const Text(
+              subtitle: Text(
                 'Permanently delete all data and profile',
-                style: TextStyle(color: Colors.grey),
+                style: textTheme.bodyMedium,
               ),
               trailing: Icon(
                 CupertinoIcons.chevron_right,
-                color: Colors.grey[400],
+                color: context.appColors.textSecondary,
                 size: 16,
               ),
               onTap: _clearAllData,
@@ -513,27 +502,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAboutSection() {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Card(
-      color: Colors.grey[900],
+      color: colorScheme.surface,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'About',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+            Text('About', style: textTheme.titleMedium),
             const SizedBox(height: 16),
             Row(
               children: [
                 Icon(
                   CupertinoIcons.lock_shield_fill,
-                  color: Colors.green,
+                  color: colors.success,
                   size: 22,
                 ),
                 const SizedBox(width: 12),
@@ -541,13 +527,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Privacy First',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
+                      Text('Privacy First', style: textTheme.titleSmall),
                       Text(
                         'All data stays on your device\nNo cloud, no tracking, no ads',
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                        style: textTheme.bodySmall,
                       ),
                     ],
                   ),
@@ -578,7 +561,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Icon(
                     CupertinoIcons.info_circle_fill,
-                    color: Colors.blue,
+                    color: colorScheme.primary,
                     size: 22,
                   ),
                   const SizedBox(width: 12),
@@ -586,13 +569,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Workout Tracker',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
+                        Text('Workout Tracker', style: textTheme.titleSmall),
                         Text(
                           'Version 1.0.0\nTrack your fitness journey',
-                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                          style: textTheme.bodySmall,
                         ),
                       ],
                     ),
@@ -605,7 +585,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Icon(
                   CupertinoIcons.flame_fill,
-                  color: Colors.grey[400],
+                  color: colors.textSecondary,
                   size: 22,
                 ),
                 const SizedBox(width: 12),
@@ -613,13 +593,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Exercise Database',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
+                      Text('Exercise Database', style: textTheme.titleSmall),
                       Text(
                         '312 exercises available',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 14),
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colors.textSecondary,
+                        ),
                       ),
                     ],
                   ),

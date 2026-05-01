@@ -12,6 +12,7 @@ import '../models/workout_template.dart';
 import '../services/exercise_service.dart';
 import '../services/user_service.dart';
 import '../services/workout_template_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/create_workout/create_workout_editor_sections.dart';
 import '../widgets/workout_customization_sheet.dart';
 import 'exercise_picker_screen.dart';
@@ -34,19 +35,32 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   final Set<int> _expandedNotes = {};
 
   // Workout customization
-  Color _selectedColor = Colors.blue;
+  late Color _selectedColor;
   IconData _selectedIcon = Icons.fitness_center;
+  bool _hasInitializedSelectedColor = false;
 
-  final List<Color> _availableColors = [
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-    Colors.red,
-    Colors.purple,
-    Colors.teal,
-    Colors.pink,
-    Colors.amber,
+  Color _defaultSelectedColor(BuildContext context) =>
+      context.appScheme.primary;
+
+  List<Color> _availableColors(BuildContext context) => <Color>[
+    context.appScheme.primary,
+    context.appColors.success,
+    context.appColors.warning,
+    context.appScheme.error,
   ];
+
+  Color _resolveTemplateColor(BuildContext context, int? colorValue) {
+    final availableColors = _availableColors(context);
+    final defaultColor = _defaultSelectedColor(context);
+    if (colorValue == null) {
+      return defaultColor;
+    }
+
+    return availableColors.firstWhere(
+      (color) => color.toARGB32() == colorValue,
+      orElse: () => defaultColor,
+    );
+  }
 
   @override
   void initState() {
@@ -57,8 +71,6 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       // WorkoutTemplate doesn't have exercises directly, we'll need to load them separately
       // For now, initialize as empty and load exercises in a separate method if needed
       _exercises = [];
-      final colorValue = template.colorValue;
-      _selectedColor = colorValue != null ? Color(colorValue) : Colors.blue;
       _selectedIcon = WorkoutIcons.getIconDataFromCodePoint(
         template.iconCodePoint,
       );
@@ -66,6 +78,19 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       // Load template exercises and attach details
       unawaited(_loadTemplateExercises());
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hasInitializedSelectedColor) return;
+
+    _selectedColor = _defaultSelectedColor(context);
+    final template = widget.workoutTemplate;
+    if (template != null) {
+      _selectedColor = _resolveTemplateColor(context, template.colorValue);
+    }
+    _hasInitializedSelectedColor = true;
   }
 
   @override
@@ -87,7 +112,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
             ? 'lbs'
             : 'kg';
         return Scaffold(
-          backgroundColor: Colors.black,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: Stack(
             children: [
               Positioned.fill(
@@ -122,7 +147,7 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                     ),
                     child: Container(
                       height: headerHeight,
-                      color: AppConstants.HEADER_BG_COLOR_MEDIUM,
+                      color: context.appColors.overlayMedium,
                       child: SafeArea(
                         bottom: false,
                         child: CreateWorkoutHeader(
@@ -533,12 +558,14 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   void _showWorkoutCustomization() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(
+        context,
+      ).scaffoldBackgroundColor.withValues(alpha: 0),
       isScrollControlled: true,
       builder: (context) => WorkoutCustomizationSheet(
         selectedColor: _selectedColor,
         selectedIcon: _selectedIcon,
-        availableColors: _availableColors,
+        availableColors: _availableColors(context),
         availableIcons: WorkoutIcons.items
             .map((item) => item.icon)
             .whereType<IconData>()

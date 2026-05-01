@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/workout_set.dart';
+import '../theme/app_theme.dart';
 
 class SetEditOptionsSheet extends StatelessWidget {
   final WorkoutSet set;
@@ -19,9 +20,13 @@ class SetEditOptionsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: colorScheme.surface,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -37,70 +42,34 @@ class SetEditOptionsSheet extends StatelessWidget {
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 20),
               decoration: BoxDecoration(
-                color: Colors.grey[600],
+                color: colors.textTertiary,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            
+
             // Title
-            Text(
-              'Set ${setIndex + 1} Options',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            
+            Text('Set ${setIndex + 1} Options', style: textTheme.titleMedium),
+
             const SizedBox(height: 16),
-            
-            // Actions
-            // Rep Range functionality has been removed from WorkoutSet model for templates.
-            // ListTile(
-            //   leading: Container(
-            //     width: 32,
-            //     height: 32,
-            //     decoration: BoxDecoration(
-            //       color: Colors.blue.withAlpha((255 * 0.2).round()),
-            //       borderRadius: BorderRadius.circular(8),
-            //     ),
-            //     child: Icon(
-            //       Icons.swap_horiz, // Placeholder icon
-            //       color: Colors.blue,
-            //       size: 20,
-            //     ),
-            //   ),
-            //   title: Text(
-            //     'Toggle Rep Range (Not Supported)', // Placeholder text
-            //     style: const TextStyle(color: Colors.white),
-            //   ),
-            //   onTap: () {
-            //     Navigator.pop(context);
-            //     // onToggleRepRange(); // onToggleRepRange logic is removed
-            //   },
-            // ),
-            
+
             if (canRemoveSet && onRemoveSet != null)
               ListTile(
                 leading: Container(
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: Colors.red.withAlpha((255 * 0.2).round()),
+                    color: colorScheme.error.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.delete, color: Colors.red, size: 20),
+                  child: Icon(Icons.delete, color: colorScheme.error, size: 20),
                 ),
-                title: const Text(
-                  'Remove Set',
-                  style: TextStyle(color: Colors.white),
-                ),
+                title: Text('Remove Set', style: textTheme.bodyLarge),
                 onTap: () {
                   Navigator.pop(context);
                   onRemoveSet!();
                 },
               ),
-            
+
             const SizedBox(height: 20),
           ],
         ),

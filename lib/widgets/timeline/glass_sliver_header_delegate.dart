@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../constants/app_constants.dart';
+import '../../theme/app_theme.dart';
 
 /// A pinned sliver header with a frosted glass blur that allows content
 /// to scroll under it.
@@ -49,8 +50,8 @@ class GlassSliverHeaderDelegate extends SliverPersistentHeaderDelegate {
             ),
             child: Container(
               color: Color.lerp(
-                AppConstants.HEADER_BG_COLOR_MEDIUM,
-                AppConstants.HEADER_BG_COLOR_STRONG,
+                context.appColors.overlayMedium,
+                context.appColors.overlayStrong,
                 t,
               ),
             ),

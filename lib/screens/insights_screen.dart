@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import '../services/insights_service.dart';
-import '../services/workout_service.dart';
-import '../screens/exercise_browser_screen.dart';
-import '../utils/unit_converter.dart';
-import '../services/user_service.dart';
 import '../constants/app_constants.dart';
+import '../screens/exercise_browser_screen.dart';
 import '../screens/insights/insights_history_mapper.dart';
 import '../screens/insights/insights_view_data.dart';
+import '../services/insights_service.dart';
+import '../services/user_service.dart';
+import '../services/workout_service.dart';
+import '../utils/unit_converter.dart';
 import '../widgets/insights/insights_screen_sections.dart';
 
 class InsightsScreen extends StatefulWidget {
@@ -151,7 +150,7 @@ class _InsightsScreenState extends State<InsightsScreen>
   }
 
   Future<void> _showExercisePicker() async {
-    Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const ExerciseBrowserScreen()),
     );
@@ -214,7 +213,6 @@ class _InsightsScreenState extends State<InsightsScreen>
       animation: UserService.instance,
       builder: (context, _) {
         return Scaffold(
-          backgroundColor: Colors.black,
           body: CustomScrollView(
             slivers: [
               InsightsAppBar(

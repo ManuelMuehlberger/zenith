@@ -1,21 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
-import '../models/workout.dart';
-import '../models/workout_template.dart';
+import '../constants/app_constants.dart';
 import '../models/exercise.dart';
+import '../models/workout.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
-import '../services/workout_session_service.dart';
-import '../services/user_service.dart';
-import '../services/workout_template_service.dart';
+import '../models/workout_template.dart';
 import '../services/reorder_service.dart';
+import '../services/user_service.dart';
+import '../services/workout_session_service.dart';
+import '../services/workout_template_service.dart';
+import '../theme/app_theme.dart';
+import '../utils/navigation_helper.dart';
 import '../widgets/active_workout/active_workout_sections.dart';
 import 'exercise_picker_screen.dart';
 import 'workout_completion_screen.dart';
-import '../utils/navigation_helper.dart';
-import '../constants/app_constants.dart';
 
 class ActiveWorkoutScreen extends StatefulWidget {
   final Workout session;
@@ -96,7 +99,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         : 'kg';
 
     return Scaffold(
-      backgroundColor: Colors.black,
       body: ActiveWorkoutScaffoldBody(
         session: _currentSession,
         expandedNotes: _expandedNotes,
@@ -137,6 +139,24 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     int? reps,
     double? weight,
     bool? isCompleted,
+  }) {
+    unawaited(
+      _updateSetAsync(
+        exerciseId,
+        setId,
+        reps: reps,
+        weight: weight,
+        isCompleted: isCompleted,
+      ),
+    );
+  }
+
+  Future<void> _updateSetAsync(
+    String exerciseId,
+    String setId, {
+    int? reps,
+    double? weight,
+    bool? isCompleted,
   }) async {
     _logger.fine(
       'Updating set $setId for exercise $exerciseId '
@@ -155,7 +175,14 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     }
   }
 
-  void _toggleSetCompletion(String exerciseId, String setId) async {
+  void _toggleSetCompletion(String exerciseId, String setId) {
+    unawaited(_toggleSetCompletionAsync(exerciseId, setId));
+  }
+
+  Future<void> _toggleSetCompletionAsync(
+    String exerciseId,
+    String setId,
+  ) async {
     _logger.fine('Toggling completion for set $setId in exercise $exerciseId');
     await WorkoutSessionService.instance.toggleSetCompletion(exerciseId, setId);
     final updatedSession = WorkoutSessionService.instance.currentSession;
@@ -164,7 +191,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     }
   }
 
-  void _addSet(String exerciseId) async {
+  void _addSet(String exerciseId) {
+    unawaited(_addSetAsync(exerciseId));
+  }
+
+  Future<void> _addSetAsync(String exerciseId) async {
     final exerciseIndex = _currentSession.exercises.indexWhere(
       (e) => e.id == exerciseId,
     );
@@ -202,7 +233,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     }
   }
 
-  void _removeSet(String exerciseId, String setId) async {
+  void _removeSet(String exerciseId, String setId) {
+    unawaited(_removeSetAsync(exerciseId, setId));
+  }
+
+  Future<void> _removeSetAsync(String exerciseId, String setId) async {
     final exerciseIndex = _currentSession.exercises.indexWhere(
       (e) => e.id == exerciseId,
     );
@@ -250,7 +285,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     }
   }
 
-  void _onReorderExercises(int oldIndex, int newIndex) async {
+  void _onReorderExercises(int oldIndex, int newIndex) {
+    unawaited(_onReorderExercisesAsync(oldIndex, newIndex));
+  }
+
+  Future<void> _onReorderExercisesAsync(int oldIndex, int newIndex) async {
     _logger.info(
       'Reordering exercises in session ${_currentSession.id}: '
       'oldIndex=$oldIndex newIndex=$newIndex',
@@ -272,7 +311,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     }
   }
 
-  void _addExercise() async {
+  void _addExercise() {
+    unawaited(_addExerciseAsync());
+  }
+
+  Future<void> _addExerciseAsync() async {
     _logger.info('Opening exercise picker for session ${_currentSession.id}');
     final selectedExercises = await Navigator.push<List<Exercise>>(
       context,
@@ -328,20 +371,25 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     );
     showCupertinoDialog<void>(
       context: context,
-      builder: (BuildContext context) => CupertinoAlertDialog(
-        title: const Text('Finish Workout'),
-        content: const Text('Are you sure you want to finish this workout?'),
+      builder: (BuildContext dialogContext) => CupertinoAlertDialog(
+        title: Text('Finish Workout', style: dialogContext.appText.titleMedium),
+        content: Text(
+          'Are you sure you want to finish this workout?',
+          style: dialogContext.appText.bodyLarge,
+        ),
         actions: <CupertinoDialogAction>[
           CupertinoDialogAction(
             child: const Text('Cancel'),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
           ),
           CupertinoDialogAction(
             isDefaultAction: true,
             child: const Text('Finish'),
             onPressed: () {
-              Navigator.pop(context);
-              if (mounted) _checkForRoutineUpdatesAndFinish();
+              Navigator.pop(dialogContext);
+              if (mounted) {
+                unawaited(_checkForRoutineUpdatesAndFinish());
+              }
             },
           ),
         ],
@@ -355,19 +403,23 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     );
     showCupertinoDialog<void>(
       context: context,
-      builder: (BuildContext context) => CupertinoAlertDialog(
-        title: const Text('Abort Workout'),
-        content: const Text('Are you sure? All progress will be lost.'),
+      builder: (BuildContext dialogContext) => CupertinoAlertDialog(
+        title: Text('Abort Workout', style: dialogContext.appText.titleMedium),
+        content: Text(
+          'Are you sure? All progress will be lost.',
+          style: dialogContext.appText.bodyLarge,
+        ),
         actions: <CupertinoDialogAction>[
           CupertinoDialogAction(
             child: const Text('Cancel'),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(dialogContext).pop(),
           ),
           CupertinoDialogAction(
             isDestructiveAction: true,
             child: const Text('Abort'),
             onPressed: () async {
-              Navigator.pop(context);
+              final navigator = Navigator.of(dialogContext);
+              navigator.pop();
               _logger.warning(
                 'Aborting active workout session ${_currentSession.id}',
               );
@@ -376,9 +428,9 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               );
               if (mounted) {
                 // Navigate back to home and clear the entire navigation stack
-                Navigator.of(
-                  context,
-                ).pushNamedAndRemoveUntil('/', (route) => false);
+                unawaited(
+                  navigator.pushNamedAndRemoveUntil('/', (route) => false),
+                );
                 // Ensure we go to the home tab
                 NavigationHelper.goToHomeTab();
               }
@@ -405,7 +457,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       _logger.fine(
         'No source template found. Proceeding directly to completion',
       );
-      _finishWorkout();
+      await _finishWorkout();
       return;
     }
 
@@ -413,10 +465,10 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     // This would require loading the template's exercises from WorkoutExerciseDao
     // and comparing them with the current session's exercises
     // For now, we'll just finish the workout without the update dialog
-    _finishWorkout();
+    await _finishWorkout();
   }
 
-  void _finishWorkout() async {
+  Future<void> _finishWorkout() async {
     if (!mounted) {
       _logger.fine('Skipping finish workout because widget is unmounted');
       return;

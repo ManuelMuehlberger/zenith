@@ -1,9 +1,12 @@
-import 'package:flutter/material.dart';
 import 'dart:ui';
+
+import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import '../models/exercise.dart';
-import '../widgets/exercise_list_widget.dart';
+
 import '../constants/app_constants.dart';
+import '../models/exercise.dart';
+import '../theme/app_theme.dart';
+import '../widgets/exercise_list_widget.dart';
 
 class ExercisePickerScreen extends StatefulWidget {
   final bool multiSelect;
@@ -50,9 +53,13 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
   Widget build(BuildContext context) {
     final double topPadding = MediaQuery.of(context).padding.top;
     final double screenHeaderHeight = topPadding + kToolbarHeight;
+    final theme = Theme.of(context);
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
+    final colors = context.appColors;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -74,7 +81,7 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
                   sigmaY: AppConstants.GLASS_BLUR_SIGMA,
                 ),
                 child: Container(
-                  color: AppConstants.HEADER_BG_COLOR_MEDIUM,
+                  color: colors.overlayMedium,
                   child: SafeArea(
                     bottom: false,
                     child: SizedBox(
@@ -84,9 +91,9 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
                           Padding(
                             padding: const EdgeInsets.only(left: 8.0),
                             child: IconButton(
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.arrow_back_ios_new,
-                                color: AppConstants.HEADER_TITLE_COLOR,
+                                color: colorScheme.onSurface,
                               ),
                               onPressed: () => Navigator.of(context).pop(),
                               tooltip: AppConstants.BACK_BUTTON_TOOLTIP,
@@ -96,7 +103,7 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
                             child: Text(
                               AppConstants.SELECT_EXERCISE_TITLE,
                               textAlign: TextAlign.center,
-                              style: AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE,
+                              style: textTheme.titleLarge,
                             ),
                           ),
                           if (widget.multiSelect)
@@ -104,7 +111,7 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
                               onPressed: _done,
                               child: Text(
                                 AppConstants.DONE_BUTTON_TEXT,
-                                style: AppConstants.HEADER_BUTTON_TEXT_STYLE,
+                                style: textTheme.labelLarge,
                               ),
                             )
                           else

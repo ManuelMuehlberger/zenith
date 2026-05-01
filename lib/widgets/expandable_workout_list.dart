@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../screens/insights/insights_view_data.dart';
+import '../theme/app_theme.dart';
 
 class ExpandableWorkoutList extends StatefulWidget {
   final DateTime selectedDate;
-  final List<WorkoutDisplayItem> workoutDisplayItems; 
+  final List<WorkoutDisplayItem> workoutDisplayItems;
   final bool isExpanded;
   final VoidCallback onToggleExpansion;
 
@@ -20,11 +21,10 @@ class ExpandableWorkoutList extends StatefulWidget {
 }
 
 class _ExpandableWorkoutListState extends State<ExpandableWorkoutList> {
-
   String _formatDuration(Duration duration) {
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
-    
+
     if (hours > 0) {
       return '${hours}h ${minutes}m';
     } else if (minutes > 0) {
@@ -36,17 +36,21 @@ class _ExpandableWorkoutListState extends State<ExpandableWorkoutList> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: colorScheme.surface,
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha((255 * 0.3).round()),
+            color: colors.shadow.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -61,33 +65,30 @@ class _ExpandableWorkoutListState extends State<ExpandableWorkoutList> {
                 Expanded(
                   child: Text(
                     'Workouts on ${widget.selectedDate.day}/${widget.selectedDate.month}/${widget.selectedDate.year}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    style: textTheme.titleMedium,
                   ),
                 ),
                 if (widget.workoutDisplayItems.isNotEmpty)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: Colors.blue,
+                      color: colorScheme.primary,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
                       '${widget.workoutDisplayItems.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                      style: textTheme.labelMedium?.copyWith(
+                        color: colorScheme.onPrimary,
                       ),
                     ),
                   ),
               ],
             ),
           ),
-          
+
           // Content section
           Expanded(
             child: widget.workoutDisplayItems.isEmpty
@@ -98,14 +99,13 @@ class _ExpandableWorkoutListState extends State<ExpandableWorkoutList> {
                         Icon(
                           Icons.event_busy,
                           size: 48,
-                          color: Colors.grey[600],
+                          color: colors.textTertiary,
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'No workouts on this date',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey[600],
+                          style: textTheme.bodyLarge?.copyWith(
+                            color: colors.textTertiary,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -121,11 +121,13 @@ class _ExpandableWorkoutListState extends State<ExpandableWorkoutList> {
                       final workout = displayItem.workout;
                       final workoutDetails = displayItem.workoutDetails;
 
-                      final IconData iconData = workoutDetails?.icon ?? Icons.fitness_center;
-                      final Color iconColor = workoutDetails?.color ?? Colors.blue;
-                      
+                      final IconData iconData =
+                          workoutDetails?.icon ?? Icons.fitness_center;
+                      final Color iconColor =
+                          workoutDetails?.color ?? colorScheme.primary;
+
                       return Card(
-                        color: Colors.grey[850],
+                        color: colorScheme.surface,
                         margin: const EdgeInsets.only(bottom: 8.0),
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
@@ -140,7 +142,7 @@ class _ExpandableWorkoutListState extends State<ExpandableWorkoutList> {
                                     width: 48,
                                     height: 48,
                                     decoration: BoxDecoration(
-                                      color: iconColor.withAlpha((255 * 0.2).round()),
+                                      color: iconColor.withValues(alpha: 0.2),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
@@ -153,11 +155,7 @@ class _ExpandableWorkoutListState extends State<ExpandableWorkoutList> {
                                   Expanded(
                                     child: Text(
                                       workout.name,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                      ),
+                                      style: textTheme.titleSmall,
                                     ),
                                   ),
                                 ],
@@ -169,45 +167,41 @@ class _ExpandableWorkoutListState extends State<ExpandableWorkoutList> {
                                   Icon(
                                     Icons.timer,
                                     size: 16,
-                                    color: Colors.grey[400],
+                                    color: colors.textSecondary,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    _formatDuration(workout.completedAt != null && workout.startedAt != null 
-                                        ? workout.completedAt!.difference(workout.startedAt!) 
-                                        : Duration.zero),
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[400],
+                                    _formatDuration(
+                                      workout.completedAt != null &&
+                                              workout.startedAt != null
+                                          ? workout.completedAt!.difference(
+                                              workout.startedAt!,
+                                            )
+                                          : Duration.zero,
                                     ),
+                                    style: textTheme.bodyMedium,
                                   ),
                                   const SizedBox(width: 16),
                                   Icon(
                                     Icons.fitness_center,
                                     size: 16,
-                                    color: Colors.grey[400],
+                                    color: colors.textSecondary,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${workout.exercises.length} exercise${workout.exercises.length != 1 ? 's' : ''}',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[400],
-                                    ),
+                                    style: textTheme.bodyMedium,
                                   ),
                                   const SizedBox(width: 16),
                                   Icon(
                                     Icons.repeat,
                                     size: 16,
-                                    color: Colors.grey[400],
+                                    color: colors.textSecondary,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${workout.totalSets} sets',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[400],
-                                    ),
+                                    style: textTheme.bodyMedium,
                                   ),
                                 ],
                               ),

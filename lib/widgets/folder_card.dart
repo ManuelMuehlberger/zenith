@@ -1,10 +1,13 @@
+import 'dart:developer' as developer; // Add debug logging
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:developer' as developer; // Add debug logging
 import 'package:pull_down_button/pull_down_button.dart';
+
+import '../constants/app_constants.dart';
 import '../models/workout_folder.dart';
 import '../services/workout_service.dart';
-import '../constants/app_constants.dart';
+import '../theme/app_theme.dart';
 
 class FolderCard extends StatelessWidget {
   final WorkoutFolder folder;
@@ -28,8 +31,15 @@ class FolderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final workoutCount = itemCount ?? WorkoutService.instance.getWorkoutsInFolder(folder.id).length;
-    
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final transparentSurface = colorScheme.surface.withValues(alpha: 0);
+    final defaultBorderColor = colors.textPrimary.withValues(alpha: 0.35);
+    final workoutCount =
+        itemCount ??
+        WorkoutService.instance.getWorkoutsInFolder(folder.id).length;
+
     return DragTarget<Map<String, dynamic>>(
       onAcceptWithDetails: (details) async {
         final data = details.data;
@@ -52,23 +62,27 @@ class FolderCard extends StatelessWidget {
         return AnimatedContainer(
           duration: AppConstants.DRAG_ANIMATION_DURATION,
           curve: AppConstants.DRAG_ANIMATION_CURVE,
-          transform: Matrix4.identity()..scale(showDropHint ? 1.02 : 1.0),
+          transform: Matrix4.diagonal3Values(
+            showDropHint ? 1.02 : 1.0,
+            showDropHint ? 1.02 : 1.0,
+            1.0,
+          ),
           margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
           decoration: BoxDecoration(
             color: showDropHint
-                ? AppConstants.ACCENT_COLOR.withAlpha((255 * 0.25).round())
-                : const Color(0xFF1C1C1E),
+                ? colorScheme.primary.withValues(alpha: 0.25)
+                : colorScheme.surface,
             borderRadius: BorderRadius.circular(16.0),
             border: Border.all(
               color: showDropHint
-                  ? AppConstants.ACCENT_COLOR.withAlpha((255 * 0.8).round())
-                  : AppConstants.CARD_STROKE_COLOR,
+                  ? colorScheme.primary.withValues(alpha: 0.8)
+                  : defaultBorderColor,
               width: showDropHint ? 1.5 : AppConstants.CARD_STROKE_WIDTH,
             ),
             boxShadow: showDropHint
                 ? [
                     BoxShadow(
-                      color: AppConstants.ACCENT_COLOR.withAlpha((255 * 0.3).round()),
+                      color: colorScheme.primary.withValues(alpha: 0.3),
                       blurRadius: 12.0,
                       spreadRadius: 2.0,
                       offset: const Offset(0, 4),
@@ -76,14 +90,14 @@ class FolderCard extends StatelessWidget {
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withAlpha((255 * 0.18).round()),
+                      color: colors.shadow.withValues(alpha: 0.18),
                       blurRadius: 10.0,
                       offset: const Offset(0, 4),
                     ),
                   ],
           ),
           child: Material(
-            color: Colors.transparent,
+            color: transparentSurface,
             child: InkWell(
               borderRadius: BorderRadius.circular(16.0),
               onTap: onTap,
@@ -96,20 +110,24 @@ class FolderCard extends StatelessWidget {
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: showDropHint 
-                            ? Colors.white.withAlpha((255 * 0.2).round())
-                            : AppConstants.ACCENT_COLOR.withAlpha((255 * 0.15).round()),
-                        borderRadius: BorderRadius.circular(26), // Fully rounded
+                        color: showDropHint
+                            ? colors.textPrimary.withValues(alpha: 0.2)
+                            : colorScheme.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(
+                          26,
+                        ), // Fully rounded
                         border: Border.all(
-                          color: showDropHint 
-                              ? Colors.white.withAlpha((255 * 0.3).round())
-                              : AppConstants.ACCENT_COLOR.withAlpha((255 * 0.3).round()),
+                          color: showDropHint
+                              ? colors.textPrimary.withValues(alpha: 0.3)
+                              : colorScheme.primary.withValues(alpha: 0.3),
                           width: 0.5,
                         ),
                       ),
                       child: Icon(
                         Icons.folder_rounded,
-                        color: showDropHint ? Colors.white : AppConstants.ACCENT_COLOR,
+                        color: showDropHint
+                            ? colors.textPrimary
+                            : colorScheme.primary,
                         size: 26,
                       ),
                     ),
@@ -120,7 +138,7 @@ class FolderCard extends StatelessWidget {
                         children: [
                           Text(
                             folder.name,
-                            style: AppConstants.CARD_TITLE_TEXT_STYLE.copyWith(
+                            style: textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                               fontSize: 18,
                             ),
@@ -130,11 +148,14 @@ class FolderCard extends StatelessWidget {
                           const SizedBox(height: 6),
                           // Workout count with modern pill styling
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: showDropHint 
-                                  ? Colors.white.withAlpha((255 * 0.15).round())
-                                  : AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.1).round()),
+                              color: showDropHint
+                                  ? colors.textPrimary.withValues(alpha: 0.15)
+                                  : colors.textTertiary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
@@ -143,19 +164,23 @@ class FolderCard extends StatelessWidget {
                                 Icon(
                                   Icons.fitness_center_outlined,
                                   size: 12,
-                                  color: showDropHint 
-                                      ? Colors.white.withAlpha((255 * 0.8).round())
-                                      : AppConstants.TEXT_SECONDARY_COLOR,
+                                  color: showDropHint
+                                      ? colors.textPrimary.withValues(
+                                          alpha: 0.8,
+                                        )
+                                      : colors.textSecondary,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '$workoutCount',
-                                  style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                                  style: textTheme.labelMedium?.copyWith(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
-                                    color: showDropHint 
-                                        ? Colors.white.withAlpha((255 * 0.9).round())
-                                        : AppConstants.TEXT_SECONDARY_COLOR,
+                                    color: showDropHint
+                                        ? colors.textPrimary.withValues(
+                                            alpha: 0.9,
+                                          )
+                                        : colors.textSecondary,
                                   ),
                                 ),
                               ],
@@ -166,12 +191,15 @@ class FolderCard extends StatelessWidget {
                     ),
                     if (showDropHint)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0,
+                          vertical: 8.0,
+                        ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withAlpha((255 * 0.2).round()),
+                          color: colors.textPrimary.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Colors.white.withAlpha((255 * 0.3).round()),
+                            color: colors.textPrimary.withValues(alpha: 0.3),
                             width: 0.5,
                           ),
                         ),
@@ -180,16 +208,16 @@ class FolderCard extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.move_down_outlined,
-                              color: Colors.white,
+                              color: colors.textPrimary,
                               size: 16,
                             ),
                             const SizedBox(width: 6),
                             Text(
                               'Drop here',
-                              style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
+                              style: textTheme.labelMedium?.copyWith(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: colors.textPrimary,
                               ),
                             ),
                           ],
@@ -215,7 +243,7 @@ class FolderCard extends StatelessWidget {
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: AppConstants.TEXT_TERTIARY_COLOR.withAlpha((255 * 0.1).round()),
+                            color: colors.textTertiary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: CupertinoButton(
@@ -223,7 +251,7 @@ class FolderCard extends StatelessWidget {
                             padding: EdgeInsets.zero,
                             child: Icon(
                               CupertinoIcons.ellipsis,
-                              color: AppConstants.TEXT_SECONDARY_COLOR,
+                              color: colors.textSecondary,
                               size: 16,
                             ),
                           ),

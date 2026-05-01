@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../constants/app_constants.dart';
+
+import '../../theme/app_theme.dart';
 
 class SkeletonTimelineRow extends StatelessWidget {
   final int index;
@@ -16,6 +17,9 @@ class SkeletonTimelineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final colors = context.appColors;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: IntrinsicHeight(
@@ -26,7 +30,7 @@ class SkeletonTimelineRow extends StatelessWidget {
               width: trackWidth,
               child: CustomPaint(
                 painter: _SkeletonTrackPainter(
-                  baseColor: AppConstants.ACCENT_COLOR.withOpacity(0.3),
+                  baseColor: colorScheme.onSurface.withValues(alpha: 0.3),
                   nodeRadius: nodeRadius,
                   nodeCenterY: 18,
                 ),
@@ -34,12 +38,12 @@ class SkeletonTimelineRow extends StatelessWidget {
             ),
             Expanded(
               child: Shimmer.fromColors(
-                baseColor: const Color(0xFF1C1C1E),
-                highlightColor: const Color(0xFF2C2C2E),
+                baseColor: colorScheme.surface,
+                highlightColor: colors.field,
                 child: Container(
                   height: 80, // Approximate height of a workout card
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1C1C1E),
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
@@ -74,7 +78,11 @@ class _SkeletonTrackPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
 
     // Straight line for skeleton
-    canvas.drawLine(Offset(centerX, 0), Offset(centerX, size.height), linePaint);
+    canvas.drawLine(
+      Offset(centerX, 0),
+      Offset(centerX, size.height),
+      linePaint,
+    );
 
     // Draw a simple node
     final nodeCenter = Offset(centerX, nodeCenterY);

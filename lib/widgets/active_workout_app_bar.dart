@@ -1,11 +1,15 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui';
+
+import '../constants/app_constants.dart';
 import '../models/workout.dart';
 import '../services/workout_session_service.dart';
-import '../constants/app_constants.dart';
+import '../theme/app_theme.dart';
 
-class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget {
+class ActiveWorkoutAppBar extends StatelessWidget
+    implements PreferredSizeWidget {
   final Workout session;
   final bool isReorderMode;
   final String weightUnit;
@@ -44,20 +48,26 @@ class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget
     // For simplicity and to ensure enough space, we use _staticPreferredHeight.
     // The actual rendered container will use the precise dynamic height.
     const double maxExpectedTopPadding = 64.0; // A generous estimate
-    return const Size.fromHeight(kToolbarHeight + _statsRowHeight + maxExpectedTopPadding);
+    return const Size.fromHeight(
+      kToolbarHeight + _statsRowHeight + maxExpectedTopPadding,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final outlineColor = colorScheme.outline;
     final progress = session.completedSets / session.totalSets;
-    final duration = session.completedAt != null 
-        ? session.completedAt!.difference(session.startedAt ?? DateTime.now()) 
+    final duration = session.completedAt != null
+        ? session.completedAt!.difference(session.startedAt ?? DateTime.now())
         : DateTime.now().difference(session.startedAt ?? DateTime.now());
     final double topPadding = MediaQuery.of(context).padding.top;
 
     // This is the height of the visible content area, AFTER SafeArea insets.
-    final double contentRenderHeight = kToolbarHeight + _statsRowHeight;
-    
+    const double contentRenderHeight = kToolbarHeight + _statsRowHeight;
+
     // This is the total height the PreferredSize widget's child (ClipRRect) will occupy.
     // It should match what the Scaffold allocates based on preferredSize getter,
     // or at least be what we intend for the BackdropFilter's extent.
@@ -65,19 +75,20 @@ class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget
     // and SafeArea will place the Column within that.
     final double totalWidgetHeight = topPadding + contentRenderHeight;
 
-
     return PreferredSize(
-      preferredSize: Size.fromHeight(totalWidgetHeight), // Inform parent of our actual, dynamic size
+      preferredSize: Size.fromHeight(totalWidgetHeight),
       child: ClipRRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+          filter: ImageFilter.blur(
+            sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+            sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+          ),
           child: Container(
-            // This container is the one being blurred. Its height should be the total widget height.
-            height: totalWidgetHeight, 
-            color: AppConstants.HEADER_BG_COLOR_MEDIUM,
+            height: totalWidgetHeight,
+            color: colors.overlayMedium,
             child: SafeArea(
               bottom: false,
-              child: Column( // This Column's height will be contentRenderHeight
+              child: Column(
                 children: [
                   // Top row
                   SizedBox(
@@ -89,10 +100,8 @@ class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget
                           Expanded(
                             child: Text(
                               session.name,
-                              style: const TextStyle(
-                                fontSize: 18,
+                              style: textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
                               ),
                               textAlign: TextAlign.center,
                               maxLines: 1,
@@ -109,8 +118,10 @@ class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget
                                 },
                                 style: IconButton.styleFrom(
                                   backgroundColor: isReorderMode
-                                      ? Colors.orange.withAlpha((255 * 0.2).round())
-                                      : Colors.grey.withAlpha((255 * 0.1).round()),
+                                      ? colors.warning.withValues(alpha: 0.2)
+                                      : colors.textSecondary.withValues(
+                                          alpha: 0.1,
+                                        ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(6),
                                   ),
@@ -119,28 +130,36 @@ class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget
                                 ),
                                 icon: Icon(
                                   Icons.reorder,
-                                  color: isReorderMode ? Colors.orange : Colors.grey[400],
+                                  color: isReorderMode
+                                      ? colors.warning
+                                      : colors.textSecondary,
                                   size: 18,
                                 ),
-                                tooltip: isReorderMode ? 'Exit reorder mode' : 'Reorder exercises',
+                                tooltip: isReorderMode
+                                    ? 'Exit reorder mode'
+                                    : 'Reorder exercises',
                               ),
                               const SizedBox(width: 8),
                               TextButton(
                                 onPressed: onFinishWorkout,
                                 style: TextButton.styleFrom(
-                                  backgroundColor: Colors.green.withAlpha((255 * 0.1).round()),
+                                  backgroundColor: colors.success.withValues(
+                                    alpha: 0.1,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(6),
                                   ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                                   minimumSize: Size.zero,
                                 ),
-                                child: const Text(
+                                child: Text(
                                   'Finish',
-                                  style: TextStyle(
-                                    color: Colors.green,
+                                  style: textTheme.labelMedium?.copyWith(
+                                    color: colors.success,
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 14,
                                   ),
                                 ),
                               ),
@@ -160,22 +179,31 @@ class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           _buildInlineStatCard(
-                            WorkoutSessionService.instance.formatDuration(duration),
+                            context,
+                            WorkoutSessionService.instance.formatDuration(
+                              duration,
+                            ),
                             Icons.timer_outlined,
                           ),
                           Container(
-                            width: 1, height: 20, color: Colors.grey[800],
+                            width: 1,
+                            height: 20,
+                            color: outlineColor,
                             margin: const EdgeInsets.symmetric(horizontal: 8),
                           ),
                           _buildInlineStatCard(
+                            context,
                             '${session.completedSets}/${session.totalSets}',
                             Icons.fitness_center_outlined,
                           ),
                           Container(
-                            width: 1, height: 20, color: Colors.grey[800],
+                            width: 1,
+                            height: 20,
+                            color: outlineColor,
                             margin: const EdgeInsets.symmetric(horizontal: 8),
                           ),
                           _buildInlineStatCard(
+                            context,
                             '${WorkoutSessionService.instance.formatWeight(session.totalWeight)}$weightUnit',
                             Icons.monitor_weight_outlined,
                           ),
@@ -185,8 +213,10 @@ class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget
                               borderRadius: BorderRadius.circular(1),
                               child: LinearProgressIndicator(
                                 value: progress,
-                                backgroundColor: Colors.grey[800],
-                                valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                                backgroundColor: colors.field,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  colorScheme.primary,
+                                ),
                                 minHeight: 2,
                               ),
                             ),
@@ -194,8 +224,9 @@ class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget
                           const SizedBox(width: 6),
                           Text(
                             '${(progress * 100).toInt()}%',
-                            style: const TextStyle(
-                              color: Colors.blue, fontSize: 11, fontWeight: FontWeight.w600,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -211,16 +242,22 @@ class ActiveWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget
     );
   }
 
-  Widget _buildInlineStatCard(String value, IconData icon) {
+  Widget _buildInlineStatCard(
+    BuildContext context,
+    String value,
+    IconData icon,
+  ) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: Colors.blue, size: 16),
+        Icon(icon, color: colorScheme.primary, size: 16),
         const SizedBox(width: 4),
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
+          style: textTheme.labelMedium?.copyWith(
             fontSize: 12,
             fontWeight: FontWeight.bold,
           ),

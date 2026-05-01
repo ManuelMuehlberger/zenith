@@ -1,11 +1,15 @@
+import 'dart:async';
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui';
 import 'package:logging/logging.dart';
-import '../services/user_service.dart';
-import '../models/user_data.dart';
+
 import '../constants/app_constants.dart';
+import '../models/user_data.dart';
+import '../services/user_service.dart';
+import '../theme/app_theme.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -129,6 +133,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _showCupertinoToast(String message) {
+    final colors = context.appColors;
+    final textTheme = context.appText;
     final overlay = Overlay.of(context);
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
@@ -142,14 +148,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               vertical: 12.0,
             ),
             decoration: BoxDecoration(
-              color: CupertinoColors.black.withOpacity(0.7),
+              color: colors.overlayStrong.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(20.0),
             ),
             child: Text(
               message,
-              style: const TextStyle(
-                color: CupertinoColors.white,
-                fontSize: 14,
+              style: textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
@@ -207,15 +212,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return shouldDiscard ?? false;
   }
 
+  Future<void> _confirmAndPopIfNeeded() async {
+    final shouldPop = await _onWillPop();
+    if (!mounted || !shouldPop) {
+      return;
+    }
+
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final double topPadding = MediaQuery.of(context).padding.top;
     final double headerHeight = topPadding + kToolbarHeight;
 
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      canPop: !_hasChanges,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || !_hasChanges) {
+          return;
+        }
+
+        unawaited(_confirmAndPopIfNeeded());
+      },
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Stack(
           children: [
             Positioned.fill(child: _buildMainContent(headerHeight)),
@@ -231,7 +252,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   child: Container(
                     height: headerHeight,
-                    color: AppConstants.HEADER_BG_COLOR_MEDIUM,
+                    color: context.appColors.overlayMedium,
                     child: SafeArea(
                       bottom: false,
                       child: _buildHeaderContent(),
@@ -247,6 +268,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildHeaderContent() {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+
     return SizedBox(
       height: kToolbarHeight,
       child: Padding(
@@ -261,35 +285,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Navigator.of(context).pop();
                 }
               },
-              child: const Icon(
+              child: Icon(
                 CupertinoIcons.back,
-                color: Colors.white,
+                color: colorScheme.onSurface,
                 size: 28,
               ),
             ),
             const SizedBox(width: 8),
-            const Expanded(
-              child: Text(
-                'Edit Profile',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
+            Expanded(child: Text('Edit Profile', style: textTheme.titleLarge)),
             if (_hasChanges)
               CupertinoButton(
                 padding: EdgeInsets.zero,
                 onPressed: _saveUserProfile,
-                child: const Text(
-                  'Save',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                child: Text('Save', style: textTheme.labelLarge),
               ),
           ],
         ),
@@ -310,15 +318,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     if (_userProfile == null) {
+      final textTheme = context.appText;
+
       return Column(
         children: [
           SizedBox(height: headerHeight),
-          const Expanded(
+          Expanded(
             child: Center(
-              child: Text(
-                'No profile found',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: Text('No profile found', style: textTheme.bodyLarge),
             ),
           ),
         ],
@@ -347,8 +354,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildProfileSection() {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+
     return Card(
-      color: Colors.grey[900],
+      color: colorScheme.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -356,16 +366,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 4.0),
-              child: Text(
-                'Personal Information',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 4.0),
+              child: Text('Personal Information', style: textTheme.titleLarge),
             ),
             _buildEditableTextField(
               controller: _nameController,
@@ -402,8 +405,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildUnitsSection() {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Card(
-      color: Colors.grey[900],
+      color: colorScheme.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -411,37 +418,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 4.0),
-              child: Text(
-                'Units',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 4.0),
+              child: Text('Units', style: textTheme.titleLarge),
             ),
             Material(
-              color: Colors.transparent,
+              type: MaterialType.transparency,
               child: ListTile(
                 leading: Icon(
                   CupertinoIcons.gauge,
-                  color: Colors.grey[400],
+                  color: colors.textSecondary,
                   size: 24,
                 ),
-                title: const Text(
-                  'Weight Units',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
+                title: Text('Weight Units', style: textTheme.titleSmall),
                 trailing: Container(
                   decoration: BoxDecoration(
-                    color: Colors.grey[800],
+                    color: colors.field,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: CupertinoSlidingSegmentedControl<Units>(
-                    backgroundColor: Colors.grey[800]!,
-                    thumbColor: Colors.blue,
+                    backgroundColor: colors.field,
+                    thumbColor: colorScheme.primary,
                     groupValue: _userProfile?.units ?? Units.metric,
                     children: {
                       Units.metric: Padding(
@@ -451,10 +448,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         child: Text(
                           Units.metric.weightUnit,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: textTheme.labelMedium,
                         ),
                       ),
                       Units.imperial: Padding(
@@ -464,10 +458,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                         child: Text(
                           Units.imperial.weightUnit,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: textTheme.labelMedium,
                         ),
                       ),
                     },
@@ -517,8 +508,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     List<TextInputFormatter>? inputFormatters,
     IconData? prefixIcon,
   }) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Material(
-      color: Colors.transparent,
+      type: MaterialType.transparency,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         child: Column(
@@ -527,29 +521,24 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             Row(
               children: [
                 if (prefixIcon != null) ...[
-                  Icon(prefixIcon, color: Colors.grey[400], size: 24),
+                  Icon(prefixIcon, color: colors.textSecondary, size: 24),
                   const SizedBox(width: 12),
                 ],
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text(label, style: textTheme.titleSmall),
               ],
             ),
             const SizedBox(height: 8),
             CupertinoTextField(
               controller: controller,
               placeholder: placeholder,
-              placeholderStyle: TextStyle(color: Colors.grey[600]),
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+              placeholderStyle: textTheme.bodyLarge?.copyWith(
+                color: colors.textTertiary,
+              ),
+              style: textTheme.bodyLarge,
               decoration: BoxDecoration(
-                color: Colors.grey[800],
+                color: colors.field,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[700]!),
+                border: Border.all(color: Theme.of(context).dividerColor),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               keyboardType: keyboardType,
@@ -563,18 +552,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Widget _buildSaveButton() {
+    final textTheme = context.appText;
+
     return SizedBox(
       width: double.infinity,
       child: CupertinoButton(
-        color: Colors.blue,
+        color: context.appScheme.primary,
         borderRadius: BorderRadius.circular(12),
         onPressed: _saveUserProfile,
-        child: const Text(
+        child: Text(
           'Save Changes',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
+          style: textTheme.labelLarge?.copyWith(
+            color: context.appScheme.onPrimary,
           ),
         ),
       ),
@@ -585,7 +574,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Divider(
       height: 0.5,
       thickness: 0.5,
-      color: Colors.grey[700],
+      color: Theme.of(context).dividerColor,
       indent: 16,
       endIndent: 16,
     );

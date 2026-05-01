@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../../constants/app_constants.dart';
-import '../../utils/unit_converter.dart';
 import '../../services/user_service.dart';
-import '../../models/user_data.dart';
+import '../../theme/app_theme.dart';
 
 class PerformanceMetricsCard extends StatelessWidget {
   final int currentMonthWorkouts;
@@ -33,24 +33,22 @@ class PerformanceMetricsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 16),
-      // Removed decoration (transparent background)
       child: Row(
         children: [
           Expanded(
             child: _buildMetricColumn(
+              context: context,
               label: 'THIS MONTH',
               count: currentMonthWorkouts,
               volume: currentMonthVolume,
-              isCurrent: true,
             ),
           ),
-          // Removed vertical divider to make it cleaner
           Expanded(
             child: _buildMetricColumn(
+              context: context,
               label: 'LAST MONTH',
               count: lastMonthWorkouts,
               volume: lastMonthVolume,
-              isCurrent: false,
             ),
           ),
         ],
@@ -59,18 +57,21 @@ class PerformanceMetricsCard extends StatelessWidget {
   }
 
   Widget _buildMetricColumn({
+    required BuildContext context,
     required String label,
     required int count,
     required double volume,
-    required bool isCurrent,
   }) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: TextStyle(
-            color: Colors.grey[600],
+          style: textTheme.bodySmall?.copyWith(
+            color: colors.textSecondary,
             fontSize: 11,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.0,
@@ -82,17 +83,15 @@ class PerformanceMetricsCard extends StatelessWidget {
             children: [
               TextSpan(
                 text: '$count',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: textTheme.titleLarge?.copyWith(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  fontFamily: 'SF Pro Display', // Assuming default font
                 ),
               ),
               TextSpan(
                 text: ' Workouts',
-                style: TextStyle(
-                  color: Colors.grey[400],
+                style: textTheme.bodyLarge?.copyWith(
+                  color: colors.textSecondary,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
@@ -103,8 +102,8 @@ class PerformanceMetricsCard extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           _formatVolume(volume),
-          style: TextStyle(
-            color: Colors.grey[500],
+          style: textTheme.bodyMedium?.copyWith(
+            color: colors.textTertiary,
             fontSize: 14,
           ),
         ),

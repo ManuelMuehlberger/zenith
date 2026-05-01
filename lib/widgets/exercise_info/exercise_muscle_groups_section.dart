@@ -1,106 +1,99 @@
 import 'package:flutter/material.dart';
-import '../../models/exercise.dart';
+
 import '../../constants/app_constants.dart';
+import '../../models/exercise.dart';
+import '../../theme/app_theme.dart';
 
 class ExerciseMuscleGroupsSection extends StatelessWidget {
   final Exercise exercise;
 
-  const ExerciseMuscleGroupsSection({
-    super.key,
-    required this.exercise,
-  });
+  const ExerciseMuscleGroupsSection({super.key, required this.exercise});
 
-  Widget _buildMuscleGroupChip(BuildContext context, String muscleGroup, bool isPrimary) {
+  Widget _buildMuscleGroupChip(
+    BuildContext context,
+    String muscleGroup,
+    bool isPrimary,
+  ) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: isPrimary ? Colors.blue.withAlpha((255 * 0.2).round()) : Colors.grey[800],
+        color: isPrimary
+            ? colorScheme.primary.withValues(alpha: 0.2)
+            : colors.field,
         border: Border.all(
-          color: isPrimary ? Colors.blue : Colors.grey[600]!,
+          color: isPrimary ? colorScheme.primary : colors.textTertiary,
           width: 1,
         ),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Text(
         muscleGroup,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: isPrimary ? Colors.blue : Colors.grey[300],
-              fontWeight: isPrimary ? FontWeight.w600 : FontWeight.w400,
-            ),
+        style: isPrimary
+            ? textTheme.labelMedium?.copyWith(color: colorScheme.primary)
+            : textTheme.labelMedium,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-Text(
-  exercise.primaryMuscleGroup.name,
-  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: Colors.grey[400],
-      ),
-),
+          Text(exercise.primaryMuscleGroup.name, style: textTheme.bodyMedium),
           const SizedBox(height: 16),
-          // Single row with Primary and Secondary side by side
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Primary section
               Expanded(
                 flex: 1,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Primary',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[400],
-                          ),
-                    ),
+                    Text('Primary', style: textTheme.bodyMedium),
                     const SizedBox(height: 8),
-                    _buildMuscleGroupChip(context, exercise.primaryMuscleGroup.name, true),
+                    _buildMuscleGroupChip(
+                      context,
+                      exercise.primaryMuscleGroup.name,
+                      true,
+                    ),
                   ],
                 ),
               ),
-              SizedBox(width: AppConstants.ITEM_HORIZONTAL_GAP), // Space between columns
-              // Secondary section
+              const SizedBox(width: AppConstants.ITEM_HORIZONTAL_GAP),
               Expanded(
                 flex: 1,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Secondary',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[400],
-                          ),
-                    ),
+                    Text('Secondary', style: textTheme.bodyMedium),
                     const SizedBox(height: 8),
                     if (exercise.secondaryMuscleGroups.isNotEmpty) ...[
-                      // List secondary muscles vertically
-...exercise.secondaryMuscleGroups
-    .map((muscle) => Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: _buildMuscleGroupChip(context, muscle.name, false),
-        ))
-    ,
-                    ] else ...[
-                      Text(
-                        'None',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
-                              fontStyle: FontStyle.italic,
-                            ),
+                      ...exercise.secondaryMuscleGroups.map(
+                        (muscle) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: _buildMuscleGroupChip(
+                            context,
+                            muscle.name,
+                            false,
+                          ),
+                        ),
                       ),
+                    ] else ...[
+                      Text('None', style: textTheme.bodySmall),
                     ],
                   ],
                 ),

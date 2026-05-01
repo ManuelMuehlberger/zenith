@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import '../models/workout.dart';
+import '../theme/app_theme.dart';
 
 class EditWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Workout? workout;
@@ -25,11 +26,15 @@ class EditWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final isEditing = workout != null;
-    
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final appBarTheme = Theme.of(context).appBarTheme;
+
     return PreferredSize(
       preferredSize: const Size.fromHeight(100),
       child: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: appBarTheme.backgroundColor,
         elevation: 0,
         automaticallyImplyLeading: false,
         flexibleSpace: SafeArea(
@@ -46,30 +51,26 @@ class EditWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget {
                     CupertinoButton(
                       padding: EdgeInsets.zero,
                       onPressed: onClose,
-                      child: const Text(
+                      child: Text(
                         'Cancel',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
+                        style: textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.primary,
                         ),
                       ),
                     ),
-                    
+
                     const Spacer(),
-                    
+
                     // Title
                     Text(
                       isEditing ? 'Edit Workout' : 'New Workout',
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
                       ),
                     ),
-                    
+
                     const Spacer(),
-                    
+
                     // Action buttons
                     Row(
                       mainAxisSize: MainAxisSize.min,
@@ -80,32 +81,34 @@ class EditWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget {
                           onPressed: onCustomize,
                           child: Icon(
                             Icons.palette_outlined,
-                            color: Colors.grey[400],
+                            color: colors.textSecondary,
                             size: 20,
                           ),
                         ),
-                        
+
                         const SizedBox(width: 8),
-                        
+
                         // Save button
                         CupertinoButton(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          color: Colors.blue,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          color: colorScheme.primary,
                           borderRadius: BorderRadius.circular(8),
                           onPressed: isLoading ? null : onSave,
                           child: isLoading
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 16,
                                   height: 16,
                                   child: CupertinoActivityIndicator(
-                                    color: Colors.white,
+                                    color: colorScheme.onPrimary,
                                   ),
                                 )
-                              : const Text(
+                              : Text(
                                   'Save',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
+                                  style: textTheme.bodyLarge?.copyWith(
+                                    color: colorScheme.onPrimary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -115,9 +118,9 @@ class EditWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 6),
-              
+
               // Stats row
               Container(
                 height: 32,
@@ -126,26 +129,25 @@ class EditWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget {
                   children: [
                     // Exercise count
                     _buildInlineStatCard(
+                      context,
                       '$exerciseCount ${exerciseCount == 1 ? 'Exercise' : 'Exercises'}',
                       Icons.fitness_center_outlined,
                     ),
-                    
+
                     if (workoutName.isNotEmpty) ...[
                       Container(
                         width: 1,
                         height: 20,
-                        color: Colors.grey[800],
+                        color: colorScheme.outline,
                         margin: const EdgeInsets.symmetric(horizontal: 12),
                       ),
-                      
+
                       // Workout name
                       Expanded(
                         child: Text(
                           workoutName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                          style: textTheme.labelMedium?.copyWith(
+                            color: colors.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -155,7 +157,7 @@ class EditWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 6),
             ],
           ),
@@ -164,16 +166,24 @@ class EditWorkoutAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  Widget _buildInlineStatCard(String value, IconData icon) {
+  Widget _buildInlineStatCard(
+    BuildContext context,
+    String value,
+    IconData icon,
+  ) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: Colors.blue, size: 16),
+        Icon(icon, color: colorScheme.primary, size: 16),
         const SizedBox(width: 4),
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
+          style: textTheme.labelMedium?.copyWith(
+            color: colors.textPrimary,
             fontSize: 12,
             fontWeight: FontWeight.bold,
           ),

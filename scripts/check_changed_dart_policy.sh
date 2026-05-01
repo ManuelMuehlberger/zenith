@@ -3,7 +3,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --staged | --range [from-ref] [to-ref]" >&2
+  echo "Usage: $0 --staged | --range [from-ref] [to-ref] | --all" >&2
   exit 1
 }
 
@@ -15,9 +15,11 @@ repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 
 changed_files=()
-color_allowlist=(
-  "lib/main.dart"
-  "lib/constants/app_constants.dart"
+scan_mode=""
+range_from=""
+range_to=""
+theme_definition_roots=(
+  "lib/theme/"
 )
 
 collect_changed_files() {
@@ -28,11 +30,11 @@ collect_changed_files() {
   done
 }
 
-is_color_allowlisted() {
+is_theme_definition_allowlisted() {
   local file_path="$1"
 
-  for allowed_path in "${color_allowlist[@]}"; do
-    if [ "$file_path" = "$allowed_path" ]; then
+  for allowed_path in "${theme_definition_roots[@]}"; do
+    if [[ "$file_path" == "$allowed_path"* ]]; then
       return 0
     fi
   done
@@ -55,20 +57,71 @@ report_matches() {
   done <<< "$matches"
 }
 
+policy_matches() {
+  local file_path="$1"
+  local pattern="$2"
+
+  if [ "$scan_mode" = "all" ]; then
+    grep -nE "$pattern" "$file_path" || true
+    return
+  fi
+
+  local diff_cmd=()
+  case "$scan_mode" in
+    staged)
+      diff_cmd=(git diff --cached --unified=0 -- "$file_path")
+      ;;
+    range)
+      diff_cmd=(git diff --unified=0 "$range_from" "$range_to" -- "$file_path")
+      ;;
+    *)
+      return
+      ;;
+  esac
+
+  "${diff_cmd[@]}" | awk '
+    /^@@ / {
+      if (match($0, /\+[0-9]+/)) {
+        line = substr($0, RSTART + 1, RLENGTH - 1) + 0
+      }
+      next
+    }
+    /^\+\+\+/ { next }
+    /^\+/ {
+      print line ":" substr($0, 2)
+      line++
+      next
+    }
+    /^ / {
+      line++
+      next
+    }
+  ' | grep -E "$pattern" || true
+}
+
 case "$1" in
   --staged)
+    scan_mode="staged"
     shift
     collect_changed_files < <(
       git diff --cached --name-only --diff-filter=ACMR -- '*.dart'
     )
     ;;
   --range)
+    scan_mode="range"
     if [ "$#" -ne 3 ]; then
       usage
     fi
+    range_from="$2"
+    range_to="$3"
     collect_changed_files < <(
-      git diff --name-only --diff-filter=ACMR "$2" "$3" -- '*.dart'
+      git diff --name-only --diff-filter=ACMR "$range_from" "$range_to" -- '*.dart'
     )
+    ;;
+  --all)
+    scan_mode="all"
+    shift
+    collect_changed_files < <(find lib -name '*.dart' -type f | sort)
     ;;
   *)
     usage
@@ -101,14 +154,44 @@ for file_path in "${changed_files[@]}"; do
     error_count=$((error_count + 1))
   fi
 
-  if ! is_color_allowlisted "$file_path"; then
+  if ! is_theme_definition_allowlisted "$file_path"; then
     raw_color_matches=$(grep -nE '\b(Colors|CupertinoColors)\.' "$file_path" || true)
     if [ -n "$raw_color_matches" ]; then
       report_matches \
         "ERROR" \
-        "Raw framework color usage is only allowed in the theme/token files" \
+        "Raw framework color usage is only allowed in lib/theme/" \
         "$file_path" \
         "$raw_color_matches"
+      error_count=$((error_count + 1))
+    fi
+
+    hardcoded_color_matches=$(grep -nE 'Color\(0x[0-9A-Fa-f]+\)|Color\.fromARGB\([[:space:]]*[0-9]+[[:space:]]*,[[:space:]]*[0-9]+[[:space:]]*,[[:space:]]*[0-9]+[[:space:]]*,[[:space:]]*[0-9]+[[:space:]]*\)|Color\.fromRGBO\([[:space:]]*[0-9]+[[:space:]]*,[[:space:]]*[0-9]+[[:space:]]*,[[:space:]]*[0-9]+[[:space:]]*,[[:space:]]*(0(\.[0-9]+)?|1(\.0+)?)' "$file_path" || true)
+    if [ -n "$hardcoded_color_matches" ]; then
+      report_matches \
+        "ERROR" \
+        "Hardcoded color constructors are only allowed in lib/theme/" \
+        "$file_path" \
+        "$hardcoded_color_matches"
+      error_count=$((error_count + 1))
+    fi
+
+    raw_style_matches=$(grep -nE '\b(TextStyle|TextTheme|ColorScheme|ThemeData)\(' "$file_path" || true)
+    if [ -n "$raw_style_matches" ]; then
+      report_matches \
+        "ERROR" \
+        "Theme-only styling: text and theme definitions must live in lib/theme/" \
+        "$file_path" \
+        "$raw_style_matches"
+      error_count=$((error_count + 1))
+    fi
+
+    compatibility_alias_matches=$(policy_matches "$file_path" '(^|[^[:alnum:]_])(AppThemeColors|AppTextStyles)\.')
+    if [ -n "$compatibility_alias_matches" ]; then
+      report_matches \
+        "ERROR" \
+        "Direct AppThemeColors/AppTextStyles usage is blocked outside lib/theme/; use context.appScheme/appText/appColors" \
+        "$file_path" \
+        "$compatibility_alias_matches"
       error_count=$((error_count + 1))
     fi
   fi
@@ -123,15 +206,6 @@ for file_path in "${changed_files[@]}"; do
     warning_count=$((warning_count + 1))
   fi
 
-  text_style_color_matches=$(grep -nE 'TextStyle\(.*color:\s*(Colors|CupertinoColors)\.' "$file_path" || true)
-  if [ -n "$text_style_color_matches" ]; then
-    report_matches \
-      "WARNING" \
-      "TextStyle uses a raw framework color on the same line; prefer theme tokens" \
-      "$file_path" \
-      "$text_style_color_matches"
-    warning_count=$((warning_count + 1))
-  fi
 done
 
 if [ "$warning_count" -gt 0 ]; then

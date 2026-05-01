@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import '../../constants/app_constants.dart';
+import 'package:flutter/material.dart';
+import '../../theme/app_theme.dart';
 
 class ExpandableInsightCard extends StatelessWidget {
   final String title;
@@ -32,16 +32,20 @@ class ExpandableInsightCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return GestureDetector(
       onTap: () => _openExpandedView(context),
       child: Hero(
         tag: heroTag ?? 'insight_card_$title',
         child: Material(
-          color: Colors.transparent,
+          type: MaterialType.transparency,
           child: Container(
             padding: const EdgeInsets.all(12.0),
             decoration: BoxDecoration(
-              color: const Color(0xFF1C1C1E),
+              color: colors.surfaceAlt,
               borderRadius: BorderRadius.circular(16.0),
             ),
             child: Column(
@@ -55,11 +59,8 @@ class ExpandableInsightCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         title,
-                        style: TextStyle(
+                        style: textTheme.labelMedium?.copyWith(
                           color: iconColor,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: -0.2,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -71,28 +72,16 @@ class ExpandableInsightCard extends StatelessWidget {
                 if (mainValue != null) ...[
                   Text(
                     mainValue!,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
+                    style: textTheme.titleLarge?.copyWith(
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   if (subLabel != null)
-                    Text(
-                      subLabel!,
-                      style: const TextStyle(
-                        color: AppConstants.TEXT_TERTIARY_COLOR,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    Text(subLabel!, style: textTheme.bodySmall),
                   const SizedBox(height: 8),
                 ],
                 // Collapsed Chart
-                Expanded(
-                  child: collapsedChart,
-                ),
+                Expanded(child: collapsedChart),
               ],
             ),
           ),
@@ -102,31 +91,32 @@ class ExpandableInsightCard extends StatelessWidget {
   }
 
   void _openExpandedView(BuildContext context) {
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+
     Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
         barrierDismissible: true,
-        barrierColor: Colors.black, // Changed to black for full screen feel
+        barrierColor: backgroundColor,
         pageBuilder: (context, animation, secondaryAnimation) {
           return FadeTransition(
             opacity: animation,
-            child: detailPage ?? _ExpandedInsightView(
-              title: title,
-              icon: icon,
-              iconColor: iconColor,
-              mainValue: mainValue,
-              subLabel: subLabel,
-              expandedChart: expandedChart,
-              extraContent: extraExpandedContent,
-              heroTag: heroTag,
-            ),
+            child:
+                detailPage ??
+                _ExpandedInsightView(
+                  title: title,
+                  icon: icon,
+                  iconColor: iconColor,
+                  mainValue: mainValue,
+                  subLabel: subLabel,
+                  expandedChart: expandedChart,
+                  extraContent: extraExpandedContent,
+                  heroTag: heroTag,
+                ),
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
+          return FadeTransition(opacity: animation, child: child);
         },
       ),
     );
@@ -156,12 +146,20 @@ class _ExpandedInsightView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final colorScheme = context.appScheme;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: backgroundColor,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.xmark_circle_fill, color: Colors.grey),
+          icon: Icon(
+            CupertinoIcons.xmark_circle_fill,
+            color: colors.textSecondary,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         elevation: 0,
@@ -169,7 +167,7 @@ class _ExpandedInsightView extends StatelessWidget {
       body: Hero(
         tag: heroTag ?? 'insight_card_$title',
         child: Material(
-          color: Colors.black,
+          color: backgroundColor,
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -182,45 +180,33 @@ class _ExpandedInsightView extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       title,
-                      style: TextStyle(
-                        color: iconColor,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: textTheme.titleLarge?.copyWith(color: iconColor),
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Main Stats
                 if (mainValue != null) ...[
                   Text(
                     mainValue!,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 34,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.5,
+                    style: textTheme.displaySmall?.copyWith(
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   if (subLabel != null)
                     Text(
                       subLabel!,
-                      style: const TextStyle(
-                        color: AppConstants.TEXT_TERTIARY_COLOR,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: colors.textTertiary,
                       ),
                     ),
                   const SizedBox(height: 32),
                 ],
-                
+
                 // Expanded Chart
-                SizedBox(
-                  height: 300,
-                  child: expandedChart,
-                ),
-                
+                SizedBox(height: 300, child: expandedChart),
+
                 if (extraContent != null) ...[
                   const SizedBox(height: 32),
                   extraContent!,

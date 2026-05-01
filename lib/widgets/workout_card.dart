@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../constants/app_constants.dart';
 import '../models/workout.dart';
 import '../screens/workout_detail_screen.dart';
 import '../services/user_service.dart';
+import '../theme/app_theme.dart';
 import '../utils/unit_converter.dart';
-import '../constants/app_constants.dart';
 
 class WorkoutCard extends StatelessWidget {
   final Workout workout;
 
-  const WorkoutCard({
-    super.key,
-    required this.workout,
-  });
+  const WorkoutCard({super.key, required this.workout});
 
   String _formatDuration(Duration duration) {
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
-    
+
     if (hours > 0) {
       return '${hours}h ${minutes}m';
     } else {
@@ -43,7 +41,9 @@ class WorkoutCard extends StatelessWidget {
   String _formatWeight(double weightInKg) {
     final userService = UserService.instance;
     final units = userService.currentProfile?.units ?? Units.metric;
-    final unitSuffix = UnitConverter.getWeightUnit(units.name); // Convert enum to string for UnitConverter
+    final unitSuffix = UnitConverter.getWeightUnit(
+      units.name,
+    ); // Convert enum to string for UnitConverter
 
     if (weightInKg >= 1000) {
       final formatter = NumberFormat("0.0", "en_US");
@@ -56,6 +56,10 @@ class WorkoutCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final metricStyle = textTheme.bodyMedium;
+
     // Listen to UserService changes to rebuild when unit preference changes
     return AnimatedBuilder(
       animation: UserService.instance,
@@ -71,122 +75,110 @@ class WorkoutCard extends StatelessWidget {
             );
           },
           child: Card(
-            color: Colors.grey[900],
-            margin: const EdgeInsets.only(bottom: 12),
+            margin: const EdgeInsets.only(
+              bottom: AppConstants.CARD_VERTICAL_GAP,
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   // Workout icon with colored squircle
                   Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: workout.color,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  workout.icon,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              // Workout details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: workout.color,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      workout.icon,
+                      color: context.appScheme.onPrimary,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Workout details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text(
-                            workout.name,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                workout.name,
+                                style: textTheme.titleMedium,
+                              ),
                             ),
-                          ),
+                            Text(
+                              _formatDate(workout.startedAt ?? DateTime.now()),
+                              style: metricStyle,
+                            ),
+                          ],
                         ),
-                        Text(
-                          _formatDate(workout.startedAt ?? DateTime.now()),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[400],
-                          ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.timer,
+                              size: 16,
+                              color: colors.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatDuration(
+                                workout.completedAt != null &&
+                                        workout.startedAt != null
+                                    ? workout.completedAt!.difference(
+                                        workout.startedAt!,
+                                      )
+                                    : Duration.zero,
+                              ),
+                              style: metricStyle,
+                            ),
+                            const SizedBox(width: 16),
+                            Icon(
+                              Icons.fitness_center,
+                              size: 16,
+                              color: colors.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${workout.totalSets} sets',
+                              style: metricStyle,
+                            ),
+                            const SizedBox(width: 16),
+                            Icon(
+                              Icons.monitor_weight,
+                              size: 16,
+                              color: colors.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatWeight(workout.totalWeight),
+                              style: metricStyle,
+                            ),
+                          ],
                         ),
+                        if (workout.notes!.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            workout.notes!,
+                            style: textTheme.bodyMedium?.copyWith(
+                              fontStyle: FontStyle.italic,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.timer,
-                          size: 16,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _formatDuration(workout.completedAt != null && workout.startedAt != null 
-                              ? workout.completedAt!.difference(workout.startedAt!) 
-                              : Duration.zero),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[400],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Icon(
-                          Icons.fitness_center,
-                          size: 16,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${workout.totalSets} sets',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[400],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Icon(
-                          Icons.monitor_weight,
-                          size: 16,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _formatWeight(workout.totalWeight),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[400],
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (workout.notes!.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        workout.notes!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[300],
-                          fontStyle: FontStyle.italic,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+                  ),
                   // Chevron icon to indicate it's tappable
                   Icon(
                     Icons.chevron_right,
-                    color: Colors.grey[600],
+                    color: colors.textTertiary,
                     size: 20,
                   ),
                 ],

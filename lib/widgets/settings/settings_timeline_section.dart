@@ -1,25 +1,29 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
 import '../../screens/timeline_screen.dart';
+import '../../theme/app_theme.dart';
 
 class SettingsTimelineSection extends StatelessWidget {
   const SettingsTimelineSection({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Card(
-      color: Colors.grey[900],
+      color: colorScheme.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Material(
-        color: Colors.transparent,
+        type: MaterialType.transparency,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () {
             Navigator.of(context).push(
-              CupertinoPageRoute(
-                builder: (context) => const TimelineScreen(),
-              ),
+              CupertinoPageRoute(builder: (context) => const TimelineScreen()),
             );
           },
           child: Padding(
@@ -29,42 +33,32 @@ class SettingsTimelineSection extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.2),
+                    color: colorScheme.primary.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     CupertinoIcons.rocket_fill,
-                    color: Colors.blue,
+                    color: colorScheme.primary,
                     size: 20,
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Timeline',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      SizedBox(height: 2),
+                      Text('Timeline', style: textTheme.titleSmall),
+                      const SizedBox(height: 2),
                       Text(
                         'View development roadmap',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 14,
-                        ),
+                        style: textTheme.bodyMedium,
                       ),
                     ],
                   ),
                 ),
                 Icon(
                   CupertinoIcons.chevron_right,
-                  color: Colors.grey[400],
+                  color: colors.textSecondary,
                   size: 16,
                 ),
               ],

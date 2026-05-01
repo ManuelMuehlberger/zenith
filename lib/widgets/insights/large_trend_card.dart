@@ -1,8 +1,9 @@
 import 'package:flutter/cupertino.dart';
-import '../../services/insights/insight_data_provider.dart';
+
 import '../../models/insights.dart';
-import 'insight_card.dart';
+import '../../services/insights/insight_data_provider.dart';
 import '../workout_chart.dart';
+import 'insight_card.dart';
 
 class TrendInsightCard extends StatefulWidget {
   final String title;
@@ -50,18 +51,20 @@ class _TrendInsightCardState extends State<TrendInsightCard> {
 
   Future<void> _fetchData() async {
     if (!mounted) return;
-    setState(() { _isLoading = true; });
-    
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final timeframe = widget.filters['timeframe'] ?? '6M';
       final monthsBack = _getMonthsBack(timeframe);
-      
+
       final data = await widget.provider.getData(
         timeframe: timeframe,
         monthsBack: monthsBack,
         filters: widget.filters,
       );
-      
+
       if (mounted) {
         setState(() {
           _data = data;
@@ -80,14 +83,22 @@ class _TrendInsightCardState extends State<TrendInsightCard> {
 
   int _getMonthsBack(String timeframe) {
     switch (timeframe) {
-      case '1W': return 1;
-      case '1M': return 1;
-      case '3M': return 3;
-      case '6M': return 6;
-      case '1Y': return 12;
-      case '2Y': return 24;
-      case 'All': return 999;
-      default: return 6;
+      case '1W':
+        return 1;
+      case '1M':
+        return 1;
+      case '3M':
+        return 3;
+      case '6M':
+        return 6;
+      case '1Y':
+        return 12;
+      case '2Y':
+        return 24;
+      case 'All':
+        return 999;
+      default:
+        return 6;
     }
   }
 
@@ -109,15 +120,19 @@ class _TrendInsightCardState extends State<TrendInsightCard> {
           filters: filters,
         );
       },
-      mainValueBuilder: widget.mainValueBuilder ?? (data) {
-        if (data.isEmpty) return "0";
-        final average = data.map((e) => e.value).reduce((a, b) => a + b) / data.length;
-        return average.toStringAsFixed(1);
-      },
-      subLabelBuilder: widget.subLabelBuilder ?? (data) => "Average ${widget.unit}",
+      mainValueBuilder:
+          widget.mainValueBuilder ??
+          (data) {
+            if (data.isEmpty) return "0";
+            final average =
+                data.map((e) => e.value).reduce((a, b) => a + b) / data.length;
+            return average.toStringAsFixed(1);
+          },
+      subLabelBuilder:
+          widget.subLabelBuilder ?? (data) => "Average ${widget.unit}",
       collapsedContentBuilder: (data) {
         if (_isLoading) {
-           return const Center(child: CupertinoActivityIndicator());
+          return const Center(child: CupertinoActivityIndicator());
         }
         return CompactChart(
           values: data.map((e) => e.value).toList(),
@@ -148,36 +163,56 @@ class _TrendInsightCardState extends State<TrendInsightCard> {
 
   double? _getItemWidth(String timeframe) {
     switch (timeframe) {
-      case '1W': return 50.0;
-      case '1M': return 12.0;
-      case '3M': return 30.0;
-      case '6M': return 20.0;
-      case '1Y': return 30.0;
-      case '2Y': return 30.0;
-      case 'All': return 30.0;
-      default: return 40.0;
+      case '1W':
+        return 50.0;
+      case '1M':
+        return 12.0;
+      case '3M':
+        return 30.0;
+      case '6M':
+        return 20.0;
+      case '1Y':
+        return 30.0;
+      case '2Y':
+        return 30.0;
+      case 'All':
+        return 30.0;
+      default:
+        return 40.0;
     }
   }
 
   double _getBarWidth(String timeframe) {
     switch (timeframe) {
-      case '1W': return 6.0;
-      case '1M': return 2.0;
-      case '3M': return 4.0;
-      case '6M': return 3.0;
-      case '1Y': return 2.5;
-      default: return 2.0;
+      case '1W':
+        return 6.0;
+      case '1M':
+        return 2.0;
+      case '3M':
+        return 4.0;
+      case '6M':
+        return 3.0;
+      case '1Y':
+        return 2.5;
+      default:
+        return 2.0;
     }
   }
 
   double _getDotRadius(String timeframe) {
     switch (timeframe) {
-      case '1W': return 6.0;
-      case '1M': return 2.0;
-      case '3M': return 4.5;
-      case '6M': return 4.0;
-      case '1Y': return 3.0;
-      default: return 2.5;
+      case '1W':
+        return 6.0;
+      case '1M':
+        return 2.0;
+      case '3M':
+        return 4.5;
+      case '6M':
+        return 4.0;
+      case '1Y':
+        return 3.0;
+      default:
+        return 2.5;
     }
   }
 }

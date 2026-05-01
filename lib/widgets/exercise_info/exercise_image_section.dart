@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/exercise.dart';
+import '../../theme/app_theme.dart';
 
 class ExerciseImageSection extends StatefulWidget {
   final Exercise exercise;
@@ -28,19 +29,22 @@ class _ExerciseImageSectionState extends State<ExerciseImageSection> {
   }
 
   Widget _buildImagePlaceholder(String type) {
+    final colors = context.appColors;
+    final scheme = context.appScheme;
+
     return Container(
       height: widget.height,
       width: widget.width,
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: scheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: colors.textPrimary.withValues(alpha: 0.1)),
       ),
       child: Center(
         child: Icon(
           type == 'image' ? Icons.image : Icons.play_circle_outline,
           size: 48,
-          color: Colors.grey[700],
+          color: colors.textTertiary,
         ),
       ),
     );
@@ -48,6 +52,7 @@ class _ExerciseImageSectionState extends State<ExerciseImageSection> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.appColors;
     final hasImage = widget.exercise.image.isNotEmpty;
     final hasAnimation = widget.exercise.animation.isNotEmpty;
 
@@ -88,11 +93,11 @@ class _ExerciseImageSectionState extends State<ExerciseImageSection> {
                 ),
               ),
             ),
-            const Center(
+            Center(
               child: Icon(
                 Icons.play_circle_filled,
                 size: 48,
-                color: Colors.white70,
+                color: colors.textPrimary.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -136,8 +141,8 @@ class _ExerciseImageSectionState extends State<ExerciseImageSection> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _currentPage == index
-                        ? Colors.white
-                        : Colors.white.withOpacity(0.4),
+                        ? colors.textPrimary
+                        : colors.textPrimary.withValues(alpha: 0.4),
                   ),
                 );
               }),

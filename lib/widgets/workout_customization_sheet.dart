@@ -1,7 +1,10 @@
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:ui';
+
 import '../constants/app_constants.dart';
+import '../theme/app_theme.dart';
 
 class WorkoutCustomizationSheet extends StatefulWidget {
   final Color selectedColor;
@@ -22,7 +25,8 @@ class WorkoutCustomizationSheet extends StatefulWidget {
   });
 
   @override
-  State<WorkoutCustomizationSheet> createState() => _WorkoutCustomizationSheetState();
+  State<WorkoutCustomizationSheet> createState() =>
+      _WorkoutCustomizationSheetState();
 }
 
 class _WorkoutCustomizationSheetState extends State<WorkoutCustomizationSheet> {
@@ -38,16 +42,22 @@ class _WorkoutCustomizationSheetState extends State<WorkoutCustomizationSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return ClipRRect(
       borderRadius: const BorderRadius.only(
         topLeft: Radius.circular(AppConstants.SHEET_RADIUS),
         topRight: Radius.circular(AppConstants.SHEET_RADIUS),
       ),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: AppConstants.GLASS_BLUR_SIGMA, sigmaY: AppConstants.GLASS_BLUR_SIGMA),
+        filter: ImageFilter.blur(
+          sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+          sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+        ),
         child: Container(
           height: MediaQuery.of(context).size.height * 0.7,
-          color: AppConstants.HEADER_BG_COLOR_MEDIUM,
+          color: colors.overlayMedium,
           child: SafeArea(
             child: Column(
               children: [
@@ -57,19 +67,16 @@ class _WorkoutCustomizationSheetState extends State<WorkoutCustomizationSheet> {
                   height: 4,
                   margin: const EdgeInsets.only(top: 12, bottom: 20),
                   decoration: BoxDecoration(
-                    color: Colors.grey[600],
+                    color: colors.textSecondary,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                
+
                 // Title
-                const Text(
-                  'Customize Workout',
-                  style: AppConstants.IOS_TITLE_TEXT_STYLE,
-                ),
-                
+                Text('Customize Workout', style: textTheme.titleSmall),
+
                 const SizedBox(height: 24),
-                
+
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -77,10 +84,7 @@ class _WorkoutCustomizationSheetState extends State<WorkoutCustomizationSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Color selection
-                        const Text(
-                          'Color',
-                          style: AppConstants.IOS_SUBTITLE_TEXT_STYLE,
-                        ),
+                        Text('Color', style: textTheme.bodyMedium),
                         const SizedBox(height: 12),
                         Wrap(
                           spacing: 12,
@@ -101,34 +105,39 @@ class _WorkoutCustomizationSheetState extends State<WorkoutCustomizationSheet> {
                                   color: color,
                                   shape: BoxShape.circle,
                                   border: isSelected
-                                      ? Border.all(color: Colors.white, width: 3)
+                                      ? Border.all(
+                                          color: colors.textPrimary,
+                                          width: 3,
+                                        )
                                       : null,
                                 ),
                                 child: isSelected
-                                    ? const Icon(Icons.check, color: Colors.white, size: 20)
+                                    ? Icon(
+                                        Icons.check,
+                                        color: colors.textPrimary,
+                                        size: 20,
+                                      )
                                     : null,
                               ),
                             );
                           }).toList(),
                         ),
-                        
+
                         const SizedBox(height: 32),
-                        
+
                         // Icon selection
-                        const Text(
-                          'Icon',
-                          style: AppConstants.IOS_SUBTITLE_TEXT_STYLE,
-                        ),
+                        Text('Icon', style: textTheme.bodyMedium),
                         const SizedBox(height: 12),
                         GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 6,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 1,
-                          ),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 6,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 1,
+                              ),
                           itemCount: widget.availableIcons.length,
                           itemBuilder: (context, index) {
                             final icon = widget.availableIcons[index];
@@ -142,28 +151,35 @@ class _WorkoutCustomizationSheetState extends State<WorkoutCustomizationSheet> {
                               },
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: isSelected ? _selectedColor.withAlpha((255 * 0.3).round()) : Colors.grey[800],
+                                  color: isSelected
+                                      ? _selectedColor.withValues(alpha: 0.3)
+                                      : colors.field,
                                   borderRadius: BorderRadius.circular(12),
                                   border: isSelected
-                                      ? Border.all(color: _selectedColor, width: 2)
+                                      ? Border.all(
+                                          color: _selectedColor,
+                                          width: 2,
+                                        )
                                       : null,
                                 ),
                                 child: Icon(
                                   icon,
-                                  color: isSelected ? _selectedColor : Colors.grey[400],
+                                  color: isSelected
+                                      ? _selectedColor
+                                      : colors.textSecondary,
                                   size: 24,
                                 ),
                               ),
                             );
                           },
                         ),
-                        
+
                         const SizedBox(height: 20),
                       ],
                     ),
                   ),
                 ),
-                
+
                 // Done button
                 Padding(
                   padding: const EdgeInsets.all(20),
@@ -176,9 +192,11 @@ class _WorkoutCustomizationSheetState extends State<WorkoutCustomizationSheet> {
                       },
                       color: _selectedColor,
                       borderRadius: BorderRadius.circular(12),
-                      child: const Text(
+                      child: Text(
                         'Done',
-                        style: AppConstants.HEADER_BUTTON_TEXT_STYLE,
+                        style: textTheme.labelLarge?.copyWith(
+                          color: colors.textPrimary,
+                        ),
                       ),
                     ),
                   ),

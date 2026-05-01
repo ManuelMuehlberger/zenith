@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../constants/app_constants.dart';
 import '../../models/workout.dart';
-import '../timeline/award_stack.dart';
+import '../../theme/app_theme.dart';
 
 class WorkoutTimelineCard extends StatelessWidget {
   final Workout workout;
@@ -21,23 +21,28 @@ class WorkoutTimelineCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final padding = compact ? const EdgeInsets.all(10) : const EdgeInsets.all(12);
-    final titleStyle = AppConstants.CARD_TITLE_TEXT_STYLE.copyWith(
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
+    final colors = context.appColors;
+    final padding = compact
+        ? const EdgeInsets.all(10)
+        : const EdgeInsets.all(12);
+    final titleStyle = textTheme.titleMedium?.copyWith(
       fontWeight: FontWeight.w700,
       fontSize: compact ? 16 : 18,
     );
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1C1C1E),
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppConstants.CARD_STROKE_COLOR,
+          color: colorScheme.outline,
           width: AppConstants.CARD_STROKE_WIDTH,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha((255 * 0.18).round()),
+            color: colors.shadow.withValues(alpha: 0.18),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -67,8 +72,8 @@ class WorkoutTimelineCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     primaryMetricsLabel,
-                    style: AppConstants.IOS_SUBTITLE_TEXT_STYLE.copyWith(
-                      color: const Color(0xFFB7B7B7),
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colors.textSecondary,
                       height: 1.1,
                       fontSize: compact ? 13 : null,
                     ),

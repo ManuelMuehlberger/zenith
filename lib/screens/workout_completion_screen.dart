@@ -1,26 +1,28 @@
+import 'dart:async';
 import 'dart:math';
-import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
-import '../models/workout.dart';
-import '../services/workout_session_service.dart';
-import '../services/user_service.dart';
-import '../utils/navigation_helper.dart';
-import '../main.dart';
+
 import 'package:confetti/confetti.dart';
-import '../constants/app_constants.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
+
+import '../constants/app_constants.dart';
+import '../main.dart';
+import '../models/workout.dart';
+import '../services/user_service.dart';
+import '../services/workout_session_service.dart';
+import '../theme/app_theme.dart';
+import '../utils/navigation_helper.dart';
 
 class WorkoutCompletionScreen extends StatefulWidget {
   final Workout session;
 
-  const WorkoutCompletionScreen({
-    super.key,
-    required this.session,
-  });
+  const WorkoutCompletionScreen({super.key, required this.session});
 
   @override
-  State<WorkoutCompletionScreen> createState() => _WorkoutCompletionScreenState();
+  State<WorkoutCompletionScreen> createState() =>
+      _WorkoutCompletionScreenState();
 }
 
 class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
@@ -35,7 +37,9 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
   @override
   void initState() {
     super.initState();
-    _confettiController = ConfettiController(duration: const Duration(seconds: 1));
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 1),
+    );
   }
 
   @override
@@ -47,23 +51,20 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return AnimatedBuilder(
       animation: UserService.instance,
       builder: (context, _) {
         return Stack(
           children: [
             Scaffold(
-              backgroundColor: Colors.black,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               appBar: AppBar(
-                title: const Text(
-                  'Complete Workout',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                backgroundColor: Colors.black,
+                title: Text('Complete Workout', style: textTheme.titleLarge),
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                 elevation: 0,
               ),
               body: SingleChildScrollView(
@@ -75,9 +76,12 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                     Container(
                       padding: const EdgeInsets.all(20.0),
                       decoration: BoxDecoration(
-                        color: Colors.grey[900],
+                        color: scheme.surface,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey[800]!, width: 1),
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor,
+                          width: 1,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -88,12 +92,12 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                                 width: 50,
                                 height: 50,
                                 decoration: BoxDecoration(
-                                  color: Colors.green.withAlpha((255 * 0.2).round()),
+                                  color: colors.field,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.check_circle_outline,
-                                  color: Colors.green,
+                                  color: colors.success,
                                   size: 24,
                                 ),
                               ),
@@ -104,20 +108,12 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                                   children: [
                                     Text(
                                       widget.session.name,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: textTheme.titleLarge,
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
                                       'Workout completed!',
-                                      style: TextStyle(
-                                        color: Colors.green[300],
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
+                                      style: textTheme.labelMedium,
                                     ),
                                   ],
                                 ),
@@ -136,9 +132,18 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                                     _stripSeconds(
                                       _editedDuration ??
                                           (widget.session.completedAt != null
-                                              ? widget.session.completedAt!.difference(widget.session.startedAt ?? DateTime.now())
-                                              : DateTime.now().difference(widget.session.startedAt ?? DateTime.now()))
-                                    )
+                                              ? widget.session.completedAt!
+                                                    .difference(
+                                                      widget
+                                                              .session
+                                                              .startedAt ??
+                                                          DateTime.now(),
+                                                    )
+                                              : DateTime.now().difference(
+                                                  widget.session.startedAt ??
+                                                      DateTime.now(),
+                                                )),
+                                    ),
                                   ),
                                   'Duration',
                                   Icons.timer_outlined,
@@ -147,7 +152,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                               Container(
                                 width: 1,
                                 height: 40,
-                                color: Colors.grey[800],
+                                color: Theme.of(context).dividerColor,
                               ),
                               _buildSummaryItem(
                                 '${widget.session.completedSets}/${widget.session.totalSets}',
@@ -157,7 +162,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                               Container(
                                 width: 1,
                                 height: 40,
-                                color: Colors.grey[800],
+                                color: Theme.of(context).dividerColor,
                               ),
                               _buildSummaryItem(
                                 '${WorkoutSessionService.instance.formatWeight(widget.session.totalWeight)} ${(UserService.instance.currentProfile?.units == Units.imperial) ? 'lbs' : 'kg'}',
@@ -170,50 +175,36 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    const Text(
-                      'Notes',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text('Notes', style: textTheme.titleMedium),
                     const SizedBox(height: 8),
                     Text(
                       'How did the workout feel? Any observations?',
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 14,
-                      ),
+                      style: textTheme.labelMedium,
                     ),
                     const SizedBox(height: 12),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.grey[900],
+                        color: scheme.surface,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[800]!, width: 1),
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor,
+                          width: 1,
+                        ),
                       ),
                       child: TextField(
                         controller: _notesController,
                         maxLines: 4,
-                        style: const TextStyle(color: Colors.white),
+                        style: textTheme.bodyLarge,
                         decoration: InputDecoration(
                           hintText: 'Optional notes...',
-                          hintStyle: TextStyle(color: Colors.grey[500]),
+                          hintStyle: textTheme.bodyMedium,
                           border: InputBorder.none,
                           contentPadding: const EdgeInsets.all(16),
                         ),
                       ),
                     ),
                     const SizedBox(height: 32),
-                    const Text(
-                      'How are you feeling?',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text('How are you feeling?', style: textTheme.titleMedium),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -232,10 +223,12 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                             width: 60,
                             height: 60,
                             decoration: BoxDecoration(
-                              color: isSelected ? Colors.blue.withAlpha((255 * 0.2).round()) : Colors.grey[900],
+                              color: isSelected ? colors.field : scheme.surface,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isSelected ? Colors.blue : Colors.grey[800]!,
+                                color: isSelected
+                                    ? scheme.primary
+                                    : Theme.of(context).dividerColor,
                                 width: 2,
                               ),
                             ),
@@ -244,7 +237,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                               children: [
                                 Text(
                                   _getMoodEmoji(moodValue),
-                                  style: const TextStyle(fontSize: 28),
+                                  style: textTheme.headlineSmall,
                                 ),
                               ],
                             ),
@@ -256,7 +249,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                     Row(
                       children: [
                         Expanded(
-                          child: SizedBox( 
+                          child: SizedBox(
                             height: 50,
                             child: TextButton(
                               key: const Key('back_to_workout_btn'),
@@ -265,51 +258,49 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                                 if (Navigator.of(context).canPop()) {
                                   Navigator.of(context).pop();
                                 } else {
-                                  _logger.warning('Navigator cannot pop. Routing to MainScreen.');
+                                  _logger.warning(
+                                    'Navigator cannot pop. Routing to MainScreen.',
+                                  );
                                   Navigator.of(context).pushAndRemoveUntil(
-                                    MaterialPageRoute(builder: (_) => const MainScreen()),
+                                    MaterialPageRoute(
+                                      builder: (_) => const MainScreen(),
+                                    ),
                                     (route) => false,
                                   );
                                   NavigationHelper.goToHomeTab();
                                 }
                               },
                               style: TextButton.styleFrom(
-                                backgroundColor: Colors.grey[800],
+                                backgroundColor: colors.surfaceAlt,
+                                foregroundColor: colors.textPrimary,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Back to Workout',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: textTheme.titleMedium,
                               ),
                             ),
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: SizedBox( 
+                          child: SizedBox(
                             height: 50,
                             child: ElevatedButton(
-                              key: _finishButtonKey, 
+                              key: _finishButtonKey,
                               onPressed: _completeWorkout,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
+                                backgroundColor: colors.success,
+                                foregroundColor: colors.textPrimary,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Finish',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: textTheme.titleMedium,
                               ),
                             ),
                           ),
@@ -319,59 +310,49 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                   ],
                 ),
               ),
-            ), 
+            ),
             // Confetti overlay
             if (_confettiPosition != null)
               Positioned(
                 left: _confettiPosition!.dx,
                 top: _confettiPosition!.dy,
                 child: SizedBox(
-                  width: 1, 
+                  width: 1,
                   height: 1,
                   child: ConfettiWidget(
                     confettiController: _confettiController,
-                    blastDirectionality: BlastDirectionality.explosive, 
-                    emissionFrequency: 0.05, 
-                    numberOfParticles: 30,  
-                    gravity: 0.1,          
+                    blastDirectionality: BlastDirectionality.explosive,
+                    emissionFrequency: 0.05,
+                    numberOfParticles: 30,
+                    gravity: 0.1,
                     shouldLoop: false,
-                    colors: const [
-                      Colors.green,
-                      Colors.blue,
-                      Colors.pink,
-                      Colors.orange,
-                      Colors.purple
+                    colors: [
+                      colors.success,
+                      scheme.primary,
+                      colors.warning,
+                      scheme.error,
+                      colors.textPrimary,
                     ],
                   ),
                 ),
               ),
-          ], 
+          ],
         );
       },
     );
   }
 
   Widget _buildSummaryItem(String value, String label, IconData icon) {
+    final scheme = context.appScheme;
+    final textTheme = context.appText;
+
     return Column(
       children: [
-        Icon(icon, color: Colors.blue, size: 24),
+        Icon(icon, color: scheme.primary, size: 24),
         const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        Text(value, style: textTheme.titleMedium),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey[400],
-            fontSize: 12,
-          ),
-        ),
+        Text(label, style: textTheme.labelMedium),
       ],
     );
   }
@@ -394,24 +375,6 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
     }
   }
 
-  // Helper method to get display name for mood (1-5 scale)
-  String _getMoodDisplayName(int mood) {
-    switch (mood) {
-      case 1:
-        return 'Very Sad';
-      case 2:
-        return 'Sad';
-      case 3:
-        return 'Neutral';
-      case 4:
-        return 'Happy';
-      case 5:
-        return 'Very Happy';
-      default:
-        return 'Happy';
-    }
-  }
-
   Duration _stripSeconds(Duration d) => Duration(minutes: d.inMinutes);
 
   String _formatDurationNoSeconds(Duration d) {
@@ -425,11 +388,11 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
 
   void _showDurationPicker() {
     final start = widget.session.startedAt ?? DateTime.now();
-    final initial = _editedDuration ??
+    final initial =
+        _editedDuration ??
         (widget.session.completedAt != null
             ? widget.session.completedAt!.difference(start)
             : DateTime.now().difference(start));
-
     showCupertinoModalPopup(
       context: context,
       builder: (ctx) {
@@ -437,9 +400,12 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
         return Container(
           height: 320,
           decoration: BoxDecoration(
-            color: Colors.black,
+            color: Theme.of(context).scaffoldBackgroundColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            border: Border.all(color: Colors.grey[900]!, width: 0.5),
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+              width: 0.5,
+            ),
           ),
           child: Column(
             children: [
@@ -447,15 +413,23 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
               Container(
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.black,
-                  border: Border(bottom: BorderSide(color: Colors.grey[800]!, width: 0.5)),
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: 0.5,
+                    ),
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     CupertinoButton(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      onPressed: () { _logger.fine('Duration picker canceled'); Navigator.of(ctx).pop(); },
+                      onPressed: () {
+                        _logger.fine('Duration picker canceled');
+                        Navigator.of(ctx).pop();
+                      },
                       child: const Text('Cancel'),
                     ),
                     CupertinoButton(
@@ -464,13 +438,12 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                         setState(() {
                           _editedDuration = _stripSeconds(temp);
                         });
-                        _logger.fine('Duration set to: ${_editedDuration != null ? _formatDurationNoSeconds(_editedDuration!) : 'null'}');
+                        _logger.fine(
+                          'Duration set to: ${_editedDuration != null ? _formatDurationNoSeconds(_editedDuration!) : 'null'}',
+                        );
                         Navigator.of(ctx).pop();
                       },
-                      child: const Text(
-                        'Done',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
+                      child: Text('Done', style: context.appText.labelLarge),
                     ),
                   ],
                 ),
@@ -491,40 +464,48 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
     );
   }
 
-  Future<void> _completeWorkout() async { 
+  Future<void> _completeWorkout() async {
     try {
       await WorkoutSessionService.instance.completeWorkout(
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
         mood: _selectedMood,
         durationOverride: _editedDuration,
       );
-      
-      HapticFeedback.mediumImpact();
-      
+
+      unawaited(HapticFeedback.mediumImpact());
+
       Offset? buttonCenter;
       if (_finishButtonKey.currentContext != null) {
-        final RenderBox renderBox = _finishButtonKey.currentContext!.findRenderObject() as RenderBox;
-        buttonCenter = renderBox.localToGlobal(renderBox.size.center(Offset.zero));
+        final RenderBox renderBox =
+            _finishButtonKey.currentContext!.findRenderObject() as RenderBox;
+        buttonCenter = renderBox.localToGlobal(
+          renderBox.size.center(Offset.zero),
+        );
         if (mounted) {
           //_triggerConfetti();
         }
       }
-      
+
       //custom circle reveal transition
       if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          CircleRevealPageRoute(
-            page: const MainScreen(),
-            centerOffset: buttonCenter, // Pass the button center for the reveal
-            transitionDuration: const Duration(milliseconds: 700),
+        unawaited(
+          Navigator.of(context).pushAndRemoveUntil(
+            CircleRevealPageRoute(
+              page: const MainScreen(),
+              centerOffset:
+                  buttonCenter, // Pass the button center for the reveal
+              transitionDuration: const Duration(milliseconds: 700),
+            ),
+            (Route<dynamic> route) => false,
           ),
-          (Route<dynamic> route) => false, 
         );
 
         // Ensure home tab is selected after transition
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) { 
-             NavigationHelper.goToHomeTab(); 
+          if (mounted) {
+            NavigationHelper.goToHomeTab();
           }
         });
       }
@@ -533,7 +514,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to complete workout: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.appScheme.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -617,6 +598,7 @@ class CircleRevealClipper extends CustomClipper<Path> {
 
   @override
   bool shouldReclip(CircleRevealClipper oldClipper) {
-    return oldClipper.fraction != fraction || oldClipper.centerOffset != centerOffset;
+    return oldClipper.fraction != fraction ||
+        oldClipper.centerOffset != centerOffset;
   }
 }

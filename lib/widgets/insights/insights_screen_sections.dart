@@ -8,6 +8,7 @@ import '../../constants/app_constants.dart';
 import '../../screens/insights/insights_view_data.dart';
 import '../../services/insights/workout_insights_provider.dart';
 import '../../services/insights/workout_trend_provider.dart';
+import '../../theme/app_theme.dart';
 import '../dated_workout_list_view.dart';
 import '../profile_icon_button.dart';
 import '../shared_calendar_view.dart';
@@ -29,9 +30,12 @@ class InsightsAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final smallTitleStyle = AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE.copyWith(
-      fontSize: 20.0,
-    );
+    final theme = Theme.of(context);
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final smallTitleStyle = textTheme.titleLarge;
+    final transparentSurface = theme.colorScheme.surface.withValues(alpha: 0);
 
     final smallTitle = AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
@@ -55,14 +59,14 @@ class InsightsAppBar extends StatelessWidget {
       stretch: true,
       centerTitle: true,
       automaticallyImplyLeading: false,
-      backgroundColor: Colors.transparent,
+      backgroundColor: transparentSurface,
       elevation: 0,
       expandedHeight: AppConstants.HEADER_EXTRA_HEIGHT + kToolbarHeight,
       leading: showCalendar
           ? IconButton(
-              icon: const Icon(
+              icon: Icon(
                 CupertinoIcons.chevron_back,
-                color: Colors.white,
+                color: colorScheme.onSurface,
                 size: 24,
               ),
               onPressed: onHideCalendar,
@@ -74,14 +78,12 @@ class InsightsAppBar extends StatelessWidget {
                 height: 32,
                 margin: const EdgeInsets.only(left: 16),
                 decoration: BoxDecoration(
-                  color: AppConstants.ACCENT_COLOR.withAlpha(
-                    (255 * 0.2).round(),
-                  ),
+                  color: colorScheme.primary.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   CupertinoIcons.calendar,
-                  color: AppConstants.ACCENT_COLOR,
+                  color: colorScheme.primary,
                   size: 20,
                 ),
               ),
@@ -103,13 +105,13 @@ class InsightsAppBar extends StatelessWidget {
                     sigmaX: AppConstants.GLASS_BLUR_SIGMA,
                     sigmaY: AppConstants.GLASS_BLUR_SIGMA,
                   ),
-                  child: Container(color: AppConstants.HEADER_BG_COLOR_STRONG),
+                  child: Container(color: colors.overlayStrong),
                 ),
               ),
               FlexibleSpaceBar(
                 centerTitle: true,
                 title: smallTitle,
-                background: Container(),
+                background: Container(color: transparentSurface),
                 collapseMode: CollapseMode.parallax,
               ),
             ],
@@ -163,6 +165,9 @@ class InsightsFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
+    final colorScheme = context.appScheme;
+    final colors = context.appColors;
+    final outlineColor = colorScheme.outline;
     final muscleGroups = AppMuscleGroup.values
         .where((group) => group != AppMuscleGroup.na)
         .map((group) => group.displayName)
@@ -184,10 +189,8 @@ class InsightsFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: AppConstants.HEADER_BG_COLOR_STRONG,
-            border: Border(
-              bottom: BorderSide(color: AppConstants.DIVIDER_COLOR, width: 0.5),
-            ),
+            color: colors.overlayStrong,
+            border: Border(bottom: BorderSide(color: outlineColor, width: 0.5)),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Row(
@@ -203,17 +206,14 @@ class InsightsFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: AppConstants.WORKOUT_BUTTON_BG_COLOR,
+                            color: colorScheme.surface,
                             shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppConstants.DIVIDER_COLOR,
-                              width: 0.5,
-                            ),
+                            border: Border.all(color: outlineColor, width: 0.5),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             CupertinoIcons.xmark,
                             size: 16,
-                            color: AppConstants.TEXT_SECONDARY_COLOR,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ),
@@ -282,6 +282,8 @@ class InsightsGraphCardsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+
     final providerFilters = filters.toProviderFilters();
 
     return Container(
@@ -297,7 +299,7 @@ class InsightsGraphCardsGrid extends StatelessWidget {
           WeeklyTrendCard(
             title: 'Workouts',
             icon: CupertinoIcons.flame_fill,
-            color: AppConstants.ACCENT_COLOR_ORANGE,
+            color: context.appColors.warning,
             unit: 'workouts',
             provider: WorkoutTrendProvider(WorkoutTrendType.count),
             filters: providerFilters,
@@ -311,7 +313,7 @@ class InsightsGraphCardsGrid extends StatelessWidget {
           WeeklyTrendCard(
             title: 'Duration',
             icon: CupertinoIcons.clock_fill,
-            color: AppConstants.ACCENT_COLOR,
+            color: colorScheme.primary,
             unit: 'min',
             provider: WorkoutTrendProvider(WorkoutTrendType.duration),
             filters: providerFilters,
@@ -331,7 +333,7 @@ class InsightsGraphCardsGrid extends StatelessWidget {
           WeeklyTrendCard(
             title: 'Volume',
             icon: CupertinoIcons.layers_fill,
-            color: AppConstants.ACCENT_COLOR_GREEN,
+            color: context.appColors.success,
             unit: 'sets',
             provider: WorkoutTrendProvider(WorkoutTrendType.sets),
             filters: providerFilters,
@@ -365,6 +367,10 @@ class InsightsQuickActionsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0),
       child: GestureDetector(
@@ -372,7 +378,7 @@ class InsightsQuickActionsCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
           decoration: BoxDecoration(
-            color: const Color(0xFF1C1C1E),
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(16.0),
           ),
           child: Row(
@@ -380,30 +386,28 @@ class InsightsQuickActionsCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppConstants.ACCENT_COLOR_GREEN.withAlpha(
-                    (255 * 0.15).round(),
-                  ),
+                  color: colors.success.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   CupertinoIcons.search,
-                  color: AppConstants.ACCENT_COLOR_GREEN,
+                  color: colors.success,
                   size: 20,
                 ),
               ),
               const SizedBox(width: 16),
-              const Text(
+              Text(
                 'Browse Exercises',
-                style: TextStyle(
-                  color: Colors.white,
+                style: textTheme.bodyLarge?.copyWith(
+                  color: colors.textPrimary,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const Spacer(),
-              const Icon(
+              Icon(
                 CupertinoIcons.chevron_right,
-                color: AppConstants.TEXT_TERTIARY_COLOR,
+                color: colors.textTertiary,
                 size: 20,
               ),
             ],
@@ -426,6 +430,9 @@ class InsightsTrendsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     final providerFilters = filters.toProviderFilters();
 
     return Container(
@@ -435,15 +442,15 @@ class InsightsTrendsSection extends StatelessWidget {
         children: [
           Text(
             'Trends',
-            style: AppConstants.IOS_LABEL_TEXT_STYLE.copyWith(
-              color: AppConstants.TEXT_TERTIARY_COLOR,
+            style: textTheme.labelMedium?.copyWith(
+              color: colors.textTertiary,
               letterSpacing: 0.5,
             ),
           ),
           const SizedBox(height: 12),
           TrendInsightCard(
             title: 'Workouts',
-            color: AppConstants.ACCENT_COLOR_ORANGE,
+            color: colors.warning,
             unit: 'workouts',
             icon: CupertinoIcons.flame_fill,
             filters: providerFilters,
@@ -452,7 +459,7 @@ class InsightsTrendsSection extends StatelessWidget {
           const SizedBox(height: 12),
           TrendInsightCard(
             title: 'Hours',
-            color: AppConstants.ACCENT_COLOR,
+            color: context.appScheme.primary,
             unit: 'hours',
             icon: CupertinoIcons.clock_fill,
             filters: providerFilters,
@@ -461,7 +468,7 @@ class InsightsTrendsSection extends StatelessWidget {
           const SizedBox(height: 12),
           TrendInsightCard(
             title: 'Weight Lifted',
-            color: AppConstants.ACCENT_COLOR_GREEN,
+            color: colors.success,
             unit: weightUnitLabel,
             icon: CupertinoIcons.chart_bar_square_fill,
             filters: providerFilters,
@@ -496,20 +503,26 @@ class InsightsCalendarSlivers {
 
     return [
       SliverToBoxAdapter(
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-          decoration: BoxDecoration(
-            color: AppConstants.CARD_BG_COLOR,
-            borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-            border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
-          ),
-          child: SharedCalendarView(
-            selectedDate: selectedDate,
-            focusedDate: focusedDate,
-            workoutDates: workoutDates,
-            onDateSelected: onDateSelected,
-            onMonthChanged: onMonthChanged,
-          ),
+        child: Builder(
+          builder: (context) {
+            final colorScheme = context.appScheme;
+
+            return Container(
+              margin: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+                border: Border.all(color: colorScheme.outline, width: 0.5),
+              ),
+              child: SharedCalendarView(
+                selectedDate: selectedDate,
+                focusedDate: focusedDate,
+                workoutDates: workoutDates,
+                onDateSelected: onDateSelected,
+                onMonthChanged: onMonthChanged,
+              ),
+            );
+          },
         ),
       ),
       SliverFillRemaining(
@@ -549,6 +562,10 @@ class InsightsEmptyStateSliver extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
+    final colors = context.appColors;
+
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 32.0),
@@ -562,24 +579,23 @@ class InsightsEmptyStateSliver extends StatelessWidget {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: AppConstants.WORKOUT_BUTTON_BG_COLOR,
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     CupertinoIcons.chart_bar_fill,
                     size: 40,
-                    color: AppConstants.TEXT_TERTIARY_COLOR,
+                    color: colors.textTertiary,
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'No Activity Data',
-                  style: AppConstants.IOS_TITLE_TEXT_STYLE,
-                ),
+                Text('No Activity Data', style: textTheme.titleSmall),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Complete workouts to see your insights',
-                  style: AppConstants.IOS_SUBTITLE_TEXT_STYLE,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -607,6 +623,11 @@ class _InsightsFilterTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final outlineColor = colorScheme.outline;
+
     return PullDownButton(
       itemBuilder: (context) => items
           .map(
@@ -623,14 +644,10 @@ class _InsightsFilterTag extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected
-                ? AppConstants.ACCENT_COLOR
-                : AppConstants.WORKOUT_BUTTON_BG_COLOR,
+            color: isSelected ? colorScheme.primary : colorScheme.surface,
             borderRadius: BorderRadius.circular(16.0),
             border: Border.all(
-              color: isSelected
-                  ? AppConstants.ACCENT_COLOR
-                  : AppConstants.DIVIDER_COLOR,
+              color: isSelected ? colorScheme.primary : outlineColor,
               width: 0.5,
             ),
           ),
@@ -639,10 +656,10 @@ class _InsightsFilterTag extends StatelessWidget {
             children: [
               Text(
                 isSelected ? selectedItem! : title,
-                style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
+                style: textTheme.bodyMedium?.copyWith(
                   color: isSelected
-                      ? Colors.white
-                      : AppConstants.TEXT_SECONDARY_COLOR,
+                      ? colorScheme.onPrimary
+                      : colors.textSecondary,
                   fontWeight: isSelected ? FontWeight.w600 : null,
                   fontSize: 13,
                 ),
@@ -652,8 +669,8 @@ class _InsightsFilterTag extends StatelessWidget {
                 CupertinoIcons.chevron_down,
                 size: 12,
                 color: isSelected
-                    ? Colors.white
-                    : AppConstants.TEXT_SECONDARY_COLOR,
+                    ? colorScheme.onPrimary
+                    : colors.textSecondary,
               ),
             ],
           ),
@@ -674,29 +691,28 @@ class _InsightsBodyweightTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final outlineColor = colorScheme.outline;
+
     return CupertinoButton(
       padding: EdgeInsets.zero,
       onPressed: onPressed,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppConstants.ACCENT_COLOR
-              : AppConstants.WORKOUT_BUTTON_BG_COLOR,
+          color: isSelected ? colorScheme.primary : colorScheme.surface,
           borderRadius: BorderRadius.circular(16.0),
           border: Border.all(
-            color: isSelected
-                ? AppConstants.ACCENT_COLOR
-                : AppConstants.DIVIDER_COLOR,
+            color: isSelected ? colorScheme.primary : outlineColor,
             width: 0.5,
           ),
         ),
         child: Text(
           'Bodyweight',
-          style: AppConstants.IOS_NORMAL_TEXT_STYLE.copyWith(
-            color: isSelected
-                ? Colors.white
-                : AppConstants.TEXT_SECONDARY_COLOR,
+          style: textTheme.bodyMedium?.copyWith(
+            color: isSelected ? colorScheme.onPrimary : colors.textSecondary,
             fontWeight: isSelected ? FontWeight.w600 : null,
             fontSize: 13,
           ),
@@ -719,6 +735,11 @@ class _InsightsTimeframeDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final outlineColor = colorScheme.outline;
+
     return PullDownButton(
       itemBuilder: (context) => timeframeOptions
           .map(
@@ -735,26 +756,26 @@ class _InsightsTimeframeDropdown extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
           decoration: BoxDecoration(
-            color: AppConstants.WORKOUT_BUTTON_BG_COLOR,
+            color: colorScheme.surface,
             borderRadius: BorderRadius.circular(8.0),
-            border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
+            border: Border.all(color: outlineColor, width: 0.5),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 selectedTimeframe,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: textTheme.labelMedium?.copyWith(
+                  color: colors.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(
+              Icon(
                 CupertinoIcons.chevron_down,
                 size: 16,
-                color: AppConstants.TEXT_SECONDARY_COLOR,
+                color: colors.textSecondary,
               ),
             ],
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zenith/theme/app_theme.dart';
 
 class SharedCalendarView extends StatelessWidget {
   final DateTime selectedDate;
@@ -17,32 +18,48 @@ class SharedCalendarView extends StatelessWidget {
   });
 
   bool _hasWorkoutOnDate(DateTime date) {
-    return workoutDates.any((workoutDate) =>
-        workoutDate.year == date.year &&
-        workoutDate.month == date.month &&
-        workoutDate.day == date.day);
+    return workoutDates.any(
+      (workoutDate) =>
+          workoutDate.year == date.year &&
+          workoutDate.month == date.month &&
+          workoutDate.day == date.day,
+    );
   }
 
   String _getMonthName(int month) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return months[month - 1];
   }
 
   @override
   Widget build(BuildContext context) {
+    final scheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
     final now = DateTime.now();
     final firstDayOfMonth = DateTime(focusedDate.year, focusedDate.month, 1);
     final lastDayOfMonth = DateTime(focusedDate.year, focusedDate.month + 1, 0);
-    
+
     // Calculate first day offset (Sunday = 0)
-    int firstDayOfWeekOffset = firstDayOfMonth.weekday % 7;
+    final firstDayOfWeekOffset = firstDayOfMonth.weekday % 7;
     final daysInMonth = lastDayOfMonth.day;
-    
+
     // Calculate number of weeks needed
-    final int numberOfWeeks = ((daysInMonth + firstDayOfWeekOffset - 1) / 7).ceil();
+    final int numberOfWeeks = ((daysInMonth + firstDayOfWeekOffset - 1) / 7)
+        .ceil();
 
     return Container(
       width: double.infinity,
@@ -60,51 +77,57 @@ class SharedCalendarView extends StatelessWidget {
                 // Previous Month Button
                 GestureDetector(
                   onTap: () {
-                    final previousMonth = DateTime(focusedDate.year, focusedDate.month - 1, 1);
+                    final previousMonth = DateTime(
+                      focusedDate.year,
+                      focusedDate.month - 1,
+                      1,
+                    );
                     onMonthChanged(previousMonth);
                   },
                   child: Container(
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: Colors.grey[800],
+                      color: colors.field,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.chevron_left,
-                      color: Colors.white70,
+                      color: colors.textSecondary,
                       size: 18,
                     ),
                   ),
                 ),
-                
+
                 // Month and Year
                 Text(
                   '${_getMonthName(focusedDate.month)} ${focusedDate.year}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                  style: textTheme.titleMedium?.copyWith(
+                    color: colors.textPrimary,
                     letterSpacing: 0.3,
                   ),
                 ),
-                
+
                 // Next Month Button
                 GestureDetector(
                   onTap: () {
-                    final nextMonth = DateTime(focusedDate.year, focusedDate.month + 1, 1);
+                    final nextMonth = DateTime(
+                      focusedDate.year,
+                      focusedDate.month + 1,
+                      1,
+                    );
                     onMonthChanged(nextMonth);
                   },
                   child: Container(
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: Colors.grey[800],
+                      color: colors.field,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.chevron_right,
-                      color: Colors.white70,
+                      color: colors.textSecondary,
                       size: 18,
                     ),
                   ),
@@ -119,19 +142,19 @@ class SharedCalendarView extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 6),
             child: Row(
               children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-                  .map((day) => Expanded(
-                        child: Center(
-                          child: Text(
-                            day,
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12,
-                              letterSpacing: 0.3,
-                            ),
+                  .map(
+                    (day) => Expanded(
+                      child: Center(
+                        child: Text(
+                          day,
+                          style: textTheme.labelMedium?.copyWith(
+                            color: colors.textSecondary,
+                            letterSpacing: 0.3,
                           ),
                         ),
-                      ))
+                      ),
+                    ),
+                  )
                   .toList(),
             ),
           ),
@@ -144,17 +167,25 @@ class SharedCalendarView extends StatelessWidget {
                 return Expanded(
                   child: Row(
                     children: List.generate(7, (dayIndex) {
-                      final dayNumberInGrid = (weekIndex * 7) + dayIndex - firstDayOfWeekOffset + 1;
-                      
-                      if (dayNumberInGrid < 1 || dayNumberInGrid > daysInMonth) {
+                      final dayNumberInGrid =
+                          (weekIndex * 7) + dayIndex - firstDayOfWeekOffset + 1;
+
+                      if (dayNumberInGrid < 1 ||
+                          dayNumberInGrid > daysInMonth) {
                         return const Expanded(child: SizedBox());
                       }
 
-                      final date = DateTime(focusedDate.year, focusedDate.month, dayNumberInGrid);
-                      final isSelected = date.year == selectedDate.year &&
+                      final date = DateTime(
+                        focusedDate.year,
+                        focusedDate.month,
+                        dayNumberInGrid,
+                      );
+                      final isSelected =
+                          date.year == selectedDate.year &&
                           date.month == selectedDate.month &&
                           date.day == selectedDate.day;
-                      final isToday = date.year == now.year &&
+                      final isToday =
+                          date.year == now.year &&
                           date.month == now.month &&
                           date.day == now.day;
                       final hasWorkout = _hasWorkoutOnDate(date);
@@ -167,29 +198,31 @@ class SharedCalendarView extends StatelessWidget {
                             child: Container(
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? Colors.blue // Selected day
+                                    ? scheme.primary
                                     : hasWorkout
-                                        ? Colors.blueAccent // Workout day, not selected
-                                        : Colors.transparent, // Default
+                                    ? scheme.primary
+                                    : null,
                                 borderRadius: BorderRadius.circular(10),
-                                border: isToday && !isSelected && !hasWorkout // Only show border if not a workout day
+                                border: isToday && !isSelected && !hasWorkout
                                     ? Border.all(
-                                        color: Colors.blue.withOpacity(0.7),
+                                        color: scheme.primary,
                                         width: 1.2,
                                       )
                                     : null,
                               ),
-                              child: Center( // Center the text
+                              child: Center(
                                 child: Text(
                                   dayNumberInGrid.toString(),
-                                  style: TextStyle(
-                                    color: isSelected || (hasWorkout && !isSelected)
-                                        ? Colors.white // White text for selected or workout days
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color:
+                                        isSelected ||
+                                            (hasWorkout && !isSelected)
+                                        ? scheme.onPrimary
                                         : isToday
-                                            ? Colors.blue // Blue text for today (not selected, no workout)
-                                            : Colors.white70, // Default text color
-                                    fontWeight: isSelected || isToday 
-                                        ? FontWeight.w600 
+                                        ? scheme.primary
+                                        : colors.textSecondary,
+                                    fontWeight: isSelected || isToday
+                                        ? FontWeight.w600
                                         : FontWeight.w500,
                                     fontSize: 15,
                                   ),

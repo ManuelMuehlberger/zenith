@@ -1,14 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../../services/export_import_service.dart';
+import '../../theme/app_theme.dart';
 
 class SettingsDataSection extends StatelessWidget {
   const SettingsDataSection({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+
     return Card(
-      color: Colors.grey[900],
+      color: colorScheme.surface,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -16,16 +20,9 @@ class SettingsDataSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 16.0, top: 8.0, bottom: 4.0),
-              child: Text(
-                'Data Management',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
+            Padding(
+              padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 4.0),
+              child: Text('Data Management', style: textTheme.titleLarge),
             ),
             _buildDataItem(
               context,
@@ -34,7 +31,7 @@ class SettingsDataSection extends StatelessWidget {
               subtitle: 'Backup your workouts and progress',
               onTap: () => _exportData(context),
             ),
-            _buildDivider(),
+            _buildDivider(context),
             _buildDataItem(
               context,
               icon: CupertinoIcons.square_arrow_down,
@@ -55,23 +52,20 @@ class SettingsDataSection extends StatelessWidget {
     required String subtitle,
     required VoidCallback onTap,
   }) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Material(
-      color: Colors.transparent,
+      type: MaterialType.transparency,
       child: InkWell(
         onTap: onTap,
         child: ListTile(
-          leading: Icon(icon, color: Colors.grey[400], size: 22),
-          title: Text(
-            title,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-          ),
-          subtitle: Text(
-            subtitle,
-            style: TextStyle(color: Colors.grey[400], fontSize: 14),
-          ),
+          leading: Icon(icon, color: colors.textSecondary, size: 22),
+          title: Text(title, style: textTheme.titleSmall),
+          subtitle: Text(subtitle, style: textTheme.bodyMedium),
           trailing: Icon(
             CupertinoIcons.chevron_right,
-            color: Colors.grey[400],
+            color: colors.textSecondary,
             size: 16,
           ),
         ),
@@ -79,11 +73,11 @@ class SettingsDataSection extends StatelessWidget {
     );
   }
 
-  Widget _buildDivider() {
+  Widget _buildDivider(BuildContext context) {
     return Divider(
       height: 0.5,
       thickness: 0.5,
-      color: Colors.grey[700],
+      color: Theme.of(context).dividerColor,
       indent: 58,
     );
   }
@@ -92,7 +86,7 @@ class SettingsDataSection extends StatelessWidget {
     try {
       final exportService = ExportImportService.instance;
       await exportService.exportData();
-      
+
       if (context.mounted) {
         _showSuccessDialog(
           context,
@@ -115,7 +109,7 @@ class SettingsDataSection extends StatelessWidget {
     try {
       final exportService = ExportImportService.instance;
       final success = await exportService.importData();
-      
+
       if (context.mounted && success) {
         _showSuccessDialog(
           context,

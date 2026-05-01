@@ -1,32 +1,33 @@
 import 'dart:ui';
-import 'package:flutter/material.dart';
+
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../constants/app_constants.dart';
 import '../models/exercise.dart';
+import '../services/insights/exercise_trend_provider.dart';
 import '../services/insights_service.dart';
 import '../services/user_service.dart';
+import '../theme/app_theme.dart';
+import '../utils/unit_converter.dart';
 import '../widgets/exercise_info/exercise_image_section.dart';
 import '../widgets/exercise_info/exercise_summary_card.dart';
 import '../widgets/insights/general_graph_card.dart';
 import '../widgets/insights/large_trend_card.dart';
-import '../utils/unit_converter.dart';
-import '../constants/app_constants.dart';
-import '../services/insights/exercise_trend_provider.dart';
 
 class ExerciseInfoScreen extends StatefulWidget {
   final Exercise exercise;
 
-  const ExerciseInfoScreen({
-    super.key,
-    required this.exercise,
-  });
+  const ExerciseInfoScreen({super.key, required this.exercise});
 
   @override
   State<ExerciseInfoScreen> createState() => _ExerciseInfoScreenState();
 }
 
-class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTickerProviderStateMixin {
+class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
+    with SingleTickerProviderStateMixin {
   ExerciseInsights? _exerciseInsights;
   bool _isLoadingInsights = false;
   int _selectedMonths = 6;
@@ -143,13 +144,15 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           _buildAppBar(),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppConstants.PAGE_HORIZONTAL_PADDING),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppConstants.PAGE_HORIZONTAL_PADDING,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -165,10 +168,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Expanded(
-                        flex: 6,
-                        child: _buildExerciseDetailsSection(),
-                      ),
+                      Expanded(flex: 6, child: _buildExerciseDetailsSection()),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -188,14 +188,18 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
   }
 
   Widget _buildAppBar() {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final transparentSurface = context.appScheme.surface.withValues(alpha: 0);
+
     return SliverAppBar(
       pinned: true,
       stretch: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: transparentSurface,
       elevation: 0,
       expandedHeight: 120.0,
       leading: IconButton(
-        icon: const Icon(CupertinoIcons.back, color: Colors.white),
+        icon: Icon(CupertinoIcons.back, color: context.appScheme.onSurface),
         onPressed: () => Navigator.of(context).pop(),
       ),
       flexibleSpace: LayoutBuilder(
@@ -209,17 +213,14 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
                     sigmaX: AppConstants.GLASS_BLUR_SIGMA,
                     sigmaY: AppConstants.GLASS_BLUR_SIGMA,
                   ),
-                  child: Container(color: AppConstants.HEADER_BG_COLOR_STRONG),
+                  child: Container(color: colors.overlayStrong),
                 ),
               ),
               FlexibleSpaceBar(
                 centerTitle: true,
                 titlePadding: const EdgeInsets.only(bottom: 16),
-                title: Text(
-                  widget.exercise.name,
-                  style: AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE,
-                ),
-                background: Container(color: Colors.transparent),
+                title: Text(widget.exercise.name, style: textTheme.titleMedium),
+                background: Container(color: transparentSurface),
               ),
             ],
           );
@@ -246,28 +247,26 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
         ],
         if (widget.exercise.equipment.isNotEmpty) ...[
           const SizedBox(height: 8),
-          _buildDetailRow(
-            'Equipment',
-            widget.exercise.equipment,
-          ),
+          _buildDetailRow('Equipment', widget.exercise.equipment),
         ],
       ],
     );
   }
 
   Widget _buildDetailRow(String label, String value, {bool isPrimary = false}) {
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
+    final colors = context.appColors;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppConstants.IOS_SUBTEXT_STYLE.copyWith(fontSize: 12),
-        ),
+        Text(label, style: textTheme.bodySmall?.copyWith(fontSize: 12)),
         const SizedBox(height: 2),
         Text(
           value,
-          style: AppConstants.IOS_BODY_TEXT_STYLE.copyWith(
-            color: isPrimary ? AppConstants.ACCENT_COLOR : Colors.white,
+          style: textTheme.bodyLarge?.copyWith(
+            color: isPrimary ? colorScheme.primary : colors.textPrimary,
             fontWeight: isPrimary ? FontWeight.w600 : FontWeight.w400,
           ),
           maxLines: 2,
@@ -278,11 +277,18 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
   }
 
   Widget _buildInstructionsSection() {
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
+    final colors = context.appColors;
+
     return Container(
       decoration: BoxDecoration(
-        color: AppConstants.CARD_BG_COLOR,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-        border: Border.all(color: AppConstants.CARD_STROKE_COLOR, width: AppConstants.CARD_STROKE_WIDTH),
+        border: Border.all(
+          color: Theme.of(context).dividerColor,
+          width: AppConstants.CARD_STROKE_WIDTH,
+        ),
       ),
       child: Column(
         children: [
@@ -294,16 +300,13 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Instructions',
-                    style: AppConstants.CARD_TITLE_TEXT_STYLE,
-                  ),
+                  Text('Instructions', style: textTheme.titleMedium),
                   AnimatedRotation(
                     turns: _isInstructionsExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 300),
                     child: Icon(
                       Icons.keyboard_arrow_down,
-                      color: AppConstants.TEXT_SECONDARY_COLOR,
+                      color: colors.textSecondary,
                     ),
                   ),
                 ],
@@ -317,10 +320,12 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Divider(color: AppConstants.DIVIDER_COLOR, height: 1),
+                  Divider(color: Theme.of(context).dividerColor, height: 1),
                   const SizedBox(height: 16),
                   if (widget.exercise.instructions.isNotEmpty)
-                    ...widget.exercise.instructions.asMap().entries.map((entry) {
+                    ...widget.exercise.instructions.asMap().entries.map((
+                      entry,
+                    ) {
                       final index = entry.key;
                       final instruction = entry.value;
                       return Padding(
@@ -332,14 +337,16 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
                               width: 20,
                               height: 20,
                               decoration: BoxDecoration(
-                                color: AppConstants.ACCENT_COLOR.withAlpha((255 * 0.2).round()),
+                                color: colorScheme.primary.withValues(
+                                  alpha: 0.2,
+                                ),
                                 shape: BoxShape.circle,
                               ),
                               child: Center(
                                 child: Text(
                                   '${index + 1}',
-                                  style: const TextStyle(
-                                    color: AppConstants.ACCENT_COLOR,
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.primary,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -350,8 +357,8 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
                             Expanded(
                               child: Text(
                                 instruction,
-                                style: AppConstants.IOS_BODY_TEXT_STYLE.copyWith(
-                                  color: AppConstants.TEXT_SECONDARY_COLOR,
+                                style: textTheme.bodyLarge?.copyWith(
+                                  color: colors.textSecondary,
                                   height: 1.4,
                                 ),
                               ),
@@ -363,7 +370,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
                   else
                     Text(
                       'No instructions available.',
-                      style: AppConstants.IOS_SUBTEXT_STYLE.copyWith(fontStyle: FontStyle.italic),
+                      style: textTheme.bodySmall?.copyWith(
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                 ],
               ),
@@ -375,47 +384,60 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
   }
 
   Widget _buildStatsHeader() {
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
+    final colors = context.appColors;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           'Statistics',
-          style: AppConstants.HEADER_TITLE_TEXT_STYLE.copyWith(fontSize: 22),
+          style: textTheme.headlineSmall?.copyWith(fontSize: 22),
         ),
         PullDownButton(
           itemBuilder: (context) => _timeframeOptions
-              .map((option) => PullDownMenuItem.selectable(
-                    title: option['label'],
-                    selected: _selectedTimeframe == option['label'],
-                    onTap: () => _onTimeframeChanged(option['label'], option['months']),
-                  ))
+              .map(
+                (option) => PullDownMenuItem.selectable(
+                  title: option['label'],
+                  selected: _selectedTimeframe == option['label'],
+                  onTap: () =>
+                      _onTimeframeChanged(option['label'], option['months']),
+                ),
+              )
               .toList(),
           buttonBuilder: (context, showMenu) => CupertinoButton(
             padding: EdgeInsets.zero,
             onPressed: showMenu,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12.0,
+                vertical: 6.0,
+              ),
               decoration: BoxDecoration(
-                color: AppConstants.WORKOUT_BUTTON_BG_COLOR,
+                color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(8.0),
-                border: Border.all(color: AppConstants.DIVIDER_COLOR, width: 0.5),
+                border: Border.all(
+                  color: Theme.of(context).dividerColor,
+                  width: 0.5,
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     _selectedTimeframe,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: textTheme.labelMedium?.copyWith(
+                      color: colors.textPrimary,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(width: 4),
-                  const Icon(
+                  Icon(
                     CupertinoIcons.chevron_down,
                     size: 16,
-                    color: AppConstants.TEXT_SECONDARY_COLOR,
+                    color: colors.textSecondary,
                   ),
                 ],
               ),
@@ -427,6 +449,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
   }
 
   Widget _buildStatsContent() {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     if (_isLoadingInsights) {
       return const Center(
         child: Padding(
@@ -440,22 +466,30 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
       return Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: AppConstants.CARD_BG_COLOR,
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
         ),
         child: Center(
           child: Column(
             children: [
-              Icon(CupertinoIcons.chart_bar, size: 48, color: Colors.grey[700]),
+              Icon(
+                CupertinoIcons.chart_bar,
+                size: 48,
+                color: colors.textTertiary,
+              ),
               const SizedBox(height: 16),
               Text(
                 'No data available',
-                style: AppConstants.IOS_TITLE_TEXT_STYLE.copyWith(color: Colors.grey[500]),
+                style: textTheme.titleSmall?.copyWith(
+                  color: colors.textTertiary,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Complete workouts with this exercise to see stats.',
-                style: AppConstants.IOS_SUBTITLE_TEXT_STYLE,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.textSecondary,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -471,9 +505,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
         // Top Row: Summary Card and Frequency Graph
         Row(
           children: [
-            Expanded(
-              child: ExerciseSummaryCard(insights: _exerciseInsights!),
-            ),
+            Expanded(child: ExerciseSummaryCard(insights: _exerciseInsights!)),
             const SizedBox(width: 12),
             Expanded(
               child: AspectRatio(
@@ -483,7 +515,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
                   value: _exerciseInsights!.averageSets.toStringAsFixed(1),
                   unit: 'sessions',
                   icon: CupertinoIcons.graph_square_fill,
-                  color: AppConstants.ACCENT_COLOR_GREEN,
+                  color: colors.success,
                   data: _exerciseInsights!.monthlyFrequency,
                 ),
               ),
@@ -493,24 +525,32 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
         const SizedBox(height: 16),
         TrendInsightCard(
           title: 'Volume',
-          color: AppConstants.ACCENT_COLOR,
+          color: colorScheme.primary,
           unit: _useKg ? 'kg' : 'lbs',
           icon: CupertinoIcons.chart_bar_fill,
           filters: filters,
-          provider: ExerciseTrendProvider(widget.exercise.slug, ExerciseTrendType.volume),
+          provider: ExerciseTrendProvider(
+            widget.exercise.slug,
+            ExerciseTrendType.volume,
+          ),
           subLabelBuilder: (_) => _useKg ? 'kg' : 'lbs',
         ),
         const SizedBox(height: 16),
         TrendInsightCard(
           title: 'Max Weight',
-          color: AppConstants.ACCENT_COLOR_ORANGE,
+          color: colors.warning,
           unit: _useKg ? 'kg' : 'lbs',
           icon: CupertinoIcons.arrow_up_circle_fill,
           filters: filters,
-          provider: ExerciseTrendProvider(widget.exercise.slug, ExerciseTrendType.maxWeight),
+          provider: ExerciseTrendProvider(
+            widget.exercise.slug,
+            ExerciseTrendType.maxWeight,
+          ),
           mainValueBuilder: (data) {
             if (data.isEmpty) return "0";
-            final max = data.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+            final max = data
+                .map((e) => e.value)
+                .reduce((a, b) => a > b ? a : b);
             return max.toStringAsFixed(1);
           },
           subLabelBuilder: (_) => _useKg ? 'kg' : 'lbs',
@@ -522,42 +562,56 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen> with SingleTick
   }
 
   Widget _buildAveragesCard() {
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppConstants.CARD_BG_COLOR,
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-        border: Border.all(color: AppConstants.CARD_STROKE_COLOR, width: AppConstants.CARD_STROKE_WIDTH),
+        border: Border.all(
+          color: Theme.of(context).dividerColor,
+          width: AppConstants.CARD_STROKE_WIDTH,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Averages',
-            style: AppConstants.CARD_TITLE_TEXT_STYLE,
-          ),
+          Text('Averages', style: textTheme.titleMedium),
           const SizedBox(height: 16),
-          _buildAverageRow('Weight per Set', _formatWeight(_exerciseInsights!.averageWeight)),
-          const Divider(color: AppConstants.DIVIDER_COLOR, height: 24),
-          _buildAverageRow('Reps per Set', _exerciseInsights!.averageReps.toStringAsFixed(1)),
-          const Divider(color: AppConstants.DIVIDER_COLOR, height: 24),
-          _buildAverageRow('Sets per Session', _exerciseInsights!.averageSets.toStringAsFixed(1)),
+          _buildAverageRow(
+            'Weight per Set',
+            _formatWeight(_exerciseInsights!.averageWeight),
+          ),
+          Divider(color: Theme.of(context).dividerColor, height: 24),
+          _buildAverageRow(
+            'Reps per Set',
+            _exerciseInsights!.averageReps.toStringAsFixed(1),
+          ),
+          Divider(color: Theme.of(context).dividerColor, height: 24),
+          _buildAverageRow(
+            'Sets per Session',
+            _exerciseInsights!.averageSets.toStringAsFixed(1),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildAverageRow(String label, String value) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-          style: AppConstants.IOS_BODY_TEXT_STYLE.copyWith(color: AppConstants.TEXT_SECONDARY_COLOR),
+          style: textTheme.bodyLarge?.copyWith(color: colors.textSecondary),
         ),
         Text(
           value,
-          style: AppConstants.IOS_BODY_TEXT_STYLE.copyWith(fontWeight: FontWeight.w600),
+          style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
         ),
       ],
     );

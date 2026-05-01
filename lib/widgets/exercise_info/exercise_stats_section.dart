@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import '../../services/insights_service.dart';
-import '../../widgets/workout_chart.dart';
-import '../../utils/unit_converter.dart';
+import 'package:flutter/material.dart';
+
 import '../../constants/app_constants.dart';
+import '../../services/insights_service.dart';
+import '../../theme/app_theme.dart';
+import '../../utils/unit_converter.dart';
+import '../../widgets/workout_chart.dart';
 
 class ExerciseStatsSection extends StatelessWidget {
   final ExerciseInsights? exerciseInsights;
@@ -40,13 +42,23 @@ class ExerciseStatsSection extends StatelessWidget {
     }
   }
 
-  Widget _buildStatCard(BuildContext context, String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    BuildContext context,
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Container(
       padding: const EdgeInsets.all(AppConstants.CARD_PADDING),
       decoration: BoxDecoration(
-        color: Colors.grey[900],
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
-        border: Border.all(color: color.withAlpha((255 * 0.3).round())),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -54,17 +66,15 @@ class ExerciseStatsSection extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             value,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
+            style: textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             title,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Colors.grey[400],
-                ),
+            style: textTheme.labelMedium?.copyWith(color: colors.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -74,6 +84,10 @@ class ExerciseStatsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -81,16 +95,19 @@ class ExerciseStatsSection extends StatelessWidget {
           children: [
             Text(
               'Time Period: ',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const Spacer(),
             TextButton(
               onPressed: onTimePeriodPressed,
               style: TextButton.styleFrom(
-                backgroundColor: Colors.grey[800],
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                backgroundColor: colors.field,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -100,10 +117,14 @@ class ExerciseStatsSection extends StatelessWidget {
                 children: [
                   Text(
                     _getTimePeriodText(selectedMonths),
-                    style: Theme.of(context).textTheme.labelLarge,
+                    style: textTheme.labelLarge,
                   ),
                   const SizedBox(width: 4),
-                  const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 16),
+                  Icon(
+                    Icons.keyboard_arrow_down,
+                    color: colorScheme.onSurface,
+                    size: 16,
+                  ),
                 ],
               ),
             ),
@@ -113,23 +134,21 @@ class ExerciseStatsSection extends StatelessWidget {
         const SizedBox(height: 24),
 
         if (isLoading) ...[
-          const Center(
-            child: CupertinoActivityIndicator(),
-          ),
+          const Center(child: CupertinoActivityIndicator()),
         ] else if (exerciseInsights == null) ...[
           Container(
             padding: const EdgeInsets.all(AppConstants.CARD_PADDING),
             decoration: BoxDecoration(
-              color: Colors.grey[900],
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
             ),
             child: Row(
               children: [
-                const Icon(Icons.error_outline, color: Colors.orange),
+                Icon(Icons.error_outline, color: colors.warning),
                 const SizedBox(width: 12),
                 Text(
                   'Unable to load exercise statistics',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: textTheme.bodyMedium,
                 ),
               ],
             ),
@@ -138,17 +157,17 @@ class ExerciseStatsSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppConstants.CARD_PADDING),
             decoration: BoxDecoration(
-              color: Colors.grey[900],
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
             ),
             child: Row(
               children: [
-                const Icon(Icons.info_outline, color: Colors.blue),
+                Icon(Icons.info_outline, color: colorScheme.primary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'No workout data found for this exercise in the selected time period',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: textTheme.bodyMedium,
                   ),
                 ),
               ],
@@ -169,28 +188,28 @@ class ExerciseStatsSection extends StatelessWidget {
                 'Total Sessions',
                 exerciseInsights!.totalSessions.toString(),
                 Icons.fitness_center,
-                Colors.blue,
+                colorScheme.primary,
               ),
               _buildStatCard(
                 context,
                 'Total Sets',
                 exerciseInsights!.totalSets.toString(),
                 Icons.repeat,
-                Colors.green,
+                colors.success,
               ),
               _buildStatCard(
                 context,
                 'Total Reps',
                 exerciseInsights!.totalReps.toString(),
                 Icons.numbers,
-                Colors.orange,
+                colors.warning,
               ),
               _buildStatCard(
                 context,
                 'Max Weight',
                 _formatWeight(exerciseInsights!.maxWeight),
                 Icons.trending_up,
-                Colors.red,
+                colorScheme.error,
               ),
             ],
           ),
@@ -200,9 +219,7 @@ class ExerciseStatsSection extends StatelessWidget {
           // Charts
           Text(
             'Progress Charts',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
           ),
 
           const SizedBox(height: 16),
@@ -210,7 +227,7 @@ class ExerciseStatsSection extends StatelessWidget {
           WorkoutChart(
             title: 'Monthly Volume',
             data: exerciseInsights!.monthlyVolume,
-            color: Colors.blue,
+            color: colorScheme.primary,
             unit: useKg ? 'kg' : 'lbs',
           ),
 
@@ -219,7 +236,7 @@ class ExerciseStatsSection extends StatelessWidget {
           WorkoutChart(
             title: 'Max Weight Progress',
             data: exerciseInsights!.monthlyMaxWeight,
-            color: Colors.red,
+            color: colorScheme.error,
             unit: useKg ? 'kg' : 'lbs',
           ),
 
@@ -228,7 +245,7 @@ class ExerciseStatsSection extends StatelessWidget {
           WorkoutChart(
             title: 'Monthly Frequency',
             data: exerciseInsights!.monthlyFrequency,
-            color: Colors.green,
+            color: colors.success,
             unit: 'sessions',
           ),
 
@@ -238,7 +255,7 @@ class ExerciseStatsSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppConstants.CARD_PADDING),
             decoration: BoxDecoration(
-              color: Colors.grey[900],
+              color: colorScheme.surface,
               borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
             ),
             child: Column(
@@ -246,9 +263,9 @@ class ExerciseStatsSection extends StatelessWidget {
               children: [
                 Text(
                   'Averages',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -256,15 +273,15 @@ class ExerciseStatsSection extends StatelessWidget {
                   children: [
                     Text(
                       'Average Weight per Set:',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[300],
-                          ),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colors.textSecondary,
+                      ),
                     ),
                     Text(
                       _formatWeight(exerciseInsights!.averageWeight),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
+                      style: textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -274,15 +291,15 @@ class ExerciseStatsSection extends StatelessWidget {
                   children: [
                     Text(
                       'Average Reps per Set:',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[300],
-                          ),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colors.textSecondary,
+                      ),
                     ),
                     Text(
                       exerciseInsights!.averageReps.toStringAsFixed(1),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
+                      style: textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -292,15 +309,15 @@ class ExerciseStatsSection extends StatelessWidget {
                   children: [
                     Text(
                       'Average Sets per Session:',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[300],
-                          ),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colors.textSecondary,
+                      ),
                     ),
                     Text(
                       exerciseInsights!.averageSets.toStringAsFixed(1),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
+                      style: textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),

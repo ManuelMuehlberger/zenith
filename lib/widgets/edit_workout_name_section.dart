@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import '../constants/app_constants.dart';
+
+import '../theme/app_theme.dart';
 
 class EditWorkoutNameSection extends StatelessWidget {
   final TextEditingController nameController;
@@ -18,14 +18,17 @@ class EditWorkoutNameSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: selectedColor.withAlpha((255 * 0.2).round()),
+        color: selectedColor.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: selectedColor.withAlpha((255 * 0.4).round()),
+          color: selectedColor.withValues(alpha: 0.4),
           width: 1,
         ),
       ),
@@ -43,27 +46,25 @@ class EditWorkoutNameSection extends StatelessWidget {
               ),
               child: Icon(
                 selectedIcon,
-                color: Colors.white,
+                color: context.appScheme.onPrimary,
                 size: 32,
               ),
             ),
           ),
-          
+
           const SizedBox(width: 16),
-          
+
           // Workout name input
           Expanded(
             child: CupertinoTextField(
               controller: nameController,
-              style: AppConstants.HEADER_EXTRA_LARGE_TITLE_TEXT_STYLE.copyWith(
-                color: Colors.white,
-              ),
+              style: textTheme.displaySmall,
               placeholder: 'Workout Name',
-              placeholderStyle: AppConstants.HEADER_EXTRA_LARGE_TITLE_TEXT_STYLE.copyWith(
-                color: Colors.white.withAlpha((255 * 0.6).round()),
+              placeholderStyle: textTheme.displaySmall?.copyWith(
+                color: colors.textTertiary,
               ),
-              decoration: const BoxDecoration(
-                color: Colors.transparent,
+              decoration: BoxDecoration(
+                color: context.appScheme.surface.withValues(alpha: 0),
               ),
               padding: const EdgeInsets.symmetric(vertical: 12),
               maxLines: 1,

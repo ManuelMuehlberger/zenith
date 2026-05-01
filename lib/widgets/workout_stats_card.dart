@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+
 import '../constants/app_constants.dart';
-import '../services/insights/workout_insights_provider.dart';
 import '../models/insights.dart';
-import '../utils/unit_converter.dart';
+import '../services/insights/workout_insights_provider.dart';
 import '../services/user_service.dart';
+import '../theme/app_theme.dart';
+import '../utils/unit_converter.dart';
 import 'insights/insight_card.dart';
 
 class WorkoutStatsCard extends StatefulWidget {
@@ -41,18 +42,20 @@ class _WorkoutStatsCardState extends State<WorkoutStatsCard> {
 
   Future<void> _fetchData() async {
     if (!mounted) return;
-    setState(() { _isLoading = true; });
-    
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final timeframe = widget.filters['timeframe'] ?? '6M';
       final monthsBack = _getMonthsBack(timeframe);
-      
+
       final data = await widget.provider.getData(
         timeframe: timeframe,
         monthsBack: monthsBack,
         filters: widget.filters,
       );
-      
+
       if (mounted) {
         setState(() {
           _data = data;
@@ -71,19 +74,29 @@ class _WorkoutStatsCardState extends State<WorkoutStatsCard> {
 
   int _getMonthsBack(String timeframe) {
     switch (timeframe) {
-      case '1W': return 1;
-      case '1M': return 1;
-      case '3M': return 3;
-      case '6M': return 6;
-      case '1Y': return 12;
-      case '2Y': return 24;
-      case 'All': return 999;
-      default: return 6;
+      case '1W':
+        return 1;
+      case '1M':
+        return 1;
+      case '3M':
+        return 3;
+      case '6M':
+        return 6;
+      case '1Y':
+        return 12;
+      case '2Y':
+        return 24;
+      case 'All':
+        return 999;
+      default:
+        return 6;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+
     if (_isLoading || _data == null) {
       final dummyData = WorkoutInsights(
         totalWorkouts: 0,
@@ -96,22 +109,23 @@ class _WorkoutStatsCardState extends State<WorkoutStatsCard> {
         averageWeightPerWorkout: 0,
         lastUpdated: DateTime.now(),
       );
-      
+
       return InsightCard<WorkoutInsights>(
         title: 'Summary',
         icon: CupertinoIcons.chart_bar_square_fill,
-        color: AppConstants.ACCENT_COLOR,
+        color: colorScheme.primary,
         unit: '',
         initialData: dummyData,
         isExpandable: false,
-        collapsedContentBuilder: (data) => const Center(child: CupertinoActivityIndicator()),
+        collapsedContentBuilder: (data) =>
+            const Center(child: CupertinoActivityIndicator()),
       );
     }
 
     return InsightCard<WorkoutInsights>(
       title: 'Summary',
       icon: CupertinoIcons.chart_bar_square_fill,
-      color: AppConstants.ACCENT_COLOR,
+      color: colorScheme.primary,
       unit: '',
       initialData: _data!,
       isExpandable: false,
@@ -121,21 +135,22 @@ class _WorkoutStatsCardState extends State<WorkoutStatsCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildStatItem(
+              context: context,
               value: data.totalWorkouts.toString(),
               label: 'Workouts',
-              color: AppConstants.ACCENT_COLOR_ORANGE,
             ),
             const SizedBox(height: 4),
             _buildStatItem(
-              value: '${(data.averageWorkoutDuration * 60).toStringAsFixed(0)}m',
+              context: context,
+              value:
+                  '${(data.averageWorkoutDuration * 60).toStringAsFixed(0)}m',
               label: 'Avg Duration',
-              color: AppConstants.ACCENT_COLOR,
             ),
             const SizedBox(height: 4),
             _buildStatItem(
+              context: context,
               value: _formatWeight(data.averageWeightPerWorkout),
               label: 'Avg Weight',
-              color: AppConstants.ACCENT_COLOR_GREEN,
             ),
           ],
         );
@@ -144,25 +159,27 @@ class _WorkoutStatsCardState extends State<WorkoutStatsCard> {
   }
 
   Widget _buildStatItem({
+    required BuildContext context,
     required String value,
     required String label,
-    required Color color,
   }) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: AppConstants.TEXT_TERTIARY_COLOR,
+          style: textTheme.bodySmall?.copyWith(
+            color: colors.textTertiary,
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
+          style: textTheme.labelMedium?.copyWith(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             letterSpacing: -0.3,

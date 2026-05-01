@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../constants/app_constants.dart';
 import '../../models/workout_exercise.dart';
+import '../../theme/app_theme.dart';
 import '../edit_exercise_card.dart';
 import '../edit_workout_action_buttons.dart';
 import '../edit_workout_name_section.dart';
@@ -25,6 +25,9 @@ class CreateWorkoutHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return SizedBox(
       height: kToolbarHeight,
       child: Padding(
@@ -33,7 +36,7 @@ class CreateWorkoutHeader extends StatelessWidget {
           children: [
             IconButton(
               onPressed: onClose,
-              icon: const Icon(Icons.close, color: Colors.white, size: 28),
+              icon: Icon(Icons.close, color: colors.textPrimary, size: 28),
             ),
             Expanded(
               child: Column(
@@ -41,12 +44,12 @@ class CreateWorkoutHeader extends StatelessWidget {
                 children: [
                   Text(
                     isEditing ? 'Edit Workout' : 'Create Workout',
-                    style: AppConstants.HEADER_SMALL_TITLE_TEXT_STYLE,
+                    style: textTheme.titleLarge,
                   ),
                   if (exerciseCount > 0)
                     Text(
                       '$exerciseCount ${exerciseCount == 1 ? 'exercise' : 'exercises'}',
-                      style: AppConstants.IOS_SUBTEXT_STYLE,
+                      style: textTheme.bodySmall,
                     ),
                 ],
               ),
@@ -54,30 +57,33 @@ class CreateWorkoutHeader extends StatelessWidget {
             TextButton(
               onPressed: isLoading ? null : onSave,
               style: TextButton.styleFrom(
-                backgroundColor: AppConstants.FINISH_BUTTON_BG_COLOR,
+                backgroundColor: colors.surfaceAlt,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
                   side: BorderSide(
-                    color: AppConstants.ACCENT_COLOR_GREEN.withAlpha((255 * 0.3).round()),
+                    color: colors.success.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 minimumSize: Size.zero,
               ),
               child: isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: AppConstants.ACCENT_COLOR_GREEN,
+                        color: colors.success,
                       ),
                     )
                   : Text(
                       'Save',
-                      style: AppConstants.HEADER_BUTTON_TEXT_STYLE.copyWith(
-                        color: AppConstants.ACCENT_COLOR_GREEN,
+                      style: textTheme.labelLarge?.copyWith(
+                        color: colors.success,
                       ),
                     ),
             ),
@@ -108,7 +114,8 @@ class CreateWorkoutContent extends StatelessWidget {
     double? targetWeight,
     String? type,
     int? targetRestSeconds,
-  }) onUpdateSet;
+  })
+  onUpdateSet;
   final void Function(int, String) onUpdateNotes;
   final void Function(int, int) onToggleRepRange;
   final void Function(int, int) onReorderExercises;
@@ -146,9 +153,7 @@ class CreateWorkoutContent extends StatelessWidget {
             onIconTap: onIconTap,
           ),
         ),
-        SliverToBoxAdapter(
-          child: WorkoutMetricsWidget(exercises: exercises),
-        ),
+        SliverToBoxAdapter(child: WorkoutMetricsWidget(exercises: exercises)),
         SliverToBoxAdapter(
           child: CreateWorkoutExercisesSection(
             exercises: exercises,
@@ -185,7 +190,8 @@ class CreateWorkoutExercisesSection extends StatelessWidget {
     double? targetWeight,
     String? type,
     int? targetRestSeconds,
-  }) onUpdateSet;
+  })
+  onUpdateSet;
   final void Function(int, String) onUpdateNotes;
   final void Function(int, int) onToggleRepRange;
   final void Function(int, int) onReorderExercises;
@@ -208,10 +214,7 @@ class CreateWorkoutExercisesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (exercises.isEmpty) {
-      return const SizedBox(
-        height: 400,
-        child: CreateWorkoutEmptyState(),
-      );
+      return const SizedBox(height: 400, child: CreateWorkoutEmptyState());
     }
 
     return ReorderableListView.builder(
@@ -243,22 +246,26 @@ class CreateWorkoutExercisesSection extends StatelessWidget {
 class CreateWorkoutBottomBar extends StatelessWidget {
   final VoidCallback onAddExercise;
 
-  const CreateWorkoutBottomBar({
-    super.key,
-    required this.onAddExercise,
-  });
+  const CreateWorkoutBottomBar({super.key, required this.onAddExercise});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.black,
-        border: Border(top: BorderSide(color: Color(0xFF222222))),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        border: Border(top: BorderSide(color: context.appScheme.surface)),
       ),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 5.0, bottom: 5.0),
+          padding: const EdgeInsets.only(
+            left: 16.0,
+            right: 16.0,
+            top: 5.0,
+            bottom: 5.0,
+          ),
           child: EditWorkoutActionButtons(onAddExercise: onAddExercise),
         ),
       ),
@@ -271,6 +278,9 @@ class CreateWorkoutEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -279,24 +289,21 @@ class CreateWorkoutEmptyState extends StatelessWidget {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: AppConstants.WORKOUT_BUTTON_BG_COLOR,
+              color: context.appScheme.surface,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.fitness_center,
               size: 40,
-              color: AppConstants.TEXT_TERTIARY_COLOR,
+              color: colors.textTertiary,
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            'No exercises added yet',
-            style: AppConstants.IOS_TITLE_TEXT_STYLE,
-          ),
+          Text('No exercises added yet', style: textTheme.titleMedium),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Add exercises to build your workout',
-            style: AppConstants.IOS_SUBTITLE_TEXT_STYLE,
+            style: textTheme.bodyMedium,
             textAlign: TextAlign.center,
           ),
         ],

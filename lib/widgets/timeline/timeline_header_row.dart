@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../constants/app_constants.dart';
-import 'award_stack.dart';
+import '../../theme/app_theme.dart';
 import 'award_balloons.dart';
+import 'award_stack.dart';
 
 class TimelineHeaderRow extends StatelessWidget {
   final String dateText;
@@ -17,6 +17,9 @@ class TimelineHeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appText = context.appText;
+    final appColors = context.appColors;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -30,10 +33,9 @@ class TimelineHeaderRow extends StatelessWidget {
             children: [
               Text(
                 dateText,
-                style: AppConstants.IOS_SUBTITLE_TEXT_STYLE.copyWith(
+                style: appText.bodyMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AppConstants.TEXT_PRIMARY_COLOR,
-                  fontSize: 15,
+                  color: appColors.textPrimary,
                 ),
               ),
               const Spacer(),
@@ -41,12 +43,9 @@ class TimelineHeaderRow extends StatelessWidget {
             ],
           ),
         ),
-        
+
         // Row 2 (The Body)
-        Padding(
-          padding: const EdgeInsets.only(left: 24.0),
-          child: child,
-        ),
+        Padding(padding: const EdgeInsets.only(left: 24.0), child: child),
       ],
     );
   }
