@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // For date formatting
 import '../models/workout.dart';
+import '../theme/app_theme.dart';
 import 'past_workout_list_item.dart';
 
 class DatedWorkoutListView extends StatelessWidget {
@@ -18,6 +19,9 @@ class DatedWorkoutListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final DateFormat headerFormatter = DateFormat('dd/MM/yyyy');
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -30,26 +34,23 @@ class DatedWorkoutListView extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Workouts on ${headerFormatter.format(selectedDate)}',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  style: textTheme.titleMedium,
                 ),
               ),
               if (!isLoading && workouts.isNotEmpty)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: Colors.blue,
+                    color: colorScheme.primary,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     '${workouts.length}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                    style: textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onPrimary,
                     ),
                   ),
                 ),
@@ -58,37 +59,36 @@ class DatedWorkoutListView extends StatelessWidget {
         ),
         Expanded(
           child: isLoading
-              ? const Center(child: CircularProgressIndicator(color: Colors.blue))
+              ? Center(
+                  child: CircularProgressIndicator(color: colorScheme.primary),
+                )
               : workouts.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.event_busy,
-                            size: 48,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'No workouts on this date',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.event_busy,
+                        size: 48,
+                        color: colors.textSecondary,
                       ),
-                    )
-                  : ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: workouts.length,
-                      itemBuilder: (context, index) {
-                        final workout = workouts[index];
-                        return PastWorkoutListItem(workout: workout);
-                      },
-                    ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No workouts on this date',
+                        style: textTheme.bodyMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: workouts.length,
+                  itemBuilder: (context, index) {
+                    final workout = workouts[index];
+                    return PastWorkoutListItem(workout: workout);
+                  },
+                ),
         ),
       ],
     );

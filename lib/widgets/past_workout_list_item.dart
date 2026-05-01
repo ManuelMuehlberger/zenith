@@ -101,10 +101,10 @@ class PastWorkoutListItem extends StatelessWidget {
                     width: 52,
                     height: 52,
                     decoration: BoxDecoration(
-                      color: workout.color.withAlpha((255 * 0.15).round()),
+                      color: workout.color.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(26), // Fully rounded
                       border: Border.all(
-                        color: workout.color.withAlpha((255 * 0.3).round()),
+                        color: workout.color.withValues(alpha: 0.3),
                         width: 0.5,
                       ),
                     ),

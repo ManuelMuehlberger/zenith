@@ -45,10 +45,10 @@ Blocking policy checks:
 - `withOpacity(...)` usage in `lib/`.
 - Raw `Colors.*` or `CupertinoColors.*` usage outside `lib/theme/`.
 - Hardcoded color constructors outside `lib/theme/`.
-- `TextStyle(...)`, `TextTheme(...)`, `ColorScheme(...)`, or `ThemeData(...)` definitions outside `lib/theme/`.
+- `TextStyle(...)`, `ColorScheme(...)`, or `ThemeData(...)` definitions outside `lib/theme/`.
 
 Warning-only policy checks:
 
 - Likely inline user-facing strings.
 
-Theme and token definitions now belong in `lib/theme/`. UI code should consume them through `context.appScheme`, `context.appText`, `context.appColors`, or existing aliases that map back to `AppTheme`.
+Theme and token definitions now belong in `lib/theme/`. UI code should consume them through `context.appScheme`, `context.appText`, `context.appColors`, or existing `AppTheme`/`AppConstants` compatibility aliases only when necessary.

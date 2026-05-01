@@ -17,4 +17,4 @@ Rules:
 - Do not introduce raw Colors.*, CupertinoColors.*, withOpacity(...), or hardcoded color constructors outside lib/theme/.
 - Keep changes scoped to assigned files only.
 - Prefer minimal diffs.
-- Run formatting and analyzer checks on touched files before finishing.
+- Run formatting and analyzer checks when touched Dart files require them before finishing.

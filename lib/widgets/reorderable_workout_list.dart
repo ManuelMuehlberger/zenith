@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../models/workout.dart';
+import '../theme/app_theme.dart';
 import 'expandable_workout_card.dart';
 
 class ReorderableWorkoutList extends StatelessWidget {
@@ -27,6 +29,8 @@ class ReorderableWorkoutList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = context.appText;
+
     if (workouts.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -36,10 +40,9 @@ class ReorderableWorkoutList extends StatelessWidget {
       children: [
         Text(
           folderId == null ? 'Workouts' : 'Workouts in folder',
-          style: const TextStyle( 
+          style: textTheme.titleMedium?.copyWith(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
           ),
         ),
         const SizedBox(height: 8),
@@ -80,10 +83,12 @@ class _ReorderableWorkoutListView extends StatefulWidget {
   });
 
   @override
-  State<_ReorderableWorkoutListView> createState() => _ReorderableWorkoutListViewState();
+  State<_ReorderableWorkoutListView> createState() =>
+      _ReorderableWorkoutListViewState();
 }
 
-class _ReorderableWorkoutListViewState extends State<_ReorderableWorkoutListView> {
+class _ReorderableWorkoutListViewState
+    extends State<_ReorderableWorkoutListView> {
   int? _draggedIndex;
   int? _hoveredIndex;
 
@@ -93,13 +98,12 @@ class _ReorderableWorkoutListViewState extends State<_ReorderableWorkoutListView
       children: [
         for (int index = 0; index < widget.workouts.length; index++) ...[
           // Drop zone above each workout (except the first one)
-          if (index > 0)
-            _buildDropZone(index),
-          
+          if (index > 0) _buildDropZone(index),
+
           // The workout card with drag target wrapper
           _buildWorkoutWithDropTarget(index),
         ],
-        
+
         // Drop zone at the end
         _buildDropZone(widget.workouts.length),
       ],
@@ -107,11 +111,14 @@ class _ReorderableWorkoutListViewState extends State<_ReorderableWorkoutListView
   }
 
   Widget _buildDropZone(int targetIndex) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+
     return DragTarget<Map<String, dynamic>>(
       onWillAcceptWithDetails: (details) {
         final data = details.data;
         if (data['type'] != 'workout') return false;
-        
+
         final draggedIndex = data['index'] as int;
         setState(() {
           _hoveredIndex = targetIndex;
@@ -126,43 +133,48 @@ class _ReorderableWorkoutListViewState extends State<_ReorderableWorkoutListView
       onAcceptWithDetails: (details) {
         final data = details.data;
         final draggedIndex = data['index'] as int;
-        
+
         int newIndex = targetIndex;
         if (targetIndex > draggedIndex) {
           newIndex = targetIndex - 1;
         }
-        
+
         widget.onWorkoutReordered(draggedIndex, newIndex);
-        
+
         setState(() {
           _hoveredIndex = null;
           _draggedIndex = null;
         });
       },
       builder: (context, candidateData, rejectedData) {
-        final isHovering = _hoveredIndex == targetIndex && candidateData.isNotEmpty;
-        
+        final isHovering =
+            _hoveredIndex == targetIndex && candidateData.isNotEmpty;
+        final dropTargetColor = colorScheme.primary;
+
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           height: isHovering ? 60 : 8,
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: isHovering ? Colors.blue.withAlpha((255 * 0.3).round()) : Colors.transparent,
+            color: isHovering
+                ? dropTargetColor.withValues(alpha: 0.3)
+                : colorScheme.surface.withValues(alpha: 0),
             borderRadius: BorderRadius.circular(8),
-            border: isHovering ? Border.all(color: Colors.blue, width: 2) : null,
+            border: isHovering
+                ? Border.all(color: dropTargetColor, width: 2)
+                : null,
           ),
           child: isHovering
               ? Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add, color: Colors.blue, size: 20),
+                      Icon(Icons.add, color: dropTargetColor, size: 20),
                       const SizedBox(width: 8),
                       Text(
                         'Drop here to reorder',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.w500,
+                        style: textTheme.labelMedium?.copyWith(
+                          color: dropTargetColor,
                         ),
                       ),
                     ],
@@ -175,6 +187,7 @@ class _ReorderableWorkoutListViewState extends State<_ReorderableWorkoutListView
   }
 
   Widget _buildWorkoutWithDropTarget(int index) {
+    final colorScheme = context.appScheme;
     final workout = widget.workouts[index];
     final isCurrentlyDragged = _draggedIndex == index;
 
@@ -186,11 +199,7 @@ class _ReorderableWorkoutListViewState extends State<_ReorderableWorkoutListView
     );
 
     return LongPressDraggable<Map<String, dynamic>>(
-      data: {
-        'type': 'workout',
-        'index': index,
-        'id': workout.id,
-      },
+      data: {'type': 'workout', 'index': index, 'id': workout.id},
       onDragStarted: () {
         HapticFeedback.lightImpact();
         setState(() {
@@ -206,7 +215,7 @@ class _ReorderableWorkoutListViewState extends State<_ReorderableWorkoutListView
         widget.onDragEnded?.call();
       },
       feedback: Material(
-        color: Colors.transparent,
+        color: colorScheme.surface.withValues(alpha: 0),
         child: SizedBox(
           width: MediaQuery.of(context).size.width,
           child: Padding(

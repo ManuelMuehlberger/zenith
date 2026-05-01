@@ -1,26 +1,27 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+
 import '../../constants/app_constants.dart';
 import '../../models/insights.dart';
-import '../../utils/unit_converter.dart';
 import '../../services/user_service.dart';
+import '../../theme/app_theme.dart';
+import '../../utils/unit_converter.dart';
 
 class ExerciseSummaryCard extends StatelessWidget {
   final ExerciseInsights insights;
 
-  const ExerciseSummaryCard({
-    super.key,
-    required this.insights,
-  });
+  const ExerciseSummaryCard({super.key, required this.insights});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+
     return AspectRatio(
       aspectRatio: 1.0,
       child: Container(
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
-          color: const Color(0xFF1C1C1E), // iOS dark grouped background
+          color: colorScheme.surface,
           borderRadius: BorderRadius.circular(16.0),
         ),
         child: Column(
@@ -31,18 +32,15 @@ class ExerciseSummaryCard extends StatelessWidget {
               children: [
                 Icon(
                   CupertinoIcons.chart_bar_square_fill,
-                  color: AppConstants.ACCENT_COLOR,
+                  color: colorScheme.primary,
                   size: 18,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     'Summary',
-                    style: TextStyle(
-                      color: AppConstants.ACCENT_COLOR,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: -0.2,
+                    style: textTheme.labelMedium?.copyWith(
+                      color: colorScheme.primary,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -56,27 +54,27 @@ class ExerciseSummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildStatItem(
+                  context: context,
                   value: insights.totalSessions.toString(),
                   label: 'Sessions',
-                  color: Colors.blue,
                 ),
                 const SizedBox(height: 8),
                 _buildStatItem(
+                  context: context,
                   value: insights.totalSets.toString(),
                   label: 'Sets',
-                  color: Colors.green,
                 ),
                 const SizedBox(height: 8),
                 _buildStatItem(
+                  context: context,
                   value: insights.totalReps.toString(),
                   label: 'Reps',
-                  color: Colors.orange,
                 ),
                 const SizedBox(height: 8),
                 _buildStatItem(
+                  context: context,
                   value: _formatWeight(insights.maxWeight),
                   label: 'Max',
-                  color: Colors.red,
                 ),
               ],
             ),
@@ -87,30 +85,17 @@ class ExerciseSummaryCard extends StatelessWidget {
   }
 
   Widget _buildStatItem({
+    required BuildContext context,
     required String value,
     required String label,
-    required Color color,
   }) {
+    final textTheme = context.appText;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: AppConstants.TEXT_TERTIARY_COLOR,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            letterSpacing: -0.3,
-          ),
-        ),
+        Text(label, style: textTheme.bodySmall),
+        Text(value, style: textTheme.titleSmall),
       ],
     );
   }

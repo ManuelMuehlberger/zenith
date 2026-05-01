@@ -79,44 +79,19 @@ class AppConstants {
   static const Color WORKOUT_BUTTON_BG_COLOR = AppThemeColors.surface;
   static const Color FINISH_BUTTON_BG_COLOR = AppThemeColors.surfaceAlt;
 
-  static const double HEADER_TITLE_FONT_SIZE = 28.0;
-  static const FontWeight HEADER_TITLE_FONT_WEIGHT = FontWeight.w700;
   static const TextStyle HEADER_TITLE_TEXT_STYLE = AppTextStyles.headline;
 
-  static const double HEADER_SMALL_TITLE_FONT_SIZE = 20.0;
-  static const FontWeight HEADER_SMALL_TITLE_FONT_WEIGHT = FontWeight.w600;
   static const TextStyle HEADER_SMALL_TITLE_TEXT_STYLE =
       AppTextStyles.appBarTitle;
-
-  static const double HEADER_LARGE_TITLE_FONT_SIZE = 32.0;
-  static const FontWeight HEADER_LARGE_TITLE_FONT_WEIGHT = FontWeight.w700;
-  static const double HEADER_EXTRA_LARGE_TITLE_FONT_SIZE = 32.0;
-  static const FontWeight HEADER_EXTRA_LARGE_TITLE_FONT_WEIGHT =
-      FontWeight.w800;
   static const TextStyle HEADER_EXTRA_LARGE_TITLE_TEXT_STYLE =
       AppTextStyles.display;
-
-  static const double HEADER_SUPER_LARGE_TITLE_FONT_SIZE = 36.0;
-  static const FontWeight HEADER_SUPER_LARGE_TITLE_FONT_WEIGHT =
-      FontWeight.w800;
-  static const double IOS_TITLE_FONT_SIZE = 18.0;
-  static const FontWeight IOS_TITLE_FONT_WEIGHT = FontWeight.w600;
   static const TextStyle IOS_TITLE_TEXT_STYLE = AppTextStyles.sectionTitle;
 
-  static const double IOS_BODY_FONT_SIZE = 16.0;
-  static const FontWeight IOS_BODY_FONT_WEIGHT = FontWeight.w400;
-  static const double IOS_LABEL_FONT_SIZE = 14.0;
-  static const FontWeight IOS_LABEL_FONT_WEIGHT = FontWeight.w500;
   static const TextStyle IOS_LABEL_TEXT_STYLE = AppTextStyles.label;
 
-  static const double IOS_NORMAL_FONT_SIZE = 15.0;
-  static const FontWeight IOS_NORMAL_FONT_WEIGHT = FontWeight.w400;
   static const double IOS_SUBTITLE_FONT_SIZE = 15.0;
-  static const FontWeight IOS_SUBTITLE_FONT_WEIGHT = FontWeight.w400;
   static const TextStyle IOS_SUBTITLE_TEXT_STYLE = AppTextStyles.bodySecondary;
 
-  static const double IOS_SUBTEXT_FONT_SIZE = 13.0;
-  static const FontWeight IOS_SUBTEXT_FONT_WEIGHT = FontWeight.w400;
   static const TextStyle IOS_SUBTEXT_STYLE = AppTextStyles.caption;
 
   // Button and action text constants
