@@ -4,6 +4,7 @@ set -euo pipefail
 
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
+source "$repo_root/scripts/hook_ui.sh"
 
 if git rev-parse --verify '@{upstream}' >/dev/null 2>&1; then
   base_ref='@{upstream}'
@@ -16,5 +17,12 @@ else
   fi
 fi
 
-"$repo_root/scripts/lint_changed_dart.sh" --range "$base_ref" HEAD
-"$repo_root/scripts/check_changed_dart_policy.sh" --range "$base_ref" HEAD
+hook_ui_section 'Pre-Push'
+hook_ui_run "format + analyze (${base_ref}..HEAD)" "$(hook_ui_cyan)" \
+  "$repo_root/scripts/lint_changed_dart.sh" --range "$base_ref" HEAD
+hook_ui_run "ui policy (${base_ref}..HEAD)" "$(hook_ui_magenta)" \
+  "$repo_root/scripts/check_changed_dart_policy.sh" --range "$base_ref" HEAD
+hook_ui_run "maintainability (${base_ref}..HEAD)" "$(hook_ui_blue)" \
+  "$repo_root/scripts/check_changed_dart_maintainability.py" --range "$base_ref" HEAD
+hook_ui_run "coverage gate (${base_ref}..HEAD)" "$(hook_ui_yellow)" \
+  "$repo_root/scripts/check_changed_dart_coverage.sh" --range "$base_ref" HEAD

@@ -1,12 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zenith/models/exercise.dart';
+import 'package:zenith/models/muscle_group.dart';
 import 'package:zenith/models/workout.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/services/dao/workout_dao.dart';
 import 'package:zenith/services/dao/workout_exercise_dao.dart';
 import 'package:zenith/services/dao/workout_set_dao.dart';
+import 'package:zenith/services/exercise_service.dart';
 import 'package:zenith/services/live_workout_notification_service.dart';
+import 'package:zenith/services/workout_service.dart';
 import 'package:zenith/services/workout_session_service.dart';
 
 // ------------------------
@@ -15,17 +19,27 @@ import 'package:zenith/services/workout_session_service.dart';
 
 class FakeWorkoutDao extends WorkoutDao {
   final Map<String, Workout> _store = {};
+  int insertCalls = 0;
+  int updateCalls = 0;
+  int deleteCalls = 0;
 
   @override
   Future<int> insert(Workout workout) async {
+    insertCalls++;
     _store[workout.id] = workout;
     return 1;
   }
 
   @override
   Future<int> updateWorkout(Workout workout) async {
+    updateCalls++;
     _store[workout.id] = workout;
     return 1;
+  }
+
+  @override
+  Future<List<Workout>> getAllWorkouts() async {
+    return _store.values.toList();
   }
 
   @override
@@ -37,30 +51,67 @@ class FakeWorkoutDao extends WorkoutDao {
 
   @override
   Future<int> deleteWorkout(String id) async {
+    deleteCalls++;
     _store.remove(id);
     return 1;
+  }
+
+  void resetCounts() {
+    insertCalls = 0;
+    updateCalls = 0;
+    deleteCalls = 0;
+  }
+}
+
+class LooseWorkoutDao extends FakeWorkoutDao {
+  @override
+  Future<List<Workout>> getInProgressWorkouts() async {
+    return _store.values.toList();
+  }
+}
+
+class ThrowingWorkoutDao extends FakeWorkoutDao {
+  @override
+  Future<List<Workout>> getInProgressWorkouts() async {
+    throw Exception('getInProgressWorkouts failed');
   }
 }
 
 class FakeWorkoutExerciseDao extends WorkoutExerciseDao {
   final Map<String, WorkoutExercise> _byId = {};
+  int insertCalls = 0;
+  int updateCalls = 0;
+  int deleteCalls = 0;
 
   @override
   Future<int> insert(WorkoutExercise model) async {
+    insertCalls++;
     _byId[model.id] = model;
     return 1;
   }
 
   @override
   Future<int> deleteWorkoutExercise(String id) async {
+    deleteCalls++;
     _byId.remove(id);
     return 1;
   }
 
   @override
   Future<int> updateWorkoutExercise(WorkoutExercise workoutExercise) async {
+    updateCalls++;
     _byId[workoutExercise.id] = workoutExercise;
     return 1;
+  }
+
+  @override
+  Future<List<WorkoutExercise>> getWorkoutExercisesByWorkoutIds(
+    List<String> workoutIds,
+  ) async {
+    return _byId.values
+        .where((e) => e.workoutId != null && workoutIds.contains(e.workoutId))
+        .toList()
+      ..sort((a, b) => (a.orderIndex ?? 0).compareTo(b.orderIndex ?? 0));
   }
 
   @override
@@ -71,27 +122,49 @@ class FakeWorkoutExerciseDao extends WorkoutExerciseDao {
       ..sort((a, b) => (a.orderIndex ?? 0).compareTo(b.orderIndex ?? 0));
     return list;
   }
+
+  void resetCounts() {
+    insertCalls = 0;
+    updateCalls = 0;
+    deleteCalls = 0;
+  }
 }
 
 class FakeWorkoutSetDao extends WorkoutSetDao {
   final Map<String, WorkoutSet> _byId = {};
+  int insertCalls = 0;
+  int updateCalls = 0;
+  int deleteCalls = 0;
 
   @override
   Future<int> insert(WorkoutSet model) async {
+    insertCalls++;
     _byId[model.id] = model;
     return 1;
   }
 
   @override
   Future<int> updateWorkoutSet(WorkoutSet workoutSet) async {
+    updateCalls++;
     _byId[workoutSet.id] = workoutSet;
     return 1;
   }
 
   @override
   Future<int> deleteWorkoutSet(String id) async {
+    deleteCalls++;
     _byId.remove(id);
     return 1;
+  }
+
+  @override
+  Future<List<WorkoutSet>> getWorkoutSetsByWorkoutExerciseIds(
+    List<String> workoutExerciseIds,
+  ) async {
+    return _byId.values
+        .where((set) => workoutExerciseIds.contains(set.workoutExerciseId))
+        .toList()
+      ..sort((a, b) => a.setIndex.compareTo(b.setIndex));
   }
 
   @override
@@ -105,10 +178,24 @@ class FakeWorkoutSetDao extends WorkoutSetDao {
           ..sort((a, b) => a.setIndex.compareTo(b.setIndex));
     return list;
   }
+
+  void resetCounts() {
+    insertCalls = 0;
+    updateCalls = 0;
+    deleteCalls = 0;
+  }
 }
 
 class FakeNotificationService implements NotificationServiceAPI {
   bool _running = false;
+  int startCalls = 0;
+  int updateCalls = 0;
+  int stopCalls = 0;
+  int restartCalls = 0;
+  Function()? _nextSetCallback;
+  Workout? lastSession;
+  int? lastExerciseIndex;
+  int? lastSetIndex;
 
   @override
   bool get isServiceRunning => _running;
@@ -120,7 +207,7 @@ class FakeNotificationService implements NotificationServiceAPI {
 
   @override
   void setNextSetCallback(Function() callback) {
-    // no-op for tests
+    _nextSetCallback = callback;
   }
 
   @override
@@ -129,7 +216,11 @@ class FakeNotificationService implements NotificationServiceAPI {
     int currentExerciseIndex,
     int currentSetIndex,
   ) async {
+    startCalls++;
     _running = true;
+    lastSession = session;
+    lastExerciseIndex = currentExerciseIndex;
+    lastSetIndex = currentSetIndex;
   }
 
   @override
@@ -138,11 +229,15 @@ class FakeNotificationService implements NotificationServiceAPI {
     int currentExerciseIndex,
     int currentSetIndex,
   ) async {
-    // no-op
+    updateCalls++;
+    lastSession = session;
+    lastExerciseIndex = currentExerciseIndex;
+    lastSetIndex = currentSetIndex;
   }
 
   @override
   Future<void> stopService() async {
+    stopCalls++;
     _running = false;
   }
 
@@ -152,7 +247,24 @@ class FakeNotificationService implements NotificationServiceAPI {
     int currentExerciseIndex,
     int currentSetIndex,
   ) async {
-    // no-op
+    restartCalls++;
+    lastSession = session;
+    lastExerciseIndex = currentExerciseIndex;
+    lastSetIndex = currentSetIndex;
+  }
+
+  void triggerNextSet() {
+    _nextSetCallback?.call();
+  }
+
+  void resetCounts() {
+    startCalls = 0;
+    updateCalls = 0;
+    stopCalls = 0;
+    restartCalls = 0;
+    lastSession = null;
+    lastExerciseIndex = null;
+    lastSetIndex = null;
   }
 }
 
@@ -163,6 +275,22 @@ void main() {
     late FakeWorkoutExerciseDao workoutExerciseDao;
     late FakeWorkoutSetDao workoutSetDao;
     late FakeNotificationService notificationService;
+
+    Exercise buildExerciseDetail(
+      String slug,
+      String name,
+      MuscleGroup primaryMuscleGroup,
+    ) {
+      return Exercise(
+        slug: slug,
+        name: name,
+        primaryMuscleGroup: primaryMuscleGroup,
+        secondaryMuscleGroups: const [],
+        instructions: const ['Do the lift'],
+        image: '',
+        animation: '',
+      );
+    }
 
     Workout buildTemplate() {
       // Build a template workout with one exercise and one set
@@ -237,6 +365,56 @@ void main() {
       );
     }
 
+    Workout buildPreviousSetTemplate() {
+      const firstExerciseId = 'ex-template-previous-1';
+      const secondExerciseId = 'ex-template-previous-2';
+
+      return Workout(
+        id: 'template-previous',
+        name: 'Upper Body',
+        exercises: [
+          WorkoutExercise(
+            id: firstExerciseId,
+            workoutTemplateId: 'template-previous',
+            exerciseSlug: 'bench-press',
+            orderIndex: 0,
+            sets: [
+              WorkoutSet(
+                id: 'set-template-previous-1',
+                workoutExerciseId: firstExerciseId,
+                setIndex: 0,
+                targetReps: 10,
+                targetWeight: 50.0,
+              ),
+              WorkoutSet(
+                id: 'set-template-previous-2',
+                workoutExerciseId: firstExerciseId,
+                setIndex: 1,
+                targetReps: 8,
+                targetWeight: 55.0,
+              ),
+            ],
+          ),
+          WorkoutExercise(
+            id: secondExerciseId,
+            workoutTemplateId: 'template-previous',
+            exerciseSlug: 'row',
+            orderIndex: 1,
+            sets: [
+              WorkoutSet(
+                id: 'set-template-previous-3',
+                workoutExerciseId: secondExerciseId,
+                setIndex: 0,
+                targetReps: 12,
+                targetWeight: 40.0,
+              ),
+            ],
+          ),
+        ],
+        status: WorkoutStatus.template,
+      );
+    }
+
     setUp(() async {
       // Mock SharedPreferences to avoid platform channel calls in tests
       SharedPreferences.setMockInitialValues({});
@@ -253,8 +431,26 @@ void main() {
       service.workoutExerciseDao = workoutExerciseDao;
       service.workoutSetDao = workoutSetDao;
       service.notificationService = notificationService;
+      service.exerciseService = ExerciseService.instance;
+
+      ExerciseService.instance.resetForTesting();
+      ExerciseService.instance.setDependenciesForTesting(
+        seedExercises: [
+          buildExerciseDetail('bench-press', 'Bench Press', MuscleGroup.chest),
+          buildExerciseDetail('row', 'Row', MuscleGroup.back),
+        ],
+        seedMuscleGroups: ['Back', 'Chest'],
+      );
+
+      WorkoutService.instance.workoutDao = workoutDao;
+      WorkoutService.instance.workoutExerciseDao = workoutExerciseDao;
+      WorkoutService.instance.workoutSetDao = workoutSetDao;
 
       await service.clearActiveSession();
+      workoutDao.resetCounts();
+      workoutExerciseDao.resetCounts();
+      workoutSetDao.resetCounts();
+      notificationService.resetCounts();
     });
 
     test('should initialize workout session service', () {
@@ -328,6 +524,7 @@ void main() {
 
           // End first session
           await service.clearActiveSession();
+          await Future<void>.delayed(const Duration(milliseconds: 1));
 
           final session2 = await service.startWorkout(template);
           final session2ExId = session2.exercises.first.id;
@@ -390,6 +587,90 @@ void main() {
         expect(updatedSet.actualWeight, 60.0);
         expect(updatedSet.isCompleted, true);
       });
+    });
+
+    group('resume and reset flows', () {
+      test(
+        'loadActiveSession hydrates persisted exercises and restarts notifications',
+        () async {
+          final session = await service.startWorkout(
+            buildMultiExerciseTemplate(),
+          );
+          final firstExercise = session.exercises.first;
+          final firstSet = firstExercise.sets.first;
+
+          await service.updateSet(
+            firstExercise.id,
+            firstSet.id,
+            actualReps: 9,
+            actualWeight: 52.5,
+            isCompleted: true,
+          );
+          await service.clearActiveSession(deleteFromDb: false);
+          notificationService.resetCounts();
+
+          await service.loadActiveSession();
+
+          final loadedSession = service.currentSession;
+          expect(loadedSession, isNotNull);
+          expect(loadedSession!.id, session.id);
+          expect(loadedSession.exercises, hasLength(2));
+          expect(loadedSession.exercises.first.sets.first.actualReps, 9);
+          expect(loadedSession.exercises.first.sets.first.actualWeight, 52.5);
+          expect(loadedSession.exercises.first.sets.first.isCompleted, isTrue);
+          expect(
+            loadedSession.exercises.first.exerciseDetail?.name,
+            'Bench Press',
+          );
+          expect(notificationService.restartCalls, 1);
+          expect(notificationService.lastSession?.id, session.id);
+          expect(notificationService.lastExerciseIndex, 0);
+          expect(notificationService.lastSetIndex, 0);
+        },
+      );
+
+      test(
+        'loadActiveSession clears an inconsistent completed session',
+        () async {
+          final completedWorkoutDao = LooseWorkoutDao();
+          final completedSession = Workout(
+            id: 'completed-session',
+            name: 'Done',
+            status: WorkoutStatus.completed,
+            startedAt: DateTime(2025, 1, 1, 9),
+            completedAt: DateTime(2025, 1, 1, 10),
+          );
+          completedWorkoutDao._store[completedSession.id] = completedSession;
+
+          service.workoutDao = completedWorkoutDao;
+          notificationService.resetCounts();
+
+          await service.loadActiveSession();
+
+          expect(service.currentSession, isNull);
+          expect(service.currentExerciseIndex, 0);
+          expect(service.currentSetIndex, 0);
+          expect(notificationService.restartCalls, 0);
+          expect(notificationService.stopCalls, 1);
+        },
+      );
+
+      test(
+        'loadActiveSession clears state when persistence lookup throws',
+        () async {
+          await service.startWorkout(buildTemplate());
+          service.workoutDao = ThrowingWorkoutDao();
+          notificationService.resetCounts();
+
+          await service.loadActiveSession();
+
+          expect(service.currentSession, isNull);
+          expect(service.hasActiveSession, isFalse);
+          expect(service.currentExerciseIndex, 0);
+          expect(service.currentSetIndex, 0);
+          expect(notificationService.stopCalls, 1);
+        },
+      );
     });
 
     group('clearActiveSession behavior', () {
@@ -503,6 +784,127 @@ void main() {
           reason: "Sets should be deleted because of re-fetching",
         );
       });
+    });
+
+    group('navigation and invalid transitions', () {
+      test(
+        'selectExercise ignores invalid indexes without persisting changes',
+        () async {
+          await service.startWorkout(buildMultiExerciseTemplate());
+          await service.selectExercise(1);
+          workoutDao.resetCounts();
+          notificationService.resetCounts();
+
+          await service.selectExercise(5);
+
+          expect(service.currentExerciseIndex, 1);
+          expect(service.currentSetIndex, 0);
+          expect(workoutDao.updateCalls, 0);
+          expect(notificationService.updateCalls, 0);
+        },
+      );
+
+      test(
+        'previousSet moves to the prior exercise last set and persists',
+        () async {
+          await service.startWorkout(buildPreviousSetTemplate());
+          await service.selectExercise(1);
+          workoutDao.resetCounts();
+          notificationService.resetCounts();
+
+          await service.previousSet();
+
+          expect(service.currentExerciseIndex, 0);
+          expect(service.currentSetIndex, 1);
+          expect(workoutDao.updateCalls, 1);
+          expect(notificationService.updateCalls, 1);
+          expect(notificationService.lastExerciseIndex, 0);
+          expect(notificationService.lastSetIndex, 1);
+        },
+      );
+
+      test(
+        'nextSet completes the final set without advancing past the workout',
+        () async {
+          final session = await service.startWorkout(buildTemplate());
+          final exercise = session.exercises.first;
+          workoutDao.resetCounts();
+          workoutSetDao.resetCounts();
+          notificationService.resetCounts();
+
+          await service.nextSet();
+
+          expect(service.currentExerciseIndex, 0);
+          expect(service.currentSetIndex, 0);
+          expect(service.currentSession!.completedSets, 1);
+          expect(
+            service.currentSession!.exercises.first.sets.first.isCompleted,
+            isTrue,
+          );
+          expect(workoutSetDao.updateCalls, 1);
+          expect(workoutDao.updateCalls, 2);
+          expect(notificationService.updateCalls, 2);
+          final persistedSets = await workoutSetDao
+              .getWorkoutSetsByWorkoutExerciseId(exercise.id);
+          expect(persistedSets.single.isCompleted, isTrue);
+        },
+      );
+
+      test(
+        'updateSet and toggleSetCompletion ignore missing targets without persistence',
+        () async {
+          final session = await service.startWorkout(buildTemplate());
+          final exercise = session.exercises.first;
+          final set = exercise.sets.first;
+          workoutDao.resetCounts();
+          workoutSetDao.resetCounts();
+          notificationService.resetCounts();
+
+          await service.updateSet('missing-exercise', set.id, targetReps: 99);
+          await service.updateSet(exercise.id, 'missing-set', targetWeight: 99);
+          await service.toggleSetCompletion('missing-exercise', set.id);
+          await service.toggleSetCompletion(exercise.id, 'missing-set');
+
+          expect(
+            service.currentSession!.exercises.first.sets.first.targetReps,
+            10,
+          );
+          expect(
+            service.currentSession!.exercises.first.sets.first.targetWeight,
+            50.0,
+          );
+          expect(
+            service.currentSession!.exercises.first.sets.first.isCompleted,
+            isFalse,
+          );
+          expect(workoutDao.updateCalls, 0);
+          expect(workoutSetDao.updateCalls, 0);
+          expect(notificationService.updateCalls, 0);
+        },
+      );
+
+      test(
+        'nextSet and previousSet do nothing for non-active sessions',
+        () async {
+          final session = await service.startWorkout(buildTemplate());
+          service.currentSession = session.copyWith(
+            status: WorkoutStatus.completed,
+          );
+          workoutDao.resetCounts();
+          workoutSetDao.resetCounts();
+          notificationService.resetCounts();
+
+          await service.nextSet();
+          await service.previousSet();
+
+          expect(service.currentExerciseIndex, 0);
+          expect(service.currentSetIndex, 0);
+          expect(service.currentSession!.status, WorkoutStatus.completed);
+          expect(workoutDao.updateCalls, 0);
+          expect(workoutSetDao.updateCalls, 0);
+          expect(notificationService.updateCalls, 0);
+        },
+      );
     });
 
     test(

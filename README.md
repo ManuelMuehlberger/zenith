@@ -35,10 +35,12 @@ delta, use:
 scripts/check_changed_dart_policy.sh --all
 ```
 
-The hook chain now does two things on changed Dart files:
+The hook chain now does several things on changed Dart files:
 
 - Runs formatting and analyzer checks.
 - Runs a UI policy scan that enforces theme-only styling.
+- Runs a maintainability gate for changed production Dart files.
+- Runs a changed-file coverage gate for non-frontend Dart files.
 
 Blocking policy checks:
 
@@ -48,8 +50,31 @@ Blocking policy checks:
 - `TextStyle(...)`, `TextTheme(...)`, `ColorScheme(...)`, or `ThemeData(...)` definitions outside `lib/theme/`.
 - Newly added direct `AppThemeColors.*` or `AppTextStyles.*` usage outside `lib/theme/` on changed-file scans (`--all` blocks any remaining usage).
 
+Maintainability gate:
+
+- `scripts/check_changed_dart_maintainability.py` enforces architecture boundaries, a changed-function complexity budget, changed-file test adjacency, and explicit annotation for new public top-level API surface.
+- Architecture checks block non-UI layers from importing screens/widgets, block UI from importing DAOs or low-level database services directly, and block insights code from reaching into persistence internals.
+- Complexity checks apply to changed functions and block functions above `80` lines, above `10` decision points, or above nesting depth `5`.
+- Test adjacency checks require non-trivial production changes to also change a matching `test/<path>*_test.dart` file unless the file explicitly opts out.
+- Public API checks require explicit annotation for newly added public top-level `class`/`enum`/`mixin`/`extension`/`typedef`, `export`, and public top-level functions.
+- Diff-only checks run on `--staged` and `--range`; `--all` runs only the architecture and complexity checks.
+
+Allowed escape hatches for exceptional cases:
+
+- `// policy: allow-boundary <reason>` to bypass an architecture rule in a file.
+- `// policy: allow-complexity <reason>` to bypass the complexity budget in a file.
+- `// policy: no-test-needed <reason>` to bypass changed-file test adjacency in a file.
+- `// policy: allow-public-api <reason>` on or immediately above a new public top-level declaration or export.
+
 Warning-only policy checks:
 
 - Likely inline user-facing strings.
+
+Coverage gate:
+
+- `scripts/check_changed_dart_coverage.sh` runs `flutter test --coverage` and checks only changed non-frontend files.
+- Frontend paths are excluded from enforcement: `lib/screens/`, `lib/widgets/`, `lib/theme/`, and `lib/main.dart`.
+- Non-instrumentable files are also excluded from enforcement: `lib/models/typedefs.dart` and `lib/services/insights/insight_data_provider.dart`.
+- The minimum per-file coverage defaults to `80%` and can be overridden with the `ZENITH_MIN_CHANGED_FILE_COVERAGE` environment variable.
 
 Theme and token definitions now belong in `lib/theme/`. UI code should consume them through `context.appScheme`, `context.appText`, and `context.appColors`. Direct `AppThemeColors` and `AppTextStyles` references are compatibility aliases that should only shrink over time, not be added back into non-theme UI code.

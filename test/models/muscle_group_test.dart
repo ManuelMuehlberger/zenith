@@ -14,7 +14,10 @@ void main() {
       expect(MuscleGroup.fromName('Chest'), MuscleGroup.chest);
       expect(MuscleGroup.fromName('Triceps'), MuscleGroup.triceps);
       expect(MuscleGroup.fromName('Front Deltoids'), MuscleGroup.frontDeltoids);
-      expect(MuscleGroup.fromName('Lateral Deltoids'), MuscleGroup.lateralDeltoids);
+      expect(
+        MuscleGroup.fromName('Lateral Deltoids'),
+        MuscleGroup.lateralDeltoids,
+      );
       expect(MuscleGroup.fromName('Rear Deltoids'), MuscleGroup.rearDeltoids);
       expect(MuscleGroup.fromName('Shoulders'), MuscleGroup.shoulders);
       expect(MuscleGroup.fromName('Rotator Cuffs'), MuscleGroup.rotatorCuff);
@@ -25,7 +28,10 @@ void main() {
       expect(MuscleGroup.fromName('Adductors'), MuscleGroup.adductors);
       expect(MuscleGroup.fromName('Lower Back'), MuscleGroup.lowerBack);
       expect(MuscleGroup.fromName('Trapezius'), MuscleGroup.trapezius);
-      expect(MuscleGroup.fromName('Forearm Flexors'), MuscleGroup.forearmFlexors);
+      expect(
+        MuscleGroup.fromName('Forearm Flexors'),
+        MuscleGroup.forearmFlexors,
+      );
       expect(MuscleGroup.fromName('Calves'), MuscleGroup.calves);
       expect(MuscleGroup.fromName('Abs'), MuscleGroup.abs);
       expect(MuscleGroup.fromName('Obliques'), MuscleGroup.obliques);
@@ -45,12 +51,73 @@ void main() {
     });
 
     test('fromName throws exception for invalid name', () {
-      expect(() => MuscleGroup.fromName('Nonexistent Muscle'), 
-          throwsA(isA<Exception>().having((e) => e.toString(), 'toString', contains('MuscleGroup not found'))));
-      expect(() => MuscleGroup.fromName(''), 
-          throwsA(isA<Exception>().having((e) => e.toString(), 'toString', contains('MuscleGroup not found'))));
-      expect(() => MuscleGroup.fromName('Unknown'), 
-          throwsA(isA<Exception>().having((e) => e.toString(), 'toString', contains('MuscleGroup not found'))));
+      expect(
+        () => MuscleGroup.fromName('Nonexistent Muscle'),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'toString',
+            contains('MuscleGroup not found'),
+          ),
+        ),
+      );
+      expect(
+        () => MuscleGroup.fromName(''),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'toString',
+            contains('MuscleGroup not found'),
+          ),
+        ),
+      );
+      expect(
+        () => MuscleGroup.fromName('Unknown'),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'toString',
+            contains('MuscleGroup not found'),
+          ),
+        ),
+      );
+    });
+
+    test('toMap serializes the display name', () {
+      expect(MuscleGroup.lowerBack.toMap(), {'name': 'Lower Back'});
+      expect(MuscleGroup.na.toMap(), {'name': 'NA'});
+    });
+
+    test('fromMap parses exact display names', () {
+      expect(
+        MuscleGroup.fromMap({'name': 'Lower Back'}),
+        MuscleGroup.lowerBack,
+      );
+      expect(MuscleGroup.fromMap({'name': 'NA'}), MuscleGroup.na);
+    });
+
+    test('fromMap falls back to case-insensitive parsing', () {
+      expect(
+        MuscleGroup.fromMap({'name': 'lower back'}),
+        MuscleGroup.lowerBack,
+      );
+      expect(
+        MuscleGroup.fromMap({'name': 'rotator cuffs'}),
+        MuscleGroup.rotatorCuff,
+      );
+    });
+
+    test('fromMap surfaces the invalid muscle group name', () {
+      expect(
+        () => MuscleGroup.fromMap({'name': 'Not a muscle group'}),
+        throwsA(
+          isA<Exception>().having(
+            (e) => e.toString(),
+            'toString',
+            contains('Not a muscle group'),
+          ),
+        ),
+      );
     });
 
     test('enum values are unique', () {

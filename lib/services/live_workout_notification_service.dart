@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:logging/logging.dart';
+import 'package:meta/meta.dart';
 
 import '../models/workout.dart';
 import '../models/workout_exercise.dart';
@@ -12,25 +13,146 @@ abstract class NotificationServiceAPI {
 
   Future<void> initialize();
   void setNextSetCallback(Function() callback);
-  Future<void> startService(Workout session, int currentExerciseIndex, int currentSetIndex);
-  Future<void> updateNotification(Workout session, int currentExerciseIndex, int currentSetIndex);
+  Future<void> startService(
+    Workout session,
+    int currentExerciseIndex,
+    int currentSetIndex,
+  );
+  Future<void> updateNotification(
+    Workout session,
+    int currentExerciseIndex,
+    int currentSetIndex,
+  );
   Future<void> stopService();
-  Future<void> restartServiceIfNeeded(Workout? session, int currentExerciseIndex, int currentSetIndex);
+  Future<void> restartServiceIfNeeded(
+    Workout? session,
+    int currentExerciseIndex,
+    int currentSetIndex,
+  );
 }
 
 const String notificationChannelId = 'workout_progress_channel';
 const String notificationChannelName = 'Workout Progress';
-const String notificationChannelDescription = 'Notifications for active workout progress';
+const String notificationChannelDescription =
+    'Notifications for active workout progress';
 const int notificationId = 888;
 const String appIcon = '@mipmap/ic_launcher';
 
+// policy: allow-public-api adapter boundary for notification plugin testing.
+abstract class LiveWorkoutNotificationsPlugin {
+  Future<bool?> initialize(
+    InitializationSettings initializationSettings, {
+    DidReceiveNotificationResponseCallback? onDidReceiveNotificationResponse,
+    DidReceiveBackgroundNotificationResponseCallback?
+    onDidReceiveBackgroundNotificationResponse,
+  });
+
+  Future<void> createNotificationChannel(
+    AndroidNotificationChannel notificationChannel,
+  );
+
+  Future<bool?> requestNotificationsPermission();
+
+  Future<void> show(
+    int id,
+    String? title,
+    String? body,
+    NotificationDetails? notificationDetails, {
+    String? payload,
+  });
+
+  Future<void> cancel(int id, {String? tag});
+}
+
+// policy: allow-public-api production adapter behind the plugin boundary.
+class FlutterLocalNotificationsPluginAdapter
+    implements LiveWorkoutNotificationsPlugin {
+  FlutterLocalNotificationsPluginAdapter({
+    FlutterLocalNotificationsPlugin? flutterLocalNotificationsPlugin,
+  }) : _flutterLocalNotificationsPlugin =
+           flutterLocalNotificationsPlugin ?? FlutterLocalNotificationsPlugin();
+
+  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin;
+
+  @override
+  Future<bool?> initialize(
+    InitializationSettings initializationSettings, {
+    DidReceiveNotificationResponseCallback? onDidReceiveNotificationResponse,
+    DidReceiveBackgroundNotificationResponseCallback?
+    onDidReceiveBackgroundNotificationResponse,
+  }) {
+    return _flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
+      onDidReceiveBackgroundNotificationResponse:
+          onDidReceiveBackgroundNotificationResponse,
+    );
+  }
+
+  @override
+  Future<void> createNotificationChannel(
+    AndroidNotificationChannel notificationChannel,
+  ) async {
+    await _flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(notificationChannel);
+  }
+
+  @override
+  Future<bool?> requestNotificationsPermission() async {
+    final androidPlugin = _flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    if (androidPlugin == null) {
+      return true;
+    }
+    return androidPlugin.requestNotificationsPermission();
+  }
+
+  @override
+  Future<void> show(
+    int id,
+    String? title,
+    String? body,
+    NotificationDetails? notificationDetails, {
+    String? payload,
+  }) {
+    return _flutterLocalNotificationsPlugin.show(
+      id,
+      title,
+      body,
+      notificationDetails,
+      payload: payload,
+    );
+  }
+
+  @override
+  Future<void> cancel(int id, {String? tag}) {
+    return _flutterLocalNotificationsPlugin.cancel(id, tag: tag);
+  }
+}
+
 class LiveWorkoutNotificationService implements NotificationServiceAPI {
-  final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  final Logger _logger = Logger('LiveWorkoutNotificationService');
-  
-  static final LiveWorkoutNotificationService _instance = LiveWorkoutNotificationService._internal();
+  final LiveWorkoutNotificationsPlugin _notificationsPlugin;
+  final Logger _logger;
+
+  static final LiveWorkoutNotificationService _instance =
+      LiveWorkoutNotificationService._internal();
   factory LiveWorkoutNotificationService() => _instance;
-  LiveWorkoutNotificationService._internal();
+  LiveWorkoutNotificationService._internal()
+    : _notificationsPlugin = FlutterLocalNotificationsPluginAdapter(),
+      _logger = Logger('LiveWorkoutNotificationService');
+
+  @visibleForTesting
+  LiveWorkoutNotificationService.withDependencies({
+    LiveWorkoutNotificationsPlugin? notificationsPlugin,
+    Logger? logger,
+  }) : _notificationsPlugin =
+           notificationsPlugin ?? FlutterLocalNotificationsPluginAdapter(),
+       _logger = logger ?? Logger('LiveWorkoutNotificationService');
 
   bool _isServiceRunning = false;
   Timer? _updateTimer;
@@ -38,10 +160,10 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
   int _currentExerciseIndex = 0;
   int _currentSetIndex = 0;
   DateTime? _sessionStartTime;
-  
+
   // Callback for handling notification actions
   Function()? _onNextSetCallback;
-  
+
   @override
   bool get isServiceRunning => _isServiceRunning;
 
@@ -51,27 +173,32 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings(appIcon);
 
-    final DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+    const DarwinInitializationSettings initializationSettingsIOS =
+        DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
 
-    final InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+    const InitializationSettings initializationSettings =
+        InitializationSettings(
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsIOS,
+        );
 
-    await _flutterLocalNotificationsPlugin.initialize(
+    await _notificationsPlugin.initialize(
       initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse notificationResponse) async {
-        _logger.info('Notification action received: ${notificationResponse.actionId}');
-        
-        if (notificationResponse.actionId == 'next_set') {
-          _logger.info('Next set action triggered from notification');
-          _onNextSetCallback?.call();
-        }
-      },
+      onDidReceiveNotificationResponse:
+          (NotificationResponse notificationResponse) async {
+            _logger.info(
+              'Notification action received: ${notificationResponse.actionId}',
+            );
+
+            if (notificationResponse.actionId == 'next_set') {
+              _logger.info('Next set action triggered from notification');
+              _onNextSetCallback?.call();
+            }
+          },
     );
 
     // Create Android notification channel
@@ -85,9 +212,7 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
       playSound: false,
     );
 
-    await _flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
+    await _notificationsPlugin.createNotificationChannel(channel);
     _logger.info('Notification service initialized');
   }
 
@@ -98,25 +223,27 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
   }
 
   @override
-  Future<void> startService(Workout session, int currentExerciseIndex, int currentSetIndex) async {
+  Future<void> startService(
+    Workout session,
+    int currentExerciseIndex,
+    int currentSetIndex,
+  ) async {
     _logger.info('Starting notification service for session: ${session.id}');
-    final androidPlugin = _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-    if (androidPlugin != null) {
-        final bool? permissionGranted = await androidPlugin.requestNotificationsPermission();
-        if (permissionGranted == null || !permissionGranted) {
-            _logger.warning("Notification permission not granted for Android.");
-            return;
-        }
+    final bool? permissionGranted = await _notificationsPlugin
+        .requestNotificationsPermission();
+    if (permissionGranted == null || !permissionGranted) {
+      _logger.warning("Notification permission not granted for Android.");
+      return;
     }
-    
+
     _isServiceRunning = true;
     _currentSession = session;
     _currentExerciseIndex = currentExerciseIndex;
     _currentSetIndex = currentSetIndex;
     _sessionStartTime = session.startedAt ?? DateTime.now();
-    
+
     _startPeriodicUpdates();
-    
+
     await _showNotification();
     _logger.info('Notification service started successfully');
   }
@@ -131,18 +258,22 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
   }
 
   @override
-  Future<void> updateNotification(Workout session, int currentExerciseIndex, int currentSetIndex) async {
+  Future<void> updateNotification(
+    Workout session,
+    int currentExerciseIndex,
+    int currentSetIndex,
+  ) async {
     _logger.fine('Updating notification for session: ${session.id}');
     if (!_isServiceRunning) {
       _logger.warning('Service not running, starting it now');
       await startService(session, currentExerciseIndex, currentSetIndex);
       return;
     }
-    
+
     _currentSession = session;
     _currentExerciseIndex = currentExerciseIndex;
     _currentSetIndex = currentSetIndex;
-    
+
     await _showNotification();
     _logger.fine('Notification updated successfully');
   }
@@ -154,22 +285,30 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
       _logger.info('Service was not running');
       return;
     }
-    
+
     _updateTimer?.cancel();
     _updateTimer = null;
     _isServiceRunning = false;
     _currentSession = null;
     _sessionStartTime = null;
     _onNextSetCallback = null;
-    
-    await _flutterLocalNotificationsPlugin.cancel(notificationId);
+
+    await _notificationsPlugin.cancel(notificationId);
     _logger.info('Notification service stopped');
   }
 
   @override
-  Future<void> restartServiceIfNeeded(Workout? session, int currentExerciseIndex, int currentSetIndex) async {
-    if (session != null && session.status == WorkoutStatus.inProgress && !_isServiceRunning) {
-      _logger.info('Restarting notification service for active session: ${session.id}');
+  Future<void> restartServiceIfNeeded(
+    Workout? session,
+    int currentExerciseIndex,
+    int currentSetIndex,
+  ) async {
+    if (session != null &&
+        session.status == WorkoutStatus.inProgress &&
+        !_isServiceRunning) {
+      _logger.info(
+        'Restarting notification service for active session: ${session.id}',
+      );
       await startService(session, currentExerciseIndex, currentSetIndex);
     }
   }
@@ -180,9 +319,13 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
       return;
     }
 
-    final sessionData = _formatSessionData(_currentSession!, _currentExerciseIndex, _currentSetIndex);
+    final sessionData = _formatSessionData(
+      _currentSession!,
+      _currentExerciseIndex,
+      _currentSetIndex,
+    );
     _logger.finest('Showing notification with data: $sessionData');
-    
+
     final String title = sessionData['title'] ?? 'Active Workout';
     final String body = sessionData['body'] ?? 'Tracking progress...';
     final String subText = sessionData['subText'] ?? '';
@@ -191,11 +334,12 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
     final int totalSets = sessionData['totalSets'] ?? 0;
     final int progressValue = sessionData['progressValue'] ?? 0;
     //final bool canAdvanceSet = sessionData['canAdvanceSet'] ?? false;
-    
-    // Create notification actions
-    List<AndroidNotificationAction> actions = [];
 
-    await _flutterLocalNotificationsPlugin.show(
+    // Create notification actions
+    const List<AndroidNotificationAction> actions =
+        <AndroidNotificationAction>[];
+
+    await _notificationsPlugin.show(
       notificationId,
       '$title | $elapsedTime',
       '$body${subText.isNotEmpty ? ' | $subText' : ''}',
@@ -227,79 +371,98 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
           threadIdentifier: 'workout_progress',
         ),
       ),
-      payload: 'active_workout_screen'
+      payload: 'active_workout_screen',
     );
   }
 
-  Map<String, dynamic> _formatSessionData(Workout session, int currentExerciseIndex, int currentSetIndex) {
+  Map<String, dynamic> _formatSessionData(
+    Workout session,
+    int currentExerciseIndex,
+    int currentSetIndex,
+  ) {
     String currentExerciseName = "Workout Starting...";
     String nextExerciseName = "";
     String progressDetails = "";
     String setProgress = "";
-    int totalWorkoutExercises = session.exercises.length;
+    final int totalWorkoutExercises = session.exercises.length;
     int currentWorkoutExerciseNum = currentExerciseIndex + 1;
-    
+
     // Use the same progress calculation as the active workout screen
     int completedSets = 0;
     int totalSets = 0;
-    
+
     // Calculate completed and total sets
     for (final exercise in session.exercises) {
       totalSets += exercise.sets.length;
       completedSets += exercise.sets.where((set) => set.isCompleted).length;
     }
 
-    if (totalWorkoutExercises > 0 && currentExerciseIndex < totalWorkoutExercises) {
-      final WorkoutExercise currentWorkoutExercise = session.exercises[currentExerciseIndex];
+    if (totalWorkoutExercises > 0 &&
+        currentExerciseIndex < totalWorkoutExercises) {
+      final WorkoutExercise currentWorkoutExercise =
+          session.exercises[currentExerciseIndex];
       // Use exerciseDetail, ensure it's loaded or provide fallback
-      currentExerciseName = currentWorkoutExercise.exerciseDetail?.name ?? currentWorkoutExercise.exerciseSlug;
+      currentExerciseName =
+          currentWorkoutExercise.exerciseDetail?.name ??
+          currentWorkoutExercise.exerciseSlug;
 
-      if (currentWorkoutExercise.sets.isNotEmpty && currentSetIndex < currentWorkoutExercise.sets.length) {
-        final WorkoutSet currentWorkoutSet = currentWorkoutExercise.sets[currentSetIndex];
-        int currentSetNum = currentSetIndex + 1;
-        int totalSetsForExercise = currentWorkoutExercise.sets.length;
-        
+      if (currentWorkoutExercise.sets.isNotEmpty &&
+          currentSetIndex < currentWorkoutExercise.sets.length) {
+        final WorkoutSet currentWorkoutSet =
+            currentWorkoutExercise.sets[currentSetIndex];
+        final int currentSetNum = currentSetIndex + 1;
+        final int totalSetsForExercise = currentWorkoutExercise.sets.length;
+
         setProgress = "Set $currentSetNum of $totalSetsForExercise";
-        
+
         // repRange fields removed from WorkoutSet, using targetReps
-        String repsStr = currentWorkoutSet.targetReps != null 
-            ? "${currentWorkoutSet.targetReps} reps" 
+        final String repsStr = currentWorkoutSet.targetReps != null
+            ? "${currentWorkoutSet.targetReps} reps"
             : "Reps not set";
         progressDetails = repsStr;
-        if (currentWorkoutSet.targetWeight != null && currentWorkoutSet.targetWeight! > 0) {
-          progressDetails += " at ${currentWorkoutSet.targetWeight} kg"; // Assuming kg for now
+        if (currentWorkoutSet.targetWeight != null &&
+            currentWorkoutSet.targetWeight! > 0) {
+          progressDetails +=
+              " at ${currentWorkoutSet.targetWeight} kg"; // Assuming kg for now
         }
       } else if (currentWorkoutExercise.sets.isEmpty) {
         progressDetails = "No sets configured";
-        setProgress = "Exercise $currentWorkoutExerciseNum of $totalWorkoutExercises";
+        setProgress =
+            "Exercise $currentWorkoutExerciseNum of $totalWorkoutExercises";
       } else {
-         progressDetails = "Moving to next exercise...";
-         setProgress = "Exercise $currentWorkoutExerciseNum of $totalWorkoutExercises";
+        progressDetails = "Moving to next exercise...";
+        setProgress =
+            "Exercise $currentWorkoutExerciseNum of $totalWorkoutExercises";
       }
 
       if (currentExerciseIndex + 1 < totalWorkoutExercises) {
         final nextWorkoutExercise = session.exercises[currentExerciseIndex + 1];
         // Use exerciseDetail, ensure it's loaded or provide fallback
-        nextExerciseName = "Next: ${nextWorkoutExercise.exerciseDetail?.name ?? nextWorkoutExercise.exerciseSlug}";
+        nextExerciseName =
+            "Next: ${nextWorkoutExercise.exerciseDetail?.name ?? nextWorkoutExercise.exerciseSlug}";
       } else {
         nextExerciseName = "Final exercise!";
       }
-    } else if (currentExerciseIndex >= totalWorkoutExercises && totalWorkoutExercises > 0) {
-        currentExerciseName = "Workout Complete!";
-        nextExerciseName = "Tap to finish";
-        progressDetails = "Great job!";
-        setProgress = "All exercises completed";
-        currentWorkoutExerciseNum = totalWorkoutExercises;
-        completedSets = totalSets;
+    } else if (currentExerciseIndex >= totalWorkoutExercises &&
+        totalWorkoutExercises > 0) {
+      currentExerciseName = "Workout Complete!";
+      nextExerciseName = "Tap to finish";
+      progressDetails = "Great job!";
+      setProgress = "All exercises completed";
+      currentWorkoutExerciseNum = totalWorkoutExercises;
+      completedSets = totalSets;
     } else {
-        currentExerciseName = "No exercises in workout";
-        nextExerciseName = "";
-        progressDetails = "";
-        setProgress = "";
+      currentExerciseName = "No exercises in workout";
+      nextExerciseName = "";
+      progressDetails = "";
+      setProgress = "";
     }
-    
-    Duration elapsedTime = DateTime.now().difference(_sessionStartTime ?? (session.startedAt ?? DateTime.now()));
-    String elapsedTimeStr = "${elapsedTime.inMinutes.toString().padLeft(2, '0')}:${(elapsedTime.inSeconds % 60).toString().padLeft(2, '0')}";
+
+    final Duration elapsedTime = DateTime.now().difference(
+      _sessionStartTime ?? (session.startedAt ?? DateTime.now()),
+    );
+    final String elapsedTimeStr =
+        "${elapsedTime.inMinutes.toString().padLeft(2, '0')}:${(elapsedTime.inSeconds % 60).toString().padLeft(2, '0')}";
 
     // Calculate progress percentage
     double progressValue = 0;
@@ -318,8 +481,12 @@ class LiveWorkoutNotificationService implements NotificationServiceAPI {
       'completedSets': completedSets,
       'totalSets': totalSets,
       'progressValue': progressValue.toInt(),
-      'canAdvanceSet': currentExerciseIndex < totalWorkoutExercises && 
-                      currentSetIndex < (totalWorkoutExercises > 0 ? session.exercises[currentExerciseIndex].sets.length : 0),
+      'canAdvanceSet':
+          currentExerciseIndex < totalWorkoutExercises &&
+          currentSetIndex <
+              (totalWorkoutExercises > 0
+                  ? session.exercises[currentExerciseIndex].sets.length
+                  : 0),
     };
   }
 }

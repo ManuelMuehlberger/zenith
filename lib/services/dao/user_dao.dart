@@ -1,5 +1,5 @@
-import '../../models/user_data.dart';
 import '../../models/typedefs.dart';
+import '../../models/user_data.dart';
 import 'base_dao.dart';
 
 class UserDao extends BaseDao<UserData> {
