@@ -23,6 +23,8 @@ class WorkoutDetailScreen extends StatefulWidget {
 }
 
 class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
+  static const int _neutralMood = 3;
+
   /*String _getUnitPreference() {
     return UserService.instance.currentProfile?.units ?? 'metric';
   }*/
@@ -72,28 +74,29 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
     final scheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
+    final moodValue = widget.workout.mood;
     final moodIcons = [
-      Icons.sentiment_very_satisfied,
-      Icons.sentiment_satisfied,
-      Icons.sentiment_neutral,
-      Icons.sentiment_dissatisfied,
       Icons.sentiment_very_dissatisfied,
+      Icons.sentiment_dissatisfied,
+      Icons.sentiment_neutral,
+      Icons.sentiment_satisfied,
+      Icons.sentiment_very_satisfied,
     ];
 
     final moodColors = [
-      colors.success,
-      scheme.primary,
-      colors.textSecondary,
-      colors.warning,
       scheme.error,
+      colors.warning,
+      colors.textSecondary,
+      scheme.primary,
+      colors.success,
     ];
 
-    final moodLabels = ['Excellent', 'Good', 'Neutral', 'Bad', 'Very Bad'];
-
-    // Ensure mood index is within valid range (0-4), default to 2 (neutral) if invalid
-    // For now, we'll use a default mood since the unified model doesn't have a mood field yet
-    const moodValue = 2; // Default to neutral
-    const moodIndex = (moodValue >= 0 && moodValue <= 4) ? moodValue : 2;
+    final moodLabels = ['Very Bad', 'Bad', 'Neutral', 'Good', 'Excellent'];
+    final normalizedMood =
+        moodValue != null && moodValue >= 1 && moodValue <= 5
+        ? moodValue
+        : _neutralMood;
+    final moodIndex = normalizedMood - 1;
 
     return Container(
       padding: const EdgeInsets.all(16),

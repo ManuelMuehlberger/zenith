@@ -23,6 +23,7 @@ class Workout {
   final WorkoutId? templateId; // Links a session to its template
   final DateTime? startedAt;
   final DateTime? completedAt;
+  final int? mood;
 
   Workout({
     WorkoutId? id,
@@ -39,6 +40,7 @@ class Workout {
     this.templateId,
     this.startedAt,
     this.completedAt,
+    this.mood,
   }) : id = id ?? const Uuid().v4(),
        exercises = List.unmodifiable(exercises);
 
@@ -57,6 +59,7 @@ class Workout {
       templateId: _readNullableString(map, 'templateId'),
       startedAt: _readNullableDateTime(map, 'startedAt'),
       completedAt: _readNullableDateTime(map, 'completedAt'),
+      mood: _readNullableInt(map, 'mood'),
       exercises: [], // To be loaded separately
     );
   }
@@ -76,6 +79,7 @@ class Workout {
       'templateId': templateId,
       'startedAt': startedAt?.toIso8601String(),
       'completedAt': completedAt?.toIso8601String(),
+      'mood': mood,
     };
   }
 
@@ -94,6 +98,7 @@ class Workout {
     Object? templateId = _undefined,
     Object? startedAt = _undefined,
     Object? completedAt = _undefined,
+    Object? mood = _undefined,
   }) {
     return Workout(
       id: id ?? this.id,
@@ -126,6 +131,7 @@ class Workout {
       completedAt: completedAt == _undefined
           ? this.completedAt
           : completedAt as DateTime?,
+        mood: mood == _undefined ? this.mood : mood as int?,
     );
   }
 

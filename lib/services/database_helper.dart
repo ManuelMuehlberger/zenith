@@ -20,7 +20,7 @@ class DatabaseHelper {
 
   static const String _dbName = 'workout_tracker.db';
   static const int _dbVersion =
-      6; // Added Exercise.equipment column and TOML bodyweight mapping
+      7; // Added Workout.mood column
 
   Future<String> get databasePath async {
     final documentsDirectory = await getApplicationDocumentsDirectory();
@@ -169,6 +169,7 @@ class DatabaseHelper {
           templateId TEXT, -- Links a session to its template
           startedAt TEXT, -- ISO8601 string
           completedAt TEXT, -- ISO8601 string
+          mood INTEGER,
           FOREIGN KEY (folderId) REFERENCES WorkoutFolder (id) ON DELETE SET NULL,
           FOREIGN KEY (templateId) REFERENCES Workout (id) ON DELETE SET NULL
         )
@@ -422,6 +423,17 @@ class DatabaseHelper {
           rethrow;
         }
         _logger.info('Version 6 upgrades completed');
+      }
+
+      if (oldVersion < 7) {
+        _logger.info('Applying version 7 upgrades');
+        try {
+          await db.execute('ALTER TABLE Workout ADD COLUMN mood INTEGER');
+          _logger.info('Added mood column to Workout table');
+        } catch (e) {
+          _logger.info('mood column already exists in Workout table');
+        }
+        _logger.info('Version 7 upgrades completed');
       }
 
       _logger.info('Database upgrade completed successfully');

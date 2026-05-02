@@ -263,7 +263,8 @@ void main() {
               status INTEGER DEFAULT 0,
               templateId TEXT,
               startedAt TEXT,
-              completedAt TEXT
+              completedAt TEXT,
+              mood INTEGER
             )
           ''');
           await db.execute('''
@@ -424,6 +425,7 @@ void main() {
           'templateId',
           'startedAt',
           'completedAt',
+          'mood',
         ]),
       );
       expect(
@@ -456,6 +458,7 @@ void main() {
       final db = await openHelperDatabase();
 
       expect(await columnNames(db, 'Workout'), contains('description'));
+      expect(await columnNames(db, 'Workout'), contains('mood'));
       expect(
         await columnNames(db, 'WorkoutExercise'),
         contains('workoutTemplateId'),
