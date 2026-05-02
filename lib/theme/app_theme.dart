@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 
 class AppThemeColors {
   AppThemeColors._();
@@ -197,6 +198,22 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
 class AppTheme {
   AppTheme._();
 
+  static const double mainDockHeight = 64;
+  static const double mainDockOffset = 18;
+  static const double mainDockMaxWidth = 420;
+  static const double mainDockBlurSigma = 18;
+  static const double mainDockIconSize = 28;
+  static const double mainDockSelectedIconSize = 30;
+  static const double mainDockPrimaryWidth = 236;
+  static const double mainDockCompactWidth = 188;
+  static const double mainDockActionSize = 64;
+  static const double mainDockActionGap = 14;
+  static const double mainDockItemPadding = 14;
+  static const BorderRadius mainDockBorderRadius = BorderRadius.all(
+    Radius.circular(28),
+  );
+  static const double mainDockClearance = mainDockHeight + mainDockOffset;
+
   static const AppThemeTokens darkTokens = AppThemeTokens(
     surfaceAlt: AppThemeColors.surfaceAlt,
     field: AppThemeColors.field,
@@ -221,6 +238,17 @@ class AppTheme {
     onError: AppThemeColors.textPrimary,
     surface: AppThemeColors.surface,
     onSurface: AppThemeColors.textPrimary,
+  );
+
+  static const BottomBarThemeData _darkBottomBarTheme = BottomBarThemeData(
+    barDecoration: BoxDecoration(color: AppThemeColors.clear),
+    layout: BottomBarLayout(
+      offset: mainDockOffset,
+      borderRadius: mainDockBorderRadius,
+      clip: Clip.none,
+      respectSafeArea: false,
+    ),
+    scrollBehavior: BottomBarScrollBehavior(hideOnScroll: false),
   );
 
   static final ThemeData dark = ThemeData(
@@ -282,7 +310,10 @@ class AppTheme {
         textStyle: AppTextStyles.body,
       ),
     ),
-    extensions: const <ThemeExtension<dynamic>>[darkTokens],
+    extensions: const <ThemeExtension<dynamic>>[
+      darkTokens,
+      _darkBottomBarTheme,
+    ],
   );
 }
 

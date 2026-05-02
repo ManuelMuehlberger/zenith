@@ -509,6 +509,7 @@ class WorkoutSessionService extends ChangeNotifier {
       status: WorkoutStatus.completed,
       completedAt: endTime,
       notes: notes,
+      mood: mood,
     );
 
     await _workoutDao.updateWorkout(completedSession);

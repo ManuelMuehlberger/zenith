@@ -13,6 +13,7 @@ import '../models/workout_template.dart';
 import '../services/workout_session_service.dart';
 import '../services/workout_template_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/main_dock_spacer.dart';
 import '../widgets/folder_card.dart';
 import '../widgets/profile_icon_button.dart';
 import '../widgets/reorderable_workout_template_list.dart';
@@ -274,11 +275,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       children: [
         if (_selectedFolderId != null) _buildBreadcrumbNavigation(),
         _buildContent(),
-        SizedBox(
-          height:
-              MediaQuery.of(context).padding.bottom +
-              kBottomNavigationBarHeight,
-        ),
+        const MainDockSpacer(),
       ],
     );
   }

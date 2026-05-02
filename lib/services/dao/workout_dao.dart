@@ -29,6 +29,7 @@ class WorkoutDao extends BaseDao<Workout> {
       'templateId': workout.templateId,
       'startedAt': workout.startedAt?.toIso8601String(),
       'completedAt': workout.completedAt?.toIso8601String(),
+      'mood': workout.mood,
     };
   }
 

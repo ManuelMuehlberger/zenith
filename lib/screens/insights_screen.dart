@@ -7,6 +7,7 @@ import '../services/insights_service.dart';
 import '../services/user_service.dart';
 import '../services/workout_service.dart';
 import '../utils/unit_converter.dart';
+import '../widgets/main_dock_spacer.dart';
 import '../widgets/insights/insights_screen_sections.dart';
 
 class InsightsScreen extends StatefulWidget {
@@ -292,14 +293,7 @@ class _InsightsScreenState extends State<InsightsScreen>
           weightUnitLabel: _getWeightUnitLabel(),
         ),
       ),
-      SliverToBoxAdapter(
-        child: SizedBox(
-          height:
-              MediaQuery.of(context).padding.bottom +
-              kBottomNavigationBarHeight +
-              20,
-        ),
-      ),
+      SliverToBoxAdapter(child: MainDockSpacer(extraSpace: 20)),
     ];
   }
 

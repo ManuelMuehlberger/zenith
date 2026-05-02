@@ -33,7 +33,8 @@ Future<Database> _openTestDatabase() {
             status INTEGER NOT NULL DEFAULT 0,
             templateId TEXT,
             startedAt TEXT,
-            completedAt TEXT
+            completedAt TEXT,
+            mood INTEGER
           )
         ''');
       },
@@ -55,6 +56,7 @@ Workout _workout({
   String? templateId,
   DateTime? startedAt,
   DateTime? completedAt,
+  int? mood,
 }) {
   return Workout(
     id: id,
@@ -70,6 +72,7 @@ Workout _workout({
     templateId: templateId,
     startedAt: startedAt,
     completedAt: completedAt,
+    mood: mood,
   );
 }
 
@@ -114,6 +117,7 @@ void main() {
         templateId: 'template-1',
         startedAt: startedAt,
         completedAt: completedAt,
+        mood: 5,
       );
 
       final map = dao.toMap(workout);
@@ -132,6 +136,7 @@ void main() {
         'templateId': 'template-1',
         'startedAt': startedAt.toIso8601String(),
         'completedAt': completedAt.toIso8601String(),
+        'mood': 5,
       });
     });
 
@@ -153,6 +158,7 @@ void main() {
         'templateId': 'template-2',
         'startedAt': startedAt.toIso8601String(),
         'completedAt': completedAt.toIso8601String(),
+        'mood': 1,
       });
 
       expect(workout.id, 'workout-2');
@@ -168,6 +174,7 @@ void main() {
       expect(workout.templateId, 'template-2');
       expect(workout.startedAt, startedAt);
       expect(workout.completedAt, completedAt);
+      expect(workout.mood, 1);
       expect(workout.exercises, isEmpty);
       expect(
         () => workout.exercises.add(
@@ -392,6 +399,7 @@ void main() {
           status: WorkoutStatus.completed,
           startedAt: DateTime.utc(2024, 4, 1, 7),
           completedAt: DateTime.utc(2024, 4, 1, 8),
+          mood: 4,
         ),
       );
       final updatedRow = await database.query(
@@ -407,6 +415,7 @@ void main() {
       expect(updatedRow.single['notes'], 'New notes');
       expect(updatedRow.single['orderIndex'], 4);
       expect(updatedRow.single['status'], WorkoutStatus.completed.index);
+      expect(updatedRow.single['mood'], 4);
       expect(deletedCount, 1);
       expect(await dao.getWorkoutById('workout-1'), isNull);
       expect(await dao.getWorkoutById('workout-2'), isNotNull);

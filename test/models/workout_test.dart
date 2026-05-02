@@ -27,6 +27,7 @@ void main() {
       expect(workout.templateId, isNull);
       expect(workout.startedAt, isNull);
       expect(workout.completedAt, isNull);
+      expect(workout.mood, isNull);
     });
 
     test('should create a workout from map', () {
@@ -45,6 +46,7 @@ void main() {
         'templateId': 'template-id',
         'startedAt': now.toIso8601String(),
         'completedAt': null,
+        'mood': 5,
       };
 
       final workoutFromMap = Workout.fromMap(map);
@@ -62,6 +64,7 @@ void main() {
       expect(workoutFromMap.templateId, 'template-id');
       expect(workoutFromMap.startedAt, now);
       expect(workoutFromMap.completedAt, isNull);
+      expect(workoutFromMap.mood, 5);
     });
 
     test('should convert workout to map', () {
@@ -70,6 +73,7 @@ void main() {
         status: WorkoutStatus.inProgress,
         templateId: 'template-id',
         startedAt: now,
+        mood: 4,
       );
 
       final map = workoutInProgress.toMap();
@@ -87,6 +91,7 @@ void main() {
       expect(map['templateId'], 'template-id');
       expect(map['startedAt'], now.toIso8601String());
       expect(map['completedAt'], isNull);
+      expect(map['mood'], 4);
     });
 
     test('should copy with new values', () {
@@ -94,11 +99,13 @@ void main() {
         name: 'Copied Workout',
         status: WorkoutStatus.completed,
         completedAt: DateTime.now(),
+        mood: 2,
       );
 
       expect(copiedWorkout.name, 'Copied Workout');
       expect(copiedWorkout.status, WorkoutStatus.completed);
       expect(copiedWorkout.completedAt, isNotNull);
+      expect(copiedWorkout.mood, 2);
       // Other values should remain the same
       expect(copiedWorkout.description, workout.description);
       expect(copiedWorkout.iconCodePoint, workout.iconCodePoint);
@@ -113,11 +120,13 @@ void main() {
           notes: null,
           startedAt: null,
           completedAt: null,
+          mood: null,
         );
 
         expect(copiedWorkout.notes, isNull);
         expect(copiedWorkout.startedAt, isNull);
         expect(copiedWorkout.completedAt, isNull);
+        expect(copiedWorkout.mood, isNull);
         expect(
           () => copiedWorkout.exercises.add(
             WorkoutExercise(

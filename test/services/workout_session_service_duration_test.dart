@@ -201,10 +201,13 @@ void main() {
 
       const override = Duration(minutes: 1, seconds: 3);
       final completed = await service.completeWorkout(
+        mood: 4,
         durationOverride: override,
       );
 
       expect(completed.completedAt, customStart.add(override));
+      expect(completed.mood, 4);
+      expect(workoutDao._store[completed.id]?.mood, 4);
     });
 
     test(

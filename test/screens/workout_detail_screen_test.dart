@@ -13,6 +13,35 @@ import '../services/workout_service_test.mocks.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  group('WorkoutDetailScreen - Mood', () {
+    testWidgets('renders persisted mood instead of neutral fallback', (
+      WidgetTester tester,
+    ) async {
+      final now = DateTime.now();
+      final workout = Workout(
+        id: 'mood-workout',
+        name: 'Mood Session',
+        status: WorkoutStatus.completed,
+        startedAt: now.subtract(const Duration(hours: 1)),
+        completedAt: now,
+        mood: 5,
+        exercises: const [],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(home: WorkoutDetailScreen(workout: workout)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Mood: Excellent'), findsOneWidget);
+      expect(
+        find.byIcon(Icons.sentiment_very_satisfied),
+        findsOneWidget,
+      );
+      expect(find.text('Mood: Neutral'), findsNothing);
+    });
+  });
+
   group('WorkoutDetailScreen - Delete Workout', () {
     late WorkoutService workoutService;
     late MockWorkoutDao mockWorkoutDao;
