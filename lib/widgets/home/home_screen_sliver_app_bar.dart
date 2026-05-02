@@ -13,6 +13,10 @@ class HomeScreenSliverAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final transparentSurface = Theme.of(
+      context,
+    ).colorScheme.surface.withValues(alpha: 0);
+
     return SliverAppBar(
       pinned: true,
       stretch: true,
@@ -39,19 +43,10 @@ class HomeScreenSliverAppBar extends StatelessWidget {
                 title: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _HomeScreenTitle(
-                      isLarge: false,
-                      showGreetingTitle: showGreetingTitle,
-                    ),
+                    _HomeScreenTitle(showGreetingTitle: showGreetingTitle),
                   ],
                 ),
-                background: Align(
-                  alignment: Alignment.center,
-                  child: _HomeScreenTitle(
-                    isLarge: true,
-                    showGreetingTitle: showGreetingTitle,
-                  ),
-                ),
+                background: ColoredBox(color: transparentSurface),
                 collapseMode: CollapseMode.parallax,
               ),
             ],
@@ -63,26 +58,17 @@ class HomeScreenSliverAppBar extends StatelessWidget {
 }
 
 class _HomeScreenTitle extends StatelessWidget {
-  final bool isLarge;
   final bool showGreetingTitle;
 
-  const _HomeScreenTitle({
-    required this.isLarge,
-    required this.showGreetingTitle,
-  });
+  const _HomeScreenTitle({required this.showGreetingTitle});
 
   @override
   Widget build(BuildContext context) {
-    final style = isLarge
-        ? context.appText.displaySmall!
-        : context.appText.titleLarge!;
+    final style = context.appText.titleLarge!;
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 400),
       transitionBuilder: (child, animation) {
-        if (isLarge) {
-          return FadeTransition(opacity: animation, child: child);
-        }
         return FadeTransition(
           opacity: animation,
           child: SizeTransition(
@@ -94,9 +80,7 @@ class _HomeScreenTitle extends StatelessWidget {
       },
       child: showGreetingTitle
           ? AnimatedBuilder(
-              key: ValueKey(
-                isLarge ? 'large_greeting_title' : 'greeting_title',
-              ),
+              key: const ValueKey('greeting_title'),
               animation: UserService.instance,
               builder: (context, _) {
                 final name = UserService.instance.currentProfile?.name.trim();
@@ -112,7 +96,7 @@ class _HomeScreenTitle extends StatelessWidget {
             )
           : Text(
               'Recent Workouts',
-              key: ValueKey(isLarge ? 'large_recent_title' : 'recent_title'),
+              key: const ValueKey('recent_title'),
               textAlign: TextAlign.center,
               style: style,
             ),

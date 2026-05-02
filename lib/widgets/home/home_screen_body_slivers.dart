@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
+import '../main_dock_spacer.dart';
 import '../timeline/skeleton_timeline_row.dart';
 
 class HomeScreenLoadingSliver extends StatelessWidget {
@@ -79,11 +80,6 @@ class HomeScreenBottomSpacerSliver extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SliverToBoxAdapter(
-      child: SizedBox(
-        height:
-            MediaQuery.of(context).padding.bottom + kBottomNavigationBarHeight,
-      ),
-    );
+    return const MainDockSpacerSliver();
   }
 }

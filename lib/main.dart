@@ -1,11 +1,14 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 import 'package:logging/logging.dart';
 
 import 'screens/app_wrapper.dart';
+import 'screens/create_workout_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/insights_screen.dart';
 import 'screens/workout_builder_screen.dart';
@@ -50,6 +53,24 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  static const List<_MainDockDestination> _destinations = [
+    _MainDockDestination(
+      label: 'Home',
+      icon: Icons.home_outlined,
+      selectedIcon: Icons.home_rounded,
+    ),
+    _MainDockDestination(
+      label: 'Workouts',
+      icon: Icons.fitness_center_outlined,
+      selectedIcon: Icons.fitness_center,
+    ),
+    _MainDockDestination(
+      label: 'Insights',
+      icon: Icons.insert_chart_outlined_rounded,
+      selectedIcon: Icons.insert_chart_rounded,
+    ),
+  ];
+
   List<Widget> get _screens => const [
     HomeScreen(),
     WorkoutBuilderScreen(),
@@ -77,49 +98,217 @@ class _MainScreenState extends State<MainScreen> {
       animation: AppNavigationService.instance,
       builder: (context, _) {
         final currentIndex = AppNavigationService.instance.currentTabIndex;
+        final dockWidth = math.min(
+          MediaQuery.sizeOf(context).width - (AppTheme.mainDockOffset * 2),
+          AppTheme.mainDockMaxWidth,
+        );
 
         return Scaffold(
           extendBody: true,
-          body: IndexedStack(index: currentIndex, children: _screens),
-          bottomNavigationBar: ClipRRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: context.appColors.overlaySoft,
-                  border: Border(
-                    top: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: 0.5,
-                    ),
-                  ),
-                ),
-                child: BottomNavigationBar(
-                  currentIndex: currentIndex,
-                  onTap: (index) {
-                    HapticFeedback.selectionClick();
-                    AppNavigationService.instance.goToTab(index);
-                  },
-                  items: const [
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.home),
-                      label: 'Home',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.fitness_center),
-                      label: 'Workouts',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.analytics),
-                      label: 'Insights',
-                    ),
-                  ],
-                ),
-              ),
+          body: BottomBar(
+            showIcon: false,
+            layout: BottomBarLayout(width: dockWidth),
+            body: IndexedStack(index: currentIndex, children: _screens),
+            child: _MainFloatingDock(
+              currentIndex: currentIndex,
+              destinations: _destinations,
+              maxWidth: dockWidth,
             ),
           ),
         );
       },
     );
   }
+}
+
+class _MainFloatingDock extends StatelessWidget {
+  const _MainFloatingDock({
+    required this.currentIndex,
+    required this.destinations,
+    required this.maxWidth,
+  });
+
+  final int currentIndex;
+  final List<_MainDockDestination> destinations;
+  final double maxWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final showWorkoutAction = currentIndex == 1;
+    final expandedWidth = math.min(AppTheme.mainDockPrimaryWidth, maxWidth);
+    final compactWidth = math.min(
+      AppTheme.mainDockCompactWidth,
+      maxWidth - AppTheme.mainDockActionSize - AppTheme.mainDockActionGap,
+    );
+
+    return SizedBox(
+      width: maxWidth,
+      height: AppTheme.mainDockHeight,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0, end: showWorkoutAction ? 1 : 0),
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+        builder: (context, progress, _) {
+          final actionSlotWidth =
+              (AppTheme.mainDockActionSize + AppTheme.mainDockActionGap) *
+              progress;
+          final dockWidth = lerpDouble(expandedWidth, compactWidth, progress)!;
+
+          return Center(
+            child: SizedBox(
+              width: dockWidth + actionSlotWidth,
+              height: AppTheme.mainDockHeight,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: dockWidth,
+                    height: AppTheme.mainDockHeight,
+                    child: _MainDockSurface(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppTheme.mainDockItemPadding,
+                          vertical: 10,
+                        ),
+                        child: BottomBarItems(
+                          spacing: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            for (
+                              var index = 0;
+                              index < destinations.length;
+                              index++
+                            )
+                              BottomBarItem(
+                                selected: index == currentIndex,
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  AppNavigationService.instance.goToTab(index);
+                                },
+                                tooltip: destinations[index].label,
+                                icon: Icon(
+                                  destinations[index].icon,
+                                  size: AppTheme.mainDockIconSize,
+                                ),
+                                selectedIcon: Icon(
+                                  destinations[index].selectedIcon,
+                                  size: AppTheme.mainDockSelectedIconSize,
+                                ),
+                                color: context.appColors.textSecondary,
+                                selectedColor: context.appScheme.primary,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: actionSlotWidth,
+                    child: ClipRect(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: progress <= 0
+                            ? const SizedBox.shrink()
+                            : Padding(
+                                padding: const EdgeInsets.only(
+                                  left: AppTheme.mainDockActionGap,
+                                ),
+                                child: IgnorePointer(
+                                  ignoring: progress < 0.95,
+                                  child: Opacity(
+                                    opacity: progress,
+                                    child: Transform.translate(
+                                      offset: Offset((1 - progress) * 12, 0),
+                                      child: _WorkoutDockAction(
+                                        onPressed: () {
+                                          HapticFeedback.mediumImpact();
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute<void>(
+                                              builder: (_) =>
+                                                  const CreateWorkoutScreen(),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _MainDockSurface extends StatelessWidget {
+  const _MainDockSurface({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: AppTheme.mainDockBorderRadius,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: context.appColors.surfaceAlt,
+          borderRadius: AppTheme.mainDockBorderRadius,
+          border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
+          boxShadow: [
+            BoxShadow(
+              color: context.appColors.shadow,
+              blurRadius: 24,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _WorkoutDockAction extends StatelessWidget {
+  const _WorkoutDockAction({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: AppTheme.mainDockActionSize,
+      height: AppTheme.mainDockActionSize,
+      child: _MainDockSurface(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            child: Icon(
+              Icons.add_rounded,
+              color: context.appScheme.primary,
+              size: AppTheme.mainDockSelectedIconSize,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MainDockDestination {
+  const _MainDockDestination({
+    required this.label,
+    required this.icon,
+    required this.selectedIcon,
+  });
+
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
 }
