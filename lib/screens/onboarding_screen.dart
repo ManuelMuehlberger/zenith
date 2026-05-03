@@ -227,7 +227,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         units: _units,
         weightHistory: weightHistory,
         createdAt: DateTime.now(),
-        theme: 'dark',
+        theme: 'system',
       );
 
       await UserService.instance.saveUserProfile(profile);
