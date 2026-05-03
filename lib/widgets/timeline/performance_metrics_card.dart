@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../constants/app_constants.dart';
@@ -9,6 +11,7 @@ class PerformanceMetricsCard extends StatelessWidget {
   final double currentMonthVolume;
   final int lastMonthWorkouts;
   final double lastMonthVolume;
+  final EdgeInsetsGeometry margin;
 
   const PerformanceMetricsCard({
     super.key,
@@ -16,6 +19,7 @@ class PerformanceMetricsCard extends StatelessWidget {
     required this.currentMonthVolume,
     required this.lastMonthWorkouts,
     required this.lastMonthVolume,
+    this.margin = const EdgeInsets.symmetric(vertical: 16),
   });
 
   String _formatVolume(double volume) {
@@ -32,26 +36,41 @@ class PerformanceMetricsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildMetricColumn(
-              context: context,
-              label: 'THIS MONTH',
-              count: currentMonthWorkouts,
-              volume: currentMonthVolume,
+      margin: margin,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final contentWidth = math.min(constraints.maxWidth, 296.0);
+          final columnWidth = (contentWidth - 20) / 2;
+
+          return Center(
+            child: SizedBox(
+              width: contentWidth,
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: columnWidth,
+                    child: _buildMetricColumn(
+                      context: context,
+                      label: 'THIS MONTH',
+                      count: currentMonthWorkouts,
+                      volume: currentMonthVolume,
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  SizedBox(
+                    width: columnWidth,
+                    child: _buildMetricColumn(
+                      context: context,
+                      label: 'LAST MONTH',
+                      count: lastMonthWorkouts,
+                      volume: lastMonthVolume,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: _buildMetricColumn(
-              context: context,
-              label: 'LAST MONTH',
-              count: lastMonthWorkouts,
-              volume: lastMonthVolume,
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -66,10 +85,11 @@ class PerformanceMetricsCard extends StatelessWidget {
     final colors = context.appColors;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           label,
+          textAlign: TextAlign.center,
           style: textTheme.bodySmall?.copyWith(
             color: colors.textSecondary,
             fontSize: 11,
@@ -79,6 +99,7 @@ class PerformanceMetricsCard extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         RichText(
+          textAlign: TextAlign.center,
           text: TextSpan(
             children: [
               TextSpan(
@@ -102,6 +123,7 @@ class PerformanceMetricsCard extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           _formatVolume(volume),
+          textAlign: TextAlign.center,
           style: textTheme.bodyMedium?.copyWith(
             color: colors.textTertiary,
             fontSize: 14,

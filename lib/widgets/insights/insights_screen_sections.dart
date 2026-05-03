@@ -33,7 +33,7 @@ class InsightsAppBar extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
-    final colors = context.appColors;
+    final headerSurface = theme.scaffoldBackgroundColor;
     final smallTitleStyle = textTheme.titleLarge;
     final transparentSurface = theme.colorScheme.surface.withValues(alpha: 0);
 
@@ -105,7 +105,9 @@ class InsightsAppBar extends StatelessWidget {
                     sigmaX: AppConstants.GLASS_BLUR_SIGMA,
                     sigmaY: AppConstants.GLASS_BLUR_SIGMA,
                   ),
-                  child: Container(color: colors.overlayStrong),
+                  child: ColoredBox(
+                    color: headerSurface.withValues(alpha: 0.94),
+                  ),
                 ),
               ),
               FlexibleSpaceBar(
@@ -168,6 +170,7 @@ class InsightsFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
     final colorScheme = context.appScheme;
     final colors = context.appColors;
     final outlineColor = colorScheme.outline;
+    final headerSurface = Theme.of(context).scaffoldBackgroundColor;
     final muscleGroups = AppMuscleGroup.values
         .where((group) => group != AppMuscleGroup.na)
         .map((group) => group.displayName)
@@ -189,7 +192,7 @@ class InsightsFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: colors.overlayStrong,
+            color: headerSurface.withValues(alpha: 0.96),
             border: Border(bottom: BorderSide(color: outlineColor, width: 0.5)),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),

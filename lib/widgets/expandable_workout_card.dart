@@ -262,7 +262,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
       margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppTheme.workoutCardBorderRadius,
         border: Border.all(
           color: _isExpanded
               ? colorScheme.primary.withValues(alpha: 0.6)
@@ -280,7 +280,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
       child: Material(
         color: transparentSurface,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppTheme.workoutCardBorderRadius,
           onTap: _toggleExpansion,
           child: Column(
             children: [
