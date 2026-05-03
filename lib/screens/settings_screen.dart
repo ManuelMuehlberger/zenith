@@ -15,6 +15,7 @@ import '../services/workout_template_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/settings/settings_data_section.dart';
 import '../widgets/settings/settings_profile_section.dart';
+import '../widgets/settings/settings_theme_section.dart';
 import '../widgets/settings/settings_timeline_section.dart';
 import '../widgets/settings/settings_units_section.dart';
 
@@ -85,6 +86,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _logger.severe('Failed to update units', e, stackTrace);
       if (mounted) {
         _showErrorDialog('Failed to update units: ${e.toString()}');
+      }
+    }
+  }
+
+  Future<void> _updateThemePreference(AppThemePreference newPreference) async {
+    if (_userProfile == null) {
+      _logger.warning('Skipping theme update because no profile is loaded');
+      return;
+    }
+
+    try {
+      _logger.info(
+        'Updating theme from ${_userProfile!.theme} to ${newPreference.storageValue}',
+      );
+      final updatedProfile = _userProfile!.copyWith(
+        theme: newPreference.storageValue,
+      );
+      await UserService.instance.saveUserProfile(updatedProfile);
+      setState(() {
+        _userProfile = updatedProfile;
+      });
+
+      if (mounted) {
+        _showCupertinoToast('Appearance updated');
+      }
+    } catch (e, stackTrace) {
+      _logger.severe('Failed to update theme preference', e, stackTrace);
+      if (mounted) {
+        _showErrorDialog('Failed to update appearance: ${e.toString()}');
       }
     }
   }
@@ -350,6 +380,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SettingsUnitsSection(
                   userProfile: _userProfile,
                   onUnitsChanged: _updateUnits,
+                ),
+                const SizedBox(height: 16),
+                SettingsThemeSection(
+                  userProfile: _userProfile,
+                  onThemeChanged: _updateThemePreference,
                 ),
                 const SizedBox(height: 16),
                 const SettingsDataSection(),

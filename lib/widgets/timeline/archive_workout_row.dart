@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../constants/app_constants.dart';
 import '../../models/workout.dart';
 import '../../theme/app_theme.dart';
 
@@ -15,7 +14,6 @@ class ArchiveWorkoutRow extends StatelessWidget {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
-    final theme = Theme.of(context);
 
     // Compact Layout:
     // [Date] [Card]
@@ -32,7 +30,7 @@ class ArchiveWorkoutRow extends StatelessWidget {
           // Date text height ~16. Center 8.
           // Top padding = 22 - 8 = 14.
           Padding(
-            padding: const EdgeInsets.only(top: 14, right: 12),
+            padding: const EdgeInsets.only(top: 14, right: 10),
             child: SizedBox(
               width: 40,
               child: Text(
@@ -51,42 +49,34 @@ class ArchiveWorkoutRow extends StatelessWidget {
 
           // Slim Card
           Expanded(
-            child: Container(
-              height: 44, // Reduced height
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: theme.dividerColor,
-                  width: AppConstants.CARD_STROKE_WIDTH,
+            child: Transform.translate(
+              offset: const Offset(-20, 0),
+              child: Container(
+                height: 44, // Reduced height
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: AppTheme.workoutCardBorderRadius,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: colors.shadow.withValues(alpha: 0.18),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center, // Center content
-                children: [
-                  // Middle: Title
-                  // Use Flexible to allow centering but truncate if too long
-                  Flexible(
-                    child: Text(
-                      workout.name,
-                      style: textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSurface,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                padding: const EdgeInsets.only(left: 20, right: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    // Middle: Title
+                    // Use Flexible to allow centering but truncate if too long
+                    Flexible(
+                      child: Text(
+                        workout.name,
+                        style: textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

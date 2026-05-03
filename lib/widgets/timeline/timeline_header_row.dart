@@ -45,7 +45,7 @@ class TimelineHeaderRow extends StatelessWidget {
         ),
 
         // Row 2 (The Body)
-        Padding(padding: const EdgeInsets.only(left: 24.0), child: child),
+        Padding(padding: const EdgeInsets.only(left: 2.0), child: child),
       ],
     );
   }

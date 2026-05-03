@@ -41,7 +41,8 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
   // Scroll controller to detect scroll direction
   final ScrollController _scrollController = ScrollController();
   bool _showSearchBar = true;
-  final double _searchBarHeight = 68.0; // Height of the search bar
+  final double _searchBarHeight = 56.0; // Height of the search bar
+  final double _filterRowHeight = 52.0;
   double _lastScrollOffset = 0.0; // Last scroll offset to track scroll distance
 
   @override
@@ -367,7 +368,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
     if (_showSearchBar) {
       internalHeaderHeight += _searchBarHeight; // Search bar height
     }
-    internalHeaderHeight += 60; // Tag filter row height
+    internalHeaderHeight += _filterRowHeight; // Tag filter row height
 
     return Stack(
       children: [
@@ -595,7 +596,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                       color: colors.overlayStrong,
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppConstants.PAGE_HORIZONTAL_PADDING,
-                        vertical: 12.0,
+                        vertical: 6.0,
                       ),
                       child: CupertinoSearchTextField(
                         controller: _searchController,
@@ -607,8 +608,12 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                           color: colorScheme.onSurface,
                         ),
                         decoration: BoxDecoration(
-                          color: colors.overlayStrong.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(10.0),
+                          color: colors.field.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(14.0),
+                          border: Border.all(
+                            color: colorScheme.outline.withValues(alpha: 0.8),
+                            width: 1,
+                          ),
                         ),
                       ),
                     ),
@@ -624,7 +629,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                     sigmaY: AppConstants.GLASS_BLUR_SIGMA,
                   ),
                   child: Container(
-                    height: 60,
+                    height: _filterRowHeight,
                     color: colors.overlayMedium,
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppConstants.PAGE_HORIZONTAL_PADDING,
@@ -668,20 +673,19 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        // Clear All icon button (always visible)
-                        CupertinoButton(
-                          key: const Key('clear_all_button'),
-                          padding: EdgeInsets.zero,
-                          onPressed: hasAnyFilter ? _clearAllFilters : null,
-                          child: Icon(
-                            CupertinoIcons.xmark_circle_fill,
-                            size: 24,
-                            color: hasAnyFilter
-                                ? colorScheme.primary
-                                : colors.textTertiary,
+                        if (hasAnyFilter) ...[
+                          const SizedBox(width: 8),
+                          CupertinoButton(
+                            key: const Key('clear_all_button'),
+                            padding: EdgeInsets.zero,
+                            onPressed: _clearAllFilters,
+                            child: Icon(
+                              CupertinoIcons.xmark_circle_fill,
+                              size: 24,
+                              color: colorScheme.primary,
+                            ),
                           ),
-                        ),
+                        ],
                         const SizedBox(width: 16),
                       ],
                     ),

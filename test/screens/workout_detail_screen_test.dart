@@ -34,10 +34,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Mood: Excellent'), findsOneWidget);
-      expect(
-        find.byIcon(Icons.sentiment_very_satisfied),
-        findsOneWidget,
-      );
+      expect(find.byIcon(Icons.sentiment_very_satisfied), findsOneWidget);
       expect(find.text('Mood: Neutral'), findsNothing);
     });
   });
@@ -108,6 +105,8 @@ void main() {
 
         // Tap the "Delete Workout" button
         expect(find.text('Delete Workout'), findsOneWidget);
+        await tester.ensureVisible(find.text('Delete Workout'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Delete Workout'));
         await tester.pumpAndSettle();
 

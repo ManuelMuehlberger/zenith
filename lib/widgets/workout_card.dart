@@ -78,6 +78,9 @@ class WorkoutCard extends StatelessWidget {
             margin: const EdgeInsets.only(
               bottom: AppConstants.CARD_VERTICAL_GAP,
             ),
+            shape: const RoundedRectangleBorder(
+              borderRadius: AppTheme.workoutCardBorderRadius,
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(

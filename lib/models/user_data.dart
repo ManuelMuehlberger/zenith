@@ -65,7 +65,7 @@ class UserData {
       weightHistory:
           [], // Weight history will be loaded separately from WeightEntry table
       createdAt: _readNullableDateTime(map, 'createdAt') ?? DateTime.now(),
-      theme: _readNullableString(map, 'theme') ?? 'dark',
+      theme: _readNullableString(map, 'theme') ?? 'system',
     );
   }
 

@@ -19,8 +19,7 @@ class DatabaseHelper {
   static final Logger _logger = Logger('DatabaseHelper');
 
   static const String _dbName = 'workout_tracker.db';
-  static const int _dbVersion =
-      7; // Added Workout.mood column
+  static const int _dbVersion = 7; // Added Workout.mood column
 
   Future<String> get databasePath async {
     final documentsDirectory = await getApplicationDocumentsDirectory();
@@ -109,7 +108,7 @@ class DatabaseHelper {
           birthdate TEXT NOT NULL, -- ISO8601 string
           units TEXT NOT NULL DEFAULT 'metric',
           createdAt TEXT NOT NULL, -- ISO8601 string
-          theme TEXT NOT NULL DEFAULT 'dark'
+          theme TEXT NOT NULL DEFAULT 'system'
         )
       ''');
 
@@ -299,7 +298,7 @@ class DatabaseHelper {
             birthdate TEXT NOT NULL, -- ISO8601 string
             units TEXT NOT NULL DEFAULT 'metric',
             createdAt TEXT NOT NULL, -- ISO8601 string
-            theme TEXT NOT NULL DEFAULT 'dark'
+            theme TEXT NOT NULL DEFAULT 'system'
           )
         ''');
 

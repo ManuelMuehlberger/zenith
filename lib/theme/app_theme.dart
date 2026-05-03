@@ -2,114 +2,184 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 
+enum AppThemePreference {
+  system('system', 'System', ThemeMode.system),
+  light('light', 'Light', ThemeMode.light),
+  dark('dark', 'Dark', ThemeMode.dark);
+
+  const AppThemePreference(this.storageValue, this.label, this.themeMode);
+
+  final String storageValue;
+  final String label;
+  final ThemeMode themeMode;
+
+  static AppThemePreference fromStorage(String? value) {
+    for (final preference in values) {
+      if (preference.storageValue == value) {
+        return preference;
+      }
+    }
+    return AppThemePreference.system;
+  }
+}
+
+@immutable
+class _ThemePalette {
+  const _ThemePalette({
+    required this.background,
+    required this.surface,
+    required this.surfaceAlt,
+    required this.field,
+    required this.overlayStrong,
+    required this.overlayMedium,
+    required this.overlaySoft,
+    required this.outline,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.textTertiary,
+    required this.accent,
+    required this.onAccent,
+    required this.success,
+    required this.warning,
+    required this.danger,
+    required this.shadow,
+  });
+
+  final Color background;
+  final Color surface;
+  final Color surfaceAlt;
+  final Color field;
+  final Color overlayStrong;
+  final Color overlayMedium;
+  final Color overlaySoft;
+  final Color outline;
+  final Color textPrimary;
+  final Color textSecondary;
+  final Color textTertiary;
+  final Color accent;
+  final Color onAccent;
+  final Color success;
+  final Color warning;
+  final Color danger;
+  final Color shadow;
+}
+
 class AppThemeColors {
   AppThemeColors._();
 
-  static const Color background = Color(0xFF000000);
-  static const Color surface = Color(0xFF212121);
-  static const Color surfaceAlt = Color(0xFF1A1A1A);
-  static const Color field = Color(0xFF2C2C2E);
-  static const Color overlayStrong = Color(0xCC000000);
-  static const Color overlayMedium = Color(0x8A000000);
-  static const Color overlaySoft = Color(0x33000000);
   static const Color clear = Color(0x00000000);
-  static const Color outline = Color(0x59FFFFFF);
-  static const Color textPrimary = Color(0xFFFFFFFF);
-  static const Color textSecondary = Color(0xFFB0B0B0);
-  static const Color textTertiary = Color(0xFF8A8A8A);
-  static const Color accent = Color(0xFF10DFE2);
-  static const Color success = Color(0xFF34C759);
-  static const Color warning = Color(0xFFFF9F0A);
-  static const Color danger = Color(0xFFFF453A);
-  static const Color shadow = Color(0x2E000000);
+
+  static const _ThemePalette light = _ThemePalette(
+    background: Color(0xFFF5F5F7),
+    surface: Color(0xFFFFFFFF),
+    surfaceAlt: Color(0xFFFFFFFF),
+    field: Color(0xFFECEEF2),
+    overlayStrong: Color(0xF2FFFFFF),
+    overlayMedium: Color(0xD9FFFFFF),
+    overlaySoft: Color(0x99FFFFFF),
+    outline: Color(0x1F101828),
+    textPrimary: Color(0xFF101828),
+    textSecondary: Color(0xFF667085),
+    textTertiary: Color(0xFF98A2B3),
+    accent: Color.fromARGB(255, 10, 114, 138),
+    onAccent: Color(0xFFFFFFFF),
+    success: Color(0xFF34C759),
+    warning: Color(0xFFFF9F0A),
+    danger: Color(0xFFFF453A),
+    shadow: Color(0x14000000),
+  );
+
+  static const _ThemePalette dark = _ThemePalette(
+    background: Color(0xFF000000),
+    surface: Color(0xFF212121),
+    surfaceAlt: Color(0xFF1A1A1A),
+    field: Color(0xFF2C2C2E),
+    overlayStrong: Color(0xCC000000),
+    overlayMedium: Color(0x8A000000),
+    overlaySoft: Color(0x33000000),
+    outline: Color(0x59FFFFFF),
+    textPrimary: Color(0xFFFFFFFF),
+    textSecondary: Color(0xFFB0B0B0),
+    textTertiary: Color(0xFF8A8A8A),
+    accent: Color.fromARGB(255, 10, 114, 138),
+    onAccent: Color(0xFFFFFFFF),
+    success: Color(0xFF34C759),
+    warning: Color(0xFFFF9F0A),
+    danger: Color(0xFFFF453A),
+    shadow: Color(0x2E000000),
+  );
 }
 
 class AppTextStyles {
   AppTextStyles._();
 
-  static const TextStyle hero = TextStyle(
-    fontSize: 36,
-    fontWeight: FontWeight.w800,
-    color: AppThemeColors.textPrimary,
-    height: 1.15,
-  );
-
-  static const TextStyle display = TextStyle(
-    fontSize: 32,
-    fontWeight: FontWeight.w700,
-    color: AppThemeColors.textPrimary,
-    height: 1.2,
-  );
-
-  static const TextStyle headline = TextStyle(
-    fontSize: 28,
-    fontWeight: FontWeight.w700,
-    color: AppThemeColors.textPrimary,
-    height: 1.2,
-  );
-
-  static const TextStyle appBarTitle = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-    color: AppThemeColors.textPrimary,
-  );
-
-  static const TextStyle sectionTitle = TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.w600,
-    color: AppThemeColors.textPrimary,
-  );
-
-  static const TextStyle body = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w400,
-    color: AppThemeColors.textPrimary,
-  );
-
-  static const TextStyle bodyStrong = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w500,
-    color: AppThemeColors.textPrimary,
-  );
-
-  static const TextStyle bodySecondary = TextStyle(
-    fontSize: 15,
-    fontWeight: FontWeight.w400,
-    color: AppThemeColors.textSecondary,
-  );
-
-  static const TextStyle label = TextStyle(
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: AppThemeColors.textSecondary,
-  );
-
-  static const TextStyle caption = TextStyle(
-    fontSize: 13,
-    fontWeight: FontWeight.w400,
-    color: AppThemeColors.textTertiary,
-  );
-
-  static const TextStyle action = TextStyle(
-    fontSize: 17,
-    fontWeight: FontWeight.w600,
-    color: AppThemeColors.accent,
-  );
-
-  static const TextTheme theme = TextTheme(
-    displayLarge: hero,
-    displaySmall: display,
-    headlineSmall: headline,
-    titleLarge: appBarTitle,
-    titleMedium: sectionTitle,
-    titleSmall: bodyStrong,
-    bodyLarge: body,
-    bodyMedium: bodySecondary,
-    bodySmall: caption,
-    labelLarge: action,
-    labelMedium: label,
-    labelSmall: caption,
-  );
+  static TextTheme theme(_ThemePalette palette) {
+    return TextTheme(
+      displayLarge: TextStyle(
+        fontSize: 36,
+        fontWeight: FontWeight.w800,
+        color: palette.textPrimary,
+        height: 1.15,
+      ),
+      displaySmall: TextStyle(
+        fontSize: 32,
+        fontWeight: FontWeight.w700,
+        color: palette.textPrimary,
+        height: 1.2,
+      ),
+      headlineSmall: TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.w700,
+        color: palette.textPrimary,
+        height: 1.2,
+      ),
+      titleLarge: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: palette.textPrimary,
+      ),
+      titleMedium: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: palette.textPrimary,
+      ),
+      titleSmall: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: palette.textPrimary,
+      ),
+      bodyLarge: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: palette.textPrimary,
+      ),
+      bodyMedium: TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w400,
+        color: palette.textSecondary,
+      ),
+      bodySmall: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w400,
+        color: palette.textTertiary,
+      ),
+      labelLarge: TextStyle(
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+        color: palette.accent,
+      ),
+      labelMedium: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: palette.textSecondary,
+      ),
+      labelSmall: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w400,
+        color: palette.textTertiary,
+      ),
+    );
+  }
 }
 
 @immutable
@@ -201,7 +271,9 @@ class AppTheme {
   static const double mainDockHeight = 64;
   static const double mainDockOffset = 18;
   static const double mainDockMaxWidth = 420;
-  static const double mainDockBlurSigma = 18;
+  static const double mainDockBlurSigma = 14;
+  static const double mainDockEdgeBlurBaseHeight = mainDockClearance * 1.6;
+  static const double mainDockEdgeBlurVisibleStop = 0.24;
   static const double mainDockIconSize = 28;
   static const double mainDockSelectedIconSize = 30;
   static const double mainDockPrimaryWidth = 236;
@@ -212,35 +284,38 @@ class AppTheme {
   static const BorderRadius mainDockBorderRadius = BorderRadius.all(
     Radius.circular(28),
   );
+  static const BorderRadius workoutCardBorderRadius = mainDockBorderRadius;
   static const double mainDockClearance = mainDockHeight + mainDockOffset;
 
-  static const AppThemeTokens darkTokens = AppThemeTokens(
-    surfaceAlt: AppThemeColors.surfaceAlt,
-    field: AppThemeColors.field,
-    overlayStrong: AppThemeColors.overlayStrong,
-    overlayMedium: AppThemeColors.overlayMedium,
-    overlaySoft: AppThemeColors.overlaySoft,
-    textPrimary: AppThemeColors.textPrimary,
-    textSecondary: AppThemeColors.textSecondary,
-    textTertiary: AppThemeColors.textTertiary,
-    success: AppThemeColors.success,
-    warning: AppThemeColors.warning,
-    shadow: AppThemeColors.shadow,
+  static final AppThemeTokens lightTokens = AppThemeTokens(
+    surfaceAlt: AppThemeColors.light.surfaceAlt,
+    field: AppThemeColors.light.field,
+    overlayStrong: AppThemeColors.light.overlayStrong,
+    overlayMedium: AppThemeColors.light.overlayMedium,
+    overlaySoft: AppThemeColors.light.overlaySoft,
+    textPrimary: AppThemeColors.light.textPrimary,
+    textSecondary: AppThemeColors.light.textSecondary,
+    textTertiary: AppThemeColors.light.textTertiary,
+    success: AppThemeColors.light.success,
+    warning: AppThemeColors.light.warning,
+    shadow: AppThemeColors.light.shadow,
   );
 
-  static const ColorScheme _darkColorScheme = ColorScheme(
-    brightness: Brightness.dark,
-    primary: AppThemeColors.accent,
-    onPrimary: AppThemeColors.textPrimary,
-    secondary: AppThemeColors.accent,
-    onSecondary: AppThemeColors.textPrimary,
-    error: AppThemeColors.danger,
-    onError: AppThemeColors.textPrimary,
-    surface: AppThemeColors.surface,
-    onSurface: AppThemeColors.textPrimary,
+  static final AppThemeTokens darkTokens = AppThemeTokens(
+    surfaceAlt: AppThemeColors.dark.surfaceAlt,
+    field: AppThemeColors.dark.field,
+    overlayStrong: AppThemeColors.dark.overlayStrong,
+    overlayMedium: AppThemeColors.dark.overlayMedium,
+    overlaySoft: AppThemeColors.dark.overlaySoft,
+    textPrimary: AppThemeColors.dark.textPrimary,
+    textSecondary: AppThemeColors.dark.textSecondary,
+    textTertiary: AppThemeColors.dark.textTertiary,
+    success: AppThemeColors.dark.success,
+    warning: AppThemeColors.dark.warning,
+    shadow: AppThemeColors.dark.shadow,
   );
 
-  static const BottomBarThemeData _darkBottomBarTheme = BottomBarThemeData(
+  static const BottomBarThemeData _bottomBarTheme = BottomBarThemeData(
     barDecoration: BoxDecoration(color: AppThemeColors.clear),
     layout: BottomBarLayout(
       offset: mainDockOffset,
@@ -251,70 +326,110 @@ class AppTheme {
     scrollBehavior: BottomBarScrollBehavior(hideOnScroll: false),
   );
 
-  static final ThemeData dark = ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.dark,
-    colorScheme: _darkColorScheme,
-    scaffoldBackgroundColor: AppThemeColors.background,
-    textTheme: AppTextStyles.theme,
-    dividerColor: AppThemeColors.outline,
-    appBarTheme: const AppBarTheme(
-      backgroundColor: AppThemeColors.background,
-      foregroundColor: AppThemeColors.textPrimary,
-      elevation: 0,
-    ),
-    cardTheme: const CardThemeData(
-      color: AppThemeColors.surface,
-      elevation: 0,
-      margin: EdgeInsets.zero,
-    ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-      backgroundColor: AppThemeColors.clear,
-      selectedItemColor: AppThemeColors.accent,
-      unselectedItemColor: AppThemeColors.textSecondary,
-      type: BottomNavigationBarType.fixed,
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppThemeColors.accent,
-        foregroundColor: AppThemeColors.textPrimary,
+  static ThemeData _buildTheme(
+    _ThemePalette palette,
+    Brightness brightness,
+    AppThemeTokens tokens,
+  ) {
+    final colorScheme = ColorScheme(
+      brightness: brightness,
+      primary: palette.accent,
+      onPrimary: palette.onAccent,
+      secondary: palette.accent,
+      onSecondary: palette.onAccent,
+      error: palette.danger,
+      onError: palette.onAccent,
+      surface: palette.surface,
+      onSurface: palette.textPrimary,
+    );
+    final textTheme = AppTextStyles.theme(palette);
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: brightness,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: palette.background,
+      textTheme: textTheme,
+      dividerColor: palette.outline,
+      appBarTheme: AppBarTheme(
+        backgroundColor: palette.background,
+        foregroundColor: palette.textPrimary,
         elevation: 0,
-        textStyle: AppTextStyles.sectionTitle,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        surfaceTintColor: AppThemeColors.clear,
       ),
-    ),
-    filledButtonTheme: FilledButtonThemeData(
-      style: FilledButton.styleFrom(
-        backgroundColor: AppThemeColors.accent,
-        foregroundColor: AppThemeColors.textPrimary,
-        textStyle: AppTextStyles.sectionTitle,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      cardTheme: CardThemeData(
+        color: palette.surface,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        surfaceTintColor: AppThemeColors.clear,
       ),
-    ),
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: AppThemeColors.textSecondary,
-        textStyle: AppTextStyles.sectionTitle.copyWith(
-          color: AppThemeColors.textSecondary,
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: AppThemeColors.clear,
+        selectedItemColor: palette.accent,
+        unselectedItemColor: palette.textSecondary,
+        type: BottomNavigationBarType.fixed,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: palette.accent,
+          foregroundColor: palette.onAccent,
+          elevation: 0,
+          textStyle: textTheme.titleMedium,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-    ),
-    cupertinoOverrideTheme: const NoDefaultCupertinoThemeData(
-      brightness: Brightness.dark,
-      primaryColor: AppThemeColors.accent,
-      scaffoldBackgroundColor: AppThemeColors.background,
-      barBackgroundColor: AppThemeColors.overlayMedium,
-      textTheme: CupertinoTextThemeData(
-        primaryColor: AppThemeColors.accent,
-        textStyle: AppTextStyles.body,
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: palette.accent,
+          foregroundColor: palette.onAccent,
+          textStyle: textTheme.titleMedium,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
       ),
-    ),
-    extensions: const <ThemeExtension<dynamic>>[
-      darkTokens,
-      _darkBottomBarTheme,
-    ],
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: palette.textSecondary,
+          textStyle: textTheme.titleMedium?.copyWith(
+            color: palette.textSecondary,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+      ),
+      cupertinoOverrideTheme: NoDefaultCupertinoThemeData(
+        brightness: brightness,
+        primaryColor: palette.accent,
+        scaffoldBackgroundColor: palette.background,
+        barBackgroundColor: palette.background,
+        textTheme: CupertinoTextThemeData(
+          primaryColor: palette.accent,
+          textStyle: textTheme.bodyLarge,
+        ),
+      ),
+      extensions: <ThemeExtension<dynamic>>[tokens, _bottomBarTheme],
+    );
+  }
+
+  static final ThemeData light = _buildTheme(
+    AppThemeColors.light,
+    Brightness.light,
+    lightTokens,
   );
+
+  static final ThemeData dark = _buildTheme(
+    AppThemeColors.dark,
+    Brightness.dark,
+    darkTokens,
+  );
+
+  static AppThemeTokens tokensFor(Brightness brightness) {
+    return brightness == Brightness.dark ? darkTokens : lightTokens;
+  }
 }
 
 extension AppThemeContext on BuildContext {
@@ -323,5 +438,6 @@ extension AppThemeContext on BuildContext {
   TextTheme get appText => Theme.of(this).textTheme;
 
   AppThemeTokens get appColors =>
-      Theme.of(this).extension<AppThemeTokens>() ?? AppTheme.darkTokens;
+      Theme.of(this).extension<AppThemeTokens>() ??
+      AppTheme.tokensFor(Theme.of(this).brightness);
 }

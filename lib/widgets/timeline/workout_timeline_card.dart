@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../constants/app_constants.dart';
 import '../../models/workout.dart';
 import '../../theme/app_theme.dart';
 
@@ -25,8 +24,8 @@ class WorkoutTimelineCard extends StatelessWidget {
     final colorScheme = context.appScheme;
     final colors = context.appColors;
     final padding = compact
-        ? const EdgeInsets.all(10)
-        : const EdgeInsets.all(12);
+        ? const EdgeInsets.fromLTRB(18, 10, 10, 10)
+        : const EdgeInsets.fromLTRB(20, 12, 12, 12);
     final titleStyle = textTheme.titleMedium?.copyWith(
       fontWeight: FontWeight.w700,
       fontSize: compact ? 16 : 18,
@@ -35,18 +34,7 @@ class WorkoutTimelineCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outline,
-          width: AppConstants.CARD_STROKE_WIDTH,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colors.shadow.withValues(alpha: 0.18),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: AppTheme.workoutCardBorderRadius,
       ),
       child: Padding(
         padding: padding,

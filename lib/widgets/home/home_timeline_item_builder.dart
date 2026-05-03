@@ -104,7 +104,6 @@ class HomeTimelineItemBuilder {
             index: index,
             isNested: true,
             style: TimelineLineStyle.straight,
-            trackWidth: 86,
             nodeRadius: 9,
             animateLineColor: true,
             animationDelay: item.animationDelay,
@@ -153,18 +152,12 @@ class HomeTimelineItemBuilder {
     }
 
     if (item is TimelineMetricsItem) {
-      return TimelineRow(
-        timestamp: DateTime.now(),
-        index: index,
-        style: TimelineLineStyle.straight,
-        node: const SizedBox.shrink(),
-        nodeRadius: 0,
-        child: PerformanceMetricsCard(
-          currentMonthWorkouts: item.currentMonthWorkouts,
-          currentMonthVolume: item.currentMonthVolume,
-          lastMonthWorkouts: item.lastMonthWorkouts,
-          lastMonthVolume: item.lastMonthVolume,
-        ),
+      return _MetricsTimelineSection(
+        showConnector: index > 0,
+        currentMonthWorkouts: item.currentMonthWorkouts,
+        currentMonthVolume: item.currentMonthVolume,
+        lastMonthWorkouts: item.lastMonthWorkouts,
+        lastMonthVolume: item.lastMonthVolume,
       );
     }
 
@@ -446,6 +439,114 @@ class _DelayedAnimatorState extends State<_DelayedAnimator>
         return widget.builder(context, _animation.value);
       },
     );
+  }
+}
+
+class _MetricsTimelineSection extends StatelessWidget {
+  const _MetricsTimelineSection({
+    required this.showConnector,
+    required this.currentMonthWorkouts,
+    required this.currentMonthVolume,
+    required this.lastMonthWorkouts,
+    required this.lastMonthVolume,
+  });
+
+  final bool showConnector;
+  final int currentMonthWorkouts;
+  final double currentMonthVolume;
+  final int lastMonthWorkouts;
+  final double lastMonthVolume;
+
+  @override
+  Widget build(BuildContext context) {
+    final dimTrackColor = context.appScheme.onSurface.withValues(alpha: 0.3);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth - 32;
+        final metricsWidth = availableWidth < 296 ? availableWidth : 296.0;
+        const connectorHeight = 32.0;
+        const sectionHeight = 104.0;
+
+        return Padding(
+          padding: const EdgeInsets.only(top: 0, bottom: 20),
+          child: SizedBox(
+            height: sectionHeight,
+            width: double.infinity,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _MetricsConnectorPainter(
+                      color: dimTrackColor,
+                      metricsWidth: metricsWidth,
+                      showConnector: showConnector,
+                      connectorHeight: connectorHeight,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: connectorHeight,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: SizedBox(
+                      width: metricsWidth,
+                      child: PerformanceMetricsCard(
+                        currentMonthWorkouts: currentMonthWorkouts,
+                        currentMonthVolume: currentMonthVolume,
+                        lastMonthWorkouts: lastMonthWorkouts,
+                        lastMonthVolume: lastMonthVolume,
+                        margin: EdgeInsets.zero,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MetricsConnectorPainter extends CustomPainter {
+  const _MetricsConnectorPainter({
+    required this.color,
+    required this.metricsWidth,
+    required this.showConnector,
+    required this.connectorHeight,
+  });
+
+  final Color color;
+  final double metricsWidth;
+  final bool showConnector;
+  final double connectorHeight;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const trackCenterX = 23.0;
+
+    if (showConnector) {
+      final dottedPaint = Paint()
+        ..color = color
+        ..style = PaintingStyle.fill;
+
+      double y = 2.0;
+      while (y < size.height - 2.0) {
+        canvas.drawCircle(Offset(trackCenterX, y), 2.0, dottedPaint);
+        y += 6.0;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _MetricsConnectorPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.metricsWidth != metricsWidth ||
+        oldDelegate.showConnector != showConnector ||
+        oldDelegate.connectorHeight != connectorHeight;
   }
 }
 

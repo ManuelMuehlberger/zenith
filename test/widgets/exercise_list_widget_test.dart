@@ -38,7 +38,7 @@ void main() {
   });
 
   testWidgets(
-    'ExerciseListWidget - Clear All button is always visible and disabled with no filters',
+    'ExerciseListWidget - Clear All button is hidden with no filters',
     (tester) async {
       // Seed 3 exercises
       final exercises = [
@@ -93,11 +93,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final clearFinder = find.byKey(const Key('clear_all_button'));
-      expect(clearFinder, findsOneWidget);
-
-      final CupertinoButton clearBtn = tester.widget(clearFinder);
-      // Disabled when no filters selected
-      expect(clearBtn.onPressed, isNull);
+      expect(clearFinder, findsNothing);
     },
   );
 
@@ -168,8 +164,9 @@ void main() {
       expect(find.text('Push-Up'), findsOneWidget);
       expect(find.text('Plank'), findsOneWidget);
 
-      // Clear All should now be enabled
+      // Clear All should now be visible and enabled
       final clearFinder = find.byKey(const Key('clear_all_button'));
+      expect(clearFinder, findsOneWidget);
       CupertinoButton clearBtn = tester.widget(clearFinder);
       expect(clearBtn.onPressed, isNotNull);
 
@@ -182,9 +179,8 @@ void main() {
       expect(find.text('Push-Up'), findsOneWidget);
       expect(find.text('Plank'), findsOneWidget);
 
-      // Clear All disabled again
-      clearBtn = tester.widget(clearFinder);
-      expect(clearBtn.onPressed, isNull);
+      // Clear All disappears again
+      expect(clearFinder, findsNothing);
     },
   );
 

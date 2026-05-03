@@ -30,7 +30,7 @@ void main() {
   });
 
   testWidgets(
-    'ExercisePickerScreen integrates ExerciseListWidget with always-visible Clear All and search at top',
+    'ExercisePickerScreen integrates ExerciseListWidget with conditional Clear All and search at top',
     (tester) async {
       // Seed exercises and muscle groups
       final exercises = [
@@ -70,11 +70,9 @@ void main() {
       await tester.pumpWidget(const MaterialApp(home: ExercisePickerScreen()));
       await tester.pumpAndSettle();
 
-      // Clear All button should be present and initially disabled
+      // Clear All button should be hidden until a filter is selected
       final clearFinder = find.byKey(const Key('clear_all_button'));
-      expect(clearFinder, findsOneWidget);
-      final clearBtn = tester.widget<CupertinoButton>(clearFinder);
-      expect(clearBtn.onPressed, isNull);
+      expect(clearFinder, findsNothing);
 
       // Search container visible at top initially
       final searchContainerFinder = find.byKey(
@@ -94,7 +92,8 @@ void main() {
       expect(find.text('Bench Press'), findsNothing);
       expect(find.text('Push-Up'), findsOneWidget);
 
-      // Clear All should now be enabled and visible
+      // Clear All should now be visible and enabled
+      expect(clearFinder, findsOneWidget);
       final enabledClearBtn = tester.widget<CupertinoButton>(clearFinder);
       expect(enabledClearBtn.onPressed, isNotNull);
     },

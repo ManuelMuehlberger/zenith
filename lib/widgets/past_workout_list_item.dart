@@ -78,7 +78,7 @@ class PastWorkoutListItem extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+              borderRadius: AppTheme.workoutCardBorderRadius,
               border: Border.all(
                 color: outlineColor,
                 width: AppConstants.CARD_STROKE_WIDTH,

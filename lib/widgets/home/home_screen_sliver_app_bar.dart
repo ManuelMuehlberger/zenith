@@ -13,6 +13,7 @@ class HomeScreenSliverAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final headerSurface = Theme.of(context).scaffoldBackgroundColor;
     final transparentSurface = Theme.of(
       context,
     ).colorScheme.surface.withValues(alpha: 0);
@@ -23,7 +24,7 @@ class HomeScreenSliverAppBar extends StatelessWidget {
       centerTitle: true,
       automaticallyImplyLeading: false,
       leading: const SizedBox(width: kToolbarHeight),
-      backgroundColor: context.appColors.overlayStrong.withValues(alpha: 0),
+      backgroundColor: headerSurface.withValues(alpha: 0),
       elevation: 0,
       expandedHeight: kToolbarHeight + 60.0,
       actions: const [ProfileIconButton()],
@@ -35,7 +36,9 @@ class HomeScreenSliverAppBar extends StatelessWidget {
               ClipRRect(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                  child: ColoredBox(color: context.appColors.overlayStrong),
+                  child: ColoredBox(
+                    color: headerSurface.withValues(alpha: 0.94),
+                  ),
                 ),
               ),
               FlexibleSpaceBar(

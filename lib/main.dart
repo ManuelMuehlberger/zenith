@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 import 'package:logging/logging.dart';
+import 'package:soft_edge_blur/soft_edge_blur.dart';
 
 import 'screens/app_wrapper.dart';
 import 'screens/create_workout_screen.dart';
@@ -13,6 +14,7 @@ import 'screens/home_screen.dart';
 import 'screens/insights_screen.dart';
 import 'screens/workout_builder_screen.dart';
 import 'services/app_navigation_service.dart';
+import 'services/user_service.dart';
 import 'services/workout_session_service.dart';
 import 'theme/app_theme.dart';
 import 'utils/app_logger.dart';
@@ -32,15 +34,33 @@ class WorkoutTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Workout Tracker',
-      theme: AppTheme.dark,
-      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
-        value: SystemUiOverlayStyle.light,
-        child: child ?? const SizedBox.shrink(),
-      ),
-      home: const AppWrapper(),
-      debugShowCheckedModeBanner: false,
+    return AnimatedBuilder(
+      animation: UserService.instance,
+      builder: (context, _) {
+        final preference = AppThemePreference.fromStorage(
+          UserService.instance.currentProfile?.theme,
+        );
+
+        return MaterialApp(
+          title: 'Workout Tracker',
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: preference.themeMode,
+          builder: (context, child) {
+            final brightness = Theme.of(context).brightness;
+            final overlayStyle = brightness == Brightness.dark
+                ? SystemUiOverlayStyle.light
+                : SystemUiOverlayStyle.dark;
+
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: overlayStyle,
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
+          home: const AppWrapper(),
+          debugShowCheckedModeBanner: false,
+        );
+      },
     );
   }
 }
@@ -108,7 +128,7 @@ class _MainScreenState extends State<MainScreen> {
           body: BottomBar(
             showIcon: false,
             layout: BottomBarLayout(width: dockWidth),
-            body: IndexedStack(index: currentIndex, children: _screens),
+            body: _MainDockBody(currentIndex: currentIndex, screens: _screens),
             child: _MainFloatingDock(
               currentIndex: currentIndex,
               destinations: _destinations,
@@ -117,6 +137,39 @@ class _MainScreenState extends State<MainScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _MainDockBody extends StatelessWidget {
+  const _MainDockBody({required this.currentIndex, required this.screens});
+
+  final int currentIndex;
+  final List<Widget> screens;
+
+  @override
+  Widget build(BuildContext context) {
+    final blurHeight =
+        AppTheme.mainDockEdgeBlurBaseHeight +
+        MediaQuery.paddingOf(context).bottom;
+
+    return SoftEdgeBlur(
+      edges: [
+        EdgeBlur(
+          type: EdgeType.bottomEdge,
+          size: blurHeight,
+          sigma: AppTheme.mainDockBlurSigma,
+          tintColor: context.appColors.overlaySoft,
+          controlPoints: [
+            ControlPoint(
+              position: AppTheme.mainDockEdgeBlurVisibleStop,
+              type: ControlPointType.visible,
+            ),
+            ControlPoint(position: 1, type: ControlPointType.transparent),
+          ],
+        ),
+      ],
+      child: IndexedStack(index: currentIndex, children: screens),
     );
   }
 }

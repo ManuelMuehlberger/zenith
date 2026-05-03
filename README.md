@@ -72,7 +72,11 @@ Warning-only policy checks:
 
 Coverage gate:
 
-- `scripts/check_changed_dart_coverage.sh` runs `flutter test --coverage` and checks only changed non-frontend files.
+- `scripts/check_changed_dart_coverage.sh` is now a stable shell entrypoint that delegates to `scripts/check_changed_dart_coverage.py`.
+- The gate combines two checks from one authoritative cached `flutter test --coverage` run: all Dart tests must pass, and changed non-frontend production files must meet the coverage threshold.
+- The script caches that full-suite test+coverage artifact under `.dart_tool/coverage_gate/` and reuses it when no `lib/**/*.dart`, `test/**/*.dart`, `pubspec.yaml`, `pubspec.lock`, or coverage-script inputs have changed.
+- Set `ZENITH_DISABLE_COVERAGE_CACHE=1` to force a fresh coverage run.
+- Set `ZENITH_COVERAGE_CACHE_DEBUG=1` to print cache fingerprint decisions.
 - Frontend paths are excluded from enforcement: `lib/screens/`, `lib/widgets/`, `lib/theme/`, and `lib/main.dart`.
 - Non-instrumentable files are also excluded from enforcement: `lib/models/typedefs.dart` and `lib/services/insights/insight_data_provider.dart`.
 - The minimum per-file coverage defaults to `80%` and can be overridden with the `ZENITH_MIN_CHANGED_FILE_COVERAGE` environment variable.

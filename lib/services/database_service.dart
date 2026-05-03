@@ -70,13 +70,13 @@ class DatabaseService {
       _logger.fine('No app settings found, returning default settings');
       return {
         'units': 'metric', // 'metric' or 'imperial'
-        'theme': 'dark',
+        'theme': 'system',
       };
     } catch (e) {
       _logger.severe(
         'Failed to get app settings, returning default settings: $e',
       );
-      return {'units': 'metric', 'theme': 'dark'};
+      return {'units': 'metric', 'theme': 'system'};
     }
   }
 
