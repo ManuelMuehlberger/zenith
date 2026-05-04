@@ -7,6 +7,7 @@ This document outlines the database schema for the Zenith fitness application, d
 ```mermaid
 erDiagram
     UserData ||--o{ WeightEntry : "has"
+    WorkoutFolder ||--o{ WorkoutFolder : "parents"
     WorkoutFolder ||--o{ WorkoutTemplate : "contains"
     WorkoutTemplate ||--o{ Workout : "instantiates"
     WorkoutTemplate ||--o{ WorkoutExercise : "defines"
@@ -35,6 +36,8 @@ erDiagram
     WorkoutFolder {
         String id PK
         String name
+        String parentFolderId FK
+        int depth
         int orderIndex
     }
 
@@ -129,6 +132,8 @@ Organizes workout templates into folders.
 | :--- | :--- | :--- | :--- |
 | `id` | String | Primary Key | Unique identifier for the folder. |
 | `name` | String | Not Null | The name of the folder. |
+| `parentFolderId` | String | Foreign Key (WorkoutFolder.id), Nullable | The parent folder. Null means the folder is at the root level. |
+| `depth` | int | Not Null, Default: 0 | The folder depth in the hierarchy. Root folders are depth 0. |
 | `orderIndex` | int | Nullable | The order index for sorting folders. |
 
 ### `WorkoutTemplate`

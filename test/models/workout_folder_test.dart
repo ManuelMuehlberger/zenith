@@ -12,6 +12,8 @@ void main() {
     test('should create a workout folder with default values', () {
       expect(workoutFolder.id, isNotNull);
       expect(workoutFolder.name, 'Test Folder');
+      expect(workoutFolder.parentFolderId, isNull);
+      expect(workoutFolder.depth, 0);
       expect(workoutFolder.orderIndex, 1);
     });
 
@@ -28,16 +30,40 @@ void main() {
 
       expect(folder.id, id);
       expect(folder.name, 'Test Folder');
+      expect(folder.parentFolderId, isNull);
+      expect(folder.depth, 0);
       expect(folder.orderIndex, 1);
     });
 
+    test('should create a nested workout folder', () {
+      final folder = WorkoutFolder(
+        id: 'child-id',
+        name: 'Child Folder',
+        parentFolderId: 'parent-id',
+        depth: 1,
+        orderIndex: 2,
+      );
+
+      expect(folder.parentFolderId, 'parent-id');
+      expect(folder.depth, 1);
+      expect(folder.orderIndex, 2);
+    });
+
     test('should create a workout folder from map', () {
-      final map = {'id': 'test-id', 'name': 'Test Folder', 'orderIndex': 1};
+      final map = {
+        'id': 'test-id',
+        'name': 'Test Folder',
+        'parentFolderId': 'parent-id',
+        'depth': 1,
+        'orderIndex': 1,
+      };
 
       final folderFromMap = WorkoutFolder.fromMap(map);
 
       expect(folderFromMap.id, 'test-id');
       expect(folderFromMap.name, 'Test Folder');
+      expect(folderFromMap.parentFolderId, 'parent-id');
+      expect(folderFromMap.depth, 1);
       expect(folderFromMap.orderIndex, 1);
     });
 
@@ -48,6 +74,8 @@ void main() {
 
       expect(folderFromMap.id, 'test-id');
       expect(folderFromMap.name, 'Test Folder');
+      expect(folderFromMap.parentFolderId, isNull);
+      expect(folderFromMap.depth, 0);
       expect(folderFromMap.orderIndex, isNull);
     });
 
@@ -56,6 +84,8 @@ void main() {
 
       expect(map['id'], workoutFolder.id);
       expect(map['name'], 'Test Folder');
+      expect(map['parentFolderId'], isNull);
+      expect(map['depth'], 0);
       expect(map['orderIndex'], 1);
     });
 
@@ -65,6 +95,8 @@ void main() {
 
       expect(map['id'], folder.id);
       expect(map['name'], 'Test Folder');
+      expect(map['parentFolderId'], isNull);
+      expect(map['depth'], 0);
       expect(map['orderIndex'], isNull);
     });
 
@@ -75,9 +107,22 @@ void main() {
       );
 
       expect(copiedFolder.name, 'Copied Folder');
+      expect(copiedFolder.parentFolderId, workoutFolder.parentFolderId);
+      expect(copiedFolder.depth, workoutFolder.depth);
       expect(copiedFolder.orderIndex, 2);
       // Other values should remain the same
       expect(copiedFolder.id, workoutFolder.id);
+    });
+
+    test('should copy with new hierarchy values', () {
+      final copiedFolder = workoutFolder.copyWith(
+        parentFolderId: 'parent-id',
+        depth: 1,
+      );
+
+      expect(copiedFolder.parentFolderId, 'parent-id');
+      expect(copiedFolder.depth, 1);
+      expect(copiedFolder.orderIndex, workoutFolder.orderIndex);
     });
 
     test('should copy with new id', () {
@@ -98,6 +143,22 @@ void main() {
       expect(copiedFolder.name, workoutFolder.name);
       expect(copiedFolder.orderIndex, isNull);
       expect(copiedFolder.id, workoutFolder.id);
+    });
+
+    test('should copy with explicitly null parentFolderId', () {
+      final nestedFolder = WorkoutFolder(
+        name: 'Nested Folder',
+        parentFolderId: 'parent-id',
+        depth: 1,
+      );
+
+      final copiedFolder = nestedFolder.copyWith(
+        parentFolderId: null,
+        depth: 0,
+      );
+
+      expect(copiedFolder.parentFolderId, isNull);
+      expect(copiedFolder.depth, 0);
     });
   });
 }

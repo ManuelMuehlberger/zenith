@@ -23,7 +23,7 @@ void main() {
     late WorkoutFolder testFolder;
     late List<WorkoutFolder> testFolders;
 
-    setUp(() {
+    setUp(() async {
       mockTemplateDao = MockWorkoutTemplateDao();
       mockFolderDao = MockWorkoutFolderDao();
       service = WorkoutTemplateService(
@@ -68,6 +68,12 @@ void main() {
         testFolder,
         WorkoutFolder(id: 'folder456', name: 'Lower Body', orderIndex: 1),
       ];
+
+      when(
+        mockFolderDao.getAllWorkoutFoldersOrdered(),
+      ).thenAnswer((_) async => <WorkoutFolder>[]);
+      await service.loadFolders();
+      clearInteractions(mockFolderDao);
     });
 
     test('should be a singleton', () {
@@ -295,15 +301,76 @@ void main() {
       });
 
       test('createFolder should create and return a new folder', () async {
+        when(
+          mockFolderDao.getAllWorkoutFoldersOrdered(),
+        ).thenAnswer((_) async => testFolders);
         when(mockFolderDao.insert(any)).thenAnswer((_) async => 1);
 
         final newFolder = await service.createFolder('New Folder');
 
         expect(newFolder.name, 'New Folder');
+        expect(newFolder.parentFolderId, isNull);
+        expect(newFolder.depth, 0);
         verify(mockFolderDao.insert(any)).called(1);
       });
 
+      test(
+        'createFolder should create nested folder with derived depth',
+        () async {
+          when(
+            mockFolderDao.getAllWorkoutFoldersOrdered(),
+          ).thenAnswer((_) async => testFolders);
+          when(mockFolderDao.insert(any)).thenAnswer((_) async => 1);
+          await service.loadFolders();
+
+          final newFolder = await service.createFolder(
+            'Child Folder',
+            parentFolderId: 'folder123',
+          );
+
+          expect(newFolder.parentFolderId, 'folder123');
+          expect(newFolder.depth, 1);
+          verify(mockFolderDao.insert(any)).called(1);
+        },
+      );
+
+      test(
+        'createFolder should reject nesting deeper than max depth',
+        () async {
+          final deepFolders = [
+            WorkoutFolder(id: 'root', name: 'Root', depth: 0, orderIndex: 0),
+            WorkoutFolder(
+              id: 'child',
+              name: 'Child',
+              parentFolderId: 'root',
+              depth: 1,
+              orderIndex: 0,
+            ),
+            WorkoutFolder(
+              id: 'grandchild',
+              name: 'Grandchild',
+              parentFolderId: 'child',
+              depth: 2,
+              orderIndex: 0,
+            ),
+          ];
+          when(
+            mockFolderDao.getAllWorkoutFoldersOrdered(),
+          ).thenAnswer((_) async => deepFolders);
+          await service.loadFolders();
+
+          expect(
+            () =>
+                service.createFolder('Too Deep', parentFolderId: 'grandchild'),
+            throwsA(isA<StateError>()),
+          );
+        },
+      );
+
       test('updateFolder should call the dao to update', () async {
+        when(
+          mockFolderDao.getAllWorkoutFoldersOrdered(),
+        ).thenAnswer((_) async => testFolders);
         when(
           mockFolderDao.updateWorkoutFolder(testFolder),
         ).thenAnswer((_) async => 1);
@@ -316,26 +383,117 @@ void main() {
       test(
         'deleteFolder should delete folder and move templates out',
         () async {
-          final templatesInFolder = [testTemplate];
           when(
-            mockTemplateDao.getWorkoutTemplatesByFolderId('folder123'),
-          ).thenAnswer((_) async => templatesInFolder);
+            mockFolderDao.getAllWorkoutFoldersOrdered(),
+          ).thenAnswer((_) async => testFolders);
+          when(
+            mockTemplateDao.getAllWorkoutTemplatesOrdered(),
+          ).thenAnswer((_) async => [testTemplate]);
           when(
             mockTemplateDao.updateWorkoutTemplate(any),
           ).thenAnswer((_) async => 1);
           when(
             mockFolderDao.deleteWorkoutFolder('folder123'),
           ).thenAnswer((_) async => 1);
+          when(
+            mockFolderDao.updateWorkoutFolder(any),
+          ).thenAnswer((_) async => 1);
+          await service.loadFolders();
 
           await service.deleteFolder('folder123');
 
-          verify(
-            mockTemplateDao.getWorkoutTemplatesByFolderId('folder123'),
-          ).called(1);
+          verify(mockTemplateDao.getAllWorkoutTemplatesOrdered()).called(1);
           verify(mockTemplateDao.updateWorkoutTemplate(any)).called(1);
           verify(mockFolderDao.deleteWorkoutFolder('folder123')).called(1);
         },
       );
+
+      test('moveFolderToParent should update folder hierarchy', () async {
+        final nestedFolders = [
+          WorkoutFolder(id: 'root-a', name: 'Root A', depth: 0, orderIndex: 0),
+          WorkoutFolder(id: 'root-b', name: 'Root B', depth: 0, orderIndex: 1),
+          WorkoutFolder(
+            id: 'child-a',
+            name: 'Child A',
+            parentFolderId: 'root-a',
+            depth: 1,
+            orderIndex: 0,
+          ),
+        ];
+        when(
+          mockFolderDao.getAllWorkoutFoldersOrdered(),
+        ).thenAnswer((_) async => nestedFolders);
+        when(mockFolderDao.updateWorkoutFolder(any)).thenAnswer((_) async => 1);
+        await service.loadFolders();
+
+        await service.moveFolderToParent('child-a', 'root-b');
+
+        final captured = verify(
+          mockFolderDao.updateWorkoutFolder(captureAny),
+        ).captured.cast<WorkoutFolder>();
+        expect(captured.first.id, 'child-a');
+        expect(captured.first.parentFolderId, 'root-b');
+        expect(captured.first.depth, 1);
+      });
+
+      test('moveFolderToParent should reject cycles', () async {
+        final nestedFolders = [
+          WorkoutFolder(id: 'root-a', name: 'Root A', depth: 0, orderIndex: 0),
+          WorkoutFolder(
+            id: 'child-a',
+            name: 'Child A',
+            parentFolderId: 'root-a',
+            depth: 1,
+            orderIndex: 0,
+          ),
+        ];
+        when(
+          mockFolderDao.getAllWorkoutFoldersOrdered(),
+        ).thenAnswer((_) async => nestedFolders);
+        await service.loadFolders();
+
+        expect(
+          () => service.moveFolderToParent('root-a', 'child-a'),
+          throwsA(isA<StateError>()),
+        );
+      });
+
+      test('moveFolderToParent should reject depth overflow', () async {
+        final nestedFolders = [
+          WorkoutFolder(id: 'root-a', name: 'Root A', depth: 0, orderIndex: 0),
+          WorkoutFolder(
+            id: 'child-a',
+            name: 'Child A',
+            parentFolderId: 'root-a',
+            depth: 1,
+            orderIndex: 0,
+          ),
+          WorkoutFolder(
+            id: 'grandchild-a',
+            name: 'Grandchild A',
+            parentFolderId: 'child-a',
+            depth: 2,
+            orderIndex: 0,
+          ),
+          WorkoutFolder(id: 'root-b', name: 'Root B', depth: 0, orderIndex: 1),
+          WorkoutFolder(
+            id: 'child-b',
+            name: 'Child B',
+            parentFolderId: 'root-b',
+            depth: 1,
+            orderIndex: 0,
+          ),
+        ];
+        when(
+          mockFolderDao.getAllWorkoutFoldersOrdered(),
+        ).thenAnswer((_) async => nestedFolders);
+        await service.loadFolders();
+
+        expect(
+          () => service.moveFolderToParent('root-a', 'child-b'),
+          throwsA(isA<StateError>()),
+        );
+      });
 
       test('reorderFolders should reorder folders successfully', () async {
         // Set up folders in cache first

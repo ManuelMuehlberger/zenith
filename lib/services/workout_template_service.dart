@@ -10,6 +10,8 @@ import 'dao/workout_set_dao.dart';
 import 'dao/workout_template_dao.dart';
 
 class WorkoutTemplateService {
+  static const int maxFolderDepth = 2;
+
   static final WorkoutTemplateService _instance =
       WorkoutTemplateService._internal();
   factory WorkoutTemplateService({
@@ -41,7 +43,9 @@ class WorkoutTemplateService {
 
   // Cache for folders
   List<WorkoutFolder> _folders = [];
-  List<WorkoutFolder> get folders => _folders;
+  bool _foldersLoaded = false;
+
+  List<WorkoutFolder> get folders => getFoldersInParentSync(null);
 
   /// Get all workout templates ordered by folder and orderIndex
   Future<List<WorkoutTemplate>> getAllWorkoutTemplates() async {
@@ -304,17 +308,39 @@ class WorkoutTemplateService {
     _logger.info('Loading folder data');
     try {
       _folders = await _workoutFolderDao.getAllWorkoutFoldersOrdered();
+      _foldersLoaded = true;
       _logger.fine('Loaded ${_folders.length} folders');
     } catch (e) {
       _logger.severe('Failed to load folder data: $e');
       _folders = [];
+      _foldersLoaded = false;
     }
   }
 
   /// Create a new folder
-  Future<WorkoutFolder> createFolder(String name) async {
-    _logger.info('Creating new folder with name: $name');
-    final folder = WorkoutFolder(name: name);
+  Future<WorkoutFolder> createFolder(
+    String name, {
+    WorkoutFolderId? parentFolderId,
+  }) async {
+    await _ensureFoldersLoaded();
+    _logger.info(
+      'Creating new folder with name: $name under parent: $parentFolderId',
+    );
+
+    final parentFolder = parentFolderId == null
+        ? null
+        : _requireFolderById(parentFolderId);
+    final depth = parentFolder == null ? 0 : parentFolder.depth + 1;
+    if (depth > maxFolderDepth) {
+      throw StateError('Folders can only be nested 3 levels deep.');
+    }
+
+    final folder = WorkoutFolder(
+      name: name,
+      parentFolderId: parentFolderId,
+      depth: depth,
+      orderIndex: _nextFolderOrderIndex(parentFolderId),
+    );
 
     await _workoutFolderDao.insert(folder);
     _folders.add(folder);
@@ -324,53 +350,127 @@ class WorkoutTemplateService {
 
   /// Update an existing folder
   Future<void> updateFolder(WorkoutFolder folder) async {
+    await _ensureFoldersLoaded();
     _logger.info('Updating folder with id: ${folder.id}');
     await _workoutFolderDao.updateWorkoutFolder(folder);
-    final index = _folders.indexWhere((f) => f.id == folder.id);
-    if (index != -1) {
-      _folders[index] = folder;
-      _logger.fine('Folder updated in cache');
-    }
+    _replaceCachedFolder(folder);
+    _logger.fine('Folder updated in cache');
   }
 
   /// Delete a folder and move its templates to no folder
   Future<void> deleteFolder(String folderId) async {
+    await _ensureFoldersLoaded();
     _logger.info('Deleting folder with id: $folderId');
 
-    // Move all templates in this folder to no folder
-    final templatesInFolder = await getWorkoutTemplatesByFolder(folderId);
-    for (final template in templatesInFolder) {
+    final folder = _requireFolderById(folderId);
+    final subtreeFolderIds = {folderId, ..._getDescendantFolderIds(folderId)};
+
+    final allTemplates = await getAllWorkoutTemplates();
+    final templatesInSubtree = allTemplates.where(
+      (template) => subtreeFolderIds.contains(template.folderId),
+    );
+    for (final template in templatesInSubtree) {
       final updatedTemplate = template.copyWith(folderId: null);
       await updateWorkoutTemplate(updatedTemplate);
-      _logger.finer('Moved template ${template.id} out of folder');
+      _logger.finer('Moved template ${template.id} out of folder subtree');
     }
 
-    await _workoutFolderDao.deleteWorkoutFolder(folderId);
-    _folders.removeWhere((f) => f.id == folderId);
-    _logger.fine('Folder deleted from database and cache');
+    final foldersToDelete =
+        _folders
+            .where((cachedFolder) => subtreeFolderIds.contains(cachedFolder.id))
+            .toList()
+          ..sort((left, right) => right.depth.compareTo(left.depth));
+
+    for (final nestedFolder in foldersToDelete) {
+      await _workoutFolderDao.deleteWorkoutFolder(nestedFolder.id);
+    }
+
+    _folders.removeWhere(
+      (cachedFolder) => subtreeFolderIds.contains(cachedFolder.id),
+    );
+    await _normalizeFolderOrderIndices(folder.parentFolderId);
+    _logger.fine('Folder subtree deleted from database and cache');
   }
 
   /// Reorder folders
   Future<void> reorderFolders(int oldIndex, int newIndex) async {
-    _logger.info('Reordering folders from $oldIndex to $newIndex');
+    await reorderFoldersInParent(null, oldIndex, newIndex);
+  }
+
+  /// Reorder folders within a given parent scope.
+  Future<void> reorderFoldersInParent(
+    WorkoutFolderId? parentFolderId,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    await _ensureFoldersLoaded();
+    _logger.info(
+      'Reordering folders in parent $parentFolderId from $oldIndex to $newIndex',
+    );
+    final siblings = getFoldersInParentSync(parentFolderId);
     if (oldIndex < 0 ||
-        oldIndex >= _folders.length ||
+        oldIndex >= siblings.length ||
         newIndex < 0 ||
-        newIndex >= _folders.length) {
+        newIndex >= siblings.length) {
       _logger.warning('Invalid reorder indices for folders');
       return;
     }
 
-    // Remove the folder from the old position
-    final folder = _folders.removeAt(oldIndex);
-    // Insert it at the new position
-    _folders.insert(newIndex, folder);
+    final movedFolder = siblings.removeAt(oldIndex);
+    siblings.insert(newIndex, movedFolder);
+    await _applyFolderOrder(parentFolderId, siblings);
+  }
 
-    // Update orderIndex for all folders
-    for (int i = 0; i < _folders.length; i++) {
-      final updatedFolder = _folders[i].copyWith(orderIndex: i);
-      await _workoutFolderDao.updateWorkoutFolder(updatedFolder);
-      _folders[i] = updatedFolder;
+  /// Move a folder into a different parent, validating cycles and depth.
+  Future<void> moveFolderToParent(
+    WorkoutFolderId folderId,
+    WorkoutFolderId? parentFolderId,
+  ) async {
+    await _ensureFoldersLoaded();
+    final folder = _requireFolderById(folderId);
+    final oldParentFolderId = folder.parentFolderId;
+
+    if (folderId == parentFolderId) {
+      throw StateError('A folder cannot become its own parent.');
+    }
+
+    final descendantFolderIds = _getDescendantFolderIds(folderId);
+    if (parentFolderId != null &&
+        descendantFolderIds.contains(parentFolderId)) {
+      throw StateError('A folder cannot be moved into one of its descendants.');
+    }
+
+    final parentFolder = parentFolderId == null
+        ? null
+        : _requireFolderById(parentFolderId);
+    final targetDepth = parentFolder == null ? 0 : parentFolder.depth + 1;
+    final maxSubtreeDepth = _getMaxSubtreeDepth(folderId);
+    final depthDelta = targetDepth - folder.depth;
+
+    if (maxSubtreeDepth + depthDelta > maxFolderDepth) {
+      throw StateError('Folders can only be nested 3 levels deep.');
+    }
+
+    final updatedFolder = folder.copyWith(
+      parentFolderId: parentFolderId,
+      depth: targetDepth,
+      orderIndex: _nextFolderOrderIndex(parentFolderId),
+    );
+    await _workoutFolderDao.updateWorkoutFolder(updatedFolder);
+    _replaceCachedFolder(updatedFolder);
+
+    for (final descendantFolderId in descendantFolderIds) {
+      final descendantFolder = _requireFolderById(descendantFolderId);
+      final shiftedFolder = descendantFolder.copyWith(
+        depth: descendantFolder.depth + depthDelta,
+      );
+      await _workoutFolderDao.updateWorkoutFolder(shiftedFolder);
+      _replaceCachedFolder(shiftedFolder);
+    }
+
+    await _normalizeFolderOrderIndices(oldParentFolderId);
+    if (oldParentFolderId != parentFolderId) {
+      await _normalizeFolderOrderIndices(parentFolderId);
     }
   }
 
@@ -416,6 +516,67 @@ class WorkoutTemplateService {
     }
   }
 
+  /// Get folders directly inside the given parent.
+  Future<List<WorkoutFolder>> getFoldersInParent(
+    WorkoutFolderId? parentFolderId,
+  ) async {
+    await _ensureFoldersLoaded();
+    return getFoldersInParentSync(parentFolderId);
+  }
+
+  /// Synchronous cached view of folders directly inside the given parent.
+  List<WorkoutFolder> getFoldersInParentSync(WorkoutFolderId? parentFolderId) {
+    final foldersInParent = _folders
+        .where((folder) => folder.parentFolderId == parentFolderId)
+        .toList();
+    foldersInParent.sort(
+      (left, right) => (left.orderIndex ?? 0).compareTo(right.orderIndex ?? 0),
+    );
+    return foldersInParent;
+  }
+
+  /// Returns the ancestry path for a folder from root to the folder itself.
+  List<WorkoutFolder> getFolderPathSync(WorkoutFolderId folderId) {
+    final path = <WorkoutFolder>[];
+    WorkoutFolder? currentFolder = getFolderById(folderId);
+    while (currentFolder != null) {
+      path.insert(0, currentFolder);
+      currentFolder = currentFolder.parentFolderId == null
+          ? null
+          : getFolderById(currentFolder.parentFolderId!);
+    }
+    return path;
+  }
+
+  /// Returns whether moving a folder to a target parent would be valid.
+  bool canMoveFolderToParentSync(
+    WorkoutFolderId folderId,
+    WorkoutFolderId? parentFolderId,
+  ) {
+    final folder = getFolderById(folderId);
+    if (folder == null || folderId == parentFolderId) {
+      return false;
+    }
+
+    final descendantFolderIds = _getDescendantFolderIds(folderId);
+    if (parentFolderId != null &&
+        descendantFolderIds.contains(parentFolderId)) {
+      return false;
+    }
+
+    final parentFolder = parentFolderId == null
+        ? null
+        : getFolderById(parentFolderId);
+    if (parentFolderId != null && parentFolder == null) {
+      return false;
+    }
+
+    final targetDepth = parentFolder == null ? 0 : parentFolder.depth + 1;
+    final maxSubtreeDepth = _getMaxSubtreeDepth(folderId);
+    final depthDelta = targetDepth - folder.depth;
+    return maxSubtreeDepth + depthDelta <= maxFolderDepth;
+  }
+
   /// Get templates in a specific folder (cached version)
   Future<List<WorkoutTemplate>> getTemplatesInFolder(String? folderId) async {
     if (folderId == null) {
@@ -439,7 +600,98 @@ class WorkoutTemplateService {
     }
 
     _folders = [];
+    _foldersLoaded = true;
     _logger.info('All user templates and folders cleared');
+  }
+
+  Future<void> _ensureFoldersLoaded() async {
+    if (!_foldersLoaded) {
+      await loadFolders();
+    }
+  }
+
+  WorkoutFolder _requireFolderById(WorkoutFolderId folderId) {
+    final folder = getFolderById(folderId);
+    if (folder == null) {
+      throw StateError('Folder not found: $folderId');
+    }
+    return folder;
+  }
+
+  int _nextFolderOrderIndex(WorkoutFolderId? parentFolderId) {
+    final siblings = getFoldersInParentSync(parentFolderId);
+    if (siblings.isEmpty) {
+      return 0;
+    }
+
+    final highestOrderIndex = siblings
+        .map((folder) => folder.orderIndex ?? 0)
+        .reduce((left, right) => left > right ? left : right);
+    return highestOrderIndex + 1;
+  }
+
+  Set<WorkoutFolderId> _getDescendantFolderIds(WorkoutFolderId folderId) {
+    final descendants = <WorkoutFolderId>{};
+    final pendingIds = <WorkoutFolderId>[folderId];
+
+    while (pendingIds.isNotEmpty) {
+      final currentFolderId = pendingIds.removeLast();
+      final children = getFoldersInParentSync(currentFolderId);
+      for (final child in children) {
+        if (descendants.add(child.id)) {
+          pendingIds.add(child.id);
+        }
+      }
+    }
+
+    return descendants;
+  }
+
+  int _getMaxSubtreeDepth(WorkoutFolderId folderId) {
+    final folder = _requireFolderById(folderId);
+    var maxDepthInSubtree = folder.depth;
+
+    for (final descendantFolderId in _getDescendantFolderIds(folderId)) {
+      final descendantFolder = _requireFolderById(descendantFolderId);
+      if (descendantFolder.depth > maxDepthInSubtree) {
+        maxDepthInSubtree = descendantFolder.depth;
+      }
+    }
+
+    return maxDepthInSubtree;
+  }
+
+  Future<void> _normalizeFolderOrderIndices(
+    WorkoutFolderId? parentFolderId,
+  ) async {
+    final siblings = getFoldersInParentSync(parentFolderId);
+    await _applyFolderOrder(parentFolderId, siblings);
+  }
+
+  Future<void> _applyFolderOrder(
+    WorkoutFolderId? parentFolderId,
+    List<WorkoutFolder> orderedFolders,
+  ) async {
+    for (int index = 0; index < orderedFolders.length; index++) {
+      final orderedFolder = orderedFolders[index];
+      final updatedFolder = orderedFolder.copyWith(
+        parentFolderId: parentFolderId,
+        orderIndex: index,
+      );
+      await _workoutFolderDao.updateWorkoutFolder(updatedFolder);
+      _replaceCachedFolder(updatedFolder);
+    }
+  }
+
+  void _replaceCachedFolder(WorkoutFolder folder) {
+    final index = _folders.indexWhere(
+      (cachedFolder) => cachedFolder.id == folder.id,
+    );
+    if (index == -1) {
+      _folders.add(folder);
+    } else {
+      _folders[index] = folder;
+    }
   }
 
   // TEMPLATE EXERCISE MANAGEMENT

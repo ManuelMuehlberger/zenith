@@ -22,6 +22,8 @@ Future<Database> _openTestDatabase() {
           CREATE TABLE WorkoutFolder (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
+            parentFolderId TEXT,
+            depth INTEGER NOT NULL DEFAULT 0,
             orderIndex INTEGER
           )
         ''');
@@ -33,9 +35,17 @@ Future<Database> _openTestDatabase() {
 WorkoutFolder _folder({
   required String id,
   required String name,
+  String? parentFolderId,
+  int depth = 0,
   int? orderIndex,
 }) {
-  return WorkoutFolder(id: id, name: name, orderIndex: orderIndex);
+  return WorkoutFolder(
+    id: id,
+    name: name,
+    parentFolderId: parentFolderId,
+    depth: depth,
+    orderIndex: orderIndex,
+  );
 }
 
 void main() {
@@ -72,6 +82,8 @@ void main() {
       expect(dao.toMap(folder), {
         'id': 'folder-1',
         'name': 'Chest Workouts',
+        'parentFolderId': null,
+        'depth': 0,
         'orderIndex': 7,
       });
     });
@@ -85,6 +97,8 @@ void main() {
 
       expect(folder.id, 'folder-2');
       expect(folder.name, 'Arm Workouts');
+      expect(folder.parentFolderId, isNull);
+      expect(folder.depth, 0);
       expect(folder.orderIndex, isNull);
     });
 
@@ -98,6 +112,8 @@ void main() {
       expect(retrieved, isNotNull);
       expect(retrieved!.id, 'folder-1');
       expect(retrieved.name, 'Push');
+      expect(retrieved.parentFolderId, isNull);
+      expect(retrieved.depth, 0);
       expect(retrieved.orderIndex, 2);
       expect(await dao.getWorkoutFolderById('missing-folder'), isNull);
     });
@@ -138,6 +154,8 @@ void main() {
         expect(updatedRow.single, {
           'id': 'folder-1',
           'name': 'Updated',
+          'parentFolderId': null,
+          'depth': 0,
           'orderIndex': null,
         });
         expect(
@@ -179,6 +197,8 @@ void main() {
         await database.insert(dao.tableName, {
           'id': 'broken-folder',
           'name': 'Broken',
+          'parentFolderId': null,
+          'depth': 0,
           'orderIndex': 'not-an-int',
         });
 
