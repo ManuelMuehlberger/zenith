@@ -30,7 +30,7 @@ void main() {
     test('getAppSettings returns defaults when none saved', () async {
       final settings = await DatabaseService.instance.getAppSettings();
       expect(settings['units'], 'metric');
-      expect(settings['theme'], 'dark');
+      expect(settings['theme'], 'system');
     });
 
     test('saveAppSettings persists and getAppSettings returns saved', () async {
@@ -65,7 +65,7 @@ void main() {
       await prefs.setString('app_settings', '{invalid-json');
       final settings = await DatabaseService.instance.getAppSettings();
       expect(settings['units'], 'metric');
-      expect(settings['theme'], 'dark');
+      expect(settings['theme'], 'system');
     });
 
     test('getActiveWorkoutState returns null on corrupt JSON', () async {

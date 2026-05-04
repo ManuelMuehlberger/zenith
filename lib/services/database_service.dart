@@ -13,6 +13,7 @@ class DatabaseService {
 
   static const String _activeWorkoutKey = 'active_workout';
   static const String _settingsKey = 'app_settings';
+  static const String _legacyWorkoutsKey = 'workouts';
 
   // Active Workout State Management
   Future<void> saveActiveWorkoutState(Map<String, dynamic> workoutState) async {
@@ -95,6 +96,7 @@ class DatabaseService {
     _logger.warning('Clearing all data from SharedPreferences');
     try {
       final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_legacyWorkoutsKey);
       await prefs.remove(_activeWorkoutKey);
       await prefs.remove(_settingsKey);
       _logger.info('All data cleared successfully');
