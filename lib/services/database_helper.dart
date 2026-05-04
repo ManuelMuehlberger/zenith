@@ -19,7 +19,7 @@ class DatabaseHelper {
   static final Logger _logger = Logger('DatabaseHelper');
 
   static const String _dbName = 'workout_tracker.db';
-  static const int _dbVersion = 7; // Added Workout.mood column
+  static const int _dbVersion = 8; // Added nested WorkoutFolder hierarchy
 
   Future<String> get databasePath async {
     final documentsDirectory = await getApplicationDocumentsDirectory();
@@ -130,7 +130,10 @@ class DatabaseHelper {
         CREATE TABLE WorkoutFolder (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
-          orderIndex INTEGER
+          parentFolderId TEXT,
+          depth INTEGER NOT NULL DEFAULT 0,
+          orderIndex INTEGER,
+          FOREIGN KEY (parentFolderId) REFERENCES WorkoutFolder (id) ON DELETE CASCADE
         )
       ''');
 
@@ -433,6 +436,32 @@ class DatabaseHelper {
           _logger.info('mood column already exists in Workout table');
         }
         _logger.info('Version 7 upgrades completed');
+      }
+
+      if (oldVersion < 8) {
+        _logger.info('Applying version 8 upgrades');
+        try {
+          await db.execute(
+            'ALTER TABLE WorkoutFolder ADD COLUMN parentFolderId TEXT',
+          );
+          _logger.info('Added parentFolderId column to WorkoutFolder table');
+        } catch (e) {
+          _logger.info(
+            'parentFolderId column already exists in WorkoutFolder table',
+          );
+        }
+        try {
+          await db.execute(
+            'ALTER TABLE WorkoutFolder ADD COLUMN depth INTEGER NOT NULL DEFAULT 0',
+          );
+          _logger.info('Added depth column to WorkoutFolder table');
+        } catch (e) {
+          _logger.info('depth column already exists in WorkoutFolder table');
+        }
+        await db.rawUpdate(
+          'UPDATE WorkoutFolder SET depth = 0 WHERE depth IS NULL',
+        );
+        _logger.info('Version 8 upgrades completed');
       }
 
       _logger.info('Database upgrade completed successfully');

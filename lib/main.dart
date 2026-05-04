@@ -82,7 +82,7 @@ class _MainScreenState extends State<MainScreen> {
     _MainDockDestination(
       label: 'Workouts',
       icon: Icons.fitness_center_outlined,
-      selectedIcon: Icons.fitness_center,
+      selectedIcon: Icons.fitness_center_rounded,
     ),
     _MainDockDestination(
       label: 'Insights',

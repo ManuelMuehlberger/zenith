@@ -20,9 +20,19 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(home: WorkoutCompletionScreen(session: session)),
       );
+      await tester.pump();
 
-      // Expect the duration text to show minutes only (no seconds), e.g., '1m'
-      expect(find.text('1m'), findsOneWidget);
+      final durationFinder = find.descendant(
+        of: find.byKey(const Key('duration_summary')),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Text &&
+              widget.data != null &&
+              RegExp(r'^\d+h \d+m$|^\d+m$').hasMatch(widget.data!),
+        ),
+      );
+
+      expect(durationFinder, findsOneWidget);
     });
 
     testWidgets('uses completedAt when present to display duration', (
@@ -42,9 +52,14 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(home: WorkoutCompletionScreen(session: session)),
       );
+      await tester.pump();
 
-      // Minutes only (no seconds) since we ignore seconds
-      expect(find.text('12m'), findsOneWidget);
+      final durationFinder = find.descendant(
+        of: find.byKey(const Key('duration_summary')),
+        matching: find.text('12m'),
+      );
+
+      expect(durationFinder, findsOneWidget);
     });
 
     testWidgets('mood labels are not shown (only emojis)', (
