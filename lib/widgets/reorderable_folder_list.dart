@@ -1,43 +1,53 @@
-import 'dart:developer' as developer; // Add debug logging
+import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../constants/app_constants.dart';
-import '../models/workout_template.dart';
+import '../models/workout_folder.dart';
 import '../theme/app_theme.dart';
-import 'expandable_workout_card.dart';
+import 'folder_card.dart';
 import 'workout_builder_drag_payload.dart';
 
-class ReorderableWorkoutTemplateList extends StatefulWidget {
-  final List<WorkoutTemplate> templates;
-  final String? folderId;
-  final Function(WorkoutTemplate) onTemplateTap;
-  final Function(WorkoutTemplate) onTemplateDeletePressed;
-  final Function(int, int) onTemplateReordered;
-  final VoidCallback? onAddWorkoutPressed;
-  final ValueChanged<WorkoutBuilderDragPayload>? onDragStarted;
-  final VoidCallback? onDragEnded;
-
-  const ReorderableWorkoutTemplateList({
+class ReorderableFolderList extends StatefulWidget {
+  const ReorderableFolderList({
     super.key,
-    required this.templates,
-    required this.folderId,
-    required this.onTemplateTap,
-    required this.onTemplateDeletePressed,
-    required this.onTemplateReordered,
-    this.onAddWorkoutPressed,
+    required this.folders,
+    required this.currentParentFolderId,
+    required this.itemCountByFolder,
+    required this.subfolderCountByFolder,
+    required this.activeDragPayload,
+    required this.onFolderTap,
+    required this.onRenamePressed,
+    required this.onDeletePressed,
+    required this.onFolderReordered,
+    required this.onPayloadDroppedIntoFolder,
+    required this.canDropIntoFolder,
     this.onDragStarted,
     this.onDragEnded,
   });
 
+  final List<WorkoutFolder> folders;
+  final String? currentParentFolderId;
+  final Map<String?, int> itemCountByFolder;
+  final Map<String, int> subfolderCountByFolder;
+  final WorkoutBuilderDragPayload? activeDragPayload;
+  final ValueChanged<WorkoutFolder> onFolderTap;
+  final ValueChanged<WorkoutFolder> onRenamePressed;
+  final ValueChanged<WorkoutFolder> onDeletePressed;
+  final void Function(int oldIndex, int newIndex) onFolderReordered;
+  final void Function(WorkoutBuilderDragPayload payload, WorkoutFolder folder)
+  onPayloadDroppedIntoFolder;
+  final bool Function(WorkoutBuilderDragPayload payload, WorkoutFolder folder)
+  canDropIntoFolder;
+  final ValueChanged<WorkoutBuilderDragPayload>? onDragStarted;
+  final VoidCallback? onDragEnded;
+
   @override
-  State<ReorderableWorkoutTemplateList> createState() =>
-      _ReorderableWorkoutTemplateListState();
+  State<ReorderableFolderList> createState() => _ReorderableFolderListState();
 }
 
-class _ReorderableWorkoutTemplateListState
-    extends State<ReorderableWorkoutTemplateList> {
+class _ReorderableFolderListState extends State<ReorderableFolderList> {
   static const double _reorderGapHeight = 18;
   static const double _dropIndexHysteresis = 16;
   static const double _autoScrollTriggerExtent = 96;
@@ -52,132 +62,54 @@ class _ReorderableWorkoutTemplateListState
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
-    final textTheme = context.appText;
-
-    if (widget.templates.isEmpty) {
+    if (widget.folders.isEmpty) {
       return const SizedBox.shrink();
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final addWorkoutButton = widget.onAddWorkoutPressed == null
-                ? null
-                : TextButton.icon(
-                    onPressed: widget.onAddWorkoutPressed,
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                    icon: const Icon(Icons.playlist_add_rounded, size: 18),
-                    label: const Text('Add workout'),
-                  );
-
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          widget.folderId != null
-                              ? 'Workouts in folder'
-                              : 'Workouts',
-                          style: textTheme.titleMedium?.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.surfaceAlt,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          '${widget.templates.length}',
-                          style: textTheme.labelMedium?.copyWith(
-                            color: colors.textSecondary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (addWorkoutButton != null) ...[
-                  const SizedBox(width: 12),
-                  Flexible(
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: addWorkoutButton,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            );
-          },
-        ),
-        const SizedBox(height: AppConstants.SECTION_VERTICAL_GAP),
-        ...List.generate(widget.templates.length, (index) {
-          return _buildReorderableItem(index);
-        }),
-        _buildDropZone(widget.templates.length), // Add drop zone at the end
+        ...List.generate(widget.folders.length, _buildReorderableItem),
+        _buildDropZone(widget.folders.length),
       ],
     );
   }
 
   Widget _buildReorderableItem(int index) {
-    final template = widget.templates[index];
-    final itemKey = _itemKeyFor(template.id);
+    final folder = widget.folders[index];
+    final itemKey = _itemKeyFor(folder.id);
+    final card = FolderCard(
+      key: ValueKey(folder.id),
+      folder: folder,
+      itemCount: widget.itemCountByFolder[folder.id] ?? 0,
+      subfolderCount: widget.subfolderCountByFolder[folder.id] ?? 0,
+      activeDragPayload: widget.activeDragPayload,
+      canAcceptPayload: (payload) => widget.canDropIntoFolder(payload, folder),
+      onPayloadDropped: (payload) =>
+          widget.onPayloadDroppedIntoFolder(payload, folder),
+      onTap: () => widget.onFolderTap(folder),
+      onRenamePressed: () => widget.onRenamePressed(folder),
+      onDeletePressed: () => widget.onDeletePressed(folder),
+    );
+
+    final payload = FolderDragPayload(
+      folderId: folder.id,
+      index: index,
+      parentFolderId: widget.currentParentFolderId,
+      depth: folder.depth,
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final card = ExpandableWorkoutCard(
-          key: ValueKey(template.id),
-          template: template,
-          index: index,
-          onEditPressed: () => widget.onTemplateTap(template),
-          onDeletePressed: () => widget.onTemplateDeletePressed(template),
-        );
-
-        final payload = TemplateDragPayload(
-          templateId: template.id,
-          index: index,
-          parentFolderId: widget.folderId,
-        );
-
         final draggable = LongPressDraggable<WorkoutBuilderDragPayload>(
           data: payload,
           delay: const Duration(milliseconds: 300),
           onDragStarted: () {
             developer.log(
-              'Drag started for template: ${template.id} at index: $index',
+              'Drag started for folder: ${folder.id} at index: $index',
             );
             HapticFeedback.mediumImpact();
             _draggedIndex = index;
-            _draggedOriginRectAtStart = _rectForTemplate(template.id);
+            _draggedOriginRectAtStart = _rectForFolder(folder.id);
             _dragStartScrollPixels = Scrollable.maybeOf(
               context,
             )?.position.pixels;
@@ -192,7 +124,7 @@ class _ReorderableWorkoutTemplateListState
           },
           onDragEnd: (details) {
             developer.log(
-              'Drag ended for template: ${template.id} at index: $index',
+              'Drag ended for folder: ${folder.id} at index: $index',
             );
             if (!details.wasAccepted) {
               _reorderUsingDropIndex(index);
@@ -206,7 +138,7 @@ class _ReorderableWorkoutTemplateListState
           },
           onDraggableCanceled: (velocity, offset) {
             developer.log(
-              'Drag canceled for template: ${template.id} at index: $index',
+              'Drag canceled for folder: ${folder.id} at index: $index',
             );
             _draggedIndex = null;
             _draggedOriginRectAtStart = null;
@@ -239,69 +171,24 @@ class _ReorderableWorkoutTemplateListState
           child: card,
         );
 
-        return DragTarget<WorkoutBuilderDragPayload>(
-          onWillAcceptWithDetails: (details) {
-            final data = details.data;
-            if (data is! TemplateDragPayload) return false;
-            if (data.parentFolderId != widget.folderId) return false;
-            final draggedIndex = data.index;
-            developer.log(
-              'Drag target will accept template at index: $index, draggedIndex: $draggedIndex',
-            );
-            return true;
-          },
-          onLeave: (data) {
-            developer.log('Drag target leave at index: $index');
-            _updateDropIndexFromPointer();
-          },
-          onAcceptWithDetails: (details) {
-            final data = details.data;
-            if (data is! TemplateDragPayload) {
-              return;
-            }
-            developer.log(
-              'Drag target accept template at index: $index for draggedIndex: ${data.index}',
-            );
-            _reorderUsingDropIndex(data.index);
-            _setDropIndex(null);
-          },
-          builder: (context, candidateData, rejectedData) {
-            final showGap = _dropIndex == index && _draggedIndex != index;
-
-            return Column(
-              children: [
-                AnimatedContainer(
-                  duration: AppConstants.DRAG_ANIMATION_DURATION,
-                  curve: AppConstants.DRAG_ANIMATION_CURVE,
-                  height: showGap ? _reorderGapHeight : 0,
-                  width: double.infinity,
-                  margin: showGap
-                      ? const EdgeInsets.only(
-                          bottom: AppConstants.CARD_VERTICAL_GAP,
-                        )
-                      : EdgeInsets.zero,
-                  decoration: BoxDecoration(
-                    color: context.appScheme.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-                KeyedSubtree(key: itemKey, child: draggable),
-              ],
-            );
-          },
+        return Column(
+          children: [
+            _buildReorderZone(index),
+            KeyedSubtree(key: itemKey, child: draggable),
+          ],
         );
       },
     );
   }
 
-  Widget _buildDropZone(int targetIndex) {
+  Widget _buildReorderZone(int targetIndex) {
     return DragTarget<WorkoutBuilderDragPayload>(
       onWillAcceptWithDetails: (details) {
         final data = details.data;
-        if (data is! TemplateDragPayload) return false;
-        if (data.parentFolderId != widget.folderId) return false;
-        final draggedIndex = data.index;
-        if (draggedIndex == targetIndex) {
+        if (data is! FolderDragPayload) {
+          return false;
+        }
+        if (data.parentFolderId != widget.currentParentFolderId) {
           return false;
         }
         return true;
@@ -311,25 +198,74 @@ class _ReorderableWorkoutTemplateListState
       },
       onAcceptWithDetails: (details) {
         final data = details.data;
-        if (data is! TemplateDragPayload) {
+        if (data is! FolderDragPayload) {
           return;
         }
         _reorderUsingDropIndex(data.index);
         _setDropIndex(null);
       },
       builder: (context, candidateData, rejectedData) {
-        final showGap = _dropIndex == targetIndex;
+        final showPlaceholder =
+            _dropIndex == targetIndex && _draggedIndex != targetIndex;
 
         return AnimatedContainer(
           duration: AppConstants.DRAG_ANIMATION_DURATION,
           curve: AppConstants.DRAG_ANIMATION_CURVE,
-          height: showGap ? _reorderGapHeight : AppConstants.CARD_VERTICAL_GAP,
+          height: showPlaceholder ? _reorderGapHeight : 0,
           width: double.infinity,
-          margin: showGap
+          margin: showPlaceholder
               ? const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP)
               : EdgeInsets.zero,
           decoration: BoxDecoration(
-            color: showGap
+            color: context.appScheme.primary.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(999),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDropZone(int targetIndex) {
+    return DragTarget<WorkoutBuilderDragPayload>(
+      onWillAcceptWithDetails: (details) {
+        final data = details.data;
+        if (data is! FolderDragPayload) {
+          return false;
+        }
+        if (data.parentFolderId != widget.currentParentFolderId) {
+          return false;
+        }
+        if (data.index == targetIndex) {
+          return false;
+        }
+        return true;
+      },
+      onLeave: (data) {
+        _updateDropIndexFromPointer();
+      },
+      onAcceptWithDetails: (details) {
+        final data = details.data;
+        if (data is! FolderDragPayload) {
+          return;
+        }
+        _reorderUsingDropIndex(data.index);
+        _setDropIndex(null);
+      },
+      builder: (context, candidateData, rejectedData) {
+        final showPlaceholder = _dropIndex == targetIndex;
+
+        return AnimatedContainer(
+          duration: AppConstants.DRAG_ANIMATION_DURATION,
+          curve: AppConstants.DRAG_ANIMATION_CURVE,
+          height: showPlaceholder
+              ? _reorderGapHeight
+              : AppConstants.CARD_VERTICAL_GAP,
+          width: double.infinity,
+          margin: showPlaceholder
+              ? const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP)
+              : EdgeInsets.zero,
+          decoration: BoxDecoration(
+            color: showPlaceholder
                 ? context.appScheme.primary.withValues(alpha: 0.12)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(999),
@@ -395,13 +331,13 @@ class _ReorderableWorkoutTemplateListState
   }
 
   bool _updateDropIndexFromPointer() {
-    if (widget.templates.isEmpty || _lastDragGlobalPosition == null) {
+    if (widget.folders.isEmpty || _lastDragGlobalPosition == null) {
       return false;
     }
 
     final centers = <double>[];
-    for (final template in widget.templates) {
-      final rect = _rectForTemplate(template.id);
+    for (final folder in widget.folders) {
+      final rect = _rectForFolder(folder.id);
       if (rect == null) {
         return false;
       }
@@ -419,7 +355,7 @@ class _ReorderableWorkoutTemplateListState
       return true;
     }
 
-    var targetIndex = _dropIndex!.clamp(0, widget.templates.length);
+    var targetIndex = _dropIndex!.clamp(0, widget.folders.length);
 
     while (targetIndex > 0) {
       final upperBoundary = _boundaryForDropIndex(centers, targetIndex - 1);
@@ -430,7 +366,7 @@ class _ReorderableWorkoutTemplateListState
       break;
     }
 
-    while (targetIndex < widget.templates.length) {
+    while (targetIndex < widget.folders.length) {
       final lowerBoundary = _boundaryForDropIndex(centers, targetIndex);
       if (pointerY > lowerBoundary + _dropIndexHysteresis) {
         targetIndex++;
@@ -489,11 +425,11 @@ class _ReorderableWorkoutTemplateListState
       return;
     }
 
-    widget.onTemplateReordered(draggedIndex, newIndex);
+    widget.onFolderReordered(draggedIndex, newIndex);
   }
 
-  Rect? _rectForTemplate(String templateId) {
-    final key = _itemKeys[templateId];
+  Rect? _rectForFolder(String folderId) {
+    final key = _itemKeys[folderId];
     final context = key?.currentContext;
     if (context == null) {
       return null;
@@ -508,8 +444,8 @@ class _ReorderableWorkoutTemplateListState
     return topLeft & renderObject.size;
   }
 
-  GlobalKey _itemKeyFor(String templateId) {
-    return _itemKeys.putIfAbsent(templateId, GlobalKey.new);
+  GlobalKey _itemKeyFor(String folderId) {
+    return _itemKeys.putIfAbsent(folderId, GlobalKey.new);
   }
 
   Rect? _currentDraggedOriginRect() {

@@ -1,9 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
 import '../constants/app_constants.dart';
@@ -15,6 +13,7 @@ import '../services/workout_template_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/navigation_helper.dart';
 import '../utils/workout_metrics.dart';
+import 'workouts_page_menu_theme.dart';
 
 class ExpandableWorkoutCard extends StatefulWidget {
   // Unified: support either a concrete Workout (legacy usage) or a WorkoutTemplate (preferred)
@@ -44,13 +43,7 @@ class ExpandableWorkoutCard extends StatefulWidget {
   State<ExpandableWorkoutCard> createState() => _ExpandableWorkoutCardState();
 }
 
-class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
-    with SingleTickerProviderStateMixin {
-  bool _isExpanded = false;
-  late AnimationController _animationController;
-  late Animation<double> _expandAnimation;
-
-  // For template mode: lazily loaded exercises preview
+class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard> {
   List<WorkoutExercise>? _templateExercises;
   bool _loadingTemplateExercises = false;
 
@@ -58,6 +51,17 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
 
   String get _displayName =>
       _isTemplate ? widget.template!.name : widget.workout!.name;
+
+  String? get _displayDescription {
+    final rawValue = _isTemplate
+        ? widget.template!.description
+        : widget.workout!.description;
+    if (rawValue == null) {
+      return null;
+    }
+    final trimmed = rawValue.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
 
   IconData get _displayIcon => _isTemplate
       ? WorkoutIcons.getIconDataFromCodePoint(widget.template!.iconCodePoint)
@@ -92,15 +96,6 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _expandAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    );
-
     if (_isTemplate) {
       _loadTemplateExercises();
     }
@@ -141,12 +136,6 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
     }
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
   Future<void> _loadTemplateExercises() async {
     if (_loadingTemplateExercises || !_isTemplate) return;
     setState(() {
@@ -177,21 +166,6 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
         });
       }
     }
-  }
-
-  void _toggleExpansion() {
-    setState(() {
-      _isExpanded = !_isExpanded;
-      if (_isExpanded) {
-        _animationController.forward();
-        if (_isTemplate && _templateExercises == null) {
-          _loadTemplateExercises();
-        }
-      } else {
-        _animationController.reverse();
-      }
-    });
-    HapticFeedback.lightImpact();
   }
 
   Future<void> _startWorkout() async {
@@ -253,67 +227,45 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
     final textTheme = context.appText;
     final colors = context.appColors;
     final displayColor = _resolveDisplayColor(colorScheme.primary);
-    final transparentSurface = colorScheme.surface.withValues(alpha: 0);
-    final defaultBorderColor = colors.textPrimary.withValues(alpha: 0.35);
-    final exerciseCount = _exerciseCount;
-    final totalSets = _totalSets;
+    final description = _displayDescription;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: AppTheme.workoutCardBorderRadius,
-        border: Border.all(
-          color: _isExpanded
-              ? colorScheme.primary.withValues(alpha: 0.6)
-              : defaultBorderColor,
-          width: _isExpanded ? 1.5 : AppConstants.CARD_STROKE_WIDTH,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colors.shadow.withValues(alpha: 0.18),
-            blurRadius: 10.0,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
-      child: Material(
-        color: transparentSurface,
-        child: InkWell(
-          borderRadius: AppTheme.workoutCardBorderRadius,
-          onTap: _toggleExpansion,
-          child: Column(
-            children: [
-              // Main card content
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppConstants.CARD_PADDING,
-                  AppConstants.CARD_PADDING,
-                  AppConstants.CARD_PADDING,
-                  0,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: displayColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: Icon(_displayIcon, color: displayColor, size: 28),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Icon container with rounded modern iOS styling
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: displayColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(
-                          26,
-                        ), // Fully rounded
-                        border: Border.all(
-                          color: displayColor.withValues(alpha: 0.3),
-                          width: 0.5,
+                const SizedBox(width: AppConstants.ITEM_HORIZONTAL_GAP),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _isTemplate ? 'Template' : 'Workout',
+                        style: textTheme.labelMedium?.copyWith(
+                          color: colors.textSecondary,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                      child: Icon(_displayIcon, color: displayColor, size: 26),
-                    ),
-                    const SizedBox(width: AppConstants.ITEM_HORIZONTAL_GAP),
-                    Expanded(
-                      child: Text(
+                      const SizedBox(height: 6),
+                      Text(
                         _displayName,
                         style: textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
@@ -322,363 +274,198 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard>
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    // Action buttons
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Expand/collapse button without background
-                        AnimatedRotation(
-                          turns: _isExpanded ? 0.5 : 0,
-                          duration: const Duration(milliseconds: 300),
-                          child: Icon(
-                            Icons.keyboard_arrow_down,
+                      if (description != null) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          description,
+                          style: textTheme.bodyMedium?.copyWith(
                             color: colors.textSecondary,
-                            size: 20,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Menu button without background
-                        PullDownButton(
-                          itemBuilder: (context) => [
-                            PullDownMenuItem(
-                              onTap: widget.onEditPressed,
-                              title: 'Edit Workout',
-                              icon: CupertinoIcons.pencil,
-                            ),
-                            PullDownMenuItem(
-                              onTap: widget.onDeletePressed,
-                              title: 'Delete Workout',
-                              isDestructive: true,
-                              icon: CupertinoIcons.delete,
-                            ),
-                          ],
-                          buttonBuilder: (context, showMenu) => CupertinoButton(
-                            onPressed: showMenu,
-                            padding: EdgeInsets.zero,
-                            child: Icon(
-                              CupertinoIcons.ellipsis,
-                              color: colors.textSecondary,
-                              size: 16,
-                            ),
-                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Indicators Section (Transitions between collapsed and expanded states)
-              AnimatedPadding(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                padding: _isExpanded
-                    ? const EdgeInsets.fromLTRB(20, 20, 20, 10)
-                    : const EdgeInsets.fromLTRB(
-                        AppConstants.CARD_PADDING +
-                            52 +
-                            AppConstants.ITEM_HORIZONTAL_GAP,
-                        4,
-                        AppConstants.CARD_PADDING,
-                        AppConstants.CARD_PADDING,
-                      ),
-                child: AnimatedCrossFade(
-                  duration: const Duration(milliseconds: 300),
-                  firstCurve: Curves.easeInOut,
-                  secondCurve: Curves.easeInOut,
-                  crossFadeState: _isExpanded
-                      ? CrossFadeState.showSecond
-                      : CrossFadeState.showFirst,
-                  firstChild: Row(
-                    children: [
-                      // Exercise count with icon
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.textTertiary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.fitness_center_outlined,
-                              size: 12,
-                              color: colors.textSecondary,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$exerciseCount',
-                              style: textTheme.labelMedium?.copyWith(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Sets count with icon
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.textTertiary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.layers_outlined,
-                              size: 12,
-                              color: colors.textSecondary,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$totalSets',
-                              style: textTheme.labelMedium?.copyWith(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Duration estimate
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.schedule_outlined,
-                              size: 12,
-                              color: colorScheme.primary,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              WorkoutMetrics.getFormattedDuration(
-                                _effectiveExercises,
-                              ),
-                              style: textTheme.labelMedium?.copyWith(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  secondChild: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildExpandedStatItem(
-                        icon: Icons.fitness_center_outlined,
-                        value: '$exerciseCount',
-                        label: 'Exercises',
-                      ),
-                      _buildExpandedStatItem(
-                        icon: Icons.layers_outlined,
-                        value: '$totalSets',
-                        label: 'Sets',
-                      ),
-                      _buildExpandedStatItem(
-                        icon: Icons.schedule_outlined,
-                        value: WorkoutMetrics.getFormattedDuration(
-                          _effectiveExercises,
-                        ).replaceAll('~', ''),
-                        label: 'Minutes',
-                      ),
                     ],
                   ),
                 ),
-              ),
-
-              // Expandable content
-              SizeTransition(
-                sizeFactor: _expandAnimation,
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: transparentSurface,
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(16),
-                      bottomRight: Radius.circular(16),
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_isExpanded) ...[
-                          // Last performed date
-                          if (_isTemplate && widget.template?.lastUsed != null)
-                            Center(
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 16.0),
-                                child: Text(
-                                  'Last performed: ${DateFormat.yMMMd().format(DateTime.parse(widget.template!.lastUsed!))}',
-                                  style: textTheme.bodySmall?.copyWith(
-                                    fontSize: 12,
-                                    color: colors.textTertiary,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                          // Exercise list
-                          if (_effectiveExercises.isNotEmpty) ...[
-                            Text(
-                              'Exercises',
-                              style: textTheme.titleSmall?.copyWith(
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            ..._effectiveExercises.map(
-                              (exercise) => Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 6,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: BoxDecoration(
-                                        color: displayColor,
-                                        borderRadius: BorderRadius.circular(3),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        exercise.exerciseDetail?.name ??
-                                            exercise.exerciseSlug,
-                                        style: textTheme.bodyLarge?.copyWith(
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: colors.textSecondary.withValues(
-                                          alpha: 0.15,
-                                        ),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        '${exercise.sets.length} sets',
-                                        style: textTheme.labelMedium?.copyWith(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
-                                          color: colors.textSecondary,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                          ],
-                        ],
-
-                        // Start workout button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: ElevatedButton(
-                            onPressed: _startWorkout,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: colorScheme.primary,
-                              foregroundColor: colorScheme.onPrimary,
-                              elevation: 0,
-                              shadowColor: transparentSurface,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.play_arrow_rounded, size: 24),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Start Workout',
-                                  style: textTheme.bodyLarge?.copyWith(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w600,
-                                    color: colorScheme.onPrimary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                const SizedBox(width: 12),
+                buildWorkoutsPageMenuWrapper(
+                  context,
+                  child: PullDownButton(
+                    itemBuilder: (context) => [
+                      PullDownMenuItem(
+                        onTap: widget.onEditPressed,
+                        title: 'Edit Workout',
+                        icon: Icons.edit_outlined,
+                      ),
+                      PullDownMenuItem(
+                        onTap: widget.onDeletePressed,
+                        title: 'Delete Workout',
+                        isDestructive: true,
+                        icon: Icons.delete_outline_rounded,
+                      ),
+                    ],
+                    buttonBuilder: (context, showMenu) => _buildIconShell(
+                      child: Icon(
+                        Icons.more_horiz_rounded,
+                        color: colors.textSecondary,
+                        size: 18,
+                      ),
+                      onTap: showMenu,
                     ),
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildCenteredMetric(
+                    value: '${_exerciseCount}',
+                    label: 'EX',
+                  ),
+                ),
+                _buildMetricDivider(),
+                Expanded(
+                  child: _buildCenteredMetric(
+                    value: '${_totalSets}',
+                    label: 'SETS',
+                  ),
+                ),
+                _buildMetricDivider(),
+                Expanded(
+                  child: _buildCenteredMetric(
+                    value: _compactDurationLabel(
+                      WorkoutMetrics.getFormattedDuration(_effectiveExercises),
+                    ),
+                    label: 'TIME',
+                  ),
+                ),
+              ],
+            ),
+            if (_loadingTemplateExercises) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: displayColor,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Loading template details',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: FilledButton.icon(
+                onPressed: _startWorkout,
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                label: Text(
+                  'Start Workout',
+                  style: textTheme.titleMedium?.copyWith(
+                    color: colorScheme.onPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildExpandedStatItem({
-    required IconData icon,
-    required String value,
-    required String label,
-  }) {
-    final colorScheme = context.appScheme;
+  String _compactDurationLabel(String value) {
+    return value
+        .replaceAll('~', '')
+        .replaceAll(' hrs', 'h')
+        .replaceAll(' hr', 'h')
+        .replaceAll(' mins', 'm')
+        .replaceAll(' min', 'm')
+        .replaceAll(' ', ' ')
+        .trim();
+  }
+
+  Widget _buildCenteredMetric({required String value, required String label}) {
     final textTheme = context.appText;
     final colors = context.appColors;
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: colorScheme.primary.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: textTheme.titleMedium?.copyWith(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.w700,
           ),
-          child: Icon(icon, size: 20, color: colorScheme.primary),
         ),
-        const SizedBox(height: 4),
-        Text(value, style: textTheme.titleMedium?.copyWith(fontSize: 18)),
+        const SizedBox(height: 2),
         Text(
           label,
-          style: textTheme.labelMedium?.copyWith(
-            fontSize: 12,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: textTheme.labelSmall?.copyWith(
             color: colors.textSecondary,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMetricDivider() {
+    final colors = context.appColors;
+
+    return Container(
+      width: 1,
+      height: 28,
+      color: colors.textTertiary.withValues(alpha: 0.18),
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+    );
+  }
+
+  Widget _buildIconShell({required Widget child, required VoidCallback onTap}) {
+    final colors = context.appColors;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: colors.surfaceAlt,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Center(child: child),
+        ),
+      ),
     );
   }
 }

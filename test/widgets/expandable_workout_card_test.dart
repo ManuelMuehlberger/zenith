@@ -37,7 +37,7 @@ void main() {
         status: WorkoutStatus.template,
       );
 
-      // Act: pump the widget and expand the card
+      // Act: pump the widget
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -52,18 +52,11 @@ void main() {
         ),
       );
 
-      // Initially collapsed; tap to expand
-      // Tap on the InkWell area by tapping on the workout name text
-      await tester.tap(find.text('Sample Workout'));
-      await tester.pumpAndSettle(
-        const Duration(milliseconds: 400),
-      ); // allow animation to complete
-
-      // Assert: the exercise slug is displayed when exerciseDetail is null
-      expect(find.text('Exercises'), findsWidgets);
-      expect(find.text('bench-press'), findsOneWidget);
-
-      // Also verify the sets count text renders as expected (may appear in summary and per-exercise)
+      // Assert: the compact metric row renders current workout counts
+      expect(find.text('Sample Workout'), findsOneWidget);
+      expect(find.text('EX'), findsOneWidget);
+      expect(find.text('SETS'), findsOneWidget);
+      expect(find.text('TIME'), findsOneWidget);
       expect(find.text('1'), findsWidgets);
     },
   );
@@ -125,16 +118,12 @@ void main() {
       // Let initState-triggered loader run
       await tester.pumpAndSettle();
 
-      // Summary chips should reflect 1 exercise, 2 sets
+      // Summary row should reflect 1 exercise, 2 sets
       expect(find.text('1'), findsWidgets);
       expect(find.text('2'), findsWidgets);
-
-      // Expand to see list
-      await tester.tap(find.text('Template Workout'));
-      await tester.pumpAndSettle(const Duration(milliseconds: 400));
-      expect(find.text('Exercises'), findsWidgets);
-      expect(find.text('squat'), findsOneWidget);
-      expect(find.text('2 sets'), findsWidgets);
+      expect(find.text('EX'), findsOneWidget);
+      expect(find.text('SETS'), findsOneWidget);
+      expect(find.text('TIME'), findsOneWidget);
     },
   );
 
