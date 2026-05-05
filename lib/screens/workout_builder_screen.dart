@@ -15,16 +15,50 @@ import '../services/workout_template_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/main_dock_spacer.dart';
 import '../widgets/profile_icon_button.dart';
+import '../widgets/workout_builder_empty_state.dart';
 import '../widgets/reorderable_folder_list.dart';
 import '../widgets/reorderable_workout_template_list.dart';
 import '../widgets/workout_builder_drag_payload.dart';
 import 'active_workout_screen.dart';
 import 'create_workout_screen.dart';
 import '../widgets/folder_breadcrumbs_card.dart';
+import '../widgets/floating_feedback_toast.dart';
 
 class WorkoutBuilderScreen extends StatefulWidget {
   final String? folderId;
   const WorkoutBuilderScreen({super.key, this.folderId});
+
+  static String routeNameForFolder(String? folderId) {
+    return folderId == null
+        ? 'workout-builder/root'
+        : 'workout-builder/folder/$folderId';
+  }
+
+  static RouteSettings routeSettingsForFolder(String? folderId) {
+    return RouteSettings(
+      name: routeNameForFolder(folderId),
+      arguments: folderId,
+    );
+  }
+
+  static bool popToFolderInStack(NavigatorState navigator, String? folderId) {
+    if (folderId == null) {
+      navigator.popUntil((route) => route.isFirst);
+      return true;
+    }
+
+    final targetRouteName = routeNameForFolder(folderId);
+    var found = false;
+    navigator.popUntil((route) {
+      final matches = route.settings.name == targetRouteName;
+      if (matches) {
+        found = true;
+        return true;
+      }
+      return route.isFirst;
+    });
+    return found;
+  }
 
   @override
   State<WorkoutBuilderScreen> createState() => _WorkoutBuilderScreenState();
@@ -143,20 +177,12 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                     ? Padding(
                         padding: const EdgeInsets.only(left: 8.0),
                         child: Center(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: context.appScheme.surface.withValues(
-                                alpha: 0.6,
-                              ),
-                              shape: BoxShape.circle,
+                          child: IconButton(
+                            icon: Icon(
+                              CupertinoIcons.back,
+                              color: context.appScheme.onSurface,
                             ),
-                            child: IconButton(
-                              icon: Icon(
-                                CupertinoIcons.back,
-                                color: context.appScheme.onSurface,
-                              ),
-                              onPressed: () => Navigator.of(context).maybePop(),
-                            ),
+                            onPressed: () => Navigator.of(context).maybePop(),
                           ),
                         ),
                       )
@@ -315,19 +341,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
         activeDragPayload: _activeDragPayload,
         onMovePayloadToParent: _movePayloadToCurrentParent,
         canMovePayloadToParent: _canMovePayloadToCurrentParent,
-        onNavigateToFolder: (id) {
-          if (id == null) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          } else {
-            Navigator.of(context)
-                .push(
-                  CupertinoPageRoute(
-                    builder: (_) => WorkoutBuilderScreen(folderId: id),
-                  ),
-                )
-                .then((_) => _initialLoad());
-          }
-        },
+        onNavigateToFolder: _navigateToFolderFromBreadcrumb,
         onDragEnded: _onDragEnded,
         parentFolderName: _currentParentFolderId == null
             ? 'All Workouts'
@@ -339,6 +353,12 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
 
   Widget _buildContent({required List<WorkoutFolder> folders}) {
     final templates = _templates;
+    final currentFolder = widget.folderId == null
+        ? null
+        : WorkoutTemplateService.instance.getFolderById(widget.folderId!);
+    final showFoldersSection =
+        currentFolder == null ||
+        currentFolder.depth < WorkoutTemplateService.maxFolderDepth;
     final subfolderCountByFolder = <String, int>{
       for (final folder in folders)
         folder.id: WorkoutTemplateService.instance
@@ -351,36 +371,6 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildContentSectionHeader(
-            title: 'Folders',
-            countLabel: '${folders.length}',
-            action: _buildAddFolderButton(),
-          ),
-          const SizedBox(height: 10),
-          if (folders.isNotEmpty) ...[
-            ReorderableFolderList(
-              folders: folders,
-              currentParentFolderId: widget.folderId,
-              itemCountByFolder: _templateCountByFolder,
-              subfolderCountByFolder: subfolderCountByFolder,
-              activeDragPayload: _activeDragPayload,
-              onFolderTap: (folder) => _selectFolder(folder.id),
-              onRenamePressed: _showRenameFolderDialog,
-              onDeletePressed: _showDeleteFolderDialog,
-              onFolderReordered: _reorderFolders,
-              onPayloadDroppedIntoFolder: _movePayloadIntoFolder,
-              canDropIntoFolder: _canDropPayloadIntoFolder,
-              onDragStarted: _onDragStarted,
-              onDragEnded: _onDragEnded,
-            ),
-          ] else ...[
-            _buildInlineSectionEmptyState(
-              message: widget.folderId != null
-                  ? 'No folders in this folder yet. Use Add folder to create one here.'
-                  : 'No folders created yet. Use Add folder to organize your workouts.',
-            ),
-          ],
-          const SizedBox(height: 16),
           ReorderableWorkoutTemplateList(
             templates: templates,
             folderId: widget.folderId,
@@ -391,24 +381,38 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
             onDragStarted: _onDragStarted,
             onDragEnded: _onDragEnded,
           ),
+          if (showFoldersSection) ...[
+            const SizedBox(height: 16),
+            _buildContentSectionHeader(
+              title: 'Folders',
+              countLabel: '${folders.length}',
+              action: _buildAddFolderButton(),
+            ),
+            const SizedBox(height: 10),
+            if (folders.isNotEmpty) ...[
+              ReorderableFolderList(
+                folders: folders,
+                currentParentFolderId: widget.folderId,
+                itemCountByFolder: _templateCountByFolder,
+                subfolderCountByFolder: subfolderCountByFolder,
+                activeDragPayload: _activeDragPayload,
+                onFolderTap: (folder) => _selectFolder(folder.id),
+                onRenamePressed: _showRenameFolderDialog,
+                onDeletePressed: _showDeleteFolderDialog,
+                onFolderReordered: _reorderFolders,
+                onPayloadDroppedIntoFolder: _movePayloadIntoFolder,
+                canDropIntoFolder: _canDropPayloadIntoFolder,
+                onDragStarted: _onDragStarted,
+                onDragEnded: _onDragEnded,
+              ),
+            ] else ...[
+              const WorkoutBuilderEmptyState(
+                icon: Icons.folder_open_rounded,
+                title: 'No folders yet',
+              ),
+            ],
+          ],
         ],
-      ),
-    );
-  }
-
-  Widget _buildInlineSectionEmptyState({required String message}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: context.appColors.surfaceAlt,
-        borderRadius: AppTheme.workoutCardBorderRadius,
-      ),
-      child: Text(
-        message,
-        style: context.appText.bodyMedium?.copyWith(
-          color: context.appColors.textSecondary,
-        ),
       ),
     );
   }
@@ -476,13 +480,29 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   }
 
   void _selectFolder(String folderId) {
+    final route = _buildFolderRoute(folderId);
     Navigator.of(context)
-        .push(
-          CupertinoPageRoute(
-            builder: (_) => WorkoutBuilderScreen(folderId: folderId),
-          ),
-        )
+        .push(route)
         .then((_) => _initialLoad());
+  }
+
+  void _navigateToFolderFromBreadcrumb(String? folderId) {
+    final navigator = Navigator.of(context);
+    final foundInStack = WorkoutBuilderScreen.popToFolderInStack(
+      navigator,
+      folderId,
+    );
+
+    if (folderId != null && !foundInStack) {
+      navigator.push(_buildFolderRoute(folderId)).then((_) => _initialLoad());
+    }
+  }
+
+  Route<void> _buildFolderRoute(String folderId) {
+    return CupertinoPageRoute<void>(
+      settings: WorkoutBuilderScreen.routeSettingsForFolder(folderId),
+      builder: (_) => WorkoutBuilderScreen(folderId: folderId),
+    );
   }
 
   Future<void> _moveTemplateToFolder(
@@ -504,18 +524,12 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
         final targetFolderName = folderId != null
             ? _getFolderName(folderId)
             : 'All Workouts';
-        final message = 'Moved to "$targetFolderName"';
+        final message = 'Moved to $targetFolderName';
         developer.log(
           'Successfully moved template $templateId to folder $folderId',
         );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: context.appColors.success,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        FloatingFeedbackToast.show(context, message: message);
       }
     } catch (e) {
       developer.log(
@@ -554,12 +568,9 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       final targetName = parentFolderId == null
           ? 'All Workouts'
           : _getFolderName(parentFolderId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Moved folder to "$targetName"'),
-          backgroundColor: context.appColors.success,
-          duration: const Duration(seconds: 2),
-        ),
+      FloatingFeedbackToast.show(
+        context,
+        message: 'Moved to $targetName',
       );
     } catch (e) {
       developer.log(
