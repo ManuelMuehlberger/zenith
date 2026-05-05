@@ -62,21 +62,25 @@ class FolderCard extends StatelessWidget {
             ? null
             : candidateData.first;
         final activePayload = hoveringPayload ?? activeDragPayload;
-        final acceptsActivePayload =
-            activePayload != null &&
-            (canAcceptPayload == null || canAcceptPayload!(activePayload));
-        final showDropHint = isHovering || acceptsActivePayload;
+        final showDropHint = isHovering;
         final highlightTint = colorScheme.primary.withValues(
           alpha: isDark ? 0.18 : 0.06,
         );
+        final restingSurfaceColor = Color.alphaBlend(
+          colorScheme.primary.withValues(alpha: isDark ? 0.06 : 0.025),
+          colors.surfaceAlt,
+        );
         final surfaceColor = showDropHint
-            ? Color.alphaBlend(highlightTint, colors.surfaceAlt)
-            : colors.surfaceAlt;
+            ? Color.alphaBlend(highlightTint, restingSurfaceColor)
+            : restingSurfaceColor;
+        final borderColor = showDropHint
+            ? colorScheme.primary.withValues(alpha: isDark ? 0.5 : 0.28)
+            : colors.textTertiary.withValues(alpha: isDark ? 0.16 : 0.08);
         final iconTint = colorScheme.primary;
         final dropMeta = switch (activePayload) {
-          FolderDragPayload() => 'Release to nest folder',
-          TemplateDragPayload() => 'Release to move workout',
-          _ => '$workoutCount workouts',
+          FolderDragPayload() => 'Drop here to nest folder',
+          TemplateDragPayload() => 'Drop here to move template',
+          _ => '$workoutCount templates',
         };
 
         return AnimatedContainer(
@@ -86,11 +90,7 @@ class FolderCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: surfaceColor,
             borderRadius: AppTheme.workoutCardBorderRadius,
-            border: Border.all(
-              color: showDropHint
-                  ? colorScheme.primary.withValues(alpha: isDark ? 0.5 : 0.28)
-                  : Colors.transparent,
-            ),
+            border: Border.all(color: borderColor),
           ),
           child: Material(
             color: transparentSurface,
@@ -100,22 +100,27 @@ class FolderCard extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 12,
+                  vertical: 14,
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      width: 56,
-                      height: 56,
+                      width: 60,
+                      height: 60,
                       decoration: BoxDecoration(
-                        color: iconTint.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(28),
+                        color: showDropHint
+                            ? iconTint.withValues(alpha: 0.16)
+                            : Color.alphaBlend(
+                                iconTint.withValues(alpha: isDark ? 0.1 : 0.06),
+                                colors.surfaceAlt,
+                              ),
+                        borderRadius: BorderRadius.circular(30),
                       ),
                       child: Icon(
                         Icons.folder_rounded,
                         color: iconTint,
-                        size: 28,
+                        size: 30,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -125,25 +130,15 @@ class FolderCard extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Folder',
-                            style: textTheme.labelMedium?.copyWith(
-                              color: showDropHint
-                                  ? colorScheme.primary
-                                  : colors.textSecondary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
                             folder.name,
                             style: textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 19,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 10),
                           if (showDropHint)
                             _buildMetaLine(
                               context,
@@ -200,29 +195,17 @@ class FolderCard extends StatelessWidget {
     required int subfolderCount,
   }) {
     final colors = context.appColors;
-    final textStyle = context.appText.labelMedium?.copyWith(
-      color: colors.textSecondary,
-      fontWeight: FontWeight.w600,
-    );
+    final textTheme = context.appText;
 
-    Widget stat(IconData icon, int value) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: colors.textSecondary),
-          const SizedBox(width: 6),
-          Text('$value', style: textStyle),
-        ],
-      );
-    }
+    final workoutLabel = workoutCount == 1 ? 'template' : 'templates';
+    final folderLabel = subfolderCount == 1 ? 'folder' : 'folders';
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        stat(Icons.fitness_center_rounded, workoutCount),
-        const SizedBox(width: 14),
-        stat(Icons.folder_copy_rounded, subfolderCount),
-      ],
+    return Text(
+      '$workoutCount $workoutLabel, $subfolderCount $folderLabel',
+      style: textTheme.labelMedium?.copyWith(
+        color: colors.textSecondary,
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 
@@ -255,8 +238,18 @@ class FolderCard extends StatelessWidget {
     BuildContext context, {
     required VoidCallback onPressed,
   }) {
-    final colorScheme = context.appScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final colors = context.appColors;
+    final colorScheme = context.appScheme;
+    final shellColor = isDark
+        ? colors.surfaceAlt
+        : Color.alphaBlend(
+            colorScheme.primary.withValues(alpha: 0.04),
+            colors.surfaceAlt,
+          );
+    final shellBorderColor = isDark
+        ? Colors.transparent
+        : colors.textTertiary.withValues(alpha: 0.14);
 
     return Material(
       color: Colors.transparent,
@@ -267,8 +260,9 @@ class FolderCard extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: colorScheme.surface,
+            color: shellColor,
             borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: shellBorderColor),
           ),
           child: Center(
             child: Icon(

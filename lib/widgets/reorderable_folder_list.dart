@@ -55,6 +55,7 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
 
   int? _dropIndex;
   int? _draggedIndex;
+  FolderDragPayload? _draggedPayload;
   Offset? _lastDragGlobalPosition;
   Rect? _draggedOriginRectAtStart;
   double? _dragStartScrollPixels;
@@ -109,6 +110,7 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
             );
             HapticFeedback.mediumImpact();
             _draggedIndex = index;
+            _draggedPayload = payload;
             _draggedOriginRectAtStart = _rectForFolder(folder.id);
             _dragStartScrollPixels = Scrollable.maybeOf(
               context,
@@ -130,6 +132,7 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
               _reorderUsingDropIndex(index);
             }
             _draggedIndex = null;
+            _draggedPayload = null;
             _draggedOriginRectAtStart = null;
             _dragStartScrollPixels = null;
             _lastDragGlobalPosition = null;
@@ -141,6 +144,7 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
               'Drag canceled for folder: ${folder.id} at index: $index',
             );
             _draggedIndex = null;
+            _draggedPayload = null;
             _draggedOriginRectAtStart = null;
             _dragStartScrollPixels = null;
             _lastDragGlobalPosition = null;
@@ -335,6 +339,14 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
       return false;
     }
 
+    final hoveredFolderIndex = _hoveredNestedDropTargetIndex(
+      _lastDragGlobalPosition!,
+    );
+    if (hoveredFolderIndex != null) {
+      _setDropIndex(null);
+      return true;
+    }
+
     final centers = <double>[];
     for (final folder in widget.folders) {
       final rect = _rectForFolder(folder.id);
@@ -388,6 +400,33 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
 
     _setDropIndex(targetIndex);
     return false;
+  }
+
+  int? _hoveredNestedDropTargetIndex(Offset globalPosition) {
+    final payload = _draggedPayload;
+    if (payload == null) {
+      return null;
+    }
+
+    for (var index = 0; index < widget.folders.length; index++) {
+      if (index == _draggedIndex) {
+        continue;
+      }
+
+      final folder = widget.folders[index];
+      final rect = _rectForFolder(folder.id);
+      if (rect == null || !rect.contains(globalPosition)) {
+        continue;
+      }
+
+      if (!widget.canDropIntoFolder(payload, folder)) {
+        return null;
+      }
+
+      return index;
+    }
+
+    return null;
   }
 
   int _rawDropIndexForPointer(double pointerY, List<double> centers) {

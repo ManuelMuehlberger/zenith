@@ -15,6 +15,67 @@ void main() {
     );
   }
 
+  Widget buildScrollableTestApp(
+    Widget child, {
+    required ScrollController controller,
+    double height = 320,
+  }) {
+    return MaterialApp(
+      theme: AppTheme.light,
+      home: Scaffold(
+        body: SizedBox(
+          height: height,
+          child: ListView(controller: controller, children: [child]),
+        ),
+      ),
+    );
+  }
+
+  List<WorkoutTemplate> buildTemplates(int count) {
+    return List.generate(
+      count,
+      (index) => WorkoutTemplate(
+        id: 'template-$index',
+        name: 'Workout $index',
+        orderIndex: index,
+      ),
+    );
+  }
+
+  List<WorkoutFolder> buildFolders(int count) {
+    return List.generate(
+      count,
+      (index) => WorkoutFolder(
+        id: 'folder-$index',
+        name: 'Folder ${String.fromCharCode(65 + index)}',
+        orderIndex: index,
+      ),
+    );
+  }
+
+  Finder gapIndicatorFinder() {
+    final gapColor = AppTheme.light.colorScheme.primary.withValues(alpha: 0.12);
+
+    return find.byWidgetPredicate((widget) {
+      Decoration? decoration;
+      double? height;
+
+      if (widget is AnimatedContainer) {
+        decoration = widget.decoration;
+        height = widget.constraints?.maxHeight;
+      } else if (widget is Container) {
+        decoration = widget.decoration;
+        height = widget.constraints?.maxHeight;
+      } else {
+        return false;
+      }
+
+      return height == 18 &&
+          decoration is BoxDecoration &&
+          decoration.color == gapColor;
+    });
+  }
+
   testWidgets('ReorderableFolderList emits typed folder drag payload', (
     tester,
   ) async {
@@ -93,6 +154,272 @@ void main() {
 
       expect(startedPayload, isA<TemplateDragPayload>());
       expect((startedPayload as TemplateDragPayload).templateId, 'template-a');
+
+      await gesture.up();
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  );
+
+  testWidgets('ReorderableWorkoutTemplateList reorders to end on drop', (
+    tester,
+  ) async {
+    int? oldIndex;
+    int? newIndex;
+    final scrollController = ScrollController();
+
+    await tester.pumpWidget(
+      buildScrollableTestApp(
+        ReorderableWorkoutTemplateList(
+          templates: buildTemplates(2),
+          folderId: null,
+          onTemplateTap: (_) {},
+          onTemplateDeletePressed: (_) {},
+          onTemplateReordered: (from, to) {
+            oldIndex = from;
+            newIndex = to;
+          },
+          onAddWorkoutPressed: null,
+          onDragStarted: (_) {},
+          onDragEnded: () {},
+        ),
+        controller: scrollController,
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Workout 0')),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await gesture.moveBy(const Offset(0, 220));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await gesture.up();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(oldIndex, 0);
+    expect(newIndex, 1);
+  });
+
+  testWidgets('ReorderableFolderList reorders to end on drop', (tester) async {
+    int? oldIndex;
+    int? newIndex;
+    final scrollController = ScrollController();
+
+    await tester.pumpWidget(
+      buildScrollableTestApp(
+        ReorderableFolderList(
+          folders: buildFolders(3),
+          currentParentFolderId: null,
+          itemCountByFolder: const {
+            'folder-0': 1,
+            'folder-1': 2,
+            'folder-2': 3,
+          },
+          subfolderCountByFolder: const {
+            'folder-0': 0,
+            'folder-1': 0,
+            'folder-2': 0,
+          },
+          activeDragPayload: null,
+          onFolderTap: (_) {},
+          onRenamePressed: (_) {},
+          onDeletePressed: (_) {},
+          onFolderReordered: (from, to) {
+            oldIndex = from;
+            newIndex = to;
+          },
+          onPayloadDroppedIntoFolder: (_, __) {},
+          canDropIntoFolder: (_, __) => true,
+          onDragStarted: (_) {},
+          onDragEnded: () {},
+        ),
+        controller: scrollController,
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Folder A')),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final scrollRect = tester.getRect(find.byType(ListView));
+    await gesture.moveTo(Offset(scrollRect.center.dx, scrollRect.bottom - 8));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    await gesture.up();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(oldIndex, 0);
+    expect(newIndex, 2);
+  });
+
+  testWidgets(
+    'ReorderableFolderList shows nesting hint without gap when hovering a folder',
+    (tester) async {
+      final scrollController = ScrollController();
+
+      await tester.pumpWidget(
+        buildScrollableTestApp(
+          ReorderableFolderList(
+            folders: buildFolders(3),
+            currentParentFolderId: null,
+            itemCountByFolder: const {
+              'folder-0': 1,
+              'folder-1': 2,
+              'folder-2': 3,
+            },
+            subfolderCountByFolder: const {
+              'folder-0': 0,
+              'folder-1': 0,
+              'folder-2': 0,
+            },
+            activeDragPayload: null,
+            onFolderTap: (_) {},
+            onRenamePressed: (_) {},
+            onDeletePressed: (_) {},
+            onFolderReordered: (_, __) {},
+            onPayloadDroppedIntoFolder: (_, __) {},
+            canDropIntoFolder: (_, __) => true,
+            onDragStarted: (_) {},
+            onDragEnded: () {},
+          ),
+          controller: scrollController,
+        ),
+      );
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.text('Folder A')),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      await gesture.moveTo(tester.getCenter(find.text('Folder B')));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Drop here to nest folder'), findsOneWidget);
+      expect(gapIndicatorFinder(), findsNothing);
+
+      await gesture.up();
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  );
+
+  testWidgets(
+    'ReorderableFolderList shows only a gap when not hovering a folder',
+    (tester) async {
+      final scrollController = ScrollController();
+
+      await tester.pumpWidget(
+        buildScrollableTestApp(
+          ReorderableFolderList(
+            folders: buildFolders(3),
+            currentParentFolderId: null,
+            itemCountByFolder: const {
+              'folder-0': 1,
+              'folder-1': 2,
+              'folder-2': 3,
+            },
+            subfolderCountByFolder: const {
+              'folder-0': 0,
+              'folder-1': 0,
+              'folder-2': 0,
+            },
+            activeDragPayload: null,
+            onFolderTap: (_) {},
+            onRenamePressed: (_) {},
+            onDeletePressed: (_) {},
+            onFolderReordered: (_, __) {},
+            onPayloadDroppedIntoFolder: (_, __) {},
+            canDropIntoFolder: (_, __) => true,
+            onDragStarted: (_) {},
+            onDragEnded: () {},
+          ),
+          controller: scrollController,
+        ),
+      );
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.text('Folder A')),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final scrollRect = tester.getRect(find.byType(ListView));
+      await gesture.moveTo(Offset(scrollRect.center.dx, scrollRect.bottom - 8));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(find.text('Drop here to nest folder'), findsNothing);
+      expect(gapIndicatorFinder(), findsOneWidget);
+
+      await gesture.up();
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  );
+
+  testWidgets('ReorderableWorkoutTemplateList shows one original-slot gap', (
+    tester,
+  ) async {
+    final scrollController = ScrollController();
+
+    await tester.pumpWidget(
+      buildScrollableTestApp(
+        ReorderableWorkoutTemplateList(
+          templates: buildTemplates(3),
+          folderId: null,
+          onTemplateTap: (_) {},
+          onTemplateDeletePressed: (_) {},
+          onTemplateReordered: (_, __) {},
+          onAddWorkoutPressed: null,
+          onDragStarted: (_) {},
+          onDragEnded: () {},
+        ),
+        controller: scrollController,
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Workout 0')),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await gesture.moveBy(const Offset(0, 1));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(gapIndicatorFinder(), findsOneWidget);
+
+    await gesture.up();
+    await tester.pump(const Duration(milliseconds: 100));
+  });
+
+  testWidgets(
+    'ReorderableWorkoutTemplateList shows one end gap below the last item',
+    (tester) async {
+      final scrollController = ScrollController();
+
+      await tester.pumpWidget(
+        buildScrollableTestApp(
+          ReorderableWorkoutTemplateList(
+            templates: buildTemplates(3),
+            folderId: null,
+            onTemplateTap: (_) {},
+            onTemplateDeletePressed: (_) {},
+            onTemplateReordered: (_, __) {},
+            onAddWorkoutPressed: null,
+            onDragStarted: (_) {},
+            onDragEnded: () {},
+          ),
+          controller: scrollController,
+        ),
+      );
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.text('Workout 0')),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      await gesture.moveBy(const Offset(0, 260));
+      await tester.pump(const Duration(milliseconds: 50));
+
+      expect(gapIndicatorFinder(), findsOneWidget);
 
       await gesture.up();
       await tester.pump(const Duration(milliseconds: 100));
