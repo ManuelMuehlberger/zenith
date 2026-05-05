@@ -55,10 +55,6 @@ class _ReorderableWorkoutTemplateListState
     final colors = context.appColors;
     final textTheme = context.appText;
 
-    if (widget.templates.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -140,10 +136,29 @@ class _ReorderableWorkoutTemplateListState
           },
         ),
         const SizedBox(height: AppConstants.SECTION_VERTICAL_GAP),
-        ...List.generate(widget.templates.length, (index) {
-          return _buildReorderableItem(index);
-        }),
-        _buildDropZone(widget.templates.length), // Add drop zone at the end
+        if (widget.templates.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: colors.surfaceAlt,
+              borderRadius: AppTheme.workoutCardBorderRadius,
+            ),
+            child: Text(
+              widget.folderId != null
+                  ? 'No workouts in this folder yet. Use Add workout to create one here.'
+                  : 'No workouts created yet. Use Add workout to create your first one.',
+              style: textTheme.bodyMedium?.copyWith(
+                color: colors.textSecondary,
+              ),
+            ),
+          )
+        else ...[
+          ...List.generate(widget.templates.length, (index) {
+            return _buildReorderableItem(index);
+          }),
+          _buildDropZone(widget.templates.length),
+        ],
       ],
     );
   }

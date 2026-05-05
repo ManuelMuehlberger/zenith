@@ -200,8 +200,10 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard> {
       unawaited(HapticFeedback.mediumImpact());
 
       if (mounted) {
+        // Pop any pushed nested folder screens
+        Navigator.of(context).popUntil((route) => route.isFirst);
         // Navigate to the Workouts tab (index 1)
-        // The WorkoutBuilderScreen on that tab will then display the ActiveWorkoutScreen
+        // The root WorkoutBuilderScreen on that tab will then display the ActiveWorkoutScreen
         NavigationHelper.goToTab(1);
       }
     } catch (e) {
@@ -258,14 +260,6 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _isTemplate ? 'Template' : 'Workout',
-                        style: textTheme.labelMedium?.copyWith(
-                          color: colors.textSecondary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
                         _displayName,
                         style: textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
@@ -273,6 +267,14 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard> {
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _isTemplate ? 'Workout Template' : 'Workout',
+                        style: textTheme.labelMedium?.copyWith(
+                          color: colors.textSecondary,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       if (description != null) ...[
                         const SizedBox(height: 6),
@@ -449,7 +451,18 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard> {
   }
 
   Widget _buildIconShell({required Widget child, required VoidCallback onTap}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = context.appScheme;
     final colors = context.appColors;
+    final shellColor = isDark
+        ? colors.surfaceAlt
+        : Color.alphaBlend(
+            colorScheme.primary.withValues(alpha: 0.04),
+            colors.surfaceAlt,
+          );
+    final shellBorderColor = isDark
+        ? Colors.transparent
+        : colors.textTertiary.withValues(alpha: 0.14);
 
     return Material(
       color: Colors.transparent,
@@ -460,8 +473,9 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: colors.surfaceAlt,
+            color: shellColor,
             borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: shellBorderColor),
           ),
           child: Center(child: child),
         ),
