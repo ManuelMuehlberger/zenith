@@ -18,6 +18,7 @@ class FolderCard extends StatelessWidget {
   final ValueChanged<WorkoutBuilderDragPayload> onPayloadDropped;
   final bool Function(WorkoutBuilderDragPayload payload)? canAcceptPayload;
   final WorkoutBuilderDragPayload? activeDragPayload;
+  final bool isDropTargetActive;
   final int? itemCount;
   final int? subfolderCount;
 
@@ -30,6 +31,7 @@ class FolderCard extends StatelessWidget {
     required this.onPayloadDropped,
     this.canAcceptPayload,
     this.activeDragPayload,
+    this.isDropTargetActive = false,
     this.itemCount,
     this.subfolderCount,
   });
@@ -53,6 +55,13 @@ class FolderCard extends StatelessWidget {
       },
       onWillAcceptWithDetails: (details) {
         developer.log('FolderCard onWillAcceptWithDetails: ${details.data}');
+        if (details.data is TemplateDragPayload) {
+          final validator = canAcceptPayload;
+          return validator == null ? true : validator(details.data);
+        }
+        if (!isDropTargetActive) {
+          return false;
+        }
         final validator = canAcceptPayload;
         return validator == null ? true : validator(details.data);
       },
@@ -62,14 +71,16 @@ class FolderCard extends StatelessWidget {
             ? null
             : candidateData.first;
         final activePayload = hoveringPayload ?? activeDragPayload;
-        final showDropHint = isHovering;
+        final showDropHint = isHovering || isDropTargetActive;
         final highlightTint = colorScheme.primary.withValues(
           alpha: isDark ? 0.18 : 0.06,
         );
-        final restingSurfaceColor = Color.alphaBlend(
-          colorScheme.primary.withValues(alpha: isDark ? 0.06 : 0.025),
-          colors.surfaceAlt,
-        );
+        final restingSurfaceColor = isDark
+            ? colorScheme.surface
+            : Color.alphaBlend(
+                colorScheme.primary.withValues(alpha: 0.025),
+                colors.surfaceAlt,
+              );
         final surfaceColor = showDropHint
             ? Color.alphaBlend(highlightTint, restingSurfaceColor)
             : restingSurfaceColor;
@@ -80,6 +91,7 @@ class FolderCard extends StatelessWidget {
         final dropMeta = switch (activePayload) {
           FolderDragPayload() => 'Drop here to nest folder',
           TemplateDragPayload() => 'Drop here to move template',
+          _ when isDropTargetActive => 'Drop here to nest folder',
           _ => '$workoutCount templates',
         };
 
@@ -202,6 +214,8 @@ class FolderCard extends StatelessWidget {
 
     return Text(
       '$workoutCount $workoutLabel, $subfolderCount $folderLabel',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
       style: textTheme.labelMedium?.copyWith(
         color: colors.textSecondary,
         fontWeight: FontWeight.w600,
@@ -219,15 +233,18 @@ class FolderCard extends StatelessWidget {
     final badgeTint = tint ?? colors.textSecondary;
 
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 14, color: badgeTint),
         const SizedBox(width: 6),
-        Text(
-          label,
-          style: context.appText.labelMedium?.copyWith(
-            color: badgeTint,
-            fontWeight: FontWeight.w600,
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: context.appText.labelMedium?.copyWith(
+              color: badgeTint,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],

@@ -7,6 +7,7 @@ import '../constants/app_constants.dart';
 import '../models/workout_template.dart';
 import '../theme/app_theme.dart';
 import 'expandable_workout_card.dart';
+import 'workout_builder_empty_state.dart';
 import 'workout_builder_drag_payload.dart';
 
 class ReorderableWorkoutTemplateList extends StatefulWidget {
@@ -137,21 +138,9 @@ class _ReorderableWorkoutTemplateListState
         ),
         const SizedBox(height: AppConstants.SECTION_VERTICAL_GAP),
         if (widget.templates.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: colors.surfaceAlt,
-              borderRadius: AppTheme.workoutCardBorderRadius,
-            ),
-            child: Text(
-              widget.folderId != null
-                  ? 'No workouts in this folder yet. Use Add workout to create one here.'
-                  : 'No workouts created yet. Use Add workout to create your first one.',
-              style: textTheme.bodyMedium?.copyWith(
-                color: colors.textSecondary,
-              ),
-            ),
+          const WorkoutBuilderEmptyState(
+            icon: Icons.fitness_center_rounded,
+            title: 'No workouts yet',
           )
         else ...[
           ...List.generate(widget.templates.length, (index) {
@@ -237,20 +226,10 @@ class _ReorderableWorkoutTemplateListState
               child: Opacity(opacity: 0.92, child: card),
             ),
           ),
-          childWhenDragging: _dropIndex == index
-              ? Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: AppConstants.CARD_VERTICAL_GAP,
-                  ),
-                  child: Container(
-                    height: _reorderGapHeight,
-                    decoration: BoxDecoration(
-                      color: context.appScheme.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                )
-              : const SizedBox.shrink(),
+          childWhenDragging: _buildAnimatedGapPlaceholder(
+            context,
+            visible: _dropIndex == index,
+          ),
           child: card,
         );
 
@@ -285,20 +264,9 @@ class _ReorderableWorkoutTemplateListState
 
             return Column(
               children: [
-                AnimatedContainer(
-                  duration: AppConstants.DRAG_ANIMATION_DURATION,
-                  curve: AppConstants.DRAG_ANIMATION_CURVE,
-                  height: showGap ? _reorderGapHeight : 0,
-                  width: double.infinity,
-                  margin: showGap
-                      ? const EdgeInsets.only(
-                          bottom: AppConstants.CARD_VERTICAL_GAP,
-                        )
-                      : EdgeInsets.zero,
-                  decoration: BoxDecoration(
-                    color: context.appScheme.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
+                _buildAnimatedGapPlaceholder(
+                  context,
+                  visible: showGap,
                 ),
                 KeyedSubtree(key: itemKey, child: draggable),
               ],
@@ -335,22 +303,37 @@ class _ReorderableWorkoutTemplateListState
       builder: (context, candidateData, rejectedData) {
         final showGap = _dropIndex == targetIndex;
 
-        return AnimatedContainer(
-          duration: AppConstants.DRAG_ANIMATION_DURATION,
-          curve: AppConstants.DRAG_ANIMATION_CURVE,
-          height: showGap ? _reorderGapHeight : AppConstants.CARD_VERTICAL_GAP,
-          width: double.infinity,
-          margin: showGap
-              ? const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP)
-              : EdgeInsets.zero,
-          decoration: BoxDecoration(
-            color: showGap
-                ? context.appScheme.primary.withValues(alpha: 0.12)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(999),
-          ),
+        return _buildAnimatedGapPlaceholder(
+          context,
+          visible: showGap,
+          collapsedHeight: AppConstants.CARD_VERTICAL_GAP,
         );
       },
+    );
+  }
+
+  Widget _buildAnimatedGapPlaceholder(
+    BuildContext context, {
+    required bool visible,
+    double collapsedHeight = 0,
+  }) {
+    return AnimatedOpacity(
+      duration: AppConstants.DRAG_ANIMATION_DURATION,
+      curve: AppConstants.DRAG_ANIMATION_CURVE,
+      opacity: visible ? 1 : 0,
+      child: AnimatedContainer(
+        duration: AppConstants.DRAG_ANIMATION_DURATION,
+        curve: AppConstants.DRAG_ANIMATION_CURVE,
+        height: visible ? _reorderGapHeight : collapsedHeight,
+        width: double.infinity,
+        margin: visible
+            ? const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP)
+            : EdgeInsets.zero,
+        decoration: BoxDecoration(
+          color: context.appScheme.primary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(999),
+        ),
+      ),
     );
   }
 
@@ -430,7 +413,9 @@ class _ReorderableWorkoutTemplateListState
     final pointerY = _lastDragGlobalPosition!.dy;
 
     if (_dropIndex == null) {
-      _setDropIndex(_rawDropIndexForPointer(pointerY, centers));
+      _setDropIndex(
+        _normalizedReorderIndex(_rawDropIndexForPointer(pointerY, centers)),
+      );
       return true;
     }
 
@@ -465,7 +450,7 @@ class _ReorderableWorkoutTemplateListState
       }
     }
 
-    _setDropIndex(targetIndex);
+    _setDropIndex(_normalizedReorderIndex(targetIndex));
     return false;
   }
 
@@ -483,6 +468,19 @@ class _ReorderableWorkoutTemplateListState
       return centers.last;
     }
     return (centers[index] + centers[index + 1]) / 2;
+  }
+
+  int? _normalizedReorderIndex(int? reorderIndex) {
+    final draggedIndex = _draggedIndex;
+    if (reorderIndex == null || draggedIndex == null) {
+      return reorderIndex;
+    }
+
+    if (reorderIndex == draggedIndex || reorderIndex == draggedIndex + 1) {
+      return draggedIndex;
+    }
+
+    return reorderIndex;
   }
 
   void _reorderUsingDropIndex(int draggedIndex) {
