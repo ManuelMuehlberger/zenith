@@ -15,14 +15,50 @@ import '../services/workout_template_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/main_dock_spacer.dart';
 import '../widgets/profile_icon_button.dart';
+import '../widgets/workout_builder_empty_state.dart';
 import '../widgets/reorderable_folder_list.dart';
 import '../widgets/reorderable_workout_template_list.dart';
 import '../widgets/workout_builder_drag_payload.dart';
 import 'active_workout_screen.dart';
 import 'create_workout_screen.dart';
+import '../widgets/folder_breadcrumbs_card.dart';
+import '../widgets/floating_feedback_toast.dart';
 
 class WorkoutBuilderScreen extends StatefulWidget {
-  const WorkoutBuilderScreen({super.key});
+  final String? folderId;
+  const WorkoutBuilderScreen({super.key, this.folderId});
+
+  static String routeNameForFolder(String? folderId) {
+    return folderId == null
+        ? 'workout-builder/root'
+        : 'workout-builder/folder/$folderId';
+  }
+
+  static RouteSettings routeSettingsForFolder(String? folderId) {
+    return RouteSettings(
+      name: routeNameForFolder(folderId),
+      arguments: folderId,
+    );
+  }
+
+  static bool popToFolderInStack(NavigatorState navigator, String? folderId) {
+    if (folderId == null) {
+      navigator.popUntil((route) => route.isFirst);
+      return true;
+    }
+
+    final targetRouteName = routeNameForFolder(folderId);
+    var found = false;
+    navigator.popUntil((route) {
+      final matches = route.settings.name == targetRouteName;
+      if (matches) {
+        found = true;
+        return true;
+      }
+      return route.isFirst;
+    });
+    return found;
+  }
 
   @override
   State<WorkoutBuilderScreen> createState() => _WorkoutBuilderScreenState();
@@ -30,7 +66,6 @@ class WorkoutBuilderScreen extends StatefulWidget {
 
 class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   final ScrollController _scrollController = ScrollController();
-  String? _selectedFolderId;
   bool _isLoading = true;
   bool _isDragging = false;
   WorkoutBuilderDragPayload? _activeDragPayload;
@@ -76,12 +111,12 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
 
   Future<void> _loadTemplates() async {
     List<WorkoutTemplate> templates;
-    if (_selectedFolderId == null) {
+    if (widget.folderId == null) {
       templates = await WorkoutTemplateService.instance
           .getWorkoutTemplatesWithoutFolder();
     } else {
       templates = await WorkoutTemplateService.instance
-          .getWorkoutTemplatesByFolder(_selectedFolderId!);
+          .getWorkoutTemplatesByFolder(widget.folderId!);
     }
     if (mounted) {
       setState(() {
@@ -97,10 +132,10 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   }
 
   void _onDragStarted(WorkoutBuilderDragPayload payload) {
-    developer.log('Drag started, selectedFolderId: $_selectedFolderId');
+    developer.log('Drag started, selectedFolderId: $widget.folderId');
     setState(() {
       _activeDragPayload = payload;
-      _isDragging = _selectedFolderId != null;
+      _isDragging = widget.folderId != null;
     });
   }
 
@@ -128,87 +163,88 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
           return ActiveWorkoutScreen(session: sessionService.currentSession!);
         }
 
-        return PopScope(
-          canPop: _selectedFolderId == null,
-          onPopInvokedWithResult: (didPop, result) {
-            if (!didPop && _selectedFolderId != null) {
-              setState(() {
-                _selectedFolderId = null;
-              });
-              // When navigating back to all workouts, refresh templates
-              _loadTemplates();
-            }
-          },
-          child: Scaffold(
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            body: CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                SliverAppBar(
-                  pinned: true,
-                  stretch: true,
-                  centerTitle: true,
-                  automaticallyImplyLeading: false,
-                  leading: const SizedBox(width: kToolbarHeight),
-                  backgroundColor: headerSurface.withValues(alpha: 0),
-                  elevation: 0,
-                  expandedHeight:
-                      AppConstants.HEADER_EXTRA_HEIGHT + kToolbarHeight,
-                  actions: const [ProfileIconButton()],
-                  flexibleSpace: LayoutBuilder(
-                    builder: (context, constraints) {
-                      return Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          // Persistent glass effect layer (covers expanded and collapsed states)
-                          ClipRRect(
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(
-                                sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                                sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-                              ),
-                              child: ColoredBox(
-                                color: headerSurface.withValues(alpha: 0.94),
-                              ),
+        return Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          body: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              SliverAppBar(
+                pinned: true,
+                stretch: true,
+                centerTitle: true,
+                automaticallyImplyLeading: false,
+                leading: widget.folderId != null
+                    ? Padding(
+                        padding: const EdgeInsets.only(left: 8.0),
+                        child: Center(
+                          child: IconButton(
+                            icon: Icon(
+                              CupertinoIcons.back,
+                              color: context.appScheme.onSurface,
                             ),
+                            onPressed: () => Navigator.of(context).maybePop(),
                           ),
-                          // FlexibleSpaceBar handles title positioning and parallax of the large title
-                          FlexibleSpaceBar(
-                            centerTitle: true,
-                            title: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [_buildSmallTitle()],
-                            ),
-                            background: ColoredBox(
-                              color: transparentSurface,
-                              child: Align(
-                                alignment: Alignment.center,
-                                child: _buildLargeTitle(),
-                              ),
-                            ),
-                            collapseMode: CollapseMode.parallax,
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-                // Content
-                if (_isLoading)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 32.0),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: context.appScheme.primary,
                         ),
+                      )
+                    : const SizedBox(width: kToolbarHeight),
+                backgroundColor: headerSurface.withValues(alpha: 0),
+                elevation: 0,
+                expandedHeight:
+                    AppConstants.HEADER_EXTRA_HEIGHT + kToolbarHeight,
+                actions: const [ProfileIconButton()],
+                flexibleSpace: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // Persistent glass effect layer (covers expanded and collapsed states)
+                        ClipRRect(
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(
+                              sigmaX: AppConstants.GLASS_BLUR_SIGMA,
+                              sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                            ),
+                            child: ColoredBox(
+                              color: headerSurface.withValues(alpha: 0.94),
+                            ),
+                          ),
+                        ),
+                        // FlexibleSpaceBar handles title positioning and parallax of the large title
+                        FlexibleSpaceBar(
+                          centerTitle: true,
+                          title: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [_buildSmallTitle()],
+                          ),
+                          background: ColoredBox(
+                            color: transparentSurface,
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: _buildLargeTitle(),
+                            ),
+                          ),
+                          collapseMode: CollapseMode.parallax,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              // Content
+              if (_isLoading)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32.0),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: context.appScheme.primary,
                       ),
                     ),
-                  )
-                else
-                  SliverToBoxAdapter(child: _buildMainContentWithoutHeader()),
-              ],
-            ),
+                  ),
+                )
+              else
+                SliverToBoxAdapter(child: _buildMainContentWithoutHeader()),
+            ],
           ),
         );
       },
@@ -216,10 +252,10 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   }
 
   Widget _buildSmallTitle() {
-    final bool isInsideFolder = _selectedFolderId != null;
+    final bool isInsideFolder = widget.folderId != null;
     String title = 'Workouts';
     if (isInsideFolder) {
-      title = _getFolderName(_selectedFolderId!);
+      title = _getFolderName(widget.folderId!);
     }
 
     // Using AnimatedSwitcher similar to home screen to prevent duplication
@@ -243,10 +279,10 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   }
 
   Widget _buildLargeTitle() {
-    final bool isInsideFolder = _selectedFolderId != null;
+    final bool isInsideFolder = widget.folderId != null;
     String title = 'Workouts';
     if (isInsideFolder) {
-      title = _getFolderName(_selectedFolderId!);
+      title = _getFolderName(widget.folderId!);
     }
 
     // Using AnimatedSwitcher similar to home screen to prevent duplication
@@ -271,184 +307,58 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     }
 
     final folders = WorkoutTemplateService.instance.getFoldersInParentSync(
-      _selectedFolderId,
+      widget.folderId,
     );
 
     return Column(
       children: [
-        if (_selectedFolderId != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: _buildBreadcrumbNavigation(),
-          ),
+        if (widget.folderId != null) _buildBreadcrumbNavigation(),
         _buildContent(folders: folders),
         const MainDockSpacer(),
       ],
     );
   }
 
-  Widget _buildOverviewBadge({
-    required IconData icon,
-    required String label,
-    Color? tint,
-  }) {
-    final colors = context.appColors;
-    final badgeTint = tint ?? colors.textSecondary;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: badgeTint.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 15, color: badgeTint),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: context.appText.labelMedium?.copyWith(
-              color: badgeTint,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildBreadcrumbNavigation() {
-    final appScheme = context.appScheme;
-    final appColors = context.appColors;
-    final breadcrumbStyle = context.appText.titleSmall!;
+    if (widget.folderId == null) return const SizedBox.shrink();
+    final folder = WorkoutTemplateService.instance.getFolderById(
+      widget.folderId!,
+    );
+    if (folder == null) return const SizedBox.shrink();
 
-    return DragTarget<WorkoutBuilderDragPayload>(
-      onAcceptWithDetails: (details) async {
-        final data = details.data;
-        developer.log('Breadcrumb onAcceptWithDetails: $data');
-        await _movePayloadToCurrentParent(data);
-        _onDragEnded();
-      },
-      onWillAcceptWithDetails: (details) {
-        developer.log('Breadcrumb onWillAcceptWithDetails: ${details.data}');
-        return _canMovePayloadToCurrentParent(details.data);
-      },
-      onLeave: (data) {},
-      builder: (context, candidateData, rejectedData) {
-        final isHoveringOverDropTarget = candidateData.isNotEmpty;
-        final showAnimation = _isDragging || isHoveringOverDropTarget;
+    final path = WorkoutTemplateService.instance.getFolderPathSync(
+      widget.folderId!,
+    );
+    final ancestors = path.length > 1
+        ? path.take(path.length - 1).toList(growable: false)
+        : const <WorkoutFolder>[];
 
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          transform: Matrix4.diagonal3Values(
-            showAnimation ? 1.01 : 1.0,
-            showAnimation ? 1.01 : 1.0,
-            1.0,
-          ),
-          child: ClipRRect(
-            borderRadius: AppTheme.workoutCardBorderRadius,
-            child: BackdropFilter(
-              filter: ImageFilter.blur(
-                sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-              ),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: showAnimation
-                      ? appScheme.primary.withValues(alpha: 0.12)
-                      : appColors.surfaceAlt,
-                  borderRadius: AppTheme.workoutCardBorderRadius,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: showAnimation
-                                ? appScheme.primary.withValues(alpha: 0.18)
-                                : appColors.overlayMedium,
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: Icon(
-                            showAnimation
-                                ? Icons.move_up_rounded
-                                : Icons.arrow_back_rounded,
-                            color: showAnimation
-                                ? appScheme.primary
-                                : appColors.textSecondary,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                showAnimation
-                                    ? 'Move to previous level'
-                                    : 'Back to previous level',
-                                style: context.appText.labelMedium?.copyWith(
-                                  color: appColors.textSecondary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              _buildBreadcrumbPath(
-                                breadcrumbStyle: breadcrumbStyle,
-                                appScheme: appScheme,
-                                appColors: appColors,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        _buildOverviewBadge(
-                          icon: showAnimation
-                              ? Icons.move_up_rounded
-                              : Icons.folder_open_rounded,
-                          label: showAnimation
-                              ? (_currentParentFolderId == null
-                                    ? 'Move to root'
-                                    : 'Move up one level')
-                              : '${_templates.length} workouts',
-                          tint: showAnimation
-                              ? appScheme.primary
-                              : appColors.textSecondary,
-                        ),
-                      ],
-                    ),
-                    if (showAnimation) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        'Drop a workout or folder here to move it to the previous level.',
-                        style: context.appText.bodySmall?.copyWith(
-                          color: appColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: FolderBreadcrumbsCard(
+        folder: folder,
+        ancestors: ancestors,
+        activeDragPayload: _activeDragPayload,
+        onMovePayloadToParent: _movePayloadToCurrentParent,
+        canMovePayloadToParent: _canMovePayloadToCurrentParent,
+        onNavigateToFolder: _navigateToFolderFromBreadcrumb,
+        onDragEnded: _onDragEnded,
+        parentFolderName: _currentParentFolderId == null
+            ? 'All Workouts'
+            : _getFolderName(_currentParentFolderId!),
+        isDragging: _isDragging,
+      ),
     );
   }
 
   Widget _buildContent({required List<WorkoutFolder> folders}) {
     final templates = _templates;
+    final currentFolder = widget.folderId == null
+        ? null
+        : WorkoutTemplateService.instance.getFolderById(widget.folderId!);
+    final showFoldersSection =
+        currentFolder == null ||
+        currentFolder.depth < WorkoutTemplateService.maxFolderDepth;
     final subfolderCountByFolder = <String, int>{
       for (final folder in folders)
         folder.id: WorkoutTemplateService.instance
@@ -456,61 +366,14 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
             .length,
     };
 
-    if (folders.isEmpty && templates.isEmpty && _selectedFolderId == null) {
-      return _buildEmptyState();
-    }
-    if (folders.isEmpty && templates.isEmpty && _selectedFolderId != null) {
-      return _buildEmptyState(inFolder: true);
-    }
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (folders.isNotEmpty) ...[
-            _buildContentSectionHeader(
-              title: 'Folders',
-              countLabel: '${folders.length}',
-              action: _buildAddFolderButton(),
-            ),
-            const SizedBox(height: 10),
-            ReorderableFolderList(
-              folders: folders,
-              currentParentFolderId: _selectedFolderId,
-              itemCountByFolder: _templateCountByFolder,
-              subfolderCountByFolder: subfolderCountByFolder,
-              activeDragPayload: _activeDragPayload,
-              onFolderTap: (folder) => _selectFolder(folder.id),
-              onRenamePressed: _showRenameFolderDialog,
-              onDeletePressed: _showDeleteFolderDialog,
-              onFolderReordered: _reorderFolders,
-              onPayloadDroppedIntoFolder: _movePayloadIntoFolder,
-              canDropIntoFolder: _canDropPayloadIntoFolder,
-              onDragStarted: _onDragStarted,
-              onDragEnded: _onDragEnded,
-            ),
-            const SizedBox(height: 16),
-          ] else if (_selectedFolderId == null && templates.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: _buildAddFolderButton(),
-              ),
-            ),
-          ] else if (_selectedFolderId != null) ...[
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: _buildAddFolderButton(),
-              ),
-            ),
-          ],
           ReorderableWorkoutTemplateList(
             templates: templates,
-            folderId: _selectedFolderId,
+            folderId: widget.folderId,
             onTemplateTap: _editWorkout,
             onTemplateDeletePressed: _showDeleteTemplateDialog,
             onTemplateReordered: _reorderTemplates,
@@ -518,51 +381,38 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
             onDragStarted: _onDragStarted,
             onDragEnded: _onDragEnded,
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState({bool inFolder = false}) {
-    return SizedBox(
-      height: 400,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              inFolder
-                  ? Icons.folder_open_rounded
-                  : Icons.fitness_center_rounded,
-              size: 64,
-              color: context.appColors.textTertiary,
-            ),
+          if (showFoldersSection) ...[
             const SizedBox(height: 16),
-            Text(
-              inFolder ? 'This folder is empty' : 'No workouts created yet',
-              style: context.appText.titleMedium!.copyWith(
-                color: context.appColors.textSecondary,
-              ),
+            _buildContentSectionHeader(
+              title: 'Folders',
+              countLabel: '${folders.length}',
+              action: _buildAddFolderButton(),
             ),
-            const SizedBox(height: 8),
-            Text(
-              inFolder
-                  ? 'Drag workouts here or use the dock + button to create one in this folder.'
-                  : 'Use the dock + button to create your first workout, or start with a folder above.',
-              style: context.appText.labelMedium!.copyWith(
-                color: context.appColors.textTertiary,
+            const SizedBox(height: 10),
+            if (folders.isNotEmpty) ...[
+              ReorderableFolderList(
+                folders: folders,
+                currentParentFolderId: widget.folderId,
+                itemCountByFolder: _templateCountByFolder,
+                subfolderCountByFolder: subfolderCountByFolder,
+                activeDragPayload: _activeDragPayload,
+                onFolderTap: (folder) => _selectFolder(folder.id),
+                onRenamePressed: _showRenameFolderDialog,
+                onDeletePressed: _showDeleteFolderDialog,
+                onFolderReordered: _reorderFolders,
+                onPayloadDroppedIntoFolder: _movePayloadIntoFolder,
+                canDropIntoFolder: _canDropPayloadIntoFolder,
+                onDragStarted: _onDragStarted,
+                onDragEnded: _onDragEnded,
               ),
-              textAlign: TextAlign.center,
-            ),
-            if (!inFolder) ...[
-              const SizedBox(height: 18),
-              _buildAddFolderButton(),
             ] else ...[
-              const SizedBox(height: 18),
-              _buildAddFolderButton(),
+              const WorkoutBuilderEmptyState(
+                icon: Icons.folder_open_rounded,
+                title: 'No folders yet',
+              ),
             ],
           ],
-        ),
+        ],
       ),
     );
   }
@@ -615,74 +465,11 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     );
   }
 
-  Widget _buildBreadcrumbPath({
-    required TextStyle breadcrumbStyle,
-    required ColorScheme appScheme,
-    required AppThemeTokens appColors,
-  }) {
-    final path = _selectedFolderId == null
-        ? <WorkoutFolder>[]
-        : WorkoutTemplateService.instance.getFolderPathSync(_selectedFolderId!);
-
-    return Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 4,
-      runSpacing: 4,
-      children: [
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              _selectedFolderId = null;
-            });
-            _loadTemplates();
-          },
-          child: AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 200),
-            style: breadcrumbStyle.copyWith(
-              color: appScheme.primary,
-              fontWeight: FontWeight.w600,
-            ),
-            child: const Text('All Workouts'),
-          ),
-        ),
-        for (final folder in path) ...[
-          Icon(
-            Icons.chevron_right_rounded,
-            color: appColors.textTertiary,
-            size: 18,
-          ),
-          GestureDetector(
-            onTap: folder.id == _selectedFolderId
-                ? null
-                : () {
-                    setState(() {
-                      _selectedFolderId = folder.id;
-                    });
-                    _loadTemplates();
-                  },
-            child: AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: breadcrumbStyle.copyWith(
-                color: folder.id == _selectedFolderId
-                    ? appColors.textPrimary
-                    : appScheme.primary,
-                fontWeight: folder.id == _selectedFolderId
-                    ? FontWeight.w700
-                    : FontWeight.w600,
-              ),
-              child: Text(folder.name, overflow: TextOverflow.ellipsis),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
   Future<void> _createWorkout() async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateWorkoutScreen(folderId: _selectedFolderId),
+        builder: (context) => CreateWorkoutScreen(folderId: widget.folderId),
       ),
     );
     if (result == true) {
@@ -693,10 +480,29 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   }
 
   void _selectFolder(String folderId) {
-    setState(() {
-      _selectedFolderId = folderId;
-    });
-    _loadTemplates();
+    final route = _buildFolderRoute(folderId);
+    Navigator.of(context)
+        .push(route)
+        .then((_) => _initialLoad());
+  }
+
+  void _navigateToFolderFromBreadcrumb(String? folderId) {
+    final navigator = Navigator.of(context);
+    final foundInStack = WorkoutBuilderScreen.popToFolderInStack(
+      navigator,
+      folderId,
+    );
+
+    if (folderId != null && !foundInStack) {
+      navigator.push(_buildFolderRoute(folderId)).then((_) => _initialLoad());
+    }
+  }
+
+  Route<void> _buildFolderRoute(String folderId) {
+    return CupertinoPageRoute<void>(
+      settings: WorkoutBuilderScreen.routeSettingsForFolder(folderId),
+      builder: (_) => WorkoutBuilderScreen(folderId: folderId),
+    );
   }
 
   Future<void> _moveTemplateToFolder(
@@ -718,18 +524,12 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
         final targetFolderName = folderId != null
             ? _getFolderName(folderId)
             : 'All Workouts';
-        final message = 'Moved to "$targetFolderName"';
+        final message = 'Moved to $targetFolderName';
         developer.log(
           'Successfully moved template $templateId to folder $folderId',
         );
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: context.appColors.success,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        FloatingFeedbackToast.show(context, message: message);
       }
     } catch (e) {
       developer.log(
@@ -768,12 +568,9 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       final targetName = parentFolderId == null
           ? 'All Workouts'
           : _getFolderName(parentFolderId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Moved folder to "$targetName"'),
-          backgroundColor: context.appColors.success,
-          duration: const Duration(seconds: 2),
-        ),
+      FloatingFeedbackToast.show(
+        context,
+        message: 'Moved to $targetName',
       );
     } catch (e) {
       developer.log(
@@ -848,7 +645,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     developer.log('Reordering folders: oldIndex=$oldIndex, newIndex=$newIndex');
     try {
       await WorkoutTemplateService.instance.reorderFoldersInParent(
-        _selectedFolderId,
+        widget.folderId,
         oldIndex,
         newIndex,
       );
@@ -872,11 +669,11 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
   }
 
   String? get _currentParentFolderId {
-    if (_selectedFolderId == null) {
+    if (widget.folderId == null) {
       return null;
     }
     return WorkoutTemplateService.instance
-        .getFolderById(_selectedFolderId!)
+        .getFolderById(widget.folderId!)
         ?.parentFolderId;
   }
 
@@ -886,7 +683,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     );
     try {
       await WorkoutTemplateService.instance.reorderTemplatesInFolder(
-        _selectedFolderId,
+        widget.folderId,
         oldIndex,
         newIndex,
       );
@@ -1038,7 +835,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                           if (name.isNotEmpty && name.length <= 30) {
                             await WorkoutTemplateService.instance.createFolder(
                               name,
-                              parentFolderId: _selectedFolderId,
+                              parentFolderId: widget.folderId,
                             );
                             if (!context.mounted || !mounted) return;
                             Navigator.pop(context);
@@ -1077,7 +874,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                           if (name.isNotEmpty && name.length <= 30) {
                             await WorkoutTemplateService.instance.createFolder(
                               name,
-                              parentFolderId: _selectedFolderId,
+                              parentFolderId: widget.folderId,
                             );
                             if (!context.mounted || !mounted) return;
                             Navigator.pop(context);
@@ -1246,8 +1043,8 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                       );
                       if (!context.mounted || !mounted) return;
                       Navigator.pop(context);
-                      if (_selectedFolderId == folder.id) {
-                        _selectedFolderId = null;
+                      if (widget.folderId == folder.id) {
+                        Navigator.of(context).pop();
                       }
                       await _loadCounts();
                       await _loadTemplates();
@@ -1274,8 +1071,8 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                       );
                       if (!context.mounted || !mounted) return;
                       Navigator.pop(context);
-                      if (_selectedFolderId == folder.id) {
-                        _selectedFolderId = null;
+                      if (widget.folderId == folder.id) {
+                        Navigator.of(context).pop();
                       }
                       await _loadCounts();
                       await _loadTemplates();

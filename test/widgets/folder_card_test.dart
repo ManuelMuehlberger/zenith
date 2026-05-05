@@ -13,7 +13,7 @@ void main() {
     );
   }
 
-  testWidgets('FolderCard shows workout drop hint for template payload', (
+  testWidgets('FolderCard does not preview move hint for ambient template drags', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -35,12 +35,175 @@ void main() {
       ),
     );
 
-    expect(find.text('Folder'), findsOneWidget);
     expect(find.text('Push Workouts'), findsOneWidget);
-    expect(find.text('Release to move workout'), findsOneWidget);
+    expect(find.text('Drop here to move template'), findsNothing);
+    expect(find.text('3 templates, 0 folders'), findsOneWidget);
   });
 
-  testWidgets('FolderCard shows symbolic workout and subfolder counts', (
+  testWidgets('FolderCard shows template move hint on direct hover', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildTestApp(
+        Column(
+          children: [
+            LongPressDraggable<WorkoutBuilderDragPayload>(
+              data: const TemplateDragPayload(
+                templateId: 'template-1',
+                index: 0,
+                parentFolderId: null,
+              ),
+              delay: const Duration(milliseconds: 300),
+              feedback: const Material(
+                color: Colors.transparent,
+                child: SizedBox(width: 120, height: 40),
+              ),
+              child: const SizedBox(width: 120, height: 40, child: Text('Drag me')),
+            ),
+            const SizedBox(height: 24),
+            FolderCard(
+              folder: WorkoutFolder(id: 'folder-hover', name: 'Hover Folder'),
+              itemCount: 2,
+              canAcceptPayload: (_) => true,
+              onPayloadDropped: (_) {},
+              onTap: () {},
+              onRenamePressed: () {},
+              onDeletePressed: () {},
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final gesture = await tester.startGesture(tester.getCenter(find.text('Drag me')));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await gesture.moveTo(tester.getCenter(find.text('Hover Folder')));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Drop here to move template'), findsOneWidget);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('FolderCard accepts direct template drop', (tester) async {
+    WorkoutBuilderDragPayload? droppedPayload;
+
+    await tester.pumpWidget(
+      buildTestApp(
+        Column(
+          children: [
+            LongPressDraggable<WorkoutBuilderDragPayload>(
+              data: const TemplateDragPayload(
+                templateId: 'template-drop',
+                index: 0,
+                parentFolderId: null,
+              ),
+              delay: const Duration(milliseconds: 300),
+              feedback: const Material(
+                color: Colors.transparent,
+                child: SizedBox(width: 120, height: 40),
+              ),
+              child: const SizedBox(
+                width: 120,
+                height: 40,
+                child: Text('Drop workout'),
+              ),
+            ),
+            const SizedBox(height: 24),
+            FolderCard(
+              folder: WorkoutFolder(id: 'folder-drop', name: 'Drop Folder'),
+              itemCount: 2,
+              canAcceptPayload: (_) => true,
+              onPayloadDropped: (payload) => droppedPayload = payload,
+              onTap: () {},
+              onRenamePressed: () {},
+              onDeletePressed: () {},
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Drop workout')),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await gesture.moveTo(tester.getCenter(find.text('Drop Folder')));
+    await tester.pump(const Duration(milliseconds: 50));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(droppedPayload, isA<TemplateDragPayload>());
+    expect(
+      (droppedPayload as TemplateDragPayload).templateId,
+      'template-drop',
+    );
+  });
+
+  testWidgets('FolderCard hover hint does not overflow at compact width', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildTestApp(
+        SizedBox(
+          width: 255,
+          child: Column(
+            children: [
+              LongPressDraggable<WorkoutBuilderDragPayload>(
+                data: const TemplateDragPayload(
+                  templateId: 'template-compact',
+                  index: 0,
+                  parentFolderId: null,
+                ),
+                delay: const Duration(milliseconds: 300),
+                feedback: const Material(
+                  color: Colors.transparent,
+                  child: SizedBox(width: 120, height: 40),
+                ),
+                child: const SizedBox(
+                  width: 120,
+                  height: 40,
+                  child: Text('Drag compact'),
+                ),
+              ),
+              const SizedBox(height: 24),
+              FolderCard(
+                folder: WorkoutFolder(
+                  id: 'folder-compact',
+                  name: 'Compact Folder',
+                ),
+                itemCount: 2,
+                canAcceptPayload: (_) => true,
+                onPayloadDropped: (_) {},
+                onTap: () {},
+                onRenamePressed: () {},
+                onDeletePressed: () {},
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Drag compact')),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await gesture.moveTo(tester.getCenter(find.text('Compact Folder')));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    expect(find.text('Drop here to move template'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('FolderCard shows compact template and subfolder summary', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -57,12 +220,10 @@ void main() {
       ),
     );
 
-    expect(find.text('4'), findsOneWidget);
-    expect(find.text('2'), findsOneWidget);
-    expect(find.textContaining('workout'), findsNothing);
+    expect(find.text('4 templates, 2 folders'), findsOneWidget);
   });
 
-  testWidgets('FolderCard shows folder nesting hint for folder payload', (
+  testWidgets('FolderCard does not preview nesting for ambient folder drags', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -85,8 +246,86 @@ void main() {
       ),
     );
 
-    expect(find.text('Folder'), findsOneWidget);
     expect(find.text('Upper Body'), findsOneWidget);
-    expect(find.text('Release to nest folder'), findsOneWidget);
+    expect(find.text('Drop here to nest folder'), findsNothing);
+    expect(find.text('1 template, 0 folders'), findsOneWidget);
+  });
+
+  testWidgets('FolderCard resting surfaces use refreshed folder tokens', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildTestApp(
+        FolderCard(
+          folder: WorkoutFolder(id: 'folder-4', name: 'Surface Match'),
+          itemCount: 2,
+          subfolderCount: 1,
+          onPayloadDropped: (_) {},
+          onTap: () {},
+          onRenamePressed: () {},
+          onDeletePressed: () {},
+        ),
+      ),
+    );
+
+    final buildContext = tester.element(find.byType(FolderCard));
+    final cardContainer = tester.widget<Container>(
+      find
+          .ancestor(
+            of: find.text('Surface Match'),
+            matching: find.byType(Container),
+          )
+          .first,
+    );
+    final menuInk = tester.widget<Ink>(find.byType(Ink).last);
+
+    expect(
+      (cardContainer.decoration as BoxDecoration).color,
+      Color.alphaBlend(
+        buildContext.appScheme.primary.withValues(alpha: 0.025),
+        buildContext.appColors.surfaceAlt,
+      ),
+    );
+    expect(
+      (menuInk.decoration as BoxDecoration).color,
+      Color.alphaBlend(
+        buildContext.appScheme.primary.withValues(alpha: 0.04),
+        buildContext.appColors.surfaceAlt,
+      ),
+    );
+  });
+
+  testWidgets('FolderCard uses neutral surface in dark mode', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: Scaffold(
+          body: FolderCard(
+            folder: WorkoutFolder(id: 'folder-dark', name: 'Dark Folder'),
+            itemCount: 2,
+            subfolderCount: 1,
+            onPayloadDropped: (_) {},
+            onTap: () {},
+            onRenamePressed: () {},
+            onDeletePressed: () {},
+          ),
+        ),
+      ),
+    );
+
+    final buildContext = tester.element(find.byType(FolderCard));
+    final cardContainer = tester.widget<Container>(
+      find
+          .ancestor(
+            of: find.text('Dark Folder'),
+            matching: find.byType(Container),
+          )
+          .first,
+    );
+
+    expect(
+      (cardContainer.decoration as BoxDecoration).color,
+      buildContext.appScheme.surface,
+    );
   });
 }
