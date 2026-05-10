@@ -30,6 +30,7 @@ class _ThemePalette {
     required this.surface,
     required this.surfaceAlt,
     required this.field,
+    required this.dockEdgeFade,
     required this.overlayStrong,
     required this.overlayMedium,
     required this.overlaySoft,
@@ -49,6 +50,7 @@ class _ThemePalette {
   final Color surface;
   final Color surfaceAlt;
   final Color field;
+  final Color dockEdgeFade;
   final Color overlayStrong;
   final Color overlayMedium;
   final Color overlaySoft;
@@ -74,6 +76,7 @@ class AppThemeColors {
     surface: Color(0xFFFFFFFF),
     surfaceAlt: Color(0xFFFFFFFF),
     field: Color(0xFFECEEF2),
+    dockEdgeFade: Color(0xFFFFFFFF),
     overlayStrong: Color(0xF2FFFFFF),
     overlayMedium: Color(0xD9FFFFFF),
     overlaySoft: Color(0x99FFFFFF),
@@ -94,6 +97,7 @@ class AppThemeColors {
     surface: Color(0xFF212121),
     surfaceAlt: Color(0xFF1A1A1A),
     field: Color(0xFF2C2C2E),
+    dockEdgeFade: Color(0xFF000000),
     overlayStrong: Color(0xCC000000),
     overlayMedium: Color(0x8A000000),
     overlaySoft: Color(0x33000000),
@@ -187,6 +191,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   const AppThemeTokens({
     required this.surfaceAlt,
     required this.field,
+    required this.dockEdgeFade,
     required this.overlayStrong,
     required this.overlayMedium,
     required this.overlaySoft,
@@ -200,6 +205,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
 
   final Color surfaceAlt;
   final Color field;
+  final Color dockEdgeFade;
   final Color overlayStrong;
   final Color overlayMedium;
   final Color overlaySoft;
@@ -214,6 +220,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   AppThemeTokens copyWith({
     Color? surfaceAlt,
     Color? field,
+    Color? dockEdgeFade,
     Color? overlayStrong,
     Color? overlayMedium,
     Color? overlaySoft,
@@ -227,6 +234,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     return AppThemeTokens(
       surfaceAlt: surfaceAlt ?? this.surfaceAlt,
       field: field ?? this.field,
+      dockEdgeFade: dockEdgeFade ?? this.dockEdgeFade,
       overlayStrong: overlayStrong ?? this.overlayStrong,
       overlayMedium: overlayMedium ?? this.overlayMedium,
       overlaySoft: overlaySoft ?? this.overlaySoft,
@@ -248,6 +256,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     return AppThemeTokens(
       surfaceAlt: Color.lerp(surfaceAlt, other.surfaceAlt, t) ?? surfaceAlt,
       field: Color.lerp(field, other.field, t) ?? field,
+      dockEdgeFade:
+          Color.lerp(dockEdgeFade, other.dockEdgeFade, t) ?? dockEdgeFade,
       overlayStrong:
           Color.lerp(overlayStrong, other.overlayStrong, t) ?? overlayStrong,
       overlayMedium:
@@ -274,6 +284,10 @@ class AppTheme {
   static const double mainDockBlurSigma = 14;
   static const double mainDockEdgeBlurBaseHeight = mainDockClearance * 1.6;
   static const double mainDockEdgeBlurVisibleStop = 0.24;
+  static const double mainDockEdgeFadeBaseHeight = mainDockClearance * 2.1;
+  static const double mainDockEdgeFadeMidStop = 0.6;
+  static const double mainDockEdgeFadeShoulderOpacity = 0.12;
+  static const double mainDockEdgeFadeBottomOpacity = 0.78;
   static const double mainDockIconSize = 28;
   static const double mainDockSelectedIconSize = 30;
   static const double mainDockPrimaryWidth = 236;
@@ -290,6 +304,7 @@ class AppTheme {
   static final AppThemeTokens lightTokens = AppThemeTokens(
     surfaceAlt: AppThemeColors.light.surfaceAlt,
     field: AppThemeColors.light.field,
+    dockEdgeFade: AppThemeColors.light.dockEdgeFade,
     overlayStrong: AppThemeColors.light.overlayStrong,
     overlayMedium: AppThemeColors.light.overlayMedium,
     overlaySoft: AppThemeColors.light.overlaySoft,
@@ -304,6 +319,7 @@ class AppTheme {
   static final AppThemeTokens darkTokens = AppThemeTokens(
     surfaceAlt: AppThemeColors.dark.surfaceAlt,
     field: AppThemeColors.dark.field,
+    dockEdgeFade: AppThemeColors.dark.dockEdgeFade,
     overlayStrong: AppThemeColors.dark.overlayStrong,
     overlayMedium: AppThemeColors.dark.overlayMedium,
     overlaySoft: AppThemeColors.dark.overlaySoft,
