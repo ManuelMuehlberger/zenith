@@ -1,5 +1,3 @@
-import 'dart:developer' as developer; // Add debug logging
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -39,6 +37,10 @@ class ReorderableWorkoutTemplateList extends StatefulWidget {
 
 class _ReorderableWorkoutTemplateListState
     extends State<ReorderableWorkoutTemplateList> {
+  static const String _cardRepaintBoundaryKeyPrefix =
+      'reorderable-template-card-repaint-';
+  static const String _feedbackRepaintBoundaryKeyPrefix =
+      'reorderable-template-feedback-repaint-';
   static const double _reorderGapHeight = 18;
   static const double _dropIndexHysteresis = 16;
   static const double _autoScrollTriggerExtent = 96;
@@ -50,6 +52,25 @@ class _ReorderableWorkoutTemplateListState
   Rect? _draggedOriginRectAtStart;
   double? _dragStartScrollPixels;
   final Map<String, GlobalKey> _itemKeys = <String, GlobalKey>{};
+  Map<String, Rect>? _cachedTemplateRects;
+  bool _templateGeometryDirty = true;
+  bool _templateGeometryRefreshScheduled = false;
+
+  @override
+  void didUpdateWidget(covariant ReorderableWorkoutTemplateList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final activeTemplateIds = widget.templates
+        .map((template) => template.id)
+        .toSet();
+    _itemKeys.removeWhere(
+      (templateId, _) => !activeTemplateIds.contains(templateId),
+    );
+    _cachedTemplateRects?.removeWhere(
+      (templateId, _) => !activeTemplateIds.contains(templateId),
+    );
+    _markTemplateGeometryDirty(scheduleRefresh: false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,13 +179,7 @@ class _ReorderableWorkoutTemplateListState
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final card = ExpandableWorkoutCard(
-          key: ValueKey(template.id),
-          template: template,
-          index: index,
-          onEditPressed: () => widget.onTemplateTap(template),
-          onDeletePressed: () => widget.onTemplateDeletePressed(template),
-        );
+        final card = _buildCard(template, index);
 
         final payload = TemplateDragPayload(
           templateId: template.id,
@@ -176,9 +191,6 @@ class _ReorderableWorkoutTemplateListState
           data: payload,
           delay: const Duration(milliseconds: 300),
           onDragStarted: () {
-            developer.log(
-              'Drag started for template: ${template.id} at index: $index',
-            );
             HapticFeedback.mediumImpact();
             _draggedIndex = index;
             _draggedOriginRectAtStart = _rectForTemplate(template.id);
@@ -186,6 +198,7 @@ class _ReorderableWorkoutTemplateListState
               context,
             )?.position.pixels;
             _lastDragGlobalPosition = null;
+            _markTemplateGeometryDirty();
             _setDropIndex(null);
             widget.onDragStarted?.call(payload);
           },
@@ -195,35 +208,27 @@ class _ReorderableWorkoutTemplateListState
             _updateDropIndexFromPointer();
           },
           onDragEnd: (details) {
-            developer.log(
-              'Drag ended for template: ${template.id} at index: $index',
-            );
             if (!details.wasAccepted) {
               _reorderUsingDropIndex(index);
             }
-            _draggedIndex = null;
-            _draggedOriginRectAtStart = null;
-            _dragStartScrollPixels = null;
-            _lastDragGlobalPosition = null;
-            _setDropIndex(null);
+            _clearDragState();
             widget.onDragEnded?.call();
           },
           onDraggableCanceled: (velocity, offset) {
-            developer.log(
-              'Drag canceled for template: ${template.id} at index: $index',
-            );
-            _draggedIndex = null;
-            _draggedOriginRectAtStart = null;
-            _dragStartScrollPixels = null;
-            _lastDragGlobalPosition = null;
-            _setDropIndex(null);
+            _clearDragState();
           },
           feedback: SizedBox(
             width: constraints.maxWidth,
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: AppTheme.workoutCardBorderRadius,
-              child: Opacity(opacity: 0.92, child: card),
+            child: RepaintBoundary(
+              key: ValueKey('$_feedbackRepaintBoundaryKeyPrefix${template.id}'),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: AppTheme.workoutCardBorderRadius,
+                child: Opacity(
+                  opacity: 0.92,
+                  child: _buildCard(template, index),
+                ),
+              ),
             ),
           ),
           childWhenDragging: _buildAnimatedGapPlaceholder(
@@ -238,14 +243,9 @@ class _ReorderableWorkoutTemplateListState
             final data = details.data;
             if (data is! TemplateDragPayload) return false;
             if (data.parentFolderId != widget.folderId) return false;
-            final draggedIndex = data.index;
-            developer.log(
-              'Drag target will accept template at index: $index, draggedIndex: $draggedIndex',
-            );
             return true;
           },
           onLeave: (data) {
-            developer.log('Drag target leave at index: $index');
             _updateDropIndexFromPointer();
           },
           onAcceptWithDetails: (details) {
@@ -253,9 +253,6 @@ class _ReorderableWorkoutTemplateListState
             if (data is! TemplateDragPayload) {
               return;
             }
-            developer.log(
-              'Drag target accept template at index: $index for draggedIndex: ${data.index}',
-            );
             _reorderUsingDropIndex(data.index);
             _setDropIndex(null);
           },
@@ -264,16 +261,26 @@ class _ReorderableWorkoutTemplateListState
 
             return Column(
               children: [
-                _buildAnimatedGapPlaceholder(
-                  context,
-                  visible: showGap,
-                ),
+                _buildAnimatedGapPlaceholder(context, visible: showGap),
                 KeyedSubtree(key: itemKey, child: draggable),
               ],
             );
           },
         );
       },
+    );
+  }
+
+  Widget _buildCard(WorkoutTemplate template, int index) {
+    return RepaintBoundary(
+      key: ValueKey('$_cardRepaintBoundaryKeyPrefix${template.id}'),
+      child: ExpandableWorkoutCard(
+        key: ValueKey(template.id),
+        template: template,
+        index: index,
+        onEditPressed: () => widget.onTemplateTap(template),
+        onDeletePressed: () => widget.onTemplateDeletePressed(template),
+      ),
     );
   }
 
@@ -341,6 +348,7 @@ class _ReorderableWorkoutTemplateListState
     if (_dropIndex == value || !mounted) {
       return;
     }
+    _markTemplateGeometryDirty();
     setState(() {
       _dropIndex = value;
     });
@@ -372,6 +380,7 @@ class _ReorderableWorkoutTemplateListState
         return;
       }
 
+      _markTemplateGeometryDirty(scheduleRefresh: false);
       position.jumpTo(targetPixels);
       return;
     }
@@ -389,6 +398,7 @@ class _ReorderableWorkoutTemplateListState
       return;
     }
 
+    _markTemplateGeometryDirty(scheduleRefresh: false);
     position.jumpTo(targetPixels);
   }
 
@@ -397,15 +407,7 @@ class _ReorderableWorkoutTemplateListState
       return false;
     }
 
-    final centers = <double>[];
-    for (final template in widget.templates) {
-      final rect = _rectForTemplate(template.id);
-      if (rect == null) {
-        return false;
-      }
-      centers.add(rect.center.dy);
-    }
-
+    final centers = _templateCenters();
     if (centers.isEmpty) {
       return false;
     }
@@ -523,6 +525,88 @@ class _ReorderableWorkoutTemplateListState
 
   GlobalKey _itemKeyFor(String templateId) {
     return _itemKeys.putIfAbsent(templateId, GlobalKey.new);
+  }
+
+  void _clearDragState() {
+    _draggedIndex = null;
+    _draggedOriginRectAtStart = null;
+    _dragStartScrollPixels = null;
+    _lastDragGlobalPosition = null;
+    _clearTemplateGeometryCache();
+    _setDropIndex(null);
+  }
+
+  void _clearTemplateGeometryCache() {
+    _cachedTemplateRects = null;
+    _templateGeometryDirty = true;
+    _templateGeometryRefreshScheduled = false;
+  }
+
+  void _markTemplateGeometryDirty({bool scheduleRefresh = true}) {
+    _templateGeometryDirty = true;
+    if (scheduleRefresh) {
+      _scheduleTemplateGeometryRefresh();
+    }
+  }
+
+  void _scheduleTemplateGeometryRefresh() {
+    if (_templateGeometryRefreshScheduled ||
+        !mounted ||
+        _draggedIndex == null) {
+      return;
+    }
+
+    _templateGeometryRefreshScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _templateGeometryRefreshScheduled = false;
+      if (!mounted || _draggedIndex == null || !_templateGeometryDirty) {
+        return;
+      }
+      _captureTemplateRects();
+    });
+  }
+
+  Map<String, Rect>? _captureTemplateRects() {
+    final templateRects = <String, Rect>{};
+    for (final template in widget.templates) {
+      final rect = _rectForTemplate(template.id);
+      if (rect == null) {
+        return null;
+      }
+      templateRects[template.id] = rect;
+    }
+
+    _cachedTemplateRects = templateRects;
+    _templateGeometryDirty = false;
+    return templateRects;
+  }
+
+  Map<String, Rect>? _ensureTemplateRects() {
+    final cachedTemplateRects = _cachedTemplateRects;
+    if (!_templateGeometryDirty &&
+        cachedTemplateRects != null &&
+        cachedTemplateRects.length == widget.templates.length) {
+      return cachedTemplateRects;
+    }
+
+    return _captureTemplateRects();
+  }
+
+  List<double> _templateCenters() {
+    final templateRects = _ensureTemplateRects();
+    if (templateRects == null) {
+      return const <double>[];
+    }
+
+    final centers = <double>[];
+    for (final template in widget.templates) {
+      final rect = templateRects[template.id];
+      if (rect == null) {
+        return const <double>[];
+      }
+      centers.add(rect.center.dy);
+    }
+    return centers;
   }
 
   Rect? _currentDraggedOriginRect() {

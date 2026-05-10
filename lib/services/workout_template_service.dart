@@ -40,6 +40,11 @@ class WorkoutTemplateService {
   late WorkoutExerciseDao _workoutExerciseDao;
   late WorkoutSetDao _workoutSetDao;
   final Logger _logger = Logger('WorkoutTemplateService');
+  final Map<WorkoutTemplateId, List<WorkoutExercise>> _templateExercisesCache =
+      <WorkoutTemplateId, List<WorkoutExercise>>{};
+  final Map<WorkoutTemplateId, Future<List<WorkoutExercise>>>
+  _ongoingTemplateExerciseLoads =
+      <WorkoutTemplateId, Future<List<WorkoutExercise>>>{};
 
   // Cache for folders
   List<WorkoutFolder> _folders = [];
@@ -173,6 +178,7 @@ class WorkoutTemplateService {
     _logger.fine('Deleting workout template with id: $id');
     try {
       final count = await _workoutTemplateDao.deleteWorkoutTemplate(id);
+      _invalidateTemplateExercisesCache(id);
       if (count > 0) {
         _logger.fine('Successfully deleted workout template with id: $id');
       } else {
@@ -700,6 +706,40 @@ class WorkoutTemplateService {
   Future<List<WorkoutExercise>> getTemplateExercises(
     WorkoutTemplateId templateId,
   ) async {
+    final cachedExercises = _templateExercisesCache[templateId];
+    if (cachedExercises != null) {
+      _logger.finer(
+        'Returning cached template exercises for template: $templateId',
+      );
+      return _cloneTemplateExercises(cachedExercises);
+    }
+
+    final ongoingTemplateExerciseLoad =
+        _ongoingTemplateExerciseLoads[templateId];
+    if (ongoingTemplateExerciseLoad != null) {
+      _logger.finer(
+        'Awaiting in-flight template exercise load for template: $templateId',
+      );
+      final exercises = await ongoingTemplateExerciseLoad;
+      return _cloneTemplateExercises(exercises);
+    }
+
+    final loadFuture = _loadTemplateExercises(templateId);
+    _ongoingTemplateExerciseLoads[templateId] = loadFuture;
+
+    try {
+      final exercises = await loadFuture;
+      return _cloneTemplateExercises(exercises);
+    } finally {
+      if (identical(_ongoingTemplateExerciseLoads[templateId], loadFuture)) {
+        _ongoingTemplateExerciseLoads.remove(templateId);
+      }
+    }
+  }
+
+  Future<List<WorkoutExercise>> _loadTemplateExercises(
+    WorkoutTemplateId templateId,
+  ) async {
     _logger.fine('Loading template exercises for template: $templateId');
     try {
       final exercises = await _workoutExerciseDao
@@ -711,6 +751,7 @@ class WorkoutTemplateService {
         );
         result.add(ex.copyWith(sets: sets));
       }
+      _templateExercisesCache[templateId] = _cloneTemplateExercises(result);
       _logger.fine(
         'Loaded ${result.length} template exercises for template: $templateId',
       );
@@ -763,6 +804,7 @@ class WorkoutTemplateService {
           await _workoutSetDao.insert(set);
         }
       }
+      _invalidateTemplateExercisesCache(templateId);
       _logger.fine(
         'Template exercises saved successfully for template: $templateId',
       );
@@ -770,5 +812,21 @@ class WorkoutTemplateService {
       _logger.severe('Failed to save template exercises for $templateId: $e');
       rethrow;
     }
+  }
+
+  List<WorkoutExercise> _cloneTemplateExercises(
+    List<WorkoutExercise> exercises,
+  ) {
+    return exercises
+        .map(
+          (exercise) =>
+              exercise.copyWith(sets: List<WorkoutSet>.from(exercise.sets)),
+        )
+        .toList(growable: false);
+  }
+
+  void _invalidateTemplateExercisesCache(WorkoutTemplateId templateId) {
+    _templateExercisesCache.remove(templateId);
+    _ongoingTemplateExerciseLoads.remove(templateId);
   }
 }

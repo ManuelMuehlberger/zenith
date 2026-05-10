@@ -1,5 +1,3 @@
-import 'dart:developer' as developer; // Add debug logging
-
 import 'package:flutter/material.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
@@ -50,11 +48,9 @@ class FolderCard extends StatelessWidget {
 
     return DragTarget<WorkoutBuilderDragPayload>(
       onAcceptWithDetails: (details) async {
-        developer.log('FolderCard onAcceptWithDetails: ${details.data}');
         onPayloadDropped(details.data);
       },
       onWillAcceptWithDetails: (details) {
-        developer.log('FolderCard onWillAcceptWithDetails: ${details.data}');
         if (details.data is TemplateDragPayload) {
           final validator = canAcceptPayload;
           return validator == null ? true : validator(details.data);
@@ -72,22 +68,20 @@ class FolderCard extends StatelessWidget {
             : candidateData.first;
         final activePayload = hoveringPayload ?? activeDragPayload;
         final showDropHint = isHovering || isDropTargetActive;
-        final highlightTint = colorScheme.primary.withValues(
-          alpha: isDark ? 0.18 : 0.06,
-        );
+        final iconTint = colorScheme.primary;
         final restingSurfaceColor = isDark
             ? colorScheme.surface
             : Color.alphaBlend(
                 colorScheme.primary.withValues(alpha: 0.025),
                 colors.surfaceAlt,
               );
-        final surfaceColor = showDropHint
-            ? Color.alphaBlend(highlightTint, restingSurfaceColor)
-            : restingSurfaceColor;
+        final restingIconSurfaceColor = Color.alphaBlend(
+          iconTint.withValues(alpha: isDark ? 0.1 : 0.06),
+          colors.surfaceAlt,
+        );
         final borderColor = showDropHint
             ? colorScheme.primary.withValues(alpha: isDark ? 0.5 : 0.28)
             : colors.textTertiary.withValues(alpha: isDark ? 0.16 : 0.08);
-        final iconTint = colorScheme.primary;
         final dropMeta = switch (activePayload) {
           FolderDragPayload() => 'Drop here to nest folder',
           TemplateDragPayload() => 'Drop here to move template',
@@ -95,12 +89,10 @@ class FolderCard extends StatelessWidget {
           _ => '$workoutCount templates',
         };
 
-        return AnimatedContainer(
-          duration: AppConstants.DRAG_ANIMATION_DURATION,
-          curve: AppConstants.DRAG_ANIMATION_CURVE,
+        return Container(
           margin: const EdgeInsets.only(bottom: AppConstants.CARD_VERTICAL_GAP),
           decoration: BoxDecoration(
-            color: surfaceColor,
+            color: restingSurfaceColor,
             borderRadius: AppTheme.workoutCardBorderRadius,
             border: Border.all(color: borderColor),
           ),
@@ -121,12 +113,7 @@ class FolderCard extends StatelessWidget {
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: showDropHint
-                            ? iconTint.withValues(alpha: 0.16)
-                            : Color.alphaBlend(
-                                iconTint.withValues(alpha: isDark ? 0.1 : 0.06),
-                                colors.surfaceAlt,
-                              ),
+                        color: restingIconSurfaceColor,
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: Icon(
@@ -168,29 +155,26 @@ class FolderCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    if (showDropHint)
-                      const SizedBox.shrink()
-                    else
-                      buildWorkoutsPageMenuWrapper(
-                        context,
-                        child: PullDownButton(
-                          itemBuilder: (context) => [
-                            PullDownMenuItem(
-                              onTap: onRenamePressed,
-                              title: 'Rename Folder',
-                              icon: Icons.edit_outlined,
-                            ),
-                            PullDownMenuItem(
-                              onTap: onDeletePressed,
-                              title: 'Delete Folder',
-                              isDestructive: true,
-                              icon: Icons.delete_outline_rounded,
-                            ),
-                          ],
-                          buttonBuilder: (context, showMenu) =>
-                              _buildMenuButton(context, onPressed: showMenu),
-                        ),
+                    buildWorkoutsPageMenuWrapper(
+                      context,
+                      child: PullDownButton(
+                        itemBuilder: (context) => [
+                          PullDownMenuItem(
+                            onTap: onRenamePressed,
+                            title: 'Rename Folder',
+                            icon: Icons.edit_outlined,
+                          ),
+                          PullDownMenuItem(
+                            onTap: onDeletePressed,
+                            title: 'Delete Folder',
+                            isDestructive: true,
+                            icon: Icons.delete_outline_rounded,
+                          ),
+                        ],
+                        buttonBuilder: (context, showMenu) =>
+                            _buildMenuButton(context, onPressed: showMenu),
                       ),
+                    ),
                   ],
                 ),
               ),

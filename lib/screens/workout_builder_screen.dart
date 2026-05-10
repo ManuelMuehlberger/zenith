@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:developer' as developer; // Add debug logging
-import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -153,6 +152,9 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     final transparentSurface = Theme.of(
       context,
     ).colorScheme.surface.withValues(alpha: 0);
+    final headerOverlay = ColoredBox(
+      color: headerSurface.withValues(alpha: 0.94),
+    );
 
     return AnimatedBuilder(
       animation: WorkoutSessionService.instance,
@@ -198,17 +200,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                       fit: StackFit.expand,
                       children: [
                         // Persistent glass effect layer (covers expanded and collapsed states)
-                        ClipRRect(
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(
-                              sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                              sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-                            ),
-                            child: ColoredBox(
-                              color: headerSurface.withValues(alpha: 0.94),
-                            ),
-                          ),
-                        ),
+                        ClipRRect(child: headerOverlay),
                         // FlexibleSpaceBar handles title positioning and parallax of the large title
                         FlexibleSpaceBar(
                           centerTitle: true,
@@ -481,9 +473,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
 
   void _selectFolder(String folderId) {
     final route = _buildFolderRoute(folderId);
-    Navigator.of(context)
-        .push(route)
-        .then((_) => _initialLoad());
+    Navigator.of(context).push(route).then((_) => _initialLoad());
   }
 
   void _navigateToFolderFromBreadcrumb(String? folderId) {
@@ -568,10 +558,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       final targetName = parentFolderId == null
           ? 'All Workouts'
           : _getFolderName(parentFolderId);
-      FloatingFeedbackToast.show(
-        context,
-        message: 'Moved to $targetName',
-      );
+      FloatingFeedbackToast.show(context, message: 'Moved to $targetName');
     } catch (e) {
       developer.log(
         'Failed to move folder $folderId to parent $parentFolderId: $e',

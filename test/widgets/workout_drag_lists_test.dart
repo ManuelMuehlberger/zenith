@@ -161,6 +161,63 @@ void main() {
     },
   );
 
+  testWidgets('drag list items are wrapped in repaint boundaries', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildTestApp(
+        Column(
+          children: [
+            ReorderableFolderList(
+              folders: [
+                WorkoutFolder(id: 'folder-a', name: 'Folder A', orderIndex: 0),
+              ],
+              currentParentFolderId: null,
+              itemCountByFolder: const {'folder-a': 1},
+              subfolderCountByFolder: const {'folder-a': 0},
+              activeDragPayload: null,
+              onFolderTap: (_) {},
+              onRenamePressed: (_) {},
+              onDeletePressed: (_) {},
+              onFolderReordered: (_, __) {},
+              onPayloadDroppedIntoFolder: (_, __) {},
+              canDropIntoFolder: (_, __) => true,
+              onDragStarted: (_) {},
+              onDragEnded: () {},
+            ),
+            ReorderableWorkoutTemplateList(
+              templates: [
+                WorkoutTemplate(
+                  id: 'template-a',
+                  name: 'Workout A',
+                  orderIndex: 0,
+                ),
+              ],
+              folderId: null,
+              onTemplateTap: (_) {},
+              onTemplateDeletePressed: (_) {},
+              onTemplateReordered: (_, __) {},
+              onAddWorkoutPressed: null,
+              onDragStarted: (_) {},
+              onDragEnded: () {},
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(
+      find.byKey(const ValueKey('reorderable-folder-card-repaint-folder-a')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(
+        const ValueKey('reorderable-template-card-repaint-template-a'),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('ReorderableWorkoutTemplateList reorders to end on drop', (
     tester,
   ) async {
@@ -405,9 +462,7 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 400));
 
-      await gesture.moveTo(
-        Offset(folderBRect.center.dx, folderBRect.top + 6),
-      );
+      await gesture.moveTo(Offset(folderBRect.center.dx, folderBRect.top + 6));
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(gapIndicatorFinder(), findsOneWidget);
@@ -550,6 +605,74 @@ void main() {
 
       await gesture.up();
       await tester.pump(const Duration(milliseconds: 100));
+    },
+  );
+
+  testWidgets(
+    'ReorderableFolderList clears nested hover and reorders after subsequent drag updates',
+    (tester) async {
+      int? oldIndex;
+      int? newIndex;
+      WorkoutFolder? nestedDropFolder;
+      final scrollController = ScrollController();
+
+      await tester.pumpWidget(
+        buildScrollableTestApp(
+          ReorderableFolderList(
+            folders: buildFolders(3),
+            currentParentFolderId: null,
+            itemCountByFolder: const {
+              'folder-0': 1,
+              'folder-1': 2,
+              'folder-2': 3,
+            },
+            subfolderCountByFolder: const {
+              'folder-0': 0,
+              'folder-1': 0,
+              'folder-2': 0,
+            },
+            activeDragPayload: null,
+            onFolderTap: (_) {},
+            onRenamePressed: (_) {},
+            onDeletePressed: (_) {},
+            onFolderReordered: (from, to) {
+              oldIndex = from;
+              newIndex = to;
+            },
+            onPayloadDroppedIntoFolder: (_, folder) {
+              nestedDropFolder = folder;
+            },
+            canDropIntoFolder: (_, __) => true,
+            onDragStarted: (_) {},
+            onDragEnded: () {},
+          ),
+          controller: scrollController,
+        ),
+      );
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.text('Folder A')),
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+
+      final folderBRect = tester.getRect(find.byType(FolderCard).at(1));
+      final listRect = tester.getRect(find.byType(ListView));
+
+      await gesture.moveTo(folderBRect.center);
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('Drop here to nest folder'), findsOneWidget);
+
+      await gesture.moveTo(Offset(listRect.center.dx, listRect.bottom - 8));
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('Drop here to nest folder'), findsNothing);
+      expect(gapIndicatorFinder(), findsOneWidget);
+
+      await gesture.up();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(nestedDropFolder, isNull);
+      expect(oldIndex, 0);
+      expect(newIndex, 2);
     },
   );
 }

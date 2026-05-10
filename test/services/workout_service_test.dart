@@ -225,6 +225,105 @@ void main() {
         ]);
       });
 
+      test(
+        'should reuse loaded workouts for repeated sorted queries',
+        () async {
+          final workouts = [
+            Workout(
+              id: 'first',
+              name: 'First',
+              exercises: const [],
+              status: WorkoutStatus.completed,
+              startedAt: DateTime(2024, 1, 1),
+            ),
+            Workout(
+              id: 'second',
+              name: 'Second',
+              exercises: const [],
+              status: WorkoutStatus.completed,
+              startedAt: DateTime(2024, 1, 2),
+            ),
+          ];
+
+          when(
+            mockWorkoutDao.getAllWorkouts(),
+          ).thenAnswer((_) async => workouts);
+          when(
+            mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutIds([
+              'first',
+              'second',
+            ]),
+          ).thenAnswer((_) async => []);
+          when(
+            mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseIds([]),
+          ).thenAnswer((_) async => []);
+
+          final firstResult = await workoutService
+              .getWorkoutsSortedByStartedAt();
+          final secondResult = await workoutService
+              .getWorkoutsSortedByStartedAt();
+
+          expect(firstResult.map((workout) => workout.id).toList(), [
+            'second',
+            'first',
+          ]);
+          expect(secondResult.map((workout) => workout.id).toList(), [
+            'second',
+            'first',
+          ]);
+          verify(mockWorkoutDao.getAllWorkouts()).called(1);
+          verify(
+            mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutIds([
+              'first',
+              'second',
+            ]),
+          ).called(1);
+          verify(
+            mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseIds([]),
+          ).called(1);
+        },
+      );
+
+      test(
+        'explicit loadData should still refresh after cached queries',
+        () async {
+          final workouts = [
+            Workout(
+              id: 'refreshable',
+              name: 'Refreshable',
+              exercises: const [],
+              status: WorkoutStatus.completed,
+              startedAt: DateTime(2024, 1, 1),
+            ),
+          ];
+
+          when(
+            mockWorkoutDao.getAllWorkouts(),
+          ).thenAnswer((_) async => workouts);
+          when(
+            mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutIds([
+              'refreshable',
+            ]),
+          ).thenAnswer((_) async => []);
+          when(
+            mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseIds([]),
+          ).thenAnswer((_) async => []);
+
+          await workoutService.getWorkoutsSortedByStartedAt();
+          await workoutService.loadData();
+
+          verify(mockWorkoutDao.getAllWorkouts()).called(2);
+          verify(
+            mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutIds([
+              'refreshable',
+            ]),
+          ).called(2);
+          verify(
+            mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseIds([]),
+          ).called(2);
+        },
+      );
+
       test('should filter workouts for a date', () async {
         final w1 = Workout(
           id: 'a',

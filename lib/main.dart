@@ -142,6 +142,8 @@ class _MainScreenState extends State<MainScreen> {
 }
 
 class _MainDockBody extends StatelessWidget {
+  static const bool _enableBottomEdgeBlur = false;
+
   const _MainDockBody({required this.currentIndex, required this.screens});
 
   final int currentIndex;
@@ -149,6 +151,12 @@ class _MainDockBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final body = IndexedStack(index: currentIndex, children: screens);
+
+    if (!_enableBottomEdgeBlur) {
+      return body;
+    }
+
     final blurHeight =
         AppTheme.mainDockEdgeBlurBaseHeight +
         MediaQuery.paddingOf(context).bottom;
@@ -169,7 +177,7 @@ class _MainDockBody extends StatelessWidget {
           ],
         ),
       ],
-      child: IndexedStack(index: currentIndex, children: screens),
+      child: body,
     );
   }
 }
@@ -193,6 +201,46 @@ class _MainFloatingDock extends StatelessWidget {
       AppTheme.mainDockCompactWidth,
       maxWidth - AppTheme.mainDockActionSize - AppTheme.mainDockActionGap,
     );
+    final dockSurface = _MainDockSurface(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTheme.mainDockItemPadding,
+          vertical: 10,
+        ),
+        child: BottomBarItems(
+          spacing: MainAxisAlignment.spaceEvenly,
+          children: [
+            for (var index = 0; index < destinations.length; index++)
+              BottomBarItem(
+                selected: index == currentIndex,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  AppNavigationService.instance.goToTab(index);
+                },
+                tooltip: destinations[index].label,
+                icon: Icon(
+                  destinations[index].icon,
+                  size: AppTheme.mainDockIconSize,
+                ),
+                selectedIcon: Icon(
+                  destinations[index].selectedIcon,
+                  size: AppTheme.mainDockSelectedIconSize,
+                ),
+                color: context.appColors.textSecondary,
+                selectedColor: context.appScheme.primary,
+              ),
+          ],
+        ),
+      ),
+    );
+    final workoutAction = _WorkoutDockAction(
+      onPressed: () {
+        HapticFeedback.mediumImpact();
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const CreateWorkoutScreen()),
+        );
+      },
+    );
 
     return SizedBox(
       width: maxWidth,
@@ -201,7 +249,8 @@ class _MainFloatingDock extends StatelessWidget {
         tween: Tween<double>(begin: 0, end: showWorkoutAction ? 1 : 0),
         duration: const Duration(milliseconds: 280),
         curve: Curves.easeOutCubic,
-        builder: (context, progress, _) {
+        child: dockSurface,
+        builder: (context, progress, child) {
           final actionSlotWidth =
               (AppTheme.mainDockActionSize + AppTheme.mainDockActionGap) *
               progress;
@@ -217,42 +266,7 @@ class _MainFloatingDock extends StatelessWidget {
                   SizedBox(
                     width: dockWidth,
                     height: AppTheme.mainDockHeight,
-                    child: _MainDockSurface(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.mainDockItemPadding,
-                          vertical: 10,
-                        ),
-                        child: BottomBarItems(
-                          spacing: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            for (
-                              var index = 0;
-                              index < destinations.length;
-                              index++
-                            )
-                              BottomBarItem(
-                                selected: index == currentIndex,
-                                onTap: () {
-                                  HapticFeedback.selectionClick();
-                                  AppNavigationService.instance.goToTab(index);
-                                },
-                                tooltip: destinations[index].label,
-                                icon: Icon(
-                                  destinations[index].icon,
-                                  size: AppTheme.mainDockIconSize,
-                                ),
-                                selectedIcon: Icon(
-                                  destinations[index].selectedIcon,
-                                  size: AppTheme.mainDockSelectedIconSize,
-                                ),
-                                color: context.appColors.textSecondary,
-                                selectedColor: context.appScheme.primary,
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    child: child,
                   ),
                   SizedBox(
                     width: actionSlotWidth,
@@ -271,17 +285,7 @@ class _MainFloatingDock extends StatelessWidget {
                                     opacity: progress,
                                     child: Transform.translate(
                                       offset: Offset((1 - progress) * 12, 0),
-                                      child: _WorkoutDockAction(
-                                        onPressed: () {
-                                          HapticFeedback.mediumImpact();
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute<void>(
-                                              builder: (_) =>
-                                                  const CreateWorkoutScreen(),
-                                            ),
-                                          );
-                                        },
-                                      ),
+                                      child: workoutAction,
                                     ),
                                   ),
                                 ),

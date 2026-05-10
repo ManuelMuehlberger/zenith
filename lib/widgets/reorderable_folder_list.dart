@@ -1,5 +1,3 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -48,17 +46,46 @@ class ReorderableFolderList extends StatefulWidget {
 }
 
 class _ReorderableFolderListState extends State<ReorderableFolderList> {
+  static const String _cardRepaintBoundaryKeyPrefix =
+      'reorderable-folder-card-repaint-';
+  static const String _feedbackRepaintBoundaryKeyPrefix =
+      'reorderable-folder-feedback-repaint-';
   static const double _reorderGapHeight = 18;
   static const double _autoScrollTriggerExtent = 96;
   static const double _autoScrollStep = 18;
   static const double _nestedDropMargin = 14;
 
-  int? _dropIndex;
   int? _draggedIndex;
-  int? _activeNestedHoverIndex;
   FolderDragPayload? _draggedPayload;
   Offset? _lastDragGlobalPosition;
   final Map<String, GlobalKey> _itemKeys = <String, GlobalKey>{};
+  Map<String, Rect>? _cachedContentRects;
+  bool _contentGeometryDirty = true;
+  bool _contentGeometryRefreshScheduled = false;
+  _FolderDragUiState _dragUiState = const _FolderDragUiState();
+  late final ValueNotifier<_FolderDragUiState> _dragUiStateNotifier =
+      ValueNotifier<_FolderDragUiState>(_dragUiState);
+
+  int? get _dropIndex => _dragUiState.dropIndex;
+  int? get _activeNestedHoverIndex => _dragUiState.nestedHoverIndex;
+
+  @override
+  void didUpdateWidget(covariant ReorderableFolderList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final activeFolderIds = widget.folders.map((folder) => folder.id).toSet();
+    _itemKeys.removeWhere((folderId, _) => !activeFolderIds.contains(folderId));
+    _cachedContentRects?.removeWhere(
+      (folderId, _) => !activeFolderIds.contains(folderId),
+    );
+    _markContentGeometryDirty(scheduleRefresh: false);
+  }
+
+  @override
+  void dispose() {
+    _dragUiStateNotifier.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,20 +104,7 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
   Widget _buildReorderableItem(int index) {
     final folder = widget.folders[index];
     final itemKey = _itemKeyFor(folder.id);
-    final card = FolderCard(
-      key: ValueKey(folder.id),
-      folder: folder,
-      itemCount: widget.itemCountByFolder[folder.id] ?? 0,
-      subfolderCount: widget.subfolderCountByFolder[folder.id] ?? 0,
-      activeDragPayload: widget.activeDragPayload,
-      isDropTargetActive: _activeNestedHoverIndex == index,
-      canAcceptPayload: (payload) => widget.canDropIntoFolder(payload, folder),
-      onPayloadDropped: (payload) =>
-          widget.onPayloadDroppedIntoFolder(payload, folder),
-      onTap: () => widget.onFolderTap(folder),
-      onRenamePressed: () => widget.onRenamePressed(folder),
-      onDeletePressed: () => widget.onDeletePressed(folder),
-    );
+    final card = _buildCard(folder, index);
 
     final payload = FolderDragPayload(
       folderId: folder.id,
@@ -105,14 +119,12 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
           data: payload,
           delay: const Duration(milliseconds: 300),
           onDragStarted: () {
-            developer.log(
-              'Drag started for folder: ${folder.id} at index: $index',
-            );
             HapticFeedback.mediumImpact();
             _draggedIndex = index;
             _draggedPayload = payload;
             _lastDragGlobalPosition = null;
             _resetNestedHoverState();
+            _markContentGeometryDirty();
             _setDropIndex(null);
             widget.onDragStarted?.call(payload);
           },
@@ -122,9 +134,6 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
             _updateDropIndexFromPointer();
           },
           onDragEnd: (details) {
-            developer.log(
-              'Drag ended for folder: ${folder.id} at index: $index',
-            );
             final nestedHoverIndex = _activeNestedHoverIndex;
             if (!details.wasAccepted && nestedHoverIndex != null) {
               widget.onPayloadDroppedIntoFolder(
@@ -134,35 +143,24 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
             } else if (!details.wasAccepted) {
               _reorderUsingDropIndex(index);
             }
-            _draggedIndex = null;
-            _draggedPayload = null;
-            _lastDragGlobalPosition = null;
-            _resetNestedHoverState();
-            _setDropIndex(null);
+            _clearDragState();
             widget.onDragEnded?.call();
           },
           onDraggableCanceled: (velocity, offset) {
-            developer.log(
-              'Drag canceled for folder: ${folder.id} at index: $index',
-            );
-            _draggedIndex = null;
-            _draggedPayload = null;
-            _lastDragGlobalPosition = null;
-            _resetNestedHoverState();
-            _setDropIndex(null);
+            _clearDragState();
           },
           feedback: SizedBox(
             width: constraints.maxWidth,
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: AppTheme.workoutCardBorderRadius,
-              child: Opacity(opacity: 0.92, child: card),
+            child: RepaintBoundary(
+              key: ValueKey('$_feedbackRepaintBoundaryKeyPrefix${folder.id}'),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: AppTheme.workoutCardBorderRadius,
+                child: Opacity(opacity: 0.92, child: _buildCard(folder, index)),
+              ),
             ),
           ),
-          childWhenDragging: _buildAnimatedGapPlaceholder(
-            context,
-            visible: _dropIndex == index,
-          ),
+          childWhenDragging: _buildDraggingPlaceholder(context, index),
           child: card,
         );
 
@@ -199,15 +197,34 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
         _reorderUsingDropIndex(data.index);
         _setDropIndex(null);
       },
-      builder: (context, candidateData, rejectedData) {
-        final showPlaceholder =
-            _dropIndex == targetIndex && _draggedIndex != targetIndex;
+      builder: (context, candidateData, rejectedData) =>
+          _buildReorderPlaceholder(context, targetIndex),
+    );
+  }
 
-        return _buildAnimatedGapPlaceholder(
-          context,
-          visible: showPlaceholder,
-        );
-      },
+  Widget _buildCard(WorkoutFolder folder, int index) {
+    return RepaintBoundary(
+      key: ValueKey('$_cardRepaintBoundaryKeyPrefix${folder.id}'),
+      child: ValueListenableBuilder<_FolderDragUiState>(
+        valueListenable: _dragUiStateNotifier,
+        builder: (context, dragUiState, _) {
+          return FolderCard(
+            key: ValueKey(folder.id),
+            folder: folder,
+            itemCount: widget.itemCountByFolder[folder.id] ?? 0,
+            subfolderCount: widget.subfolderCountByFolder[folder.id] ?? 0,
+            activeDragPayload: widget.activeDragPayload,
+            isDropTargetActive: dragUiState.nestedHoverIndex == index,
+            canAcceptPayload: (payload) =>
+                widget.canDropIntoFolder(payload, folder),
+            onPayloadDropped: (payload) =>
+                widget.onPayloadDroppedIntoFolder(payload, folder),
+            onTap: () => widget.onFolderTap(folder),
+            onRenamePressed: () => widget.onRenamePressed(folder),
+            onDeletePressed: () => widget.onDeletePressed(folder),
+          );
+        },
+      ),
     );
   }
 
@@ -237,12 +254,42 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
         _reorderUsingDropIndex(data.index);
         _setDropIndex(null);
       },
-      builder: (context, candidateData, rejectedData) {
-        final showPlaceholder = _dropIndex == targetIndex;
+      builder: (context, candidateData, rejectedData) =>
+          _buildDropZonePlaceholder(context, targetIndex),
+    );
+  }
 
+  Widget _buildDraggingPlaceholder(BuildContext context, int index) {
+    return ValueListenableBuilder<_FolderDragUiState>(
+      valueListenable: _dragUiStateNotifier,
+      builder: (context, dragUiState, _) {
         return _buildAnimatedGapPlaceholder(
           context,
-          visible: showPlaceholder,
+          visible: dragUiState.dropIndex == index,
+        );
+      },
+    );
+  }
+
+  Widget _buildReorderPlaceholder(BuildContext context, int targetIndex) {
+    return ValueListenableBuilder<_FolderDragUiState>(
+      valueListenable: _dragUiStateNotifier,
+      builder: (context, dragUiState, _) {
+        final showPlaceholder =
+            dragUiState.dropIndex == targetIndex &&
+            _draggedIndex != targetIndex;
+        return _buildAnimatedGapPlaceholder(context, visible: showPlaceholder);
+      },
+    );
+  }
+
+  Widget _buildDropZonePlaceholder(BuildContext context, int targetIndex) {
+    return ValueListenableBuilder<_FolderDragUiState>(
+      valueListenable: _dragUiStateNotifier,
+      builder: (context, dragUiState, _) {
+        return _buildAnimatedGapPlaceholder(
+          context,
+          visible: dragUiState.dropIndex == targetIndex,
           collapsedHeight: AppConstants.CARD_VERTICAL_GAP,
         );
       },
@@ -278,9 +325,8 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
     if (_dropIndex == value || !mounted) {
       return;
     }
-    setState(() {
-      _dropIndex = value;
-    });
+    _markContentGeometryDirty();
+    _setDragUiState(_dragUiState.copyWith(dropIndex: value));
   }
 
   void _maybeAutoScroll(Offset globalPosition) {
@@ -309,6 +355,7 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
         return;
       }
 
+      _markContentGeometryDirty(scheduleRefresh: false);
       position.jumpTo(targetPixels);
       return;
     }
@@ -326,6 +373,7 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
       return;
     }
 
+    _markContentGeometryDirty(scheduleRefresh: false);
     position.jumpTo(targetPixels);
   }
 
@@ -336,22 +384,14 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
 
     final classification = _classifyPointer(_lastDragGlobalPosition!);
     if (classification == null) {
-      if ((_activeNestedHoverIndex != null || _dropIndex != null) && mounted) {
-        setState(() {
-          _activeNestedHoverIndex = null;
-          _dropIndex = null;
-        });
-      }
+      _setDragHoverState(nestedHoverIndex: null, dropIndex: null);
       return false;
     }
 
     if (classification.nestedFolderIndex != null) {
       final nestedIndex = classification.nestedFolderIndex;
-      if (_activeNestedHoverIndex != nestedIndex && mounted) {
-        setState(() {
-          _activeNestedHoverIndex = nestedIndex;
-          _dropIndex = null;
-        });
+      if (_activeNestedHoverIndex != nestedIndex) {
+        _setDragHoverState(nestedHoverIndex: nestedIndex, dropIndex: null);
       } else {
         _setDropIndex(null);
       }
@@ -361,18 +401,12 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
     final reorderIndex = classification.reorderIndex;
     final effectiveDropIndex = _normalizedReorderIndex(reorderIndex);
 
-    if ((_activeNestedHoverIndex != null || _dropIndex != effectiveDropIndex) &&
-        mounted) {
-      setState(() {
-        _activeNestedHoverIndex = null;
-        _dropIndex = effectiveDropIndex;
-      });
-    }
+    _setDragHoverState(nestedHoverIndex: null, dropIndex: effectiveDropIndex);
     return false;
   }
 
   void _resetNestedHoverState() {
-    _activeNestedHoverIndex = null;
+    _setDragHoverState(nestedHoverIndex: null, dropIndex: _dropIndex);
   }
 
   _FolderDragClassification? _classifyPointer(Offset globalPosition) {
@@ -381,15 +415,7 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
       return null;
     }
 
-    final contentRects = <Rect>[];
-    for (final folder in widget.folders) {
-      final rect = _contentRectForFolder(folder.id);
-      if (rect == null) {
-        return null;
-      }
-      contentRects.add(rect);
-    }
-
+    final contentRects = _contentRectsInOrder();
     if (contentRects.isEmpty) {
       return null;
     }
@@ -409,7 +435,7 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
         break;
       }
 
-        return _FolderDragClassification(nestedFolderIndex: index);
+      return _FolderDragClassification(nestedFolderIndex: index);
     }
 
     final firstRect = contentRects.first;
@@ -437,7 +463,7 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
     return _FolderDragClassification(reorderIndex: contentRects.length);
   }
 
-  Rect? _contentRectForFolder(String folderId) {
+  Rect? _measureContentRectForFolder(String folderId) {
     final rect = _rectForFolder(folderId);
     if (rect == null) {
       return null;
@@ -515,17 +541,152 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
   GlobalKey _itemKeyFor(String folderId) {
     return _itemKeys.putIfAbsent(folderId, GlobalKey.new);
   }
+
+  void _clearDragState() {
+    _draggedIndex = null;
+    _draggedPayload = null;
+    _lastDragGlobalPosition = null;
+    _clearContentGeometryCache();
+    _setDragHoverState(nestedHoverIndex: null, dropIndex: null);
+  }
+
+  void _setDragHoverState({
+    required int? nestedHoverIndex,
+    required int? dropIndex,
+  }) {
+    final nextDragUiState = _FolderDragUiState(
+      nestedHoverIndex: nestedHoverIndex,
+      dropIndex: dropIndex,
+    );
+    if (_dragUiState == nextDragUiState) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+    _markContentGeometryDirty();
+    _setDragUiState(nextDragUiState);
+  }
+
+  void _clearContentGeometryCache() {
+    _cachedContentRects = null;
+    _contentGeometryDirty = true;
+    _contentGeometryRefreshScheduled = false;
+  }
+
+  void _setDragUiState(_FolderDragUiState nextDragUiState) {
+    _dragUiState = nextDragUiState;
+    _dragUiStateNotifier.value = nextDragUiState;
+  }
+
+  void _markContentGeometryDirty({bool scheduleRefresh = true}) {
+    _contentGeometryDirty = true;
+    if (scheduleRefresh) {
+      _scheduleContentGeometryRefresh();
+    }
+  }
+
+  void _scheduleContentGeometryRefresh() {
+    if (_contentGeometryRefreshScheduled ||
+        !mounted ||
+        _draggedPayload == null) {
+      return;
+    }
+
+    _contentGeometryRefreshScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _contentGeometryRefreshScheduled = false;
+      if (!mounted || _draggedPayload == null || !_contentGeometryDirty) {
+        return;
+      }
+      _captureContentRects();
+    });
+  }
+
+  Map<String, Rect>? _captureContentRects() {
+    final contentRects = <String, Rect>{};
+    for (final folder in widget.folders) {
+      final rect = _measureContentRectForFolder(folder.id);
+      if (rect == null) {
+        return null;
+      }
+      contentRects[folder.id] = rect;
+    }
+
+    _cachedContentRects = contentRects;
+    _contentGeometryDirty = false;
+    return contentRects;
+  }
+
+  Map<String, Rect>? _ensureContentRects() {
+    final cachedContentRects = _cachedContentRects;
+    if (!_contentGeometryDirty &&
+        cachedContentRects != null &&
+        cachedContentRects.length == widget.folders.length) {
+      return cachedContentRects;
+    }
+
+    return _captureContentRects();
+  }
+
+  List<Rect> _contentRectsInOrder() {
+    final contentRectsById = _ensureContentRects();
+    if (contentRectsById == null) {
+      return const <Rect>[];
+    }
+
+    final contentRects = <Rect>[];
+    for (final folder in widget.folders) {
+      final rect = contentRectsById[folder.id];
+      if (rect == null) {
+        return const <Rect>[];
+      }
+      contentRects.add(rect);
+    }
+    return contentRects;
+  }
 }
 
 class _FolderDragClassification {
-  const _FolderDragClassification({
-    this.nestedFolderIndex,
-    this.reorderIndex,
-  }) : assert(
-         (nestedFolderIndex == null) != (reorderIndex == null),
-         'Provide exactly one drag classification.',
-       );
+  const _FolderDragClassification({this.nestedFolderIndex, this.reorderIndex})
+    : assert(
+        (nestedFolderIndex == null) != (reorderIndex == null),
+        'Provide exactly one drag classification.',
+      );
 
   final int? nestedFolderIndex;
   final int? reorderIndex;
 }
+
+class _FolderDragUiState {
+  const _FolderDragUiState({this.nestedHoverIndex, this.dropIndex});
+
+  final int? nestedHoverIndex;
+  final int? dropIndex;
+
+  _FolderDragUiState copyWith({
+    Object? nestedHoverIndex = _unsetDragUiValue,
+    Object? dropIndex = _unsetDragUiValue,
+  }) {
+    return _FolderDragUiState(
+      nestedHoverIndex: identical(nestedHoverIndex, _unsetDragUiValue)
+          ? this.nestedHoverIndex
+          : nestedHoverIndex as int?,
+      dropIndex: identical(dropIndex, _unsetDragUiValue)
+          ? this.dropIndex
+          : dropIndex as int?,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is _FolderDragUiState &&
+        other.nestedHoverIndex == nestedHoverIndex &&
+        other.dropIndex == dropIndex;
+  }
+
+  @override
+  int get hashCode => Object.hash(nestedHoverIndex, dropIndex);
+}
+
+const Object _unsetDragUiValue = Object();

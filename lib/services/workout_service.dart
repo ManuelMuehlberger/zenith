@@ -24,11 +24,25 @@ class WorkoutService extends ChangeNotifier {
   WorkoutExerciseDao _workoutExerciseDao = WorkoutExerciseDao();
   WorkoutSetDao _workoutSetDao = WorkoutSetDao();
   WorkoutFolderDao _workoutFolderDao = WorkoutFolderDao();
+  Future<void>? _ongoingWorkoutLoad;
+  bool _hasLoadedWorkouts = false;
 
   // Allow for mock injection in tests
-  set workoutDao(WorkoutDao dao) => _workoutDao = dao;
-  set workoutExerciseDao(WorkoutExerciseDao dao) => _workoutExerciseDao = dao;
-  set workoutSetDao(WorkoutSetDao dao) => _workoutSetDao = dao;
+  set workoutDao(WorkoutDao dao) {
+    _workoutDao = dao;
+    _invalidateWorkoutCache();
+  }
+
+  set workoutExerciseDao(WorkoutExerciseDao dao) {
+    _workoutExerciseDao = dao;
+    _invalidateWorkoutCache();
+  }
+
+  set workoutSetDao(WorkoutSetDao dao) {
+    _workoutSetDao = dao;
+    _invalidateWorkoutCache();
+  }
+
   set workoutFolderDao(WorkoutFolderDao dao) => _workoutFolderDao = dao;
 
   List<Workout> _workouts = [];
@@ -37,14 +51,41 @@ class WorkoutService extends ChangeNotifier {
   List<Workout> get workouts => _workouts;
   List<WorkoutFolder> get folders => _folders;
 
-  Future<void> loadData() async {
-    _logger.info('Loading all workout data');
+  Future<void> loadData({bool forceRefresh = true}) async {
+    if (!forceRefresh && _hasLoadedWorkouts) {
+      _logger.finer('Workout cache already loaded; skipping reload');
+      return;
+    }
+
+    final ongoingWorkoutLoad = _ongoingWorkoutLoad;
+    if (ongoingWorkoutLoad != null) {
+      _logger.finer('Workout data load already in progress; awaiting result');
+      return ongoingWorkoutLoad;
+    }
+
+    final workoutLoad = _loadDataInternal(forceRefresh: forceRefresh);
+    _ongoingWorkoutLoad = workoutLoad;
+
+    try {
+      await workoutLoad;
+    } finally {
+      if (identical(_ongoingWorkoutLoad, workoutLoad)) {
+        _ongoingWorkoutLoad = null;
+      }
+    }
+  }
+
+  Future<void> _loadDataInternal({required bool forceRefresh}) async {
+    _logger.info(
+      forceRefresh ? 'Loading all workout data' : 'Loading workout cache',
+    );
     try {
       _workouts = await _workoutDao.getAllWorkouts();
       _logger.fine('Loaded ${_workouts.length} workouts');
 
       if (_workouts.isEmpty) {
         _logger.info('No workouts found to load');
+        _hasLoadedWorkouts = true;
         return;
       }
 
@@ -90,9 +131,11 @@ class WorkoutService extends ChangeNotifier {
           )
           .toList();
 
+      _hasLoadedWorkouts = true;
       _logger.info('Finished loading exercises and sets for all workouts');
     } catch (e) {
       _logger.severe('Failed to load workout data: $e');
+      _hasLoadedWorkouts = false;
       _workouts = [];
     } finally {
       notifyListeners();
@@ -101,7 +144,7 @@ class WorkoutService extends ChangeNotifier {
 
   Future<List<Workout>> getWorkoutsSortedByStartedAt() async {
     _logger.fine('Getting workouts sorted by startedAt descending');
-    await loadData();
+    await _ensureWorkoutsLoaded();
 
     final workouts = List<Workout>.from(_workouts)
       ..sort(
@@ -114,6 +157,7 @@ class WorkoutService extends ChangeNotifier {
 
   Future<List<Workout>> getWorkoutsForDate(DateTime date) async {
     _logger.fine('Getting workouts for date: ${date.toIso8601String()}');
+    await _ensureWorkoutsLoaded();
     final allWorkouts = await getWorkoutsSortedByStartedAt();
     final targetDate = DateTime(date.year, date.month, date.day);
 
@@ -134,6 +178,7 @@ class WorkoutService extends ChangeNotifier {
 
   Future<List<DateTime>> getDatesWithWorkouts() async {
     _logger.fine('Getting dates with workouts');
+    await _ensureWorkoutsLoaded();
     final workouts = await getWorkoutsSortedByStartedAt();
     final dates = <DateTime>{};
 
@@ -149,6 +194,7 @@ class WorkoutService extends ChangeNotifier {
 
   Future<Workout?> getLastWorkoutForExercise(String exerciseSlug) async {
     _logger.fine('Getting last workout for exercise slug: $exerciseSlug');
+    await _ensureWorkoutsLoaded();
     final workouts = await getWorkoutsSortedByStartedAt();
 
     for (final workout in workouts) {
@@ -237,6 +283,7 @@ class WorkoutService extends ChangeNotifier {
 
     await _workoutDao.insert(workout);
     _workouts.add(workout);
+    _hasLoadedWorkouts = true;
     _logger.fine('Workout created with id: ${workout.id}');
     notifyListeners();
     return workout;
@@ -250,6 +297,7 @@ class WorkoutService extends ChangeNotifier {
       _workouts[index] = workout;
       _logger.fine('Workout updated in cache');
     }
+    _hasLoadedWorkouts = true;
     notifyListeners();
   }
 
@@ -265,6 +313,7 @@ class WorkoutService extends ChangeNotifier {
 
     await _workoutDao.deleteWorkout(workoutId);
     _workouts.removeWhere((w) => w.id == workoutId);
+    _hasLoadedWorkouts = true;
     _logger.fine('Workout deleted from database and cache');
     notifyListeners();
   }
@@ -276,6 +325,7 @@ class WorkoutService extends ChangeNotifier {
       final updatedWorkout = _workouts[index].copyWith(folderId: folderId);
       await _workoutDao.updateWorkout(updatedWorkout);
       _workouts[index] = updatedWorkout;
+      _hasLoadedWorkouts = true;
       _logger.fine('Workout moved successfully');
       notifyListeners();
     } else {
@@ -314,6 +364,7 @@ class WorkoutService extends ChangeNotifier {
         _workouts[index] = updatedWorkout;
       }
     }
+    _hasLoadedWorkouts = true;
     notifyListeners();
   }
 
@@ -398,6 +449,7 @@ class WorkoutService extends ChangeNotifier {
       );
       await _workoutDao.updateWorkout(updatedWorkout);
       _workouts[workoutIndex] = updatedWorkout;
+      _hasLoadedWorkouts = true;
       _logger.fine('Exercise added successfully');
       notifyListeners();
     } else {
@@ -424,6 +476,7 @@ class WorkoutService extends ChangeNotifier {
       );
       await _workoutDao.updateWorkout(updatedWorkout);
       _workouts[workoutIndex] = updatedWorkout;
+      _hasLoadedWorkouts = true;
       _logger.fine('Exercise removed successfully');
       notifyListeners();
     } else {
@@ -451,6 +504,7 @@ class WorkoutService extends ChangeNotifier {
       );
       await _workoutDao.updateWorkout(updatedWorkout);
       _workouts[workoutIndex] = updatedWorkout;
+      _hasLoadedWorkouts = true;
       notifyListeners();
     } else {
       _logger.warning('Workout with id $workoutId not found');
@@ -609,7 +663,17 @@ class WorkoutService extends ChangeNotifier {
     }
 
     _workouts = [];
+    _hasLoadedWorkouts = true;
     _logger.info('All user workouts cleared');
     notifyListeners();
+  }
+
+  Future<void> _ensureWorkoutsLoaded() {
+    return loadData(forceRefresh: false);
+  }
+
+  void _invalidateWorkoutCache() {
+    _hasLoadedWorkouts = false;
+    _ongoingWorkoutLoad = null;
   }
 }
