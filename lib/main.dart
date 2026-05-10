@@ -149,27 +149,63 @@ class _MainDockBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final body = IndexedStack(index: currentIndex, children: screens);
     final blurHeight =
         AppTheme.mainDockEdgeBlurBaseHeight +
         MediaQuery.paddingOf(context).bottom;
+    final fadeHeight =
+        AppTheme.mainDockEdgeFadeBaseHeight +
+        MediaQuery.paddingOf(context).bottom;
+    final fadeColor = context.appColors.dockEdgeFade;
 
-    return SoftEdgeBlur(
-      edges: [
-        EdgeBlur(
-          type: EdgeType.bottomEdge,
-          size: blurHeight,
-          sigma: AppTheme.mainDockBlurSigma,
-          tintColor: context.appColors.overlaySoft,
-          controlPoints: [
-            ControlPoint(
-              position: AppTheme.mainDockEdgeBlurVisibleStop,
-              type: ControlPointType.visible,
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        SoftEdgeBlur(
+          edges: [
+            EdgeBlur(
+              type: EdgeType.bottomEdge,
+              size: blurHeight,
+              sigma: AppTheme.mainDockBlurSigma,
+              tintColor: context.appColors.overlaySoft,
+              controlPoints: [
+                ControlPoint(
+                  position: AppTheme.mainDockEdgeBlurVisibleStop,
+                  type: ControlPointType.visible,
+                ),
+                ControlPoint(position: 1, type: ControlPointType.transparent),
+              ],
             ),
-            ControlPoint(position: 1, type: ControlPointType.transparent),
           ],
+          child: body,
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: fadeHeight,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0, AppTheme.mainDockEdgeFadeMidStop, 1],
+                  colors: [
+                    fadeColor.withValues(alpha: 0),
+                    fadeColor.withValues(
+                      alpha: AppTheme.mainDockEdgeFadeShoulderOpacity,
+                    ),
+                    fadeColor.withValues(
+                      alpha: AppTheme.mainDockEdgeFadeBottomOpacity,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ],
-      child: IndexedStack(index: currentIndex, children: screens),
     );
   }
 }
