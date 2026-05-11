@@ -1,6 +1,55 @@
 import '../../models/insights.dart';
 
 class InsightsTimeframeResolver {
+  static DateTime resolveWindowStart({
+    required DateTime referenceDate,
+    required int monthsBack,
+    int? weeksBack,
+    required InsightsGrouping grouping,
+  }) {
+    if (weeksBack == 1) {
+      final dayStart = DateTime(
+        referenceDate.year,
+        referenceDate.month,
+        referenceDate.day,
+      );
+      return DateTime(dayStart.year, dayStart.month, dayStart.day - 6);
+    }
+
+    if (grouping == InsightsGrouping.day) {
+      final dayStart = DateTime(
+        referenceDate.year,
+        referenceDate.month,
+        referenceDate.day,
+      );
+      return DateTime(
+        dayStart.year,
+        dayStart.month,
+        dayStart.day - ((30 * monthsBack) - 1),
+      );
+    }
+
+    if (grouping == InsightsGrouping.week) {
+      final weekStart = _weekStart(referenceDate);
+      final slots = weeklyTimeSlots(
+        grouping: grouping,
+        effectiveMonths: monthsBack,
+        weeksBack: weeksBack,
+      );
+      return DateTime(
+        weekStart.year,
+        weekStart.month,
+        weekStart.day - ((slots - 1) * 7),
+      );
+    }
+
+    return DateTime(
+      referenceDate.year,
+      referenceDate.month - (monthsBack - 1),
+      1,
+    );
+  }
+
   static InsightsGrouping resolveGrouping({
     required int monthsBack,
     int? weeksBack,
@@ -79,5 +128,14 @@ class InsightsTimeframeResolver {
     required bool? isBodyWeight,
   }) {
     return 'weekly_insights_${effectiveMonths}m_${timeSlots}_${grouping.name}_${workoutName ?? "all"}_${muscleGroup ?? "all"}_${equipment ?? "all"}_${isBodyWeight ?? "all"}';
+  }
+
+  static DateTime _weekStart(DateTime date) {
+    final daysFromMonday = date.weekday - 1;
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).subtract(Duration(days: daysFromMonday));
   }
 }

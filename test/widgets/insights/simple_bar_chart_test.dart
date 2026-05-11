@@ -112,4 +112,24 @@ void main() {
 
     expect(barWidth, lessThan(4.0));
   });
+
+  test('zooms range charts when all weekly values are flat and non-zero', () {
+    final bounds = resolveSimpleBarChartBounds(
+      weeklyData: List.generate(
+        6,
+        (index) => WeeklyBarData(
+          label: '',
+          minValue: 12,
+          maxValue: 12,
+          weekStart: DateTime(2024, 1, 1).add(Duration(days: index * 7)),
+        ),
+      ),
+      grouping: InsightsGrouping.week,
+      suggestedMaxY: 14,
+    );
+
+    expect(bounds.minY, lessThan(12));
+    expect(bounds.maxY, greaterThan(12));
+    expect(bounds.minY, greaterThan(0));
+  });
 }

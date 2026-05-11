@@ -4,6 +4,7 @@ import '../../models/workout_exercise.dart';
 import '../exercise_service.dart';
 import '../insights_service.dart';
 import 'insight_data_provider.dart';
+import 'insights_timeframe_resolver.dart';
 
 enum WorkoutTrendType { count, duration, volume, sets }
 
@@ -44,16 +45,12 @@ class WorkoutTrendProvider implements InsightDataProvider {
         ? now
         : latestWorkoutDate;
 
-    final DateTime cutoffDate;
-    if (weeksBack != null && weeksBack > 0) {
-      cutoffDate = referenceDate.subtract(Duration(days: weeksBack * 7));
-    } else {
-      cutoffDate = DateTime(
-        referenceDate.year,
-        referenceDate.month - (monthsBack - 1),
-        1,
-      );
-    }
+    final cutoffDate = InsightsTimeframeResolver.resolveWindowStart(
+      referenceDate: referenceDate,
+      monthsBack: monthsBack,
+      weeksBack: weeksBack,
+      grouping: grouping,
+    );
 
     final recentWorkouts = workouts.where((workout) {
       if (workout.startedAt == null ||

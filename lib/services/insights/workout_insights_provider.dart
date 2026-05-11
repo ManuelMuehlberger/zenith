@@ -2,6 +2,7 @@ import '../../models/exercise.dart';
 import '../../models/workout.dart';
 import '../exercise_service.dart';
 import '../insights_service.dart';
+import 'insights_timeframe_resolver.dart';
 
 class WorkoutInsightsProvider {
   Future<WorkoutInsights> getData({
@@ -42,16 +43,12 @@ class WorkoutInsightsProvider {
       referenceDate = now;
     }
 
-    final DateTime cutoffDate;
-    if (finalWeeksBack != null && finalWeeksBack > 0) {
-      cutoffDate = referenceDate.subtract(Duration(days: finalWeeksBack * 7));
-    } else {
-      cutoffDate = DateTime(
-        referenceDate.year,
-        referenceDate.month - (monthsBack - 1),
-        1,
-      );
-    }
+    final cutoffDate = InsightsTimeframeResolver.resolveWindowStart(
+      referenceDate: referenceDate,
+      monthsBack: monthsBack,
+      weeksBack: finalWeeksBack,
+      grouping: finalGrouping,
+    );
 
     final recentWorkouts = workouts.where((workout) {
       if (workout.startedAt == null ||

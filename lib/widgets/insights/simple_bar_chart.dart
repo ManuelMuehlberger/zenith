@@ -7,6 +7,47 @@ import '../../models/weekly_bar_data.dart';
 import '../../services/insights_service.dart';
 import '../../theme/app_theme.dart';
 
+class SimpleBarChartBounds {
+  final double minY;
+  final double maxY;
+
+  const SimpleBarChartBounds({required this.minY, required this.maxY});
+
+  double get range => maxY - minY;
+}
+
+@visibleForTesting
+SimpleBarChartBounds resolveSimpleBarChartBounds({
+  required List<WeeklyBarData> weeklyData,
+  required InsightsGrouping? grouping,
+  required double suggestedMaxY,
+}) {
+  if (weeklyData.isEmpty) {
+    return const SimpleBarChartBounds(minY: 0, maxY: 10);
+  }
+
+  final effectiveGrouping = grouping ?? InsightsGrouping.week;
+  final allBarsNonZero = weeklyData.every((data) => data.maxValue > 0);
+
+  if (effectiveGrouping != InsightsGrouping.day && allBarsNonZero) {
+    final minValue = weeklyData
+        .map((data) => data.minValue > 0 ? data.minValue : data.maxValue)
+        .reduce(math.min);
+    final maxValue = weeklyData.map((data) => data.maxValue).reduce(math.max);
+    final spread = (maxValue - minValue).abs();
+    final padding = math.max(
+      1.0,
+      spread < 0.5 ? maxValue * 0.15 : spread * 0.25,
+    );
+    final minY = math.max(0.0, minValue - padding);
+    final maxY = math.max(minY + 2.0, maxValue + padding);
+
+    return SimpleBarChartBounds(minY: minY, maxY: maxY);
+  }
+
+  return SimpleBarChartBounds(minY: 0, maxY: math.max(suggestedMaxY, 4));
+}
+
 class SimpleBarChart extends StatelessWidget {
   final List<WeeklyBarData> weeklyData;
   final double maxYValue;
@@ -79,12 +120,17 @@ class SimpleBarChart extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final resolvedBarWidth = _resolveBarWidth(constraints.maxWidth);
+        final bounds = resolveSimpleBarChartBounds(
+          weeklyData: weeklyData,
+          grouping: grouping,
+          suggestedMaxY: maxYValue,
+        );
 
         return BarChart(
           BarChartData(
             alignment: _resolveAlignment(),
-            maxY: maxYValue,
-            minY: 0,
+            maxY: bounds.maxY,
+            minY: bounds.minY,
             barTouchData: BarTouchData(
               enabled: touchEnabled && !onlyAxis,
               touchTooltipData: BarTouchTooltipData(
@@ -142,7 +188,7 @@ class SimpleBarChart extends StatelessWidget {
               show: showGrid && !onlyAxis,
               drawVerticalLine: false,
               drawHorizontalLine: true,
-              horizontalInterval: maxYValue > 0 ? maxYValue / 4 : 1,
+              horizontalInterval: bounds.range > 0 ? bounds.range / 4 : 1,
               getDrawingHorizontalLine: (value) {
                 return FlLine(
                   color: gridLineColor,
@@ -154,7 +200,7 @@ class SimpleBarChart extends StatelessWidget {
             borderData: FlBorderData(show: false),
             barGroups: onlyAxis
                 ? []
-                : _buildBarGroups(backgroundBarColor, resolvedBarWidth),
+                : _buildBarGroups(backgroundBarColor, resolvedBarWidth, bounds),
           ),
         );
       },
@@ -302,14 +348,18 @@ class SimpleBarChart extends StatelessWidget {
   List<BarChartGroupData> _buildBarGroups(
     Color backgroundBarColor,
     double resolvedBarWidth,
+    SimpleBarChartBounds bounds,
   ) {
     return List.generate(weeklyData.length, (index) {
       final data = weeklyData[index];
-      final double effectiveMin = data.minValue;
-      final double effectiveMax =
-          data.maxValue == data.minValue && data.maxValue > 0
-          ? data.maxValue + (maxYValue * 0.02)
-          : data.maxValue;
+      double effectiveMin = data.minValue;
+      double effectiveMax = data.maxValue;
+
+      if (data.maxValue == data.minValue && data.maxValue > 0) {
+        final halfHeight = math.max(bounds.range * 0.06, 0.35);
+        effectiveMin = math.max(bounds.minY, data.minValue - halfHeight);
+        effectiveMax = math.min(bounds.maxY, data.maxValue + halfHeight);
+      }
 
       return BarChartGroupData(
         x: index,
@@ -322,7 +372,7 @@ class SimpleBarChart extends StatelessWidget {
             borderRadius: BorderRadius.circular(showTitles ? 4 : 3),
             backDrawRodData: BackgroundBarChartRodData(
               show: true,
-              toY: maxYValue,
+              toY: bounds.maxY,
               color: backgroundBarColor,
             ),
           ),
