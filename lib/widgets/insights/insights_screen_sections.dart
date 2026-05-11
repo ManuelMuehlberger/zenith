@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
 import '../../constants/app_constants.dart';
+import '../../models/insights.dart';
 import '../../screens/insights/insights_view_data.dart';
+import '../../services/insights_service.dart';
 import '../../services/insights/workout_insights_provider.dart';
 import '../../services/insights/workout_trend_provider.dart';
 import '../../theme/app_theme.dart';
@@ -306,12 +308,30 @@ class InsightsGraphCardsGrid extends StatelessWidget {
             unit: 'workouts',
             provider: WorkoutTrendProvider(WorkoutTrendType.count),
             filters: providerFilters,
-            mainValueBuilder: (data) {
-              if (data.isEmpty) return '0.0';
+            timeframeMainValueBuilder: (data, timeframe) {
+              if (data.isEmpty) return '0';
+
+              final grouping = InsightsService.getGroupingForTimeframe(
+                timeframe,
+              );
               final total = data.fold(0.0, (sum, entry) => sum + entry.value);
+
+              if (grouping == InsightsGrouping.day) {
+                return total.toStringAsFixed(0);
+              }
+
               return (total / data.length).toStringAsFixed(1);
             },
-            subLabelBuilder: (data) => 'Avg / Week',
+            timeframeSubLabelBuilder: (data, timeframe) {
+              switch (InsightsService.getGroupingForTimeframe(timeframe)) {
+                case InsightsGrouping.day:
+                  return timeframe == '1W' ? 'This Week' : 'This Month';
+                case InsightsGrouping.week:
+                  return 'Avg / Week';
+                case InsightsGrouping.month:
+                  return 'Avg / Month';
+              }
+            },
           ),
           WeeklyTrendCard(
             title: 'Duration',
@@ -320,6 +340,7 @@ class InsightsGraphCardsGrid extends StatelessWidget {
             unit: 'min',
             provider: WorkoutTrendProvider(WorkoutTrendType.duration),
             filters: providerFilters,
+            dailyBarValueBuilder: (point) => point.value * 60,
             mainValueBuilder: (data) {
               if (data.isEmpty) return '0m';
               double totalDurationMinutes = 0;
@@ -340,6 +361,7 @@ class InsightsGraphCardsGrid extends StatelessWidget {
             unit: 'sets',
             provider: WorkoutTrendProvider(WorkoutTrendType.sets),
             filters: providerFilters,
+            dailyBarValueBuilder: (point) => point.value,
             mainValueBuilder: (data) {
               if (data.isEmpty) return '0';
               double totalSets = 0;

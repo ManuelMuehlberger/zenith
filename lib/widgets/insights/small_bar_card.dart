@@ -14,7 +14,12 @@ class WeeklyTrendCard extends StatefulWidget {
   final InsightDataProvider provider;
   final Map<String, dynamic> filters;
   final String Function(List<InsightDataPoint>)? mainValueBuilder;
+  final String Function(List<InsightDataPoint>, String timeframe)?
+  timeframeMainValueBuilder;
   final String Function(List<InsightDataPoint>)? subLabelBuilder;
+  final String Function(List<InsightDataPoint>, String timeframe)?
+  timeframeSubLabelBuilder;
+  final double Function(InsightDataPoint point)? dailyBarValueBuilder;
 
   const WeeklyTrendCard({
     super.key,
@@ -25,7 +30,10 @@ class WeeklyTrendCard extends StatefulWidget {
     required this.provider,
     required this.filters,
     this.mainValueBuilder,
+    this.timeframeMainValueBuilder,
     this.subLabelBuilder,
+    this.timeframeSubLabelBuilder,
+    this.dailyBarValueBuilder,
   });
 
   @override
@@ -148,8 +156,9 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
           monthsBack: monthsBack,
           filters: filters,
         );
-        return _trimData(data);
+        return timeframe == 'All' ? _trimData(data) : data;
       },
+      timeframeMainValueBuilder: widget.timeframeMainValueBuilder,
       mainValueBuilder:
           widget.mainValueBuilder ??
           (data) {
@@ -158,16 +167,16 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
                 data.map((e) => e.value).reduce((a, b) => a + b) / data.length;
             return average.toStringAsFixed(1);
           },
+      timeframeSubLabelBuilder: widget.timeframeSubLabelBuilder,
       subLabelBuilder: widget.subLabelBuilder ?? (data) => "Avg / Week",
       collapsedContentBuilder: (data) {
         if (_isLoading) {
           return const Center(child: CupertinoActivityIndicator());
         }
-        final weeklyData = _prepareWeeklyData(data);
-        final maxY = _calculateMaxY(weeklyData);
-
         final timeframe = widget.filters['timeframe'] ?? '6M';
         final grouping = InsightsService.getGroupingForTimeframe(timeframe);
+        final weeklyData = _prepareChartData(data, grouping);
+        final maxY = _calculateMaxY(weeklyData);
 
         return SimpleBarChart(
           weeklyData: weeklyData,
@@ -180,10 +189,9 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
         );
       },
       expandedContentBuilder: (context, data, timeframe, months) {
-        final weeklyData = _prepareWeeklyData(data);
-        final maxY = _calculateMaxY(weeklyData);
-
         final grouping = InsightsService.getGroupingForTimeframe(timeframe);
+        final weeklyData = _prepareChartData(data, grouping);
+        final maxY = _calculateMaxY(weeklyData);
 
         return SimpleBarChart(
           weeklyData: weeklyData,
@@ -198,10 +206,9 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
         );
       },
       axisBuilder: (context, data, timeframe, months) {
-        final weeklyData = _prepareWeeklyData(data);
-        final maxY = _calculateMaxY(weeklyData);
-
         final grouping = InsightsService.getGroupingForTimeframe(timeframe);
+        final weeklyData = _prepareChartData(data, grouping);
+        final maxY = _calculateMaxY(weeklyData);
 
         return SimpleBarChart(
           weeklyData: weeklyData,
@@ -224,17 +231,17 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
       case '1W':
         return 50.0;
       case '1M':
-        return 12.0;
+        return 10.0;
       case '3M':
-        return 30.0;
+        return 24.0;
       case '6M':
-        return 20.0;
+        return 18.0;
       case '1Y':
-        return 30.0;
+        return 24.0;
       case '2Y':
-        return 30.0;
+        return 24.0;
       case 'All':
-        return 30.0;
+        return 24.0;
       default:
         return 40.0;
     }
@@ -245,26 +252,41 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
       case '1W':
         return 20.0;
       case '1M':
-        return 6.0;
+        return 4.0;
       case '3M':
-        return 12.0;
-      case '6M':
         return 8.0;
+      case '6M':
+        return 6.0;
       case '1Y':
-        return 12.0;
+        return 8.0;
       case '2Y':
-        return 12.0;
+        return 8.0;
       case 'All':
-        return 12.0;
+        return 8.0;
       default:
         return 16.0;
     }
   }
 
-  static List<WeeklyBarData> _prepareWeeklyData(List<InsightDataPoint> data) {
+  List<WeeklyBarData> _prepareChartData(
+    List<InsightDataPoint> data,
+    InsightsGrouping grouping,
+  ) {
     return List.generate(data.length, (index) {
       final dataPoint = data[index];
       final label = _generateLabel(index, data.length, dataPoint.date);
+
+      if (grouping == InsightsGrouping.day) {
+        final dailyTotal =
+            widget.dailyBarValueBuilder?.call(dataPoint) ?? dataPoint.value;
+        return WeeklyBarData(
+          label: label,
+          minValue: 0,
+          maxValue: dailyTotal,
+          weekStart: dataPoint.date,
+        );
+      }
+
       return WeeklyBarData(
         label: label,
         minValue: dataPoint.minValue ?? 0,

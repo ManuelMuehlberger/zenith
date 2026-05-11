@@ -29,8 +29,16 @@ class InsightCard<T> extends StatelessWidget {
   /// If null, no main value is displayed.
   final String Function(T data)? mainValueBuilder;
 
+  /// Builder for the main value displayed in the card that can react to the
+  /// currently selected timeframe.
+  final String Function(T data, String timeframe)? timeframeMainValueBuilder;
+
   /// Builder for the sub-label displayed below the main value.
   final String Function(T data)? subLabelBuilder;
+
+  /// Builder for the sub-label displayed below the main value that can react
+  /// to the currently selected timeframe.
+  final String Function(T data, String timeframe)? timeframeSubLabelBuilder;
 
   /// Builder for the content displayed in the collapsed view (card).
   final Widget Function(T data) collapsedContentBuilder;
@@ -75,7 +83,9 @@ class InsightCard<T> extends StatelessWidget {
     required this.collapsedContentBuilder,
     this.dataFetcher,
     this.mainValueBuilder,
+    this.timeframeMainValueBuilder,
     this.subLabelBuilder,
+    this.timeframeSubLabelBuilder,
     this.expandedContentBuilder,
     this.axisBuilder,
     this.itemWidthBuilder,
@@ -88,8 +98,13 @@ class InsightCard<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mainValue = mainValueBuilder?.call(initialData);
-    final subLabel = subLabelBuilder?.call(initialData);
+    final initialTimeframe = initialFilters['timeframe'] as String? ?? '6M';
+    final mainValue =
+        timeframeMainValueBuilder?.call(initialData, initialTimeframe) ??
+        mainValueBuilder?.call(initialData);
+    final subLabel =
+        timeframeSubLabelBuilder?.call(initialData, initialTimeframe) ??
+        subLabelBuilder?.call(initialData);
     final collapsedContent = collapsedContentBuilder(initialData);
 
     final card = ExpandableInsightCard(
@@ -120,9 +135,14 @@ class InsightCard<T> extends StatelessWidget {
               dataFetcher: (timeframe, months, filters) async {
                 return dataFetcher!(timeframe, months, filters);
               },
-              mainValueBuilder: (data) =>
-                  mainValueBuilder?.call(data as T) ?? '',
-              subLabelBuilder: (data) => subLabelBuilder?.call(data as T) ?? '',
+              mainValueBuilder: (data, timeframe) =>
+                  timeframeMainValueBuilder?.call(data as T, timeframe) ??
+                  mainValueBuilder?.call(data as T) ??
+                  '',
+              subLabelBuilder: (data, timeframe) =>
+                  timeframeSubLabelBuilder?.call(data as T, timeframe) ??
+                  subLabelBuilder?.call(data as T) ??
+                  '',
               dataCountBuilder: (data) =>
                   dataCountBuilder?.call(data as T) ?? 0,
               itemWidthBuilder: (timeframe) =>
