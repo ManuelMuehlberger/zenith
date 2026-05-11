@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pull_down_button/pull_down_button.dart';
@@ -5,6 +7,89 @@ import 'package:pull_down_button/pull_down_button.dart';
 import '../constants/app_constants.dart';
 import '../services/insights_service.dart';
 import '../theme/app_theme.dart';
+
+const double _insightDetailChartPlotHeight = 350.0;
+const double _insightDetailChartBottomInset = 16.0;
+const double _insightDetailChartAxisWidth = 40.0;
+const double _insightDetailChartGap = 8.0;
+const double _insightDetailChartEdgePadding = 12.0;
+
+@visibleForTesting
+double get insightDetailChartSectionHeight =>
+    _insightDetailChartPlotHeight + _insightDetailChartBottomInset;
+
+@visibleForTesting
+int resolveInsightDetailMonthsToFetch(String timeframe) {
+  switch (timeframe) {
+    case '1W':
+      return 1;
+    case '1M':
+      return 1;
+    case '3M':
+      return 3;
+    case '6M':
+      return 6;
+    case '1Y':
+      return 12;
+    case '2Y':
+      return 24;
+    case 'All':
+      return 999;
+    default:
+      return 6;
+  }
+}
+
+@visibleForTesting
+String formatInsightDetailSummaryText({
+  required String title,
+  required String summary,
+}) {
+  if (summary.isEmpty) {
+    return summary;
+  }
+
+  switch (summary) {
+    case 'Avg / Week':
+      return 'average ${title.toLowerCase()} per week';
+    case 'Avg / Month':
+      return 'average ${title.toLowerCase()} per month';
+    case 'Avg / Workout':
+      return 'average per workout';
+    case 'Avg Sets / Workout':
+      return 'average sets per workout';
+    default:
+      return summary[0].toLowerCase() + summary.substring(1);
+  }
+}
+
+@visibleForTesting
+double calculateInsightDetailChartViewportWidth({
+  required double availableWidth,
+  required bool hasAxis,
+}) {
+  final axisFootprint = hasAxis
+      ? _insightDetailChartAxisWidth + _insightDetailChartGap
+      : 0.0;
+  return math.max(availableWidth - axisFootprint, 0.0);
+}
+
+@visibleForTesting
+double calculateInsightDetailChartContentWidth({
+  required double availableWidth,
+  required bool hasAxis,
+  required int dataCount,
+  required double itemWidth,
+}) {
+  final viewportWidth = calculateInsightDetailChartViewportWidth(
+    availableWidth: availableWidth,
+    hasAxis: hasAxis,
+  );
+  final desiredWidth = dataCount > 0
+      ? (dataCount * itemWidth) + (_insightDetailChartEdgePadding * 2)
+      : viewportWidth;
+  return math.max(viewportWidth, desiredWidth);
+}
 
 class InsightDetailScreen extends StatefulWidget {
   final String title;
@@ -32,8 +117,8 @@ class InsightDetailScreen extends StatefulWidget {
     int months,
   )?
   axisBuilder;
-  final String Function(dynamic data) mainValueBuilder;
-  final String Function(dynamic data) subLabelBuilder;
+  final String Function(dynamic data, String timeframe) mainValueBuilder;
+  final String Function(dynamic data, String timeframe) subLabelBuilder;
   final int Function(dynamic data)? dataCountBuilder;
   final double Function(String timeframe)? itemWidthBuilder;
   final String? heroTag;
@@ -133,9 +218,9 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
         'exerciseName': _selectedExerciseName,
       };
 
-      // Always fetch a large history (e.g., 60 months/5 years) to allow scrolling into the past
-      // The timeframe parameter is still passed so the fetcher can decide on grouping (weekly vs monthly)
-      const int monthsToFetch = 60;
+      final monthsToFetch = resolveInsightDetailMonthsToFetch(
+        _selectedTimeframe,
+      );
 
       final data = await widget.dataFetcher(
         _selectedTimeframe,
@@ -278,103 +363,22 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
 
                             // Main Stats
                             if (_data != null) ...[
-                              Text(
-                                widget.mainValueBuilder(_data),
-                                style: textTheme.displaySmall!.copyWith(
-                                  color: appColors.textPrimary,
-                                  fontSize: 34,
-                                  letterSpacing: -0.5,
+                              _buildHeadlineSummary(
+                                context,
+                                value: widget.mainValueBuilder(
+                                  _data,
+                                  _selectedTimeframe,
                                 ),
-                              ),
-                              Text(
-                                widget.subLabelBuilder(_data),
-                                style: textTheme.bodyLarge!.copyWith(
-                                  color: appColors.textTertiary,
-                                  fontWeight: FontWeight.w500,
+                                summary: widget.subLabelBuilder(
+                                  _data,
+                                  _selectedTimeframe,
                                 ),
                               ),
                               const SizedBox(height: 32),
                             ],
 
                             // Chart
-                            if (_data != null)
-                              SizedBox(
-                                height: 350,
-                                child: Row(
-                                  children: [
-                                    // Fixed Y-Axis
-                                    if (widget.axisBuilder != null)
-                                      Builder(
-                                        builder: (context) {
-                                          final axisWidget =
-                                              widget.axisBuilder!(
-                                                context,
-                                                _data,
-                                                _selectedTimeframe,
-                                                _selectedMonths,
-                                              );
-                                          if (axisWidget == null) {
-                                            return const SizedBox.shrink();
-                                          }
-                                          return SizedBox(
-                                            width: 40,
-                                            child: axisWidget,
-                                          );
-                                        },
-                                      ),
-
-                                    // Scrollable Chart
-                                    Expanded(
-                                      child: SingleChildScrollView(
-                                        controller: _scrollController,
-                                        scrollDirection: Axis.horizontal,
-                                        child: Container(
-                                          constraints: BoxConstraints(
-                                            minWidth:
-                                                MediaQuery.of(
-                                                  context,
-                                                ).size.width -
-                                                40 -
-                                                (widget.axisBuilder?.call(
-                                                          context,
-                                                          _data,
-                                                          _selectedTimeframe,
-                                                          _selectedMonths,
-                                                        ) !=
-                                                        null
-                                                    ? 40
-                                                    : 0),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: SizedBox(
-                                            width:
-                                                widget.dataCountBuilder != null
-                                                ? widget.dataCountBuilder!(
-                                                        _data,
-                                                      ) *
-                                                      (widget.itemWidthBuilder
-                                                              ?.call(
-                                                                _selectedTimeframe,
-                                                              ) ??
-                                                          50.0)
-                                                : MediaQuery.of(
-                                                        context,
-                                                      ).size.width -
-                                                      40,
-                                            height: 350,
-                                            child: widget.chartBuilder(
-                                              context,
-                                              _data,
-                                              _selectedTimeframe,
-                                              _selectedMonths,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            if (_data != null) _buildChartSection(context),
                           ],
                         ),
                       ),
@@ -383,6 +387,132 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHeadlineSummary(
+    BuildContext context, {
+    required String value,
+    required String summary,
+  }) {
+    final textTheme = context.appText;
+    final appColors = context.appColors;
+    final formattedSummary = formatInsightDetailSummaryText(
+      title: widget.title,
+      summary: summary,
+    );
+
+    if (formattedSummary.isEmpty) {
+      return Text(
+        value,
+        style: textTheme.displaySmall!.copyWith(
+          color: appColors.textPrimary,
+          fontSize: 34,
+          letterSpacing: -0.5,
+        ),
+      );
+    }
+
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: value,
+            style: textTheme.displaySmall!.copyWith(
+              color: appColors.textPrimary,
+              fontSize: 34,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const WidgetSpan(child: SizedBox(width: 12)),
+          TextSpan(
+            text: formattedSummary,
+            style: textTheme.titleMedium!.copyWith(
+              color: appColors.textTertiary,
+              fontWeight: FontWeight.w500,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  Widget _buildChartSection(BuildContext context) {
+    final axisWidget = widget.axisBuilder?.call(
+      context,
+      _data,
+      _selectedTimeframe,
+      _selectedMonths,
+    );
+    final hasAxis = axisWidget != null;
+    final itemWidth = widget.itemWidthBuilder?.call(_selectedTimeframe) ?? 50.0;
+    final dataCount = widget.dataCountBuilder?.call(_data) ?? 0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewportWidth = calculateInsightDetailChartViewportWidth(
+          availableWidth: constraints.maxWidth,
+          hasAxis: hasAxis,
+        );
+        final contentWidth = calculateInsightDetailChartContentWidth(
+          availableWidth: constraints.maxWidth,
+          hasAxis: hasAxis,
+          dataCount: dataCount,
+          itemWidth: itemWidth,
+        );
+
+        return SizedBox(
+          height: insightDetailChartSectionHeight,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (hasAxis)
+                Padding(
+                  padding: const EdgeInsets.only(
+                    bottom: _insightDetailChartBottomInset,
+                  ),
+                  child: SizedBox(
+                    width: _insightDetailChartAxisWidth,
+                    height: _insightDetailChartPlotHeight,
+                    child: axisWidget,
+                  ),
+                ),
+              if (hasAxis) const SizedBox(width: _insightDetailChartGap),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: viewportWidth),
+                    child: SizedBox(
+                      width: contentWidth,
+                      height: insightDetailChartSectionHeight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                          left: _insightDetailChartEdgePadding,
+                          right: _insightDetailChartEdgePadding,
+                          bottom: _insightDetailChartBottomInset,
+                        ),
+                        child: SizedBox.expand(
+                          child: widget.chartBuilder(
+                            context,
+                            _data,
+                            _selectedTimeframe,
+                            _selectedMonths,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
