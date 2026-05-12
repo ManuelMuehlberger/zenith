@@ -4,9 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/models/workout.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
+import 'package:zenith/models/workout_template.dart';
 import 'package:zenith/services/dao/workout_dao.dart';
 import 'package:zenith/services/dao/workout_exercise_dao.dart';
 import 'package:zenith/services/dao/workout_set_dao.dart';
+import 'package:zenith/services/dao/workout_template_dao.dart';
 import 'package:zenith/services/debug_data_service.dart';
 
 class FakeWorkoutDao extends WorkoutDao {
@@ -27,6 +29,15 @@ class FakeWorkoutExerciseDao extends WorkoutExerciseDao {
     insertedExercises.add(model);
     return 1;
   }
+
+  @override
+  Future<List<WorkoutExercise>> getWorkoutExercisesByWorkoutTemplateId(
+    String workoutTemplateId,
+  ) async {
+    return insertedExercises
+        .where((exercise) => exercise.workoutTemplateId == workoutTemplateId)
+        .toList();
+  }
 }
 
 class FakeWorkoutSetDao extends WorkoutSetDao {
@@ -36,6 +47,21 @@ class FakeWorkoutSetDao extends WorkoutSetDao {
   Future<int> insert(WorkoutSet model) async {
     insertedSets.add(model);
     return 1;
+  }
+}
+
+class FakeWorkoutTemplateDao extends WorkoutTemplateDao {
+  final List<WorkoutTemplate> insertedTemplates = [];
+
+  @override
+  Future<int> insert(WorkoutTemplate model) async {
+    insertedTemplates.add(model);
+    return 1;
+  }
+
+  @override
+  Future<List<WorkoutTemplate>> getAllWorkoutTemplatesOrdered() async {
+    return List<WorkoutTemplate>.from(insertedTemplates);
   }
 }
 
@@ -91,6 +117,7 @@ void main() {
     late FakeWorkoutDao workoutDao;
     late FakeWorkoutExerciseDao workoutExerciseDao;
     late FakeWorkoutSetDao workoutSetDao;
+    late FakeWorkoutTemplateDao workoutTemplateDao;
     late int loadExercisesCallCount;
     late int refreshWorkoutDataCallCount;
 
@@ -101,12 +128,14 @@ void main() {
       workoutDao = FakeWorkoutDao();
       workoutExerciseDao = FakeWorkoutExerciseDao();
       workoutSetDao = FakeWorkoutSetDao();
+      workoutTemplateDao = FakeWorkoutTemplateDao();
       loadExercisesCallCount = 0;
       refreshWorkoutDataCallCount = 0;
 
       service.workoutDao = workoutDao;
       service.workoutExerciseDao = workoutExerciseDao;
       service.workoutSetDao = workoutSetDao;
+      service.workoutTemplateDao = workoutTemplateDao;
       service.loadExercises = () async {
         loadExercisesCallCount++;
       };
@@ -141,7 +170,8 @@ void main() {
         await service.generateDebugData();
 
         expect(loadExercisesCallCount, 1);
-  expect(refreshWorkoutDataCallCount, 1);
+        expect(refreshWorkoutDataCallCount, 1);
+        expect(workoutTemplateDao.insertedTemplates, hasLength(1));
         expect(workoutDao.insertedWorkouts, isNotEmpty);
         expect(
           workoutDao.insertedWorkouts.map((workout) => workout.name),
@@ -152,8 +182,11 @@ void main() {
           everyElement(WorkoutStatus.completed),
         );
 
+        final historyExercises = workoutExerciseDao.insertedExercises
+            .where((exercise) => exercise.workoutId != null)
+            .toList();
         final exercisesByWorkoutId = <String, List<WorkoutExercise>>{};
-        for (final exercise in workoutExerciseDao.insertedExercises) {
+        for (final exercise in historyExercises) {
           exercisesByWorkoutId
               .putIfAbsent(exercise.workoutId!, () => [])
               .add(exercise);
@@ -193,7 +226,7 @@ void main() {
           isTrue,
         );
 
-        final benchExerciseIds = workoutExerciseDao.insertedExercises
+        final benchExerciseIds = historyExercises
             .where((exercise) => exercise.exerciseSlug == 'bench-press')
             .map((exercise) => exercise.id)
             .toSet();
@@ -216,6 +249,23 @@ void main() {
                 .fold<double>(0, (sum, set) => sum + set.actualWeight!) /
             10;
         expect(lateAverageWeight, greaterThan(earlyAverageWeight));
+
+        final seededTemplate = workoutTemplateDao.insertedTemplates.single;
+        final templateExercises = workoutExerciseDao.insertedExercises
+            .where((exercise) => exercise.workoutTemplateId == seededTemplate.id)
+            .toList();
+        expect(templateExercises, hasLength(3));
+        expect(
+          templateExercises.map((exercise) => exercise.exerciseSlug),
+          ['bench-press', 'pull-up', 'push-up'],
+        );
+
+        final templateSets = workoutSetDao.insertedSets.where(
+          (set) => templateExercises.any(
+            (exercise) => exercise.id == set.workoutExerciseId,
+          ),
+        );
+        expect(templateSets.where((set) => set.isCompleted), isEmpty);
       },
     );
 
@@ -243,7 +293,7 @@ void main() {
         await service.generateDebugData();
 
         expect(loadExercisesCallCount, 1);
-  expect(refreshWorkoutDataCallCount, 1);
+          expect(refreshWorkoutDataCallCount, 1);
         expect(workoutDao.insertedWorkouts, hasLength(3));
         expect(
           workoutDao.insertedWorkouts.map((workout) => workout.startedAt!.day),
@@ -257,6 +307,34 @@ void main() {
         );
       },
     );
+
+    test('generateDebugData does not duplicate persisted templates', () async {
+      service.weeksToGenerate = 1;
+      service.nowProvider = () => DateTime(2025, 1, 15, 12);
+      service.workoutTemplatesForTesting = [
+        {
+          'name': 'Push Day',
+          'exercises': [
+            {'slug': 'bench-press', 'baseWeight': 60.0, 'baseReps': 8},
+          ],
+          'optionalExercises': [
+            {'slug': 'push-up', 'baseWeight': 0.0, 'baseReps': 15},
+          ],
+        },
+      ];
+      service.random = Random(7);
+
+      await service.generateDebugData();
+      await service.generateDebugData();
+
+      expect(workoutTemplateDao.insertedTemplates, hasLength(1));
+
+      final template = workoutTemplateDao.insertedTemplates.single;
+      final templateExercises = workoutExerciseDao.insertedExercises
+          .where((exercise) => exercise.workoutTemplateId == template.id)
+          .toList();
+      expect(templateExercises, hasLength(2));
+    });
 
     test(
       'createWorkoutFromTemplateForTesting clamps invalid reps and weight',

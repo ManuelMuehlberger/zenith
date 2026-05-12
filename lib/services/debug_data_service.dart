@@ -6,9 +6,11 @@ import 'package:uuid/uuid.dart';
 import '../models/workout.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
+import '../models/workout_template.dart';
 import 'dao/workout_dao.dart';
 import 'dao/workout_exercise_dao.dart';
 import 'dao/workout_set_dao.dart';
+import 'dao/workout_template_dao.dart';
 import 'exercise_service.dart';
 import 'workout_service.dart';
 
@@ -27,6 +29,7 @@ class DebugDataService {
   WorkoutDao _workoutDao = WorkoutDao();
   WorkoutExerciseDao _workoutExerciseDao = WorkoutExerciseDao();
   WorkoutSetDao _workoutSetDao = WorkoutSetDao();
+  WorkoutTemplateDao _workoutTemplateDao = WorkoutTemplateDao();
   Random _random = Random();
   Future<void> Function() _loadExercises =
       ExerciseService.instance.loadExercises;
@@ -45,6 +48,9 @@ class DebugDataService {
 
   @visibleForTesting
   set workoutSetDao(WorkoutSetDao dao) => _workoutSetDao = dao;
+
+  @visibleForTesting
+  set workoutTemplateDao(WorkoutTemplateDao dao) => _workoutTemplateDao = dao;
 
   @visibleForTesting
   set random(Random random) => _random = random;
@@ -73,6 +79,7 @@ class DebugDataService {
     _workoutDao = WorkoutDao();
     _workoutExerciseDao = WorkoutExerciseDao();
     _workoutSetDao = WorkoutSetDao();
+    _workoutTemplateDao = WorkoutTemplateDao();
     _random = Random();
     _loadExercises = ExerciseService.instance.loadExercises;
     _refreshWorkoutData = WorkoutService.instance.loadData;
@@ -86,6 +93,7 @@ class DebugDataService {
 
     // Ensure exercises are loaded so we can link details if needed (though we mostly use slugs)
     await _loadExercises();
+    await _seedWorkoutTemplates();
 
     final now = _startOfDay(_nowProvider());
 
@@ -235,6 +243,133 @@ class DebugDataService {
         await _workoutSetDao.insert(set);
       }
     }
+  }
+
+  Future<void> _seedWorkoutTemplates() async {
+    _logger.fine('Seeding workout templates for the workout builder');
+
+    final existingTemplates = await _workoutTemplateDao
+        .getAllWorkoutTemplatesOrdered();
+    final existingByName = {
+      for (final template in existingTemplates) template.name: template,
+    };
+
+    var nextOrderIndex = _nextTemplateOrderIndex(existingTemplates);
+
+    for (final templateData in _workoutTemplates) {
+      final name = templateData['name'] as String;
+      final existingTemplate = existingByName[name];
+
+      if (existingTemplate == null) {
+        final template = WorkoutTemplate(
+          name: name,
+          orderIndex: nextOrderIndex,
+        );
+        await _workoutTemplateDao.insert(template);
+        await _seedTemplateExercises(template, templateData);
+        existingByName[name] = template;
+        nextOrderIndex++;
+        continue;
+      }
+
+      final existingExercises = await _workoutExerciseDao
+          .getWorkoutExercisesByWorkoutTemplateId(existingTemplate.id);
+      if (existingExercises.isNotEmpty) {
+        continue;
+      }
+
+      await _seedTemplateExercises(existingTemplate, templateData);
+    }
+  }
+
+  Future<void> _seedTemplateExercises(
+    WorkoutTemplate template,
+    Map<String, dynamic> templateData,
+  ) async {
+    final exercises = _templateExerciseBlueprints(templateData);
+
+    for (int exerciseIndex = 0; exerciseIndex < exercises.length; exerciseIndex++) {
+      final exerciseData = exercises[exerciseIndex];
+      final baseWeight = exerciseData['baseWeight'] as double;
+      final baseReps = exerciseData['baseReps'] as int;
+
+      final workoutExercise = WorkoutExercise(
+        workoutTemplateId: template.id,
+        exerciseSlug: exerciseData['slug'] as String,
+        orderIndex: exerciseIndex,
+        sets: const [],
+      );
+      await _workoutExerciseDao.insert(workoutExercise);
+
+      final setCount = exerciseIndex < 2 ? 4 : 3;
+      for (int setIndex = 0; setIndex < setCount; setIndex++) {
+        final set = WorkoutSet(
+          workoutExerciseId: workoutExercise.id,
+          setIndex: setIndex,
+          targetReps: _templateTargetReps(baseReps, setIndex),
+          targetWeight: _templateTargetWeight(baseWeight, setIndex),
+          targetRestSeconds: exerciseIndex < 2 ? 120 : 75,
+        );
+        await _workoutSetDao.insert(set);
+      }
+    }
+  }
+
+  List<Map<String, dynamic>> _templateExerciseBlueprints(
+    Map<String, dynamic> templateData,
+  ) {
+    final requiredExercises = (templateData['exercises'] as List<dynamic>)
+        .map(
+          (exercise) => Map<String, dynamic>.from(
+            exercise as Map<dynamic, dynamic>,
+          ),
+        )
+        .toList();
+    final optionalExercises = (templateData['optionalExercises'] as List<dynamic>? ??
+            const <dynamic>[])
+        .map(
+          (exercise) => Map<String, dynamic>.from(
+            exercise as Map<dynamic, dynamic>,
+          ),
+        )
+        .where(
+          (exercise) => !requiredExercises.any(
+            (existing) => existing['slug'] == exercise['slug'],
+          ),
+        )
+        .toList();
+
+    return [...requiredExercises, ...optionalExercises];
+  }
+
+  int _nextTemplateOrderIndex(List<WorkoutTemplate> existingTemplates) {
+    if (existingTemplates.isEmpty) {
+      return 0;
+    }
+
+    return existingTemplates
+            .map((template) => template.orderIndex ?? -1)
+            .reduce(max) +
+        1;
+  }
+
+  int _templateTargetReps(int baseReps, int setIndex) {
+    final repDrop = setIndex >= 2 ? 1 : 0;
+    return max(1, baseReps - repDrop);
+  }
+
+  double _templateTargetWeight(double baseWeight, int setIndex) {
+    if (baseWeight <= 0) {
+      return 0;
+    }
+
+    final multiplier = switch (setIndex) {
+      0 => 1.0,
+      1 => 1.0,
+      2 => 0.97,
+      _ => 0.94,
+    };
+    return _roundToNearestHalf(baseWeight * multiplier);
   }
 
   List<Map<String, dynamic>> _selectExercisesForWorkout(
