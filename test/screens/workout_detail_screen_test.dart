@@ -4,6 +4,7 @@ import 'package:mockito/mockito.dart';
 
 import 'package:zenith/models/workout.dart';
 import 'package:zenith/models/workout_exercise.dart';
+import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/screens/workout_detail_screen.dart';
 import 'package:zenith/services/workout_service.dart';
 
@@ -128,5 +129,60 @@ void main() {
         verify(mockWorkoutDao.deleteWorkout('w1')).called(1);
       },
     );
+  });
+
+  group('WorkoutDetailScreen - Set Details', () {
+    testWidgets('renders goal and actual values for completed sets', (
+      WidgetTester tester,
+    ) async {
+      final now = DateTime.now();
+      final workout = Workout(
+        id: 'w-detail',
+        name: 'Detailed Session',
+        status: WorkoutStatus.completed,
+        startedAt: now.subtract(const Duration(hours: 2)),
+        completedAt: now,
+        exercises: [
+          WorkoutExercise(
+            id: 'exercise-1',
+            workoutId: 'w-detail',
+            exerciseSlug: 'bench-press',
+            sets: [
+              WorkoutSet(
+                workoutExerciseId: 'exercise-1',
+                setIndex: 0,
+                targetReps: 8,
+                targetWeight: 80.0,
+                actualReps: 6,
+                actualWeight: 82.5,
+                isCompleted: true,
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(home: WorkoutDetailScreen(workout: workout)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is RichText &&
+              widget.text.toPlainText() == 'Goal: 8 reps @ 80.0 kg',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is RichText &&
+              widget.text.toPlainText() == 'Actual: 6 reps @ 82.5 kg',
+        ),
+        findsOneWidget,
+      );
+    });
   });
 }

@@ -125,6 +125,10 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     }
   }
 
+  Future<void> _reloadAfterSettingsClosed() async {
+    await _initialLoad();
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -191,7 +195,9 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                 elevation: 0,
                 expandedHeight:
                     AppConstants.HEADER_EXTRA_HEIGHT + kToolbarHeight,
-                actions: const [ProfileIconButton()],
+                actions: [
+                  ProfileIconButton(onClosed: _reloadAfterSettingsClosed),
+                ],
                 flexibleSpace: LayoutBuilder(
                   builder: (context, constraints) {
                     return Stack(

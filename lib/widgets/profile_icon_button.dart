@@ -4,16 +4,19 @@ import '../screens/settings_screen.dart';
 import '../theme/app_theme.dart';
 
 class ProfileIconButton extends StatelessWidget {
-  const ProfileIconButton({super.key});
+  const ProfileIconButton({super.key, this.onClosed});
+
+  final Future<void> Function()? onClosed;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const SettingsScreen()),
         );
+        await onClosed?.call();
       },
       child: Container(
         width: 32,
