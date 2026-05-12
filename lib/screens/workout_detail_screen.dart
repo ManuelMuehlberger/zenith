@@ -5,12 +5,20 @@ import '../constants/app_constants.dart';
 import '../models/exercise.dart';
 import '../models/workout.dart';
 import '../models/workout_exercise.dart';
+import '../models/workout_set.dart';
 import '../services/exercise_service.dart';
 import '../services/user_service.dart';
 import '../services/workout_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/unit_converter.dart';
 import 'exercise_info_screen.dart';
+
+class _SetMetric {
+  const _SetMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+}
 
 class WorkoutDetailScreen extends StatefulWidget {
   const WorkoutDetailScreen({super.key, required this.workout});
@@ -732,8 +740,7 @@ class _ExerciseSessionCard extends StatelessWidget {
               ...exercise.sets.asMap().entries.map((entry) {
                 final index = entry.key;
                 final set = entry.value;
-                final reps = set.actualReps ?? set.targetReps ?? 0;
-                final weight = set.actualWeight ?? set.targetWeight ?? 0.0;
+                final metrics = _buildSetMetrics(set);
                 return Padding(
                   padding: EdgeInsets.only(
                     bottom: index == exercise.sets.length - 1 ? 0 : 8,
@@ -774,18 +781,34 @@ class _ExerciseSessionCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Wrap(
-                            spacing: 12,
-                            runSpacing: 4,
-                            children: [
-                              Text('$reps reps', style: textTheme.bodyMedium),
-                              Text(
-                                formatWeight(weight),
-                                style: textTheme.bodyMedium?.copyWith(
-                                  color: colors.textSecondary,
-                                ),
-                              ),
-                            ],
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: metrics
+                                .map(
+                                  (metric) => Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: identical(metric, metrics.last)
+                                          ? 0
+                                          : 4,
+                                    ),
+                                    child: RichText(
+                                      text: TextSpan(
+                                        style: textTheme.bodyMedium,
+                                        children: [
+                                          TextSpan(
+                                            text: '${metric.label}: ',
+                                            style: textTheme.bodyMedium?.copyWith(
+                                              color: colors.textSecondary,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          TextSpan(text: metric.value),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
                           ),
                         ),
                         if (set.isCompleted)
@@ -804,5 +827,44 @@ class _ExerciseSessionCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<_SetMetric> _buildSetMetrics(WorkoutSet set) {
+    final metrics = <_SetMetric>[];
+
+    final goalValue = _formatSetMetric(set.targetReps, set.targetWeight);
+    if (goalValue != null) {
+      metrics.add(_SetMetric(label: 'Goal', value: goalValue));
+    }
+
+    final actualValue = _formatSetMetric(set.actualReps, set.actualWeight);
+    if (actualValue != null) {
+      metrics.add(
+        _SetMetric(
+          label: set.isCompleted ? 'Actual' : 'Logged',
+          value: actualValue,
+        ),
+      );
+    }
+
+    if (metrics.isEmpty) {
+      metrics.add(const _SetMetric(label: 'Set', value: 'No data'));
+    }
+
+    return metrics;
+  }
+
+  String? _formatSetMetric(int? reps, double? weight) {
+    final parts = <String>[];
+    if (reps != null) {
+      parts.add('$reps reps');
+    }
+    if (weight != null) {
+      parts.add(formatWeight(weight));
+    }
+    if (parts.isEmpty) {
+      return null;
+    }
+    return parts.join(' @ ');
   }
 }

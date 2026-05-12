@@ -10,6 +10,7 @@ import 'dao/workout_dao.dart';
 import 'dao/workout_exercise_dao.dart';
 import 'dao/workout_set_dao.dart';
 import 'exercise_service.dart';
+import 'workout_service.dart';
 
 enum _TrainingWeekType { normal, peak, deload, pause }
 
@@ -29,6 +30,8 @@ class DebugDataService {
   Random _random = Random();
   Future<void> Function() _loadExercises =
       ExerciseService.instance.loadExercises;
+    Future<void> Function() _refreshWorkoutData =
+      WorkoutService.instance.loadData;
   DateTime Function() _nowProvider = DateTime.now;
   int _weeksToGenerate = 104;
 
@@ -50,6 +53,10 @@ class DebugDataService {
   set loadExercises(Future<void> Function() callback) =>
       _loadExercises = callback;
 
+    @visibleForTesting
+    set refreshWorkoutData(Future<void> Function() callback) =>
+      _refreshWorkoutData = callback;
+
   @visibleForTesting
   set nowProvider(DateTime Function() callback) => _nowProvider = callback;
 
@@ -68,6 +75,7 @@ class DebugDataService {
     _workoutSetDao = WorkoutSetDao();
     _random = Random();
     _loadExercises = ExerciseService.instance.loadExercises;
+    _refreshWorkoutData = WorkoutService.instance.loadData;
     _nowProvider = DateTime.now;
     _weeksToGenerate = 104;
     _workoutTemplates = _defaultWorkoutTemplates();
@@ -112,6 +120,7 @@ class DebugDataService {
     }
 
     _logger.info('Debug data generation complete.');
+    await _refreshWorkoutData();
   }
 
   @visibleForTesting

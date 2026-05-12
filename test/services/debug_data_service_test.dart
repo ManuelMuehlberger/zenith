@@ -92,6 +92,7 @@ void main() {
     late FakeWorkoutExerciseDao workoutExerciseDao;
     late FakeWorkoutSetDao workoutSetDao;
     late int loadExercisesCallCount;
+    late int refreshWorkoutDataCallCount;
 
     setUp(() {
       service = DebugDataService.instance;
@@ -101,12 +102,16 @@ void main() {
       workoutExerciseDao = FakeWorkoutExerciseDao();
       workoutSetDao = FakeWorkoutSetDao();
       loadExercisesCallCount = 0;
+      refreshWorkoutDataCallCount = 0;
 
       service.workoutDao = workoutDao;
       service.workoutExerciseDao = workoutExerciseDao;
       service.workoutSetDao = workoutSetDao;
       service.loadExercises = () async {
         loadExercisesCallCount++;
+      };
+      service.refreshWorkoutData = () async {
+        refreshWorkoutDataCallCount++;
       };
     });
 
@@ -136,6 +141,7 @@ void main() {
         await service.generateDebugData();
 
         expect(loadExercisesCallCount, 1);
+  expect(refreshWorkoutDataCallCount, 1);
         expect(workoutDao.insertedWorkouts, isNotEmpty);
         expect(
           workoutDao.insertedWorkouts.map((workout) => workout.name),
@@ -237,6 +243,7 @@ void main() {
         await service.generateDebugData();
 
         expect(loadExercisesCallCount, 1);
+  expect(refreshWorkoutDataCallCount, 1);
         expect(workoutDao.insertedWorkouts, hasLength(3));
         expect(
           workoutDao.insertedWorkouts.map((workout) => workout.startedAt!.day),
