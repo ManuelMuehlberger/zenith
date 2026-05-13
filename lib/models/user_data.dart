@@ -25,10 +25,41 @@ class WeightEntry {
   }
 }
 
+enum Gender {
+  female('female', 'Female'),
+  male('male', 'Male'),
+  ratherNotSay('ratherNotSay', 'Rather not say');
+
+  const Gender(this.storageValue, this.displayLabel);
+
+  final String storageValue;
+  final String displayLabel;
+
+  static Gender fromStorage(String? value) {
+    for (final gender in values) {
+      if (gender.storageValue == value) {
+        return gender;
+      }
+    }
+    return Gender.ratherNotSay;
+  }
+
+  double defaultStartingWeight(Units units) {
+    final defaultKilograms = this == Gender.male ? 75.0 : 60.0;
+    if (units == Units.metric) {
+      return defaultKilograms;
+    }
+
+    final pounds = defaultKilograms * 2.2046226218;
+    return (pounds * 2).round() / 2;
+  }
+}
+
 class UserData {
   final UserDataId id;
   final String name;
   final DateTime birthdate;
+  final Gender gender;
   final Units units; // metric or imperial
   final List<WeightEntry> weightHistory;
   final DateTime createdAt;
@@ -38,6 +69,7 @@ class UserData {
     UserDataId? id,
     required this.name,
     required this.birthdate,
+    this.gender = Gender.ratherNotSay,
     required this.units,
     required List<WeightEntry> weightHistory,
     required this.createdAt,
@@ -50,6 +82,7 @@ class UserData {
       'id': id,
       'name': name,
       'birthdate': birthdate.toIso8601String(),
+      'gender': gender.storageValue,
       'units': units.name, // Convert enum to string for storage
       'createdAt': createdAt.toIso8601String(),
       'theme': theme,
@@ -61,6 +94,7 @@ class UserData {
       id: _readNullableString(map, 'id') ?? const Uuid().v4(),
       name: _readNullableString(map, 'name') ?? '',
       birthdate: _readRequiredDateTime(map, 'birthdate'),
+      gender: Gender.fromStorage(_readNullableString(map, 'gender')),
       units: Units.fromString(_readNullableString(map, 'units') ?? 'metric'),
       weightHistory:
           [], // Weight history will be loaded separately from WeightEntry table
@@ -73,6 +107,7 @@ class UserData {
     UserDataId? id,
     String? name,
     DateTime? birthdate,
+    Gender? gender,
     Units? units,
     List<WeightEntry>? weightHistory,
     DateTime? createdAt,
@@ -82,6 +117,7 @@ class UserData {
       id: id ?? this.id,
       name: name ?? this.name,
       birthdate: birthdate ?? this.birthdate,
+      gender: gender ?? this.gender,
       units: units ?? this.units,
       weightHistory: weightHistory ?? this.weightHistory,
       createdAt: createdAt ?? this.createdAt,

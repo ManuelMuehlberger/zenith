@@ -88,6 +88,13 @@ class SettingsProfileSection extends StatelessWidget {
             _buildDivider(context),
             _buildDetailItem(
               context: context,
+              icon: CupertinoIcons.person_2,
+              label: 'Gender',
+              value: userProfile?.gender.displayLabel ?? 'Not set',
+            ),
+            _buildDivider(context),
+            _buildDetailItem(
+              context: context,
               icon: CupertinoIcons.gauge,
               label: 'Weight',
               value:

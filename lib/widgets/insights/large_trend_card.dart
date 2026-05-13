@@ -14,6 +14,7 @@ class TrendInsightCard extends StatefulWidget {
   final InsightDataProvider provider;
   final String Function(List<InsightDataPoint>)? mainValueBuilder;
   final String Function(List<InsightDataPoint>)? subLabelBuilder;
+  final bool showFiltersInDetail;
 
   const TrendInsightCard({
     super.key,
@@ -25,6 +26,7 @@ class TrendInsightCard extends StatefulWidget {
     required this.provider,
     this.mainValueBuilder,
     this.subLabelBuilder,
+    this.showFiltersInDetail = true,
   });
 
   @override
@@ -158,6 +160,7 @@ class _TrendInsightCardState extends State<TrendInsightCard> {
       },
       itemWidthBuilder: _getItemWidth,
       dataCountBuilder: (data) => data.length,
+      showFiltersInDetail: widget.showFiltersInDetail,
     );
   }
 

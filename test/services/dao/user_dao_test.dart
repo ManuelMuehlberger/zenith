@@ -24,6 +24,7 @@ Future<Database> _openTestDatabase() {
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             birthdate TEXT NOT NULL,
+            gender TEXT NOT NULL DEFAULT 'ratherNotSay',
             units TEXT NOT NULL,
             createdAt TEXT NOT NULL,
             theme TEXT NOT NULL
@@ -64,6 +65,7 @@ void main() {
         id: 'user123',
         name: 'John Doe',
         birthdate: DateTime(1990, 1, 1),
+        gender: Gender.male,
         units: Units.metric,
         weightHistory: [],
         createdAt: now,
@@ -75,6 +77,7 @@ void main() {
       expect(map['id'], 'user123');
       expect(map['name'], 'John Doe');
       expect(map['birthdate'], '1990-01-01T00:00:00.000');
+      expect(map['gender'], 'male');
       expect(map['units'], 'metric');
       expect(map['createdAt'], now.toIso8601String());
       expect(map['theme'], 'dark');
@@ -86,6 +89,7 @@ void main() {
         'id': 'user456',
         'name': 'Jane Smith',
         'birthdate': '1995-05-15T00:00:00.000',
+        'gender': 'female',
         'units': 'imperial',
         'createdAt': now.toIso8601String(),
         'theme': 'light',
@@ -96,6 +100,7 @@ void main() {
       expect(userData.id, 'user456');
       expect(userData.name, 'Jane Smith');
       expect(userData.birthdate, DateTime(1995, 5, 15));
+      expect(userData.gender, Gender.female);
       expect(userData.units, Units.imperial);
       expect(userData.weightHistory, isEmpty);
       expect(userData.createdAt, now);
@@ -109,6 +114,7 @@ void main() {
           id: 'user789',
           name: 'Jordan Lee',
           birthdate: DateTime(1988, 7, 4),
+          gender: Gender.ratherNotSay,
           units: Units.metric,
           weightHistory: const [],
           createdAt: DateTime(2024, 1, 2, 3, 4, 5),
@@ -137,6 +143,7 @@ void main() {
         name: 'John Doe',
         birthdate: DateTime(1990, 1, 1),
         units: Units.metric,
+        gender: Gender.male,
         weightHistory: const [],
         createdAt: DateTime(2024, 5, 1, 10),
         theme: 'dark',
@@ -145,6 +152,7 @@ void main() {
         id: 'user456',
         name: 'Jane Smith',
         birthdate: DateTime(1995, 5, 15),
+        gender: Gender.female,
         units: Units.imperial,
         weightHistory: const [],
         createdAt: DateTime(2024, 5, 2, 11),
@@ -156,6 +164,7 @@ void main() {
       final updatedCount = await dao.updateUserData(
         original.copyWith(
           name: 'John Updated',
+          gender: Gender.ratherNotSay,
           units: Units.imperial,
           theme: 'system',
         ),
@@ -171,6 +180,7 @@ void main() {
         'id': 'user123',
         'name': 'John Updated',
         'birthdate': '1990-01-01T00:00:00.000',
+        'gender': 'ratherNotSay',
         'units': 'imperial',
         'createdAt': '2024-05-01T10:00:00.000',
         'theme': 'system',

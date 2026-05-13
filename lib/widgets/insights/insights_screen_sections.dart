@@ -283,139 +283,104 @@ class InsightsFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
 
 class InsightsGraphCardsGrid extends StatelessWidget {
   final InsightsFilterSnapshot filters;
-  final String weightUnitLabel;
 
-  const InsightsGraphCardsGrid({
-    super.key,
-    required this.filters,
-    required this.weightUnitLabel,
-  });
+  const InsightsGraphCardsGrid({super.key, required this.filters});
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: UserService.instance,
-      builder: (context, _) {
-        final colorScheme = context.appScheme;
-        final providerFilters = filters.toProviderFilters();
+    final colorScheme = context.appScheme;
+    final providerFilters = filters.toProviderFilters();
 
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-          child: GridView.count(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12.0,
-            crossAxisSpacing: 12.0,
-            childAspectRatio: 1.0,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              WeeklyTrendCard(
-                title: 'Workouts',
-                icon: CupertinoIcons.flame_fill,
-                color: context.appColors.warning,
-                unit: 'workouts',
-                provider: WorkoutTrendProvider(WorkoutTrendType.count),
-                filters: providerFilters,
-                timeframeMainValueBuilder: (data, timeframe) {
-                  if (data.isEmpty) return '0';
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+      child: GridView.count(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12.0,
+        crossAxisSpacing: 12.0,
+        childAspectRatio: 1.0,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          WeeklyTrendCard(
+            title: 'Workouts',
+            icon: CupertinoIcons.flame_fill,
+            color: context.appColors.warning,
+            unit: 'workouts',
+            provider: WorkoutTrendProvider(WorkoutTrendType.count),
+            filters: providerFilters,
+            timeframeMainValueBuilder: (data, timeframe) {
+              if (data.isEmpty) return '0';
 
-                  final grouping = InsightsService.getGroupingForTimeframe(
-                    timeframe,
-                  );
-                  final total = data.fold(
-                    0.0,
-                    (sum, entry) => sum + entry.value,
-                  );
+              final grouping = InsightsService.getGroupingForTimeframe(
+                timeframe,
+              );
+              final total = data.fold(0.0, (sum, entry) => sum + entry.value);
 
-                  if (grouping == InsightsGrouping.day) {
-                    return total.toStringAsFixed(0);
-                  }
+              if (grouping == InsightsGrouping.day) {
+                return total.toStringAsFixed(0);
+              }
 
-                  return (total / data.length).toStringAsFixed(1);
-                },
-                timeframeSubLabelBuilder: (data, timeframe) {
-                  switch (InsightsService.getGroupingForTimeframe(timeframe)) {
-                    case InsightsGrouping.day:
-                      return timeframe == '1W' ? 'This Week' : 'This Month';
-                    case InsightsGrouping.week:
-                      return 'Avg / Week';
-                    case InsightsGrouping.month:
-                      return 'Avg / Month';
-                  }
-                },
-              ),
-              WeeklyTrendCard(
-                title: 'Duration',
-                icon: CupertinoIcons.clock_fill,
-                color: colorScheme.primary,
-                unit: 'min',
-                provider: WorkoutTrendProvider(WorkoutTrendType.duration),
-                filters: providerFilters,
-                dailyBarValueBuilder: (point) => point.value * 60,
-                mainValueBuilder: (data) {
-                  if (data.isEmpty) return '0m';
-                  double totalDurationMinutes = 0;
-                  int totalWorkouts = 0;
-                  for (final entry in data) {
-                    totalDurationMinutes += entry.value * 60;
-                    totalWorkouts += entry.count ?? 0;
-                  }
-                  if (totalWorkouts == 0) return '0m';
-                  return '${(totalDurationMinutes / totalWorkouts).toStringAsFixed(0)}m';
-                },
-                subLabelBuilder: (data) => 'Avg / Workout',
-              ),
-              WeeklyTrendCard(
-                title: 'Volume',
-                icon: CupertinoIcons.layers_fill,
-                color: context.appColors.success,
-                unit: 'sets',
-                provider: WorkoutTrendProvider(WorkoutTrendType.sets),
-                filters: providerFilters,
-                dailyBarValueBuilder: (point) => point.value,
-                mainValueBuilder: (data) {
-                  if (data.isEmpty) return '0';
-                  double totalSets = 0;
-                  int totalWorkouts = 0;
-                  for (final entry in data) {
-                    totalSets += entry.value;
-                    totalWorkouts += entry.count ?? 0;
-                  }
-                  if (totalWorkouts == 0) return '0';
-                  return (totalSets / totalWorkouts).toStringAsFixed(0);
-                },
-                subLabelBuilder: (data) => 'Avg Sets / Workout',
-              ),
-              WeeklyTrendCard(
-                title: 'Body Weight',
-                icon: Icons.monitor_weight_outlined,
-                color: context.appColors.info,
-                unit: weightUnitLabel,
-                provider: WeightTrendProvider(),
-                filters: providerFilters,
-                mainValueBuilder: (data) {
-                  final latestPoint = data.lastWhere(
-                    (point) => point.count != null && point.count! > 0,
-                    orElse: () =>
-                        InsightDataPoint(date: DateTime.now(), value: 0),
-                  );
-                  return latestPoint.value.toStringAsFixed(1);
-                },
-                subLabelBuilder: (data) {
-                  final hasData = data.any(
-                    (point) => point.count != null && point.count! > 0,
-                  );
-                  return hasData ? 'Latest Entry' : 'No entries';
-                },
-              ),
-              WorkoutStatsCard(
-                provider: WorkoutInsightsProvider(),
-                filters: providerFilters,
-              ),
-            ],
+              return (total / data.length).toStringAsFixed(1);
+            },
+            timeframeSubLabelBuilder: (data, timeframe) {
+              switch (InsightsService.getGroupingForTimeframe(timeframe)) {
+                case InsightsGrouping.day:
+                  return timeframe == '1W' ? 'This Week' : 'This Month';
+                case InsightsGrouping.week:
+                  return 'Avg / Week';
+                case InsightsGrouping.month:
+                  return 'Avg / Month';
+              }
+            },
           ),
-        );
-      },
+          WeeklyTrendCard(
+            title: 'Duration',
+            icon: CupertinoIcons.clock_fill,
+            color: colorScheme.primary,
+            unit: 'min',
+            provider: WorkoutTrendProvider(WorkoutTrendType.duration),
+            filters: providerFilters,
+            dailyBarValueBuilder: (point) => point.value * 60,
+            mainValueBuilder: (data) {
+              if (data.isEmpty) return '0m';
+              double totalDurationMinutes = 0;
+              int totalWorkouts = 0;
+              for (final entry in data) {
+                totalDurationMinutes += entry.value * 60;
+                totalWorkouts += entry.count ?? 0;
+              }
+              if (totalWorkouts == 0) return '0m';
+              return '${(totalDurationMinutes / totalWorkouts).toStringAsFixed(0)}m';
+            },
+            subLabelBuilder: (data) => 'Avg / Workout',
+          ),
+          WeeklyTrendCard(
+            title: 'Volume',
+            icon: CupertinoIcons.layers_fill,
+            color: context.appColors.success,
+            unit: 'sets',
+            provider: WorkoutTrendProvider(WorkoutTrendType.sets),
+            filters: providerFilters,
+            dailyBarValueBuilder: (point) => point.value,
+            mainValueBuilder: (data) {
+              if (data.isEmpty) return '0';
+              double totalSets = 0;
+              int totalWorkouts = 0;
+              for (final entry in data) {
+                totalSets += entry.value;
+                totalWorkouts += entry.count ?? 0;
+              }
+              if (totalWorkouts == 0) return '0';
+              return (totalSets / totalWorkouts).toStringAsFixed(0);
+            },
+            subLabelBuilder: (data) => 'Avg Sets / Workout',
+          ),
+          WorkoutStatsCard(
+            provider: WorkoutInsightsProvider(),
+            filters: providerFilters,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -490,52 +455,81 @@ class InsightsTrendsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = context.appText;
-    final colors = context.appColors;
+    return AnimatedBuilder(
+      animation: UserService.instance,
+      builder: (context, _) {
+        final textTheme = context.appText;
+        final colors = context.appColors;
+        final providerFilters = filters.toProviderFilters();
+        final weightFilters = {'timeframe': filters.timeframe};
 
-    final providerFilters = filters.toProviderFilters();
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Trends',
-            style: textTheme.labelMedium?.copyWith(
-              color: colors.textTertiary,
-              letterSpacing: 0.5,
-            ),
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Trends',
+                style: textTheme.labelMedium?.copyWith(
+                  color: colors.textTertiary,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TrendInsightCard(
+                title: 'Workouts',
+                color: colors.warning,
+                unit: 'workouts',
+                icon: CupertinoIcons.flame_fill,
+                filters: providerFilters,
+                provider: WorkoutTrendProvider(WorkoutTrendType.count),
+              ),
+              const SizedBox(height: 12),
+              TrendInsightCard(
+                title: 'Hours',
+                color: context.appScheme.primary,
+                unit: 'hours',
+                icon: CupertinoIcons.clock_fill,
+                filters: providerFilters,
+                provider: WorkoutTrendProvider(WorkoutTrendType.duration),
+              ),
+              const SizedBox(height: 12),
+              TrendInsightCard(
+                title: 'Weight Lifted',
+                color: colors.success,
+                unit: weightUnitLabel,
+                icon: CupertinoIcons.chart_bar_square_fill,
+                filters: providerFilters,
+                provider: WorkoutTrendProvider(WorkoutTrendType.volume),
+              ),
+              const SizedBox(height: 12),
+              TrendInsightCard(
+                title: 'Body Weight',
+                color: colors.info,
+                unit: weightUnitLabel,
+                icon: Icons.monitor_weight_outlined,
+                filters: weightFilters,
+                provider: WeightTrendProvider(),
+                showFiltersInDetail: false,
+                mainValueBuilder: (data) {
+                  final latestPoint = data.lastWhere(
+                    (point) => point.count != null && point.count! > 0,
+                    orElse: () =>
+                        InsightDataPoint(date: DateTime.now(), value: 0),
+                  );
+                  return latestPoint.value.toStringAsFixed(1);
+                },
+                subLabelBuilder: (data) {
+                  final hasData = data.any(
+                    (point) => point.count != null && point.count! > 0,
+                  );
+                  return hasData ? 'Latest Entry' : '';
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          TrendInsightCard(
-            title: 'Workouts',
-            color: colors.warning,
-            unit: 'workouts',
-            icon: CupertinoIcons.flame_fill,
-            filters: providerFilters,
-            provider: WorkoutTrendProvider(WorkoutTrendType.count),
-          ),
-          const SizedBox(height: 12),
-          TrendInsightCard(
-            title: 'Hours',
-            color: context.appScheme.primary,
-            unit: 'hours',
-            icon: CupertinoIcons.clock_fill,
-            filters: providerFilters,
-            provider: WorkoutTrendProvider(WorkoutTrendType.duration),
-          ),
-          const SizedBox(height: 12),
-          TrendInsightCard(
-            title: 'Weight Lifted',
-            color: colors.success,
-            unit: weightUnitLabel,
-            icon: CupertinoIcons.chart_bar_square_fill,
-            filters: providerFilters,
-            provider: WorkoutTrendProvider(WorkoutTrendType.volume),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

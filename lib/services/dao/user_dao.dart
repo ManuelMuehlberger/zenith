@@ -19,6 +19,7 @@ class UserDao extends BaseDao<UserData> {
       'id': userData.id,
       'name': userData.name,
       'birthdate': userData.birthdate.toIso8601String(),
+      'gender': userData.gender.storageValue,
       'units': userData.units.name, // Convert enum to string for storage
       'createdAt': userData.createdAt.toIso8601String(),
       'theme': userData.theme,

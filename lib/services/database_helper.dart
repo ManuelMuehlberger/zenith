@@ -19,7 +19,7 @@ class DatabaseHelper {
   static final Logger _logger = Logger('DatabaseHelper');
 
   static const String _dbName = 'workout_tracker.db';
-  static const int _dbVersion = 8; // Added nested WorkoutFolder hierarchy
+  static const int _dbVersion = 9; // Added profile gender support
 
   Future<String> get databasePath async {
     final documentsDirectory = await getApplicationDocumentsDirectory();
@@ -106,6 +106,7 @@ class DatabaseHelper {
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           birthdate TEXT NOT NULL, -- ISO8601 string
+          gender TEXT NOT NULL DEFAULT 'ratherNotSay',
           units TEXT NOT NULL DEFAULT 'metric',
           createdAt TEXT NOT NULL, -- ISO8601 string
           theme TEXT NOT NULL DEFAULT 'system'
@@ -299,6 +300,7 @@ class DatabaseHelper {
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             birthdate TEXT NOT NULL, -- ISO8601 string
+            gender TEXT NOT NULL DEFAULT 'ratherNotSay',
             units TEXT NOT NULL DEFAULT 'metric',
             createdAt TEXT NOT NULL, -- ISO8601 string
             theme TEXT NOT NULL DEFAULT 'system'
@@ -462,6 +464,19 @@ class DatabaseHelper {
           'UPDATE WorkoutFolder SET depth = 0 WHERE depth IS NULL',
         );
         _logger.info('Version 8 upgrades completed');
+      }
+
+      if (oldVersion < 9) {
+        _logger.info('Applying version 9 upgrades');
+        try {
+          await db.execute(
+            "ALTER TABLE UserData ADD COLUMN gender TEXT NOT NULL DEFAULT 'ratherNotSay'",
+          );
+          _logger.info('Added gender column to UserData table');
+        } catch (e) {
+          _logger.info('gender column already exists in UserData table');
+        }
+        _logger.info('Version 9 upgrades completed');
       }
 
       _logger.info('Database upgrade completed successfully');

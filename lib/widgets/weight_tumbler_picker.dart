@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 
 import '../constants/app_constants.dart';
+import '../models/user_data.dart';
 import '../theme/app_theme.dart';
 
 class WeightTumblerSpec {
@@ -54,8 +55,10 @@ class WeightTumblerSpec {
     return minimum + (safeIndex * step);
   }
 
-  double defaultWeight() {
-    return unitLabel == 'kg' ? 70.0 : 154.0;
+  double defaultWeight({Gender gender = Gender.ratherNotSay}) {
+    return gender.defaultStartingWeight(
+      unitLabel == 'kg' ? Units.metric : Units.imperial,
+    );
   }
 }
 

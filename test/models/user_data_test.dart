@@ -35,6 +35,7 @@ void main() {
     final userData = UserData(
       name: 'John Doe',
       birthdate: DateTime(1990, 5, 15),
+      gender: Gender.male,
       units: Units.metric,
       weightHistory: weightHistory,
       createdAt: testDate,
@@ -46,6 +47,7 @@ void main() {
 
       expect(fromMap.name, userData.name);
       expect(fromMap.birthdate, userData.birthdate);
+      expect(fromMap.gender, userData.gender);
       expect(fromMap.units, userData.units);
       // Note: weightHistory is not preserved through toMap/fromMap as it's loaded separately
       expect(fromMap.weightHistory.length, 0);
@@ -84,16 +86,19 @@ void main() {
       expect(userData.birthdate.month, 5);
       expect(userData.birthdate.day, 15);
       expect(userData.units, Units.metric);
+      expect(userData.gender, Gender.ratherNotSay);
     });
 
     test('copyWith creates new instance with updated values', () {
       final updated = userData.copyWith(
         name: 'Jane Doe',
+        gender: Gender.female,
         units: Units.imperial,
       );
       expect(updated.theme, userData.theme);
 
       expect(updated.name, 'Jane Doe');
+      expect(updated.gender, Gender.female);
       expect(updated.units, Units.imperial);
       expect(updated.birthdate, userData.birthdate);
       expect(updated.weightHistory, userData.weightHistory);
@@ -116,12 +121,19 @@ void main() {
       expect(imperialUser.weightUnit, 'lbs');
     });
 
+    test('gender default weight follows onboarding defaults', () {
+      expect(Gender.female.defaultStartingWeight(Units.metric), 60.0);
+      expect(Gender.ratherNotSay.defaultStartingWeight(Units.metric), 60.0);
+      expect(Gender.male.defaultStartingWeight(Units.metric), 75.0);
+    });
+
     group('age calculation', () {
       test('returns correct age when birthday has passed this year', () {
         final today = DateTime(2023, 6, 1);
         final userData = UserData(
           name: 'Test',
           birthdate: DateTime(1990, 5, 15),
+          gender: Gender.ratherNotSay,
           units: Units.metric,
           weightHistory: [],
           createdAt: today,
@@ -135,6 +147,7 @@ void main() {
         final userData = UserData(
           name: 'Test',
           birthdate: DateTime(1990, 5, 15),
+          gender: Gender.ratherNotSay,
           units: Units.metric,
           weightHistory: [],
           createdAt: today,
@@ -148,6 +161,7 @@ void main() {
         final userData = UserData(
           name: 'Test',
           birthdate: DateTime(2000, 2, 29),
+          gender: Gender.ratherNotSay,
           units: Units.metric,
           weightHistory: [],
           createdAt: today,

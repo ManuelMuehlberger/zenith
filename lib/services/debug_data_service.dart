@@ -314,7 +314,7 @@ class DebugDataService {
     final trendGain = profile.units == Units.metric ? 2.0 : 4.5;
     final latestKnownWeight = profile.weightHistory.isNotEmpty
         ? profile.weightHistory.last.value
-        : _defaultBodyWeight(profile.units);
+        : _defaultBodyWeight(profile.units, profile.gender);
     final baseline = latestKnownWeight - trendGain;
 
     final weekAdjustment = switch (weekType) {
@@ -344,8 +344,8 @@ class DebugDataService {
     );
   }
 
-  double _defaultBodyWeight(Units units) {
-    return units == Units.metric ? 70.0 : 154.0;
+  double _defaultBodyWeight(Units units, Gender gender) {
+    return gender.defaultStartingWeight(units);
   }
 
   Future<void> _seedWorkoutTemplates() async {

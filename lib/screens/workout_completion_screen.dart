@@ -9,6 +9,7 @@ import 'package:logging/logging.dart';
 
 import '../constants/app_constants.dart';
 import '../main.dart';
+import '../models/user_data.dart';
 import '../models/workout.dart';
 import '../services/user_service.dart';
 import '../services/workout_session_service.dart';
@@ -465,7 +466,11 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
       return history.last.value;
     }
 
-    return WeightTumblerSpec.forUnits(_weightUnits).defaultWeight();
+    final gender =
+        UserService.instance.currentProfile?.gender ?? Gender.ratherNotSay;
+    return WeightTumblerSpec.forUnits(
+      _weightUnits,
+    ).defaultWeight(gender: gender);
   }
 
   String _selectedWeightLabel() {

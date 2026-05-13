@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../constants/app_constants.dart';
+import '../../models/user_data.dart';
 import '../../theme/app_theme.dart';
 import '../weight_tumbler_picker.dart';
 import 'onboarding_common.dart';
@@ -114,7 +115,7 @@ class AgePage extends StatelessWidget {
                 children: [
                   OnboardingProgressIndicator(
                     current: 2,
-                    total: 4,
+                    total: 5,
                     onBack: onBack,
                   ),
                   const SizedBox(height: 32),
@@ -167,6 +168,74 @@ class AgePage extends StatelessWidget {
   }
 }
 
+class GenderPage extends StatelessWidget {
+  final Gender gender;
+  final ValueChanged<Gender> onGenderChanged;
+  final VoidCallback onNext;
+  final VoidCallback onBack;
+
+  const GenderPage({
+    super.key,
+    required this.gender,
+    required this.onGenderChanged,
+    required this.onNext,
+    required this.onBack,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          OnboardingProgressIndicator(current: 3, total: 5, onBack: onBack),
+          const SizedBox(height: 32),
+          Text('Gender?', style: textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          Text(
+            'We use this to choose a sensible starting weight for the picker',
+            style: textTheme.bodyLarge?.copyWith(color: colors.textTertiary),
+          ),
+          const SizedBox(height: 40),
+          UnitOption(
+            title: 'Female',
+            subtitle: 'Starts at 60 kg',
+            value: Gender.female.storageValue,
+            isSelected: gender == Gender.female,
+            onTap: () => onGenderChanged(Gender.female),
+          ),
+          const SizedBox(height: 16),
+          UnitOption(
+            title: 'Male',
+            subtitle: 'Starts at 75 kg',
+            value: Gender.male.storageValue,
+            isSelected: gender == Gender.male,
+            onTap: () => onGenderChanged(Gender.male),
+          ),
+          const SizedBox(height: 16),
+          UnitOption(
+            title: 'Rather not say',
+            subtitle: 'Starts at 60 kg',
+            value: Gender.ratherNotSay.storageValue,
+            isSelected: gender == Gender.ratherNotSay,
+            onTap: () => onGenderChanged(Gender.ratherNotSay),
+          ),
+          const Spacer(),
+          OnboardingNavigationButtons(
+            canContinue: true,
+            onNext: onNext,
+            onBack: onBack,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class UnitsPage extends StatelessWidget {
   final Units units;
   final ValueChanged<Units> onUnitsChanged;
@@ -191,7 +260,7 @@ class UnitsPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          OnboardingProgressIndicator(current: 3, total: 4, onBack: onBack),
+          OnboardingProgressIndicator(current: 4, total: 5, onBack: onBack),
           const SizedBox(height: 32),
 
           Text('Preferred units?', style: textTheme.headlineSmall),
@@ -260,7 +329,7 @@ class WeightPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          OnboardingProgressIndicator(current: 4, total: 4, onBack: onBack),
+          OnboardingProgressIndicator(current: 5, total: 5, onBack: onBack),
           const SizedBox(height: 32),
 
           Text('Current weight?', style: textTheme.headlineSmall),
