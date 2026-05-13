@@ -4,6 +4,7 @@ import '../user_service.dart';
 import 'insight_data_provider.dart';
 import 'insights_timeframe_resolver.dart';
 
+// policy: allow-public-api shared insight provider consumed by the body-weight trend UI.
 class WeightTrendProvider implements InsightDataProvider {
   final List<WeightEntry> Function()? weightHistoryProvider;
 

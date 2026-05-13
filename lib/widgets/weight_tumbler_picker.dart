@@ -4,6 +4,7 @@ import '../constants/app_constants.dart';
 import '../models/user_data.dart';
 import '../theme/app_theme.dart';
 
+// policy: allow-public-api shared weight-wheel contract used by onboarding and workout completion flows.
 class WeightTumblerSpec {
   const WeightTumblerSpec({
     required this.minimum,
@@ -66,6 +67,7 @@ class WeightTumblerSpec {
   }
 }
 
+// policy: allow-public-api shared weight input widget reused across onboarding and workout completion.
 class WeightTumblerPicker extends StatelessWidget {
   final double weight;
   final Units units;

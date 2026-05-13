@@ -132,5 +132,22 @@ void main() {
       );
       expect(find.text('Done'), findsOneWidget);
     });
+
+    testWidgets('shows both completion actions', (WidgetTester tester) async {
+      final startedAt = DateTime.now().subtract(const Duration(minutes: 1));
+      final session = Workout(
+        name: 'Action Check',
+        status: WorkoutStatus.inProgress,
+        startedAt: startedAt,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(home: WorkoutCompletionScreen(session: session)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('back_to_workout_btn')), findsOneWidget);
+      expect(find.text('Finish'), findsOneWidget);
+    });
   });
 }

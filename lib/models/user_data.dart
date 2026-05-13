@@ -25,6 +25,7 @@ class WeightEntry {
   }
 }
 
+// policy: allow-public-api persisted user profile field shared across onboarding, settings, and debug data.
 enum Gender {
   female('female', 'Female'),
   male('male', 'Male'),

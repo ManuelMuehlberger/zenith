@@ -54,359 +54,406 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: UserService.instance,
+      builder: _buildAnimatedContent,
+    );
+  }
+
+  Widget _buildAnimatedContent(BuildContext context, Widget? child) {
+    return Stack(
+      children: [
+        _buildScaffold(context),
+        if (_confettiPosition != null) _buildConfettiOverlay(context),
+      ],
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
+    final textTheme = context.appText;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text('Complete Workout', style: textTheme.titleLarge),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildWorkoutSummaryCard(context),
+            const SizedBox(height: 32),
+            _buildNotesSection(context),
+            const SizedBox(height: 32),
+            _buildMoodSection(context),
+            const SizedBox(height: 32),
+            _buildWeightSection(context),
+            const SizedBox(height: 40),
+            _buildActionButtons(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWorkoutSummaryCard(BuildContext context) {
     final scheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
 
-    return AnimatedBuilder(
-      animation: UserService.instance,
-      builder: (context, _) {
-        return Stack(
-          children: [
-            Scaffold(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              appBar: AppBar(
-                title: Text('Complete Workout', style: textTheme.titleLarge),
-                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                elevation: 0,
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: colors.field,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.check_circle_outline,
+                  color: colors.success,
+                  size: 24,
+                ),
               ),
-              body: SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
+              const SizedBox(width: 16),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Workout summary
-                    Container(
-                      padding: const EdgeInsets.all(20.0),
-                      decoration: BoxDecoration(
-                        color: scheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Theme.of(context).dividerColor,
-                          width: 1,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: colors.field,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  Icons.check_circle_outline,
-                                  color: colors.success,
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      widget.session.name,
-                                      style: textTheme.titleLarge,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Workout completed!',
-                                      style: textTheme.labelMedium,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              GestureDetector(
-                                key: const Key('duration_summary'),
-                                onTap: _showDurationPicker,
-                                child: _buildSummaryItem(
-                                  _formatDurationNoSeconds(
-                                    _stripSeconds(
-                                      _editedDuration ??
-                                          (widget.session.completedAt != null
-                                              ? widget.session.completedAt!
-                                                    .difference(
-                                                      widget
-                                                              .session
-                                                              .startedAt ??
-                                                          DateTime.now(),
-                                                    )
-                                              : DateTime.now().difference(
-                                                  widget.session.startedAt ??
-                                                      DateTime.now(),
-                                                )),
-                                    ),
-                                  ),
-                                  'Duration',
-                                  Icons.timer_outlined,
-                                ),
-                              ),
-                              Container(
-                                width: 1,
-                                height: 40,
-                                color: Theme.of(context).dividerColor,
-                              ),
-                              _buildSummaryItem(
-                                '${widget.session.completedSets}/${widget.session.totalSets}',
-                                'Sets',
-                                Icons.fitness_center_outlined,
-                              ),
-                              Container(
-                                width: 1,
-                                height: 40,
-                                color: Theme.of(context).dividerColor,
-                              ),
-                              _buildSummaryItem(
-                                '${WorkoutSessionService.instance.formatWeight(widget.session.totalWeight)} ${(UserService.instance.currentProfile?.units == Units.imperial) ? 'lbs' : 'kg'}',
-                                'Weight',
-                                Icons.monitor_weight_outlined,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    Text('Notes', style: textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    Text(
-                      'How did the workout feel? Any observations?',
-                      style: textTheme.labelMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: scheme.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Theme.of(context).dividerColor,
-                          width: 1,
-                        ),
-                      ),
-                      child: TextField(
-                        controller: _notesController,
-                        maxLines: 4,
-                        style: textTheme.bodyLarge,
-                        decoration: InputDecoration(
-                          hintText: 'Optional notes...',
-                          hintStyle: textTheme.bodyMedium,
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.all(16),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    Text('How are you feeling?', style: textTheme.titleMedium),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(5, (index) {
-                        final moodValue = 5 - index;
-                        final isSelected = _selectedMood == moodValue;
-                        return GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            setState(() {
-                              _selectedMood = moodValue;
-                            });
-                          },
-                          child: Container(
-                            key: Key('mood_$moodValue'),
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: isSelected ? colors.field : scheme.surface,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isSelected
-                                    ? scheme.primary
-                                    : Theme.of(context).dividerColor,
-                                width: 2,
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  _getMoodEmoji(moodValue),
-                                  style: textTheme.headlineSmall,
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                    const SizedBox(height: 32),
-                    Text('Current weight', style: textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Optional. Log your body weight with the tumbler.',
-                      style: textTheme.labelMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      key: const Key('weight_summary'),
-                      onTap: _showWeightPicker,
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: scheme.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Theme.of(context).dividerColor,
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: colors.field,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                Icons.monitor_weight_outlined,
-                                color: scheme.primary,
-                                size: 22,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _selectedWeightLabel(),
-                                    style: textTheme.titleMedium,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _selectedWeight == null
-                                        ? 'Tap to log weight'
-                                        : 'Logged for this workout',
-                                    style: textTheme.labelMedium,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Icon(
-                              CupertinoIcons.chevron_right,
-                              color: colors.textTertiary,
-                              size: 18,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 50,
-                            child: TextButton(
-                              key: const Key('back_to_workout_btn'),
-                              onPressed: () {
-                                _logger.fine('Back to Workout tapped');
-                                if (Navigator.of(context).canPop()) {
-                                  Navigator.of(context).pop();
-                                } else {
-                                  _logger.warning(
-                                    'Navigator cannot pop. Routing to MainScreen.',
-                                  );
-                                  Navigator.of(context).pushAndRemoveUntil(
-                                    MaterialPageRoute(
-                                      builder: (_) => const MainScreen(),
-                                    ),
-                                    (route) => false,
-                                  );
-                                  NavigationHelper.goToHomeTab();
-                                }
-                              },
-                              style: TextButton.styleFrom(
-                                backgroundColor: colors.surfaceAlt,
-                                foregroundColor: colors.textPrimary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: Text(
-                                'Back to Workout',
-                                style: textTheme.titleMedium,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: SizedBox(
-                            height: 50,
-                            child: ElevatedButton(
-                              key: _finishButtonKey,
-                              onPressed: _completeWorkout,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: colors.success,
-                                foregroundColor: colors.textPrimary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: Text(
-                                'Finish',
-                                style: textTheme.titleMedium,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    Text(widget.session.name, style: textTheme.titleLarge),
+                    const SizedBox(height: 4),
+                    Text('Workout completed!', style: textTheme.labelMedium),
                   ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              GestureDetector(
+                key: const Key('duration_summary'),
+                onTap: _showDurationPicker,
+                child: _buildSummaryItem(
+                  _formattedSessionDuration(),
+                  'Duration',
+                  Icons.timer_outlined,
+                ),
+              ),
+              _buildSummaryDivider(context),
+              _buildSummaryItem(
+                '${widget.session.completedSets}/${widget.session.totalSets}',
+                'Sets',
+                Icons.fitness_center_outlined,
+              ),
+              _buildSummaryDivider(context),
+              _buildSummaryItem(
+                _formattedSessionWeight(),
+                'Weight',
+                Icons.monitor_weight_outlined,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryDivider(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 40,
+      color: Theme.of(context).dividerColor,
+    );
+  }
+
+  Widget _buildNotesSection(BuildContext context) {
+    final scheme = context.appScheme;
+    final textTheme = context.appText;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Notes', style: textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Text(
+          'How did the workout feel? Any observations?',
+          style: textTheme.labelMedium,
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Theme.of(context).dividerColor, width: 1),
+          ),
+          child: TextField(
+            controller: _notesController,
+            maxLines: 4,
+            style: textTheme.bodyLarge,
+            decoration: InputDecoration(
+              hintText: 'Optional notes...',
+              hintStyle: textTheme.bodyMedium,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(16),
             ),
-            // Confetti overlay
-            if (_confettiPosition != null)
-              Positioned(
-                left: _confettiPosition!.dx,
-                top: _confettiPosition!.dy,
-                child: SizedBox(
-                  width: 1,
-                  height: 1,
-                  child: ConfettiWidget(
-                    confettiController: _confettiController,
-                    blastDirectionality: BlastDirectionality.explosive,
-                    emissionFrequency: 0.05,
-                    numberOfParticles: 30,
-                    gravity: 0.1,
-                    shouldLoop: false,
-                    colors: [
-                      colors.success,
-                      scheme.primary,
-                      colors.warning,
-                      scheme.error,
-                      colors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMoodSection(BuildContext context) {
+    final textTheme = context.appText;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('How are you feeling?', style: textTheme.titleMedium),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: List.generate(
+            5,
+            (index) => _buildMoodButton(context, index),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMoodButton(BuildContext context, int index) {
+    final scheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final moodValue = 5 - index;
+    final isSelected = _selectedMood == moodValue;
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        setState(() {
+          _selectedMood = moodValue;
+        });
+      },
+      child: Container(
+        key: Key('mood_$moodValue'),
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          color: isSelected ? colors.field : scheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? scheme.primary : Theme.of(context).dividerColor,
+            width: 2,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(_getMoodEmoji(moodValue), style: textTheme.headlineSmall),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWeightSection(BuildContext context) {
+    final scheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Current weight', style: textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Text(
+          'Optional. Log your body weight with the tumbler.',
+          style: textTheme.labelMedium,
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          key: const Key('weight_summary'),
+          onTap: _showWeightPicker,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: scheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).dividerColor,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: colors.field,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.monitor_weight_outlined,
+                    color: scheme.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _selectedWeightLabel(),
+                        style: textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _selectedWeight == null
+                            ? 'Tap to log weight'
+                            : 'Logged for this workout',
+                        style: textTheme.labelMedium,
+                      ),
                     ],
                   ),
                 ),
-              ),
-          ],
-        );
-      },
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  color: colors.textTertiary,
+                  size: 18,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 50,
+            child: TextButton(
+              key: const Key('back_to_workout_btn'),
+              onPressed: () => _handleBackToWorkout(context),
+              style: TextButton.styleFrom(
+                backgroundColor: colors.surfaceAlt,
+                foregroundColor: colors.textPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text('Back to Workout', style: textTheme.titleMedium),
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: SizedBox(
+            height: 50,
+            child: ElevatedButton(
+              key: _finishButtonKey,
+              onPressed: _completeWorkout,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colors.success,
+                foregroundColor: colors.textPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text('Finish', style: textTheme.titleMedium),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _handleBackToWorkout(BuildContext context) {
+    _logger.fine('Back to Workout tapped');
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    _logger.warning('Navigator cannot pop. Routing to MainScreen.');
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const MainScreen()),
+      (route) => false,
+    );
+    NavigationHelper.goToHomeTab();
+  }
+
+  Widget _buildConfettiOverlay(BuildContext context) {
+    final scheme = context.appScheme;
+    final colors = context.appColors;
+
+    return Positioned(
+      left: _confettiPosition!.dx,
+      top: _confettiPosition!.dy,
+      child: SizedBox(
+        width: 1,
+        height: 1,
+        child: ConfettiWidget(
+          confettiController: _confettiController,
+          blastDirectionality: BlastDirectionality.explosive,
+          emissionFrequency: 0.05,
+          numberOfParticles: 30,
+          gravity: 0.1,
+          shouldLoop: false,
+          colors: [
+            colors.success,
+            scheme.primary,
+            colors.warning,
+            scheme.error,
+            colors.textPrimary,
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formattedSessionDuration() {
+    final completedDuration = widget.session.completedAt != null
+        ? widget.session.completedAt!.difference(
+            widget.session.startedAt ?? DateTime.now(),
+          )
+        : DateTime.now().difference(widget.session.startedAt ?? DateTime.now());
+    return _formatDurationNoSeconds(
+      _stripSeconds(_editedDuration ?? completedDuration),
+    );
+  }
+
+  String _formattedSessionWeight() {
+    final unitLabel =
+        UserService.instance.currentProfile?.units == Units.imperial
+        ? 'lbs'
+        : 'kg';
+    return '${WorkoutSessionService.instance.formatWeight(widget.session.totalWeight)} $unitLabel';
   }
 
   Widget _buildSummaryItem(String value, String label, IconData icon) {

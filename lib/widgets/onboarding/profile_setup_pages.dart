@@ -168,6 +168,7 @@ class AgePage extends StatelessWidget {
   }
 }
 
+// policy: allow-public-api onboarding step reused by screen-level flow tests.
 class GenderPage extends StatelessWidget {
   final Gender gender;
   final ValueChanged<Gender> onGenderChanged;
