@@ -1,0 +1,184 @@
+name: Refresh CI Image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .ci/toolchain-image/**
+      - .gitea/workflows/refresh-ci-image.yml
+      - scripts/resolve_flutter_stable.py
+  schedule:
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+    inputs:
+      flutter_version:
+        description: Exact Flutter version to build and promote. Leave blank for the current stable release.
+        required: false
+      force_rebuild:
+        description: Rebuild even if the immutable image tag already exists.
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: refresh-ci-image-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-promote:
+    runs-on: ci-image-builder
+    env:
+      CI_IMAGE_REGISTRY: ${{ vars.CI_IMAGE_REGISTRY }}
+      CI_IMAGE_REPOSITORY: ${{ vars.CI_IMAGE_REPOSITORY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate CI Image Configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${CI_IMAGE_REGISTRY}" ]; then
+            echo "CI_IMAGE_REGISTRY repo variable is required." >&2
+            exit 1
+          fi
+          if [ -z "${CI_IMAGE_REPOSITORY}" ]; then
+            echo "CI_IMAGE_REPOSITORY repo variable is required." >&2
+            exit 1
+          fi
+          if ! command -v docker >/dev/null 2>&1; then
+            echo "Docker CLI is required on the ci-image-builder runner." >&2
+            exit 1
+          fi
+
+      - name: Resolve Flutter Stable Release
+        id: flutter_release
+        shell: bash
+        env:
+          REQUESTED_FLUTTER_VERSION: ${{ inputs.flutter_version }}
+        run: |
+          set -euo pipefail
+          if [ -n "${REQUESTED_FLUTTER_VERSION}" ]; then
+            python3 scripts/resolve_flutter_stable.py --version "${REQUESTED_FLUTTER_VERSION}" --output github >> "$GITHUB_OUTPUT"
+          else
+            python3 scripts/resolve_flutter_stable.py --output github >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute Image Source Hash
+        id: source_hash
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_hash="$({ sha256sum .ci/toolchain-image/Dockerfile scripts/resolve_flutter_stable.py .gitea/workflows/refresh-ci-image.yml scripts/ci_image_smoke_test.sh; } | sha256sum | cut -c1-12)"
+          echo "value=${source_hash}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute Image Tags
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+          image_root="${CI_IMAGE_REGISTRY}/${CI_IMAGE_REPOSITORY}"
+          immutable_tag="${image_root}:flutter-${{ steps.flutter_release.outputs.version }}-${{ steps.source_hash.outputs.value }}"
+          version_tag="${image_root}:flutter-${{ steps.flutter_release.outputs.version }}"
+          floating_tag="${image_root}:flutter-stable"
+          echo "image_root=${image_root}" >> "$GITHUB_OUTPUT"
+          echo "immutable_tag=${immutable_tag}" >> "$GITHUB_OUTPUT"
+          echo "version_tag=${version_tag}" >> "$GITHUB_OUTPUT"
+          echo "floating_tag=${floating_tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Log In to Container Registry
+        shell: bash
+        env:
+          CI_IMAGE_REGISTRY_USERNAME: ${{ secrets.CI_IMAGE_REGISTRY_USERNAME }}
+          CI_IMAGE_REGISTRY_PASSWORD: ${{ secrets.CI_IMAGE_REGISTRY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CI_IMAGE_REGISTRY_USERNAME}" ] || [ -z "${CI_IMAGE_REGISTRY_PASSWORD}" ]; then
+            echo "CI_IMAGE_REGISTRY_USERNAME and CI_IMAGE_REGISTRY_PASSWORD secrets are required." >&2
+            exit 1
+          fi
+          printf '%s' "${CI_IMAGE_REGISTRY_PASSWORD}" | docker login "${CI_IMAGE_REGISTRY}" --username "${CI_IMAGE_REGISTRY_USERNAME}" --password-stdin
+
+      - name: Check for Existing Immutable Image
+        id: existing
+        shell: bash
+        run: |
+          set -euo pipefail
+          if docker manifest inspect "${{ steps.image.outputs.immutable_tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Candidate CI Image
+        if: steps.existing.outputs.exists != 'true' || inputs.force_rebuild
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build --pull \
+            --file .ci/toolchain-image/Dockerfile \
+            --build-arg FLUTTER_VERSION="${{ steps.flutter_release.outputs.version }}" \
+            --build-arg FLUTTER_ARCHIVE="${{ steps.flutter_release.outputs.archive }}" \
+            --build-arg FLUTTER_SHA256="${{ steps.flutter_release.outputs.sha256 }}" \
+            --build-arg FLUTTER_HASH="${{ steps.flutter_release.outputs.hash }}" \
+            --build-arg SOURCE_REPOSITORY="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}" \
+            --tag "${{ steps.image.outputs.immutable_tag }}" \
+            .ci/toolchain-image
+
+      - name: Smoke Validate Candidate Image
+        if: steps.existing.outputs.exists != 'true' || inputs.force_rebuild
+        shell: bash
+        run: |
+          set -euo pipefail
+          container_id="$(docker create \
+            -e CI=true \
+            -e CI_MAIN_REF=origin/main \
+            -w /workspace \
+            "${{ steps.image.outputs.immutable_tag }}" \
+            bash scripts/ci_image_smoke_test.sh)"
+          cleanup() {
+            docker rm -f "$container_id" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          docker cp . "$container_id:/workspace"
+          docker start -a "$container_id"
+
+      - name: Pull Existing Immutable Image
+        if: steps.existing.outputs.exists == 'true' && !inputs.force_rebuild
+        shell: bash
+        run: docker pull "${{ steps.image.outputs.immutable_tag }}"
+
+      - name: Push Immutable Image
+        if: steps.existing.outputs.exists != 'true' || inputs.force_rebuild
+        shell: bash
+        run: docker push "${{ steps.image.outputs.immutable_tag }}"
+
+      - name: Promote CI Image Aliases
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker tag "${{ steps.image.outputs.immutable_tag }}" "${{ steps.image.outputs.version_tag }}"
+          docker tag "${{ steps.image.outputs.immutable_tag }}" "${{ steps.image.outputs.floating_tag }}"
+          docker push "${{ steps.image.outputs.version_tag }}"
+          docker push "${{ steps.image.outputs.floating_tag }}"
+
+      - name: Show Promotion Summary
+        shell: bash
+        run: |
+          {
+            echo "## CI image refreshed"
+            echo
+            echo "- Flutter version: ${{ steps.flutter_release.outputs.version }}"
+            echo "- Source hash: ${{ steps.source_hash.outputs.value }}"
+            echo "- Immutable tag: ${{ steps.image.outputs.immutable_tag }}"
+            echo "- Version alias: ${{ steps.image.outputs.version_tag }}"
+            echo "- Stable alias: ${{ steps.image.outputs.floating_tag }}"
+            echo "- Rebuilt image: ${{ steps.existing.outputs.exists != 'true' || inputs.force_rebuild }}"
+          } >> "$GITHUB_STEP_SUMMARY"
