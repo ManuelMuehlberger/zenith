@@ -14,6 +14,10 @@ class TrendInsightCard extends StatefulWidget {
   final InsightDataProvider provider;
   final String Function(List<InsightDataPoint>)? mainValueBuilder;
   final String Function(List<InsightDataPoint>)? subLabelBuilder;
+  final bool showFiltersInDetail;
+  final List<double> Function(List<InsightDataPoint>)? compactValuesBuilder;
+  final double? Function(List<InsightDataPoint>)? compactMinYBuilder;
+  final double? Function(List<InsightDataPoint>)? compactMaxYBuilder;
 
   const TrendInsightCard({
     super.key,
@@ -25,6 +29,10 @@ class TrendInsightCard extends StatefulWidget {
     required this.provider,
     this.mainValueBuilder,
     this.subLabelBuilder,
+    this.showFiltersInDetail = true,
+    this.compactValuesBuilder,
+    this.compactMinYBuilder,
+    this.compactMaxYBuilder,
   });
 
   @override
@@ -134,10 +142,15 @@ class _TrendInsightCardState extends State<TrendInsightCard> {
         if (_isLoading) {
           return const Center(child: CupertinoActivityIndicator());
         }
+        final compactValues =
+            widget.compactValuesBuilder?.call(data) ??
+            data.map((e) => e.value).toList();
         return CompactChart(
-          values: data.map((e) => e.value).toList(),
+          values: compactValues,
           color: widget.color,
           height: 100,
+          minY: widget.compactMinYBuilder?.call(data),
+          maxY: widget.compactMaxYBuilder?.call(data),
         );
       },
       expandedContentBuilder: (context, data, timeframe, monthsBack) {
@@ -158,6 +171,7 @@ class _TrendInsightCardState extends State<TrendInsightCard> {
       },
       itemWidthBuilder: _getItemWidth,
       dataCountBuilder: (data) => data.length,
+      showFiltersInDetail: widget.showFiltersInDetail,
     );
   }
 

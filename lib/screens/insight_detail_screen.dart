@@ -122,6 +122,7 @@ class InsightDetailScreen extends StatefulWidget {
   final int Function(dynamic data)? dataCountBuilder;
   final double Function(String timeframe)? itemWidthBuilder;
   final String? heroTag;
+  final bool showFilters;
 
   const InsightDetailScreen({
     super.key,
@@ -138,6 +139,7 @@ class InsightDetailScreen extends StatefulWidget {
     this.dataCountBuilder,
     this.itemWidthBuilder,
     this.heroTag,
+    this.showFilters = true,
   });
 
   @override
@@ -173,7 +175,9 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
   void initState() {
     super.initState();
     _initializeFilters();
-    _loadAvailableWorkouts();
+    if (widget.showFilters) {
+      _loadAvailableWorkouts();
+    }
     _loadData();
   }
 
@@ -331,8 +335,7 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
           color: backgroundColor,
           child: Column(
             children: [
-              // Filters
-              _buildFilters(),
+              _buildControls(),
 
               Expanded(
                 child: _isLoading
@@ -626,6 +629,20 @@ class _InsightDetailScreenState extends State<InsightDetailScreen> {
           _buildTimeframeDropdown(context),
         ],
       ),
+    );
+  }
+
+  Widget _buildControls() {
+    if (widget.showFilters) {
+      return _buildFilters();
+    }
+
+    return Container(
+      height: 50,
+      margin: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      alignment: Alignment.centerRight,
+      child: _buildTimeframeDropdown(context),
     );
   }
 

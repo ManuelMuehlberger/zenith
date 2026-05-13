@@ -101,10 +101,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       );
 
       final updatedProfile = UserData(
+        id: _userProfile!.id,
         name: _nameController.text.trim(),
         birthdate: _calculateBirthdate(
           int.tryParse(_ageController.text) ?? _userProfile!.age,
         ),
+        gender: _userProfile!.gender,
         units: _userProfile!.units,
         weightHistory: weightHistory,
         createdAt: _userProfile!.createdAt,
@@ -386,6 +388,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               prefixIcon: CupertinoIcons.calendar,
             ),
             _buildDivider(),
+            _buildGenderSelector(),
+            _buildDivider(),
             _buildEditableTextField(
               controller: _weightController,
               placeholder: 'Enter your weight',
@@ -498,6 +502,77 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _showErrorDialog('Failed to update units: ${e.toString()}');
       }
     }
+  }
+
+  Widget _buildGenderSelector() {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final selectedGender = _userProfile?.gender ?? Gender.ratherNotSay;
+
+    return Material(
+      type: MaterialType.transparency,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  CupertinoIcons.person_2,
+                  color: colors.textSecondary,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text('Gender', style: textTheme.titleSmall),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: Gender.values.map((gender) {
+                final isSelected = gender == selectedGender;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _userProfile = _userProfile?.copyWith(gender: gender);
+                      _hasChanges = true;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? context.appScheme.primary.withValues(alpha: 0.12)
+                          : colors.field,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isSelected
+                            ? context.appScheme.primary
+                            : Theme.of(context).dividerColor,
+                      ),
+                    ),
+                    child: Text(
+                      gender.displayLabel,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: isSelected
+                            ? context.appScheme.primary
+                            : colors.textPrimary,
+                        fontWeight: isSelected ? FontWeight.w600 : null,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildEditableTextField({

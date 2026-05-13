@@ -148,6 +148,7 @@ void main() {
     late FakeWorkoutExerciseDao workoutExerciseDao;
     late FakeWorkoutSetDao workoutSetDao;
     late FakeNotificationService notificationService;
+    late List<(double, DateTime)> recordedWeights;
 
     Workout buildTemplate() {
       const templateExerciseId = 'ex-template-1';
@@ -188,6 +189,10 @@ void main() {
       service.workoutExerciseDao = workoutExerciseDao;
       service.workoutSetDao = workoutSetDao;
       service.notificationService = notificationService;
+      recordedWeights = [];
+      service.recordWeightEntry = (value, timestamp) async {
+        recordedWeights.add((value, timestamp));
+      };
 
       await service.clearActiveSession();
     });
@@ -208,6 +213,24 @@ void main() {
       expect(completed.completedAt, customStart.add(override));
       expect(completed.mood, 4);
       expect(workoutDao._store[completed.id]?.mood, 4);
+    });
+
+    test('records post-workout weight using the completed timestamp', () async {
+      final template = buildTemplate();
+      final session = await service.startWorkout(template);
+
+      final customStart = DateTime(2025, 1, 1, 12, 0, 0);
+      service.currentSession = session.copyWith(startedAt: customStart);
+
+      const override = Duration(minutes: 15);
+      final completed = await service.completeWorkout(
+        durationOverride: override,
+        postWorkoutWeight: 74.5,
+      );
+
+      expect(recordedWeights, hasLength(1));
+      expect(recordedWeights.single.$1, 74.5);
+      expect(recordedWeights.single.$2, completed.completedAt);
     });
 
     test(

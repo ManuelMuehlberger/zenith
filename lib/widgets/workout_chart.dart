@@ -420,12 +420,16 @@ class CompactChart extends StatelessWidget {
   final List<double> values;
   final Color color;
   final double height;
+  final double? minY;
+  final double? maxY;
 
   const CompactChart({
     super.key,
     required this.values,
     required this.color,
     this.height = 40,
+    this.minY,
+    this.maxY,
   });
 
   @override
@@ -442,6 +446,8 @@ class CompactChart extends StatelessWidget {
       height: height,
       child: LineChart(
         LineChartData(
+          minY: minY,
+          maxY: maxY,
           gridData: const FlGridData(show: false),
           titlesData: const FlTitlesData(show: false),
           borderData: FlBorderData(show: false),

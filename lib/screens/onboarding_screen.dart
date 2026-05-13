@@ -29,8 +29,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   late TextEditingController _nameController;
   late FocusNode _nameFocusNode;
   int _age = 25;
+  Gender _gender = Gender.ratherNotSay;
   Units _units = Units.metric;
-  double _weight = 70.0;
+  double _weight = Gender.ratherNotSay.defaultStartingWeight(Units.metric);
+  bool _hasCustomizedWeight = false;
 
   @override
   void initState() {
@@ -82,16 +84,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               onNext: _nextPage,
               onBack: _previousPage,
             ),
+            GenderPage(
+              gender: _gender,
+              onGenderChanged: _updateGender,
+              onNext: _nextPage,
+              onBack: _previousPage,
+            ),
             UnitsPage(
               units: _units,
-              onUnitsChanged: (value) => setState(() => _units = value),
+              onUnitsChanged: _updateUnits,
               onNext: _nextPage,
               onBack: _previousPage,
             ),
             WeightPage(
               weight: _weight,
               units: _units,
-              onWeightChanged: (value) => setState(() => _weight = value),
+              onWeightChanged: (value) => setState(() {
+                _weight = value;
+                _hasCustomizedWeight = true;
+              }),
               onNext: _nextPage,
               onBack: _previousPage,
             ),
@@ -107,7 +118,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _nextPage() {
-    if (_currentPage < 5) {
+    if (_currentPage < 6) {
       _logger.fine(
         'Advancing onboarding from page $_currentPage to ${_currentPage + 1}',
       );
@@ -116,6 +127,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     }
+  }
+
+  void _updateGender(Gender value) {
+    setState(() {
+      _gender = value;
+      _syncDefaultWeightIfNeeded();
+    });
+  }
+
+  void _updateUnits(Units value) {
+    setState(() {
+      _units = value;
+      _syncDefaultWeightIfNeeded();
+    });
+  }
+
+  void _syncDefaultWeightIfNeeded() {
+    if (_hasCustomizedWeight) {
+      return;
+    }
+
+    _weight = _gender.defaultStartingWeight(_units);
   }
 
   void _previousPage() {
@@ -224,6 +257,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final profile = UserData(
         name: _nameController.text.trim(),
         birthdate: birthdate,
+        gender: _gender,
         units: _units,
         weightHistory: weightHistory,
         createdAt: DateTime.now(),

@@ -43,6 +43,7 @@ class AppThemePalette {
     required this.onAccent,
     required this.success,
     required this.warning,
+    required this.info,
     required this.danger,
     required this.shadow,
   });
@@ -63,6 +64,7 @@ class AppThemePalette {
   final Color onAccent;
   final Color success;
   final Color warning;
+  final Color info;
   final Color danger;
   final Color shadow;
 }
@@ -89,6 +91,7 @@ class AppThemeColors {
     onAccent: Color(0xFFFFFFFF),
     success: Color(0xFF34C759),
     warning: Color(0xFFFF9F0A),
+    info: Color(0xFF5BB8FF),
     danger: Color(0xFFFF453A),
     shadow: Color(0x14000000),
   );
@@ -110,6 +113,7 @@ class AppThemeColors {
     onAccent: Color(0xFFFFFFFF),
     success: Color(0xFF34C759),
     warning: Color(0xFFFF9F0A),
+    info: Color(0xFF8BD3FF),
     danger: Color(0xFFFF453A),
     shadow: Color(0x2E000000),
   );
@@ -201,6 +205,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.textTertiary,
     required this.success,
     required this.warning,
+    required this.info,
     required this.shadow,
   });
 
@@ -215,6 +220,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   final Color textTertiary;
   final Color success;
   final Color warning;
+  final Color info;
   final Color shadow;
 
   @override
@@ -230,6 +236,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     Color? textTertiary,
     Color? success,
     Color? warning,
+    Color? info,
     Color? shadow,
   }) {
     return AppThemeTokens(
@@ -244,6 +251,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       textTertiary: textTertiary ?? this.textTertiary,
       success: success ?? this.success,
       warning: warning ?? this.warning,
+      info: info ?? this.info,
       shadow: shadow ?? this.shadow,
     );
   }
@@ -271,6 +279,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
           Color.lerp(textTertiary, other.textTertiary, t) ?? textTertiary,
       success: Color.lerp(success, other.success, t) ?? success,
       warning: Color.lerp(warning, other.warning, t) ?? warning,
+      info: Color.lerp(info, other.info, t) ?? info,
       shadow: Color.lerp(shadow, other.shadow, t) ?? shadow,
     );
   }
@@ -314,6 +323,7 @@ class AppTheme {
     textTertiary: AppThemeColors.light.textTertiary,
     success: AppThemeColors.light.success,
     warning: AppThemeColors.light.warning,
+    info: AppThemeColors.light.info,
     shadow: AppThemeColors.light.shadow,
   );
 
@@ -329,6 +339,7 @@ class AppTheme {
     textTertiary: AppThemeColors.dark.textTertiary,
     success: AppThemeColors.dark.success,
     warning: AppThemeColors.dark.warning,
+    info: AppThemeColors.dark.info,
     shadow: AppThemeColors.dark.shadow,
   );
 

@@ -229,6 +229,7 @@ void main() {
               id TEXT PRIMARY KEY,
               name TEXT NOT NULL,
               birthdate TEXT NOT NULL,
+              gender TEXT NOT NULL DEFAULT 'ratherNotSay',
               units TEXT NOT NULL DEFAULT 'metric',
               createdAt TEXT NOT NULL,
               theme TEXT NOT NULL DEFAULT 'dark'
@@ -375,6 +376,7 @@ void main() {
             'WorkoutTemplate',
           ]),
         );
+        expect(await columnNames(db, 'UserData'), contains('gender'));
 
         final seededExercises = await db.query('Exercise', orderBy: 'slug ASC');
         expect(seededExercises.map((row) => row['slug']), [
@@ -442,6 +444,7 @@ void main() {
           'WorkoutTemplate',
         ]),
       );
+      expect(await columnNames(db, 'UserData'), contains('gender'));
 
       final workoutSet = await db.query(
         'WorkoutSet',
@@ -459,6 +462,7 @@ void main() {
 
       expect(await columnNames(db, 'Workout'), contains('description'));
       expect(await columnNames(db, 'Workout'), contains('mood'));
+      expect(await columnNames(db, 'UserData'), contains('gender'));
       expect(
         await columnNames(db, 'WorkoutExercise'),
         contains('workoutTemplateId'),

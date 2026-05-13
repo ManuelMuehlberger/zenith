@@ -414,6 +414,47 @@ void main() {
       });
     });
 
+    group('recordWeightEntry', () {
+      test('should append a new weight entry to the current profile', () async {
+        when(
+          mockWeightEntryDao.addWeightEntryForUser(any, any),
+        ).thenAnswer((_) async => 1);
+        userService.currentProfileForTesting = testUser;
+
+        final beforeCount = testUser.weightHistory.length;
+        final timestamp = DateTime(2026, 5, 13, 18, 30);
+
+        final entry = await userService.recordWeightEntry(
+          value: 73.8,
+          timestamp: timestamp,
+        );
+
+        verify(
+          mockWeightEntryDao.addWeightEntryForUser('user123', entry),
+        ).called(1);
+        expect(userService.currentProfile, isNotNull);
+        expect(
+          userService.currentProfile!.weightHistory,
+          hasLength(beforeCount + 1),
+        );
+        expect(userService.currentProfile!.weightHistory.last.value, 73.8);
+        expect(
+          userService.currentProfile!.weightHistory.last.timestamp,
+          timestamp,
+        );
+      });
+
+      test('should throw when no profile is loaded', () {
+        userService.resetForTesting();
+
+        expect(
+          () => userService.recordWeightEntry(value: 72.0),
+          throwsA(isA<StateError>()),
+        );
+        verifyNever(mockWeightEntryDao.addWeightEntryForUser(any, any));
+      });
+    });
+
     group('clearUserData', () {
       test('should clear all user data', () async {
         // Arrange

@@ -1,10 +1,13 @@
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zenith/constants/app_constants.dart';
+import 'package:zenith/models/user_data.dart';
 import 'package:zenith/models/workout.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/models/workout_template.dart';
+import 'package:zenith/services/dao/weight_entry_dao.dart';
 import 'package:zenith/services/dao/workout_dao.dart';
 import 'package:zenith/services/dao/workout_exercise_dao.dart';
 import 'package:zenith/services/dao/workout_set_dao.dart';
@@ -65,6 +68,19 @@ class FakeWorkoutTemplateDao extends WorkoutTemplateDao {
   }
 }
 
+class FakeWeightEntryDao extends WeightEntryDao {
+  final List<(String userId, WeightEntry entry)> insertedWeightEntries = [];
+
+  @override
+  Future<int> addWeightEntryForUser(
+    String userDataId,
+    WeightEntry weightEntry,
+  ) async {
+    insertedWeightEntries.add((userDataId, weightEntry));
+    return 1;
+  }
+}
+
 class SequenceRandom implements Random {
   SequenceRandom({
     List<int> nextInts = const [],
@@ -118,8 +134,10 @@ void main() {
     late FakeWorkoutExerciseDao workoutExerciseDao;
     late FakeWorkoutSetDao workoutSetDao;
     late FakeWorkoutTemplateDao workoutTemplateDao;
+    late FakeWeightEntryDao weightEntryDao;
     late int loadExercisesCallCount;
     late int refreshWorkoutDataCallCount;
+    late int refreshUserProfileCallCount;
 
     setUp(() {
       service = DebugDataService.instance;
@@ -129,19 +147,26 @@ void main() {
       workoutExerciseDao = FakeWorkoutExerciseDao();
       workoutSetDao = FakeWorkoutSetDao();
       workoutTemplateDao = FakeWorkoutTemplateDao();
+      weightEntryDao = FakeWeightEntryDao();
       loadExercisesCallCount = 0;
       refreshWorkoutDataCallCount = 0;
+      refreshUserProfileCallCount = 0;
 
       service.workoutDao = workoutDao;
       service.workoutExerciseDao = workoutExerciseDao;
       service.workoutSetDao = workoutSetDao;
       service.workoutTemplateDao = workoutTemplateDao;
+      service.weightEntryDao = weightEntryDao;
       service.loadExercises = () async {
         loadExercisesCallCount++;
       };
       service.refreshWorkoutData = () async {
         refreshWorkoutDataCallCount++;
       };
+      service.refreshUserProfile = () async {
+        refreshUserProfileCallCount++;
+      };
+      service.currentProfileProvider = () => null;
     });
 
     tearDown(() {
@@ -171,8 +196,10 @@ void main() {
 
         expect(loadExercisesCallCount, 1);
         expect(refreshWorkoutDataCallCount, 1);
+        expect(refreshUserProfileCallCount, 0);
         expect(workoutTemplateDao.insertedTemplates, hasLength(1));
         expect(workoutDao.insertedWorkouts, isNotEmpty);
+        expect(weightEntryDao.insertedWeightEntries, isEmpty);
         expect(
           workoutDao.insertedWorkouts.map((workout) => workout.name),
           everyElement('Custom Day'),
@@ -303,6 +330,7 @@ void main() {
         expect(loadExercisesCallCount, 1);
         expect(refreshWorkoutDataCallCount, 1);
         expect(workoutDao.insertedWorkouts, hasLength(3));
+        expect(weightEntryDao.insertedWeightEntries, isEmpty);
         expect(
           workoutDao.insertedWorkouts.map((workout) => workout.startedAt!.day),
           [8, 10, 12],
@@ -342,6 +370,7 @@ void main() {
           .where((exercise) => exercise.workoutTemplateId == template.id)
           .toList();
       expect(templateExercises, hasLength(2));
+      expect(weightEntryDao.insertedWeightEntries, isEmpty);
     });
 
     test(
@@ -375,6 +404,64 @@ void main() {
           expect(set.actualReps, greaterThanOrEqualTo(1));
           expect(set.isCompleted, isTrue);
         }
+      },
+    );
+
+    test(
+      'generateDebugData adds weight entries for the active profile',
+      () async {
+        service.weeksToGenerate = 12;
+        service.nowProvider = () => DateTime(2025, 1, 15, 12);
+        service.currentProfileProvider = () => UserData(
+          id: 'user-1',
+          name: 'Tester',
+          birthdate: DateTime(1990, 1, 1),
+          units: Units.metric,
+          weightHistory: [
+            WeightEntry(timestamp: DateTime(2024, 12, 31), value: 74.0),
+          ],
+          createdAt: DateTime(2024, 1, 1),
+          theme: 'system',
+        );
+        service.workoutTemplatesForTesting = [
+          {
+            'name': 'Custom Day',
+            'exercises': [
+              {'slug': 'bench-press', 'baseWeight': 60.0, 'baseReps': 8},
+            ],
+          },
+        ];
+        service.random = Random(10);
+
+        await service.generateDebugData();
+
+        expect(refreshWorkoutDataCallCount, 1);
+        expect(refreshUserProfileCallCount, 1);
+        expect(
+          weightEntryDao.insertedWeightEntries,
+          hasLength(workoutDao.insertedWorkouts.length),
+        );
+
+        final weightValues = weightEntryDao.insertedWeightEntries
+            .map((entry) => entry.$2.value)
+            .toList();
+        final deltas = [
+          for (int i = 1; i < weightValues.length; i++)
+            weightValues[i] - weightValues[i - 1],
+        ];
+
+        for (int i = 0; i < weightEntryDao.insertedWeightEntries.length; i++) {
+          final seededWeight = weightEntryDao.insertedWeightEntries[i];
+          final workout = workoutDao.insertedWorkouts[i];
+
+          expect(seededWeight.$1, 'user-1');
+          expect(seededWeight.$2.timestamp, workout.completedAt);
+          expect(seededWeight.$2.value, greaterThan(0));
+        }
+
+        expect(weightValues.toSet().length, greaterThan(4));
+        expect(deltas.any((delta) => delta > 0), isTrue);
+        expect(deltas.any((delta) => delta < 0), isTrue);
       },
     );
   });

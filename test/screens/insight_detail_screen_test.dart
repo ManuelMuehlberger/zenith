@@ -1,5 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/screens/insight_detail_screen.dart';
+import 'package:zenith/services/insights_service.dart';
+import 'package:zenith/theme/app_theme.dart';
 
 void main() {
   group('InsightDetailScreen layout helpers', () {
@@ -74,6 +77,46 @@ void main() {
         384,
       );
       expect(insightDetailChartSectionHeight, 366);
+    });
+  });
+
+  group('InsightDetailScreen filters', () {
+    setUp(() {
+      InsightsService.instance.reset();
+      InsightsService.instance.setWorkoutsProvider(() async => []);
+    });
+
+    tearDown(() {
+      InsightsService.instance.reset();
+    });
+
+    testWidgets('can hide workout filters while keeping timeframe control', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: InsightDetailScreen(
+            title: 'Body Weight',
+            icon: Icons.monitor_weight_outlined,
+            color: Colors.lightBlue,
+            unit: 'kg',
+            showFilters: false,
+            dataFetcher: (timeframe, months, filters) async => [],
+            chartBuilder: (context, data, timeframe, months) =>
+                const SizedBox.shrink(),
+            mainValueBuilder: (data, timeframe) => '0',
+            subLabelBuilder: (data, timeframe) => '',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Workout'), findsNothing);
+      expect(find.text('Muscle'), findsNothing);
+      expect(find.text('Equipment'), findsNothing);
+      expect(find.text('Bodyweight'), findsNothing);
+      expect(find.text('6M'), findsOneWidget);
     });
   });
 }

@@ -72,6 +72,7 @@ class InsightCard<T> extends StatelessWidget {
   final double? height;
   final String? heroTag;
   final bool isExpandable;
+  final bool showFiltersInDetail;
 
   const InsightCard({
     super.key,
@@ -94,6 +95,7 @@ class InsightCard<T> extends StatelessWidget {
     this.height,
     this.heroTag,
     this.isExpandable = true,
+    this.showFiltersInDetail = true,
   });
 
   @override
@@ -158,6 +160,7 @@ class InsightCard<T> extends StatelessWidget {
               axisBuilder: (context, data, timeframe, months) {
                 return axisBuilder?.call(context, data as T, timeframe, months);
               },
+              showFilters: showFiltersInDetail,
               heroTag: heroTag,
             )
           : null,

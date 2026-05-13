@@ -9,6 +9,7 @@ import 'dao/workout_exercise_dao.dart';
 import 'dao/workout_set_dao.dart';
 import 'exercise_service.dart';
 import 'live_workout_notification_service.dart';
+import 'user_service.dart';
 import 'workout_service.dart';
 
 class WorkoutSessionService extends ChangeNotifier {
@@ -45,6 +46,16 @@ class WorkoutSessionService extends ChangeNotifier {
   ExerciseService _exerciseService = ExerciseService.instance;
   @visibleForTesting
   set exerciseService(ExerciseService svc) => _exerciseService = svc;
+
+  Future<void> Function(double value, DateTime timestamp) _recordWeightEntry =
+      (value, timestamp) => UserService.instance.recordWeightEntry(
+        value: value,
+        timestamp: timestamp,
+      );
+  @visibleForTesting
+  set recordWeightEntry(
+    Future<void> Function(double value, DateTime timestamp) callback,
+  ) => _recordWeightEntry = callback;
 
   Workout? _currentSession;
   @visibleForTesting
@@ -473,6 +484,7 @@ class WorkoutSessionService extends ChangeNotifier {
     String? notes,
     int? mood,
     Duration? durationOverride,
+    double? postWorkoutWeight,
   }) async {
     _logger.info('Completing workout session: ${_currentSession?.id}');
     final session = _currentSession;
@@ -514,6 +526,12 @@ class WorkoutSessionService extends ChangeNotifier {
 
     await _workoutDao.updateWorkout(completedSession);
     _logger.fine('Saved completed session to database');
+
+    if (postWorkoutWeight != null) {
+      await _recordWeightEntry(postWorkoutWeight, endTime);
+      _logger.fine('Recorded post-workout weight entry');
+    }
+
     await WorkoutService.instance.loadData();
 
     await _notificationService.stopService();

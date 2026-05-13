@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
@@ -6,9 +7,11 @@ import 'package:pull_down_button/pull_down_button.dart';
 
 import '../../constants/app_constants.dart';
 import '../../screens/insights/insights_view_data.dart';
+import '../../services/insights/weight_trend_provider.dart';
 import '../../services/insights/workout_insights_provider.dart';
 import '../../services/insights/workout_trend_provider.dart';
 import '../../services/insights_service.dart';
+import '../../services/user_service.dart';
 import '../../theme/app_theme.dart';
 import '../dated_workout_list_view.dart';
 import '../profile_icon_button.dart';
@@ -287,7 +290,6 @@ class InsightsGraphCardsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.appScheme;
-
     final providerFilters = filters.toProviderFilters();
 
     return Container(
@@ -452,12 +454,77 @@ class InsightsTrendsSection extends StatelessWidget {
     required this.weightUnitLabel,
   });
 
+  List<double> _buildWeightPreviewValues(List<InsightDataPoint> data) {
+    final measuredValues = data
+        .where((point) => (point.count ?? 0) > 0)
+        .map((point) => point.value)
+        .toList();
+    if (measuredValues.isEmpty) {
+      return data.map((_) => 0.0).toList();
+    }
+
+    var lastKnown = measuredValues.first;
+    return data.map((point) {
+      if ((point.count ?? 0) > 0) {
+        lastKnown = point.value;
+      }
+      return lastKnown;
+    }).toList();
+  }
+
+  double? _buildWeightPreviewMinY(
+    List<InsightDataPoint> data,
+    String unitLabel,
+  ) {
+    final values = _buildWeightPreviewValues(
+      data,
+    ).where((value) => value > 0).toList();
+    if (values.isEmpty) {
+      return null;
+    }
+
+    final minValue = values.reduce(math.min);
+    final maxValue = values.reduce(math.max);
+    final halfSpan = math.max(
+      unitLabel == 'kg' ? 4.0 : 9.0,
+      (maxValue - minValue) * 2.5,
+    );
+    final center = (minValue + maxValue) / 2;
+    return center - halfSpan;
+  }
+
+  double? _buildWeightPreviewMaxY(
+    List<InsightDataPoint> data,
+    String unitLabel,
+  ) {
+    final values = _buildWeightPreviewValues(
+      data,
+    ).where((value) => value > 0).toList();
+    if (values.isEmpty) {
+      return null;
+    }
+
+    final minValue = values.reduce(math.min);
+    final maxValue = values.reduce(math.max);
+    final halfSpan = math.max(
+      unitLabel == 'kg' ? 4.0 : 9.0,
+      (maxValue - minValue) * 2.5,
+    );
+    final center = (minValue + maxValue) / 2;
+    return center + halfSpan;
+  }
+
   @override
   Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: UserService.instance,
+      builder: _buildTrendsContent,
+    );
+  }
+
+  Widget _buildTrendsContent(BuildContext context, Widget? child) {
     final textTheme = context.appText;
     final colors = context.appColors;
-
-    final providerFilters = filters.toProviderFilters();
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
@@ -472,35 +539,84 @@ class InsightsTrendsSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          TrendInsightCard(
-            title: 'Workouts',
-            color: colors.warning,
-            unit: 'workouts',
-            icon: CupertinoIcons.flame_fill,
-            filters: providerFilters,
-            provider: WorkoutTrendProvider(WorkoutTrendType.count),
-          ),
-          const SizedBox(height: 12),
-          TrendInsightCard(
-            title: 'Hours',
-            color: context.appScheme.primary,
-            unit: 'hours',
-            icon: CupertinoIcons.clock_fill,
-            filters: providerFilters,
-            provider: WorkoutTrendProvider(WorkoutTrendType.duration),
-          ),
-          const SizedBox(height: 12),
-          TrendInsightCard(
-            title: 'Weight Lifted',
-            color: colors.success,
-            unit: weightUnitLabel,
-            icon: CupertinoIcons.chart_bar_square_fill,
-            filters: providerFilters,
-            provider: WorkoutTrendProvider(WorkoutTrendType.volume),
-          ),
+          ..._buildTrendCards(context),
         ],
       ),
     );
+  }
+
+  List<Widget> _buildTrendCards(BuildContext context) {
+    final colors = context.appColors;
+    final providerFilters = filters.toProviderFilters();
+    final weightFilters = {'timeframe': filters.timeframe};
+
+    return [
+      TrendInsightCard(
+        title: 'Workouts',
+        color: colors.warning,
+        unit: 'workouts',
+        icon: CupertinoIcons.flame_fill,
+        filters: providerFilters,
+        provider: WorkoutTrendProvider(WorkoutTrendType.count),
+      ),
+      const SizedBox(height: 12),
+      TrendInsightCard(
+        title: 'Hours',
+        color: context.appScheme.primary,
+        unit: 'hours',
+        icon: CupertinoIcons.clock_fill,
+        filters: providerFilters,
+        provider: WorkoutTrendProvider(WorkoutTrendType.duration),
+      ),
+      const SizedBox(height: 12),
+      TrendInsightCard(
+        title: 'Weight Lifted',
+        color: colors.success,
+        unit: weightUnitLabel,
+        icon: CupertinoIcons.chart_bar_square_fill,
+        filters: providerFilters,
+        provider: WorkoutTrendProvider(WorkoutTrendType.volume),
+      ),
+      const SizedBox(height: 12),
+      _buildBodyWeightTrendCard(colors, weightFilters),
+    ];
+  }
+
+  Widget _buildBodyWeightTrendCard(
+    AppThemeTokens colors,
+    Map<String, dynamic> weightFilters,
+  ) {
+    return TrendInsightCard(
+      title: 'Body Weight',
+      color: colors.info,
+      unit: weightUnitLabel,
+      icon: Icons.monitor_weight_outlined,
+      filters: weightFilters,
+      provider: WeightTrendProvider(),
+      showFiltersInDetail: false,
+      compactValuesBuilder: _buildWeightPreviewValues,
+      compactMinYBuilder: (data) =>
+          _buildWeightPreviewMinY(data, weightUnitLabel),
+      compactMaxYBuilder: (data) =>
+          _buildWeightPreviewMaxY(data, weightUnitLabel),
+      mainValueBuilder: _buildBodyWeightMainValue,
+      subLabelBuilder: _buildBodyWeightSubLabel,
+    );
+  }
+
+  String _buildBodyWeightMainValue(List<InsightDataPoint> data) {
+    final latestPoint = data.lastWhere(
+      (point) => point.count != null && point.count! > 0,
+      orElse: () => InsightDataPoint(date: DateTime.now(), value: 0),
+    );
+    return latestPoint.value.toStringAsFixed(1);
+  }
+
+  String _buildBodyWeightSubLabel(List<InsightDataPoint> data) {
+    final hasData = data.any(
+      (point) => point.count != null && point.count! > 0,
+    );
+    return hasData ? 'Latest Entry' : '';
   }
 }
 
