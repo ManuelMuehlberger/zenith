@@ -131,7 +131,7 @@ class Workout {
       completedAt: completedAt == _undefined
           ? this.completedAt
           : completedAt as DateTime?,
-        mood: mood == _undefined ? this.mood : mood as int?,
+      mood: mood == _undefined ? this.mood : mood as int?,
     );
   }
 

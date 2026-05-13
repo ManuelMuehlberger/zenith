@@ -2,6 +2,7 @@ import '../../models/workout.dart';
 import '../../services/workout_service.dart';
 import 'insights_view_data.dart';
 
+// policy: no-test-needed thin adapter around WorkoutService lookups covered by screen flows.
 class InsightsHistoryMapper {
   static List<WorkoutDisplayItem> buildDisplayItems(List<Workout> workouts) {
     return workouts.map((workout) {
@@ -14,10 +15,7 @@ class InsightsHistoryMapper {
         details = null;
       }
 
-      return WorkoutDisplayItem(
-        workout: workout,
-        workoutDetails: details,
-      );
+      return WorkoutDisplayItem(workout: workout, workoutDetails: details);
     }).toList();
   }
 }

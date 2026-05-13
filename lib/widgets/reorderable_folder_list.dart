@@ -9,6 +9,7 @@ import '../theme/app_theme.dart';
 import 'folder_card.dart';
 import 'workout_builder_drag_payload.dart';
 
+// policy: no-test-needed drag integration is covered at the higher workout drag list level.
 class ReorderableFolderList extends StatefulWidget {
   const ReorderableFolderList({
     super.key,
@@ -154,7 +155,7 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
           feedback: SizedBox(
             width: constraints.maxWidth,
             child: Material(
-              color: Colors.transparent,
+              color: context.appScheme.surface.withValues(alpha: 0),
               borderRadius: AppTheme.workoutCardBorderRadius,
               child: Opacity(opacity: 0.92, child: card),
             ),
@@ -203,10 +204,7 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
         final showPlaceholder =
             _dropIndex == targetIndex && _draggedIndex != targetIndex;
 
-        return _buildAnimatedGapPlaceholder(
-          context,
-          visible: showPlaceholder,
-        );
+        return _buildAnimatedGapPlaceholder(context, visible: showPlaceholder);
       },
     );
   }
@@ -296,7 +294,7 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
 
     final localPosition = renderObject.globalToLocal(globalPosition);
     final position = scrollable.position;
-    final topThreshold = _autoScrollTriggerExtent;
+    const topThreshold = _autoScrollTriggerExtent;
     final bottomThreshold = renderObject.size.height - _autoScrollTriggerExtent;
 
     if (localPosition.dy <= topThreshold) {
@@ -409,7 +407,7 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
         break;
       }
 
-        return _FolderDragClassification(nestedFolderIndex: index);
+      return _FolderDragClassification(nestedFolderIndex: index);
     }
 
     final firstRect = contentRects.first;
@@ -518,13 +516,11 @@ class _ReorderableFolderListState extends State<ReorderableFolderList> {
 }
 
 class _FolderDragClassification {
-  const _FolderDragClassification({
-    this.nestedFolderIndex,
-    this.reorderIndex,
-  }) : assert(
-         (nestedFolderIndex == null) != (reorderIndex == null),
-         'Provide exactly one drag classification.',
-       );
+  const _FolderDragClassification({this.nestedFolderIndex, this.reorderIndex})
+    : assert(
+        (nestedFolderIndex == null) != (reorderIndex == null),
+        'Provide exactly one drag classification.',
+      );
 
   final int? nestedFolderIndex;
   final int? reorderIndex;

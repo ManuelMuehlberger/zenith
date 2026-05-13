@@ -4,20 +4,14 @@ class WorkoutDisplayItem {
   final Workout workout;
   final Workout? workoutDetails;
 
-  const WorkoutDisplayItem({
-    required this.workout,
-    this.workoutDetails,
-  });
+  const WorkoutDisplayItem({required this.workout, this.workoutDetails});
 }
 
 class InsightsTimeframeOption {
   final String label;
   final int months;
 
-  const InsightsTimeframeOption({
-    required this.label,
-    required this.months,
-  });
+  const InsightsTimeframeOption({required this.label, required this.months});
 }
 
 class InsightsFilterSnapshot {

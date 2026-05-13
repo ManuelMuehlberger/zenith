@@ -25,13 +25,19 @@ class WorkoutTimelineGroupingService {
     final effectiveNow = now ?? DateTime.now();
     // Use start of day for cutoff to ensure we include workouts from the full 'recentDays' window
     // regardless of the current time of day.
-    final startOfToday = DateTime(effectiveNow.year, effectiveNow.month, effectiveNow.day);
+    final startOfToday = DateTime(
+      effectiveNow.year,
+      effectiveNow.month,
+      effectiveNow.day,
+    );
     final cutoff = startOfToday.subtract(Duration(days: recentDays));
 
-    final completed = workouts.where((w) {
-      if (w.status != WorkoutStatus.completed) return false;
-      return _timestampOf(w) != null;
-    }).toList(growable: false);
+    final completed = workouts
+        .where((w) {
+          if (w.status != WorkoutStatus.completed) return false;
+          return _timestampOf(w) != null;
+        })
+        .toList(growable: false);
 
     final recent = <Workout>[];
     final Map<MonthKey, List<Workout>> byMonth = {};
@@ -55,26 +61,23 @@ class WorkoutTimelineGroupingService {
     for (final key in keys) {
       final items = byMonth[key]!;
       items.sort((a, b) => _timestampOf(b)!.compareTo(_timestampOf(a)!));
-      archiveGroups.add(MonthlyWorkoutGroup.fromWorkouts(key: key, workouts: items));
+      archiveGroups.add(
+        MonthlyWorkoutGroup.fromWorkouts(key: key, workouts: items),
+      );
     }
 
-    return WorkoutTimelineBuckets(
-      recent: recent,
-      archive: archiveGroups,
-    );
+    return WorkoutTimelineBuckets(recent: recent, archive: archiveGroups);
   }
 
-  static DateTime? _timestampOf(Workout workout) => workout.completedAt ?? workout.startedAt;
+  static DateTime? _timestampOf(Workout workout) =>
+      workout.completedAt ?? workout.startedAt;
 }
 
 class WorkoutTimelineBuckets {
   final List<Workout> recent;
   final List<MonthlyWorkoutGroup> archive;
 
-  const WorkoutTimelineBuckets({
-    required this.recent,
-    required this.archive,
-  });
+  const WorkoutTimelineBuckets({required this.recent, required this.archive});
 }
 
 /// Year+month identifier with ordering.
@@ -130,7 +133,10 @@ class MonthlyWorkoutGroup {
     required List<Workout> workouts,
   }) {
     final count = workouts.length;
-    final totalVolume = workouts.fold<double>(0, (sum, w) => sum + w.totalWeight);
+    final totalVolume = workouts.fold<double>(
+      0,
+      (sum, w) => sum + w.totalWeight,
+    );
     final totalTime = workouts.fold<Duration>(Duration.zero, (sum, w) {
       final s = w.startedAt;
       final c = w.completedAt;

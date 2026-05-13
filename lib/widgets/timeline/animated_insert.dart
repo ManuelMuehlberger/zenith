@@ -20,7 +20,10 @@ class AnimatedInsert extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+    );
 
     Widget result = FadeTransition(
       opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curved),

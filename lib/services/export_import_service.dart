@@ -68,10 +68,7 @@ class ExportImportService {
     required FileType type,
     required bool allowMultiple,
   }) {
-    return FilePicker.platform.pickFiles(
-      type: type,
-      allowMultiple: allowMultiple,
-    );
+    return FilePicker.pickFiles(type: type, allowMultiple: allowMultiple);
   }
 
   static Directory _defaultTempDirectory() => Directory.systemTemp;

@@ -4,7 +4,9 @@ import 'package:zenith/models/workout.dart';
 import 'package:zenith/screens/workout_completion_screen.dart';
 
 void main() {
-  testWidgets('Mood order is Happy (left) to Sad (right)', (WidgetTester tester) async {
+  testWidgets('Mood order is Happy (left) to Sad (right)', (
+    WidgetTester tester,
+  ) async {
     final start = DateTime(2025, 1, 1, 12, 0, 0);
     final session = Workout(
       name: 'Mood Order Test',
@@ -14,9 +16,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: WorkoutCompletionScreen(session: session),
-      ),
+      MaterialApp(home: WorkoutCompletionScreen(session: session)),
     );
 
     // Ensure the mood row is visible

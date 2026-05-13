@@ -357,6 +357,26 @@ void main() {
     );
 
     test(
+      'restartServiceIfNeeded resumes the supplied workout position after a stop',
+      () async {
+        await service.startService(buildSession(), 0, 1);
+        await service.stopService();
+
+        await service.restartServiceIfNeeded(buildSession(), 1, 0);
+
+        expect(service.isServiceRunning, isTrue);
+        expect(
+          notificationsPlugin.shownNotifications.last.title,
+          startsWith('row | '),
+        );
+        expect(
+          notificationsPlugin.shownNotifications.last.body,
+          'Set 1 of 1 | 12 reps | Final exercise!',
+        );
+      },
+    );
+
+    test(
       'stopService is a no-op when the service is already stopped',
       () async {
         await service.stopService();

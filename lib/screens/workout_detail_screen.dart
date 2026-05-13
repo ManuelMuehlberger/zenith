@@ -694,7 +694,7 @@ class _ExerciseSessionCard extends StatelessWidget {
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             borderRadius: AppTheme.workoutCardBorderRadius,
           ),
           child: Column(
@@ -797,10 +797,11 @@ class _ExerciseSessionCard extends StatelessWidget {
                                         children: [
                                           TextSpan(
                                             text: '${metric.label}: ',
-                                            style: textTheme.bodyMedium?.copyWith(
-                                              color: colors.textSecondary,
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                            style: textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  color: colors.textSecondary,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
                                           ),
                                           TextSpan(text: metric.value),
                                         ],

@@ -324,5 +324,30 @@ void main() {
       expect(loadUserProfileCalls, 2);
       expect(loadActiveSessionCalls, 2);
     });
+
+    test('resetForTesting clears a successful initialization cache', () async {
+      var initializeNotificationsCalls = 0;
+      var loadExercisesCalls = 0;
+
+      final service = AppStartupService(
+        initializeNotifications: () async {
+          initializeNotificationsCalls += 1;
+        },
+        initializeNotificationCallback: () {},
+        loadExercises: () async {
+          loadExercisesCalls += 1;
+        },
+        loadWorkoutData: () async {},
+        loadUserProfile: () async {},
+        loadActiveSession: () async {},
+      );
+
+      await service.initializeMainApp();
+      service.resetForTesting();
+      await service.initializeMainApp();
+
+      expect(initializeNotificationsCalls, 2);
+      expect(loadExercisesCalls, 2);
+    });
   });
 }

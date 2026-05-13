@@ -6,18 +6,13 @@ class InsightsCacheSnapshot {
   final Map<String, dynamic> cache;
   final DateTime lastUpdate;
 
-  const InsightsCacheSnapshot({
-    required this.cache,
-    required this.lastUpdate,
-  });
+  const InsightsCacheSnapshot({required this.cache, required this.lastUpdate});
 }
 
 class InsightsCacheStore {
   final String cacheKey;
 
-  const InsightsCacheStore({
-    required this.cacheKey,
-  });
+  const InsightsCacheStore({required this.cacheKey});
 
   Future<InsightsCacheSnapshot?> load() async {
     final prefs = await SharedPreferences.getInstance();

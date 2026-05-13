@@ -26,16 +26,19 @@ void main() {
       expect(MuscleGroup.fromName('Hamstrings'), MuscleGroup.hamstrings);
       expect(MuscleGroup.fromName('Glutes'), MuscleGroup.glutes);
       expect(MuscleGroup.fromName('Adductors'), MuscleGroup.adductors);
+      expect(MuscleGroup.fromName('Abductors'), MuscleGroup.abductors);
       expect(MuscleGroup.fromName('Lower Back'), MuscleGroup.lowerBack);
       expect(MuscleGroup.fromName('Trapezius'), MuscleGroup.trapezius);
       expect(
         MuscleGroup.fromName('Forearm Flexors'),
         MuscleGroup.forearmFlexors,
       );
+      expect(MuscleGroup.fromName('Forearms'), MuscleGroup.forearms);
       expect(MuscleGroup.fromName('Calves'), MuscleGroup.calves);
       expect(MuscleGroup.fromName('Abs'), MuscleGroup.abs);
       expect(MuscleGroup.fromName('Obliques'), MuscleGroup.obliques);
       expect(MuscleGroup.fromName('Back'), MuscleGroup.back);
+      expect(MuscleGroup.fromName('Lats'), MuscleGroup.lats);
       expect(MuscleGroup.fromName('Legs'), MuscleGroup.legs);
       expect(MuscleGroup.fromName('Cardio'), MuscleGroup.cardio);
     });
@@ -93,6 +96,7 @@ void main() {
         MuscleGroup.fromMap({'name': 'Lower Back'}),
         MuscleGroup.lowerBack,
       );
+      expect(MuscleGroup.fromMap({'name': 'Lats'}), MuscleGroup.lats);
       expect(MuscleGroup.fromMap({'name': 'NA'}), MuscleGroup.na);
     });
 

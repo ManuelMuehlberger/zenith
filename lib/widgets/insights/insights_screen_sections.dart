@@ -5,11 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
 import '../../constants/app_constants.dart';
-import '../../models/insights.dart';
 import '../../screens/insights/insights_view_data.dart';
-import '../../services/insights_service.dart';
 import '../../services/insights/workout_insights_provider.dart';
 import '../../services/insights/workout_trend_provider.dart';
+import '../../services/insights_service.dart';
 import '../../theme/app_theme.dart';
 import '../dated_workout_list_view.dart';
 import '../profile_icon_button.dart';

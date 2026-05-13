@@ -17,7 +17,7 @@ class UserService with ChangeNotifier {
     _userDao = UserDao();
     _weightEntryDao = WeightEntryDao();
   }
-  
+
   static UserService get instance => _instance;
 
   // Inject DAOs
@@ -36,11 +36,15 @@ class UserService with ChangeNotifier {
       if (users.isNotEmpty) {
         _currentProfile = users.first;
         _logger.fine('Found user profile with id: ${_currentProfile!.id}');
-        
-        final weightEntries = await _weightEntryDao.getWeightEntriesByUserId(_currentProfile!.id);
-        _currentProfile = _currentProfile!.copyWith(weightHistory: weightEntries);
+
+        final weightEntries = await _weightEntryDao.getWeightEntriesByUserId(
+          _currentProfile!.id,
+        );
+        _currentProfile = _currentProfile!.copyWith(
+          weightHistory: weightEntries,
+        );
         _logger.fine('Loaded ${weightEntries.length} weight entries for user');
-        
+
         notifyListeners();
         _logger.info('User profile loaded successfully');
       } else {
@@ -61,10 +65,10 @@ class UserService with ChangeNotifier {
       _logger.warning('User name is empty');
       throw ArgumentError('User name cannot be empty');
     }
-    
+
     try {
       final existingUser = await _userDao.getUserDataById(profile.id);
-      
+
       if (existingUser != null) {
         _logger.fine('Updating existing user profile');
         await _userDao.updateUserData(profile);
@@ -72,17 +76,19 @@ class UserService with ChangeNotifier {
         _logger.fine('Creating new user profile');
         await _userDao.insert(profile);
       }
-      
+
       _logger.fine('Saving weight history');
       for (final weightEntry in profile.weightHistory) {
         try {
           await _weightEntryDao.addWeightEntryForUser(profile.id, weightEntry);
         } catch (e) {
-          _logger.finer('Weight entry already exists, updating: ${weightEntry.id}');
+          _logger.finer(
+            'Weight entry already exists, updating: ${weightEntry.id}',
+          );
           await _weightEntryDao.updateWeightEntry(profile.id, weightEntry);
         }
       }
-      
+
       _currentProfile = profile;
       notifyListeners();
       _logger.info('User profile saved successfully');
@@ -117,7 +123,7 @@ class UserService with ChangeNotifier {
         _logger.fine('Deleting user: ${user.id}');
         await _userDao.delete(user.id);
       }
-      
+
       _currentProfile = null;
       notifyListeners();
       _logger.info('All user data cleared successfully');
@@ -129,10 +135,10 @@ class UserService with ChangeNotifier {
 
   String getGreeting() {
     if (_currentProfile == null) return 'Welcome';
-    
+
     final hour = DateTime.now().hour;
     String timeGreeting;
-    
+
     if (hour < 12) {
       timeGreeting = 'Good morning';
     } else if (hour < 17) {
@@ -140,7 +146,7 @@ class UserService with ChangeNotifier {
     } else {
       timeGreeting = 'Good evening';
     }
-    
+
     return '$timeGreeting, ${_currentProfile!.name}';
   }
 

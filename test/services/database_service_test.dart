@@ -9,14 +9,17 @@ void main() {
   });
 
   group('Active workout state', () {
-    test('saveActiveWorkoutState and getActiveWorkoutState round-trip', () async {
-      final state = {'id': 'active123', 'status': 'inProgress'};
-      await DatabaseService.instance.saveActiveWorkoutState(state);
-      final loaded = await DatabaseService.instance.getActiveWorkoutState();
-      expect(loaded, isNotNull);
-      expect(loaded!['id'], 'active123');
-      expect(loaded['status'], 'inProgress');
-    });
+    test(
+      'saveActiveWorkoutState and getActiveWorkoutState round-trip',
+      () async {
+        final state = {'id': 'active123', 'status': 'inProgress'};
+        await DatabaseService.instance.saveActiveWorkoutState(state);
+        final loaded = await DatabaseService.instance.getActiveWorkoutState();
+        expect(loaded, isNotNull);
+        expect(loaded!['id'], 'active123');
+        expect(loaded['status'], 'inProgress');
+      },
+    );
 
     test('clearActiveWorkoutState removes state', () async {
       await DatabaseService.instance.saveActiveWorkoutState({'foo': 'bar'});
@@ -44,18 +47,24 @@ void main() {
   });
 
   group('Data clearing', () {
-    test('clearAllData removes legacy workouts, settings, and active state', () async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList('workouts', ['{}']);
-      await prefs.setString('app_settings', '{"units":"imperial","theme":"light"}');
-      await prefs.setString('active_workout', '{"id":"active"}');
+    test(
+      'clearAllData removes legacy workouts, settings, and active state',
+      () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setStringList('workouts', ['{}']);
+        await prefs.setString(
+          'app_settings',
+          '{"units":"imperial","theme":"light"}',
+        );
+        await prefs.setString('active_workout', '{"id":"active"}');
 
-      await DatabaseService.instance.clearAllData();
+        await DatabaseService.instance.clearAllData();
 
-      expect(prefs.getStringList('workouts'), isNull);
-      expect(prefs.getString('app_settings'), isNull);
-      expect(prefs.getString('active_workout'), isNull);
-    });
+        expect(prefs.getStringList('workouts'), isNull);
+        expect(prefs.getString('app_settings'), isNull);
+        expect(prefs.getString('active_workout'), isNull);
+      },
+    );
   });
 
   // Additional varied-data robustness tests

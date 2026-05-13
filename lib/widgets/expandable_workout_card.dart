@@ -324,14 +324,14 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard> {
               children: [
                 Expanded(
                   child: _buildCenteredMetric(
-                    value: '${_exerciseCount}',
+                    value: '$_exerciseCount',
                     label: 'EX',
                   ),
                 ),
                 _buildMetricDivider(),
                 Expanded(
                   child: _buildCenteredMetric(
-                    value: '${_totalSets}',
+                    value: '$_totalSets',
                     label: 'SETS',
                   ),
                 ),
@@ -454,6 +454,7 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = context.appScheme;
     final colors = context.appColors;
+    final transparentColor = colorScheme.surface.withValues(alpha: 0);
     final shellColor = isDark
         ? colors.surfaceAlt
         : Color.alphaBlend(
@@ -461,11 +462,11 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard> {
             colors.surfaceAlt,
           );
     final shellBorderColor = isDark
-        ? Colors.transparent
+        ? transparentColor
         : colors.textTertiary.withValues(alpha: 0.14);
 
     return Material(
-      color: Colors.transparent,
+      color: transparentColor,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),

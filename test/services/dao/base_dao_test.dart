@@ -236,5 +236,20 @@ void main() {
         throwsA(isA<FormatException>()),
       );
     });
+
+    test('rethrows mapping errors from getAll', () async {
+      await database.insert(dao.tableName, {
+        'id': 'id-1',
+        'alt_id': 'alt-1',
+        'name': 'BAD',
+      });
+
+      final throwingDao = TestDao(database, throwOnStoredName: 'BAD');
+
+      await expectLater(
+        () => throwingDao.getAll(),
+        throwsA(isA<FormatException>()),
+      );
+    });
   });
 }

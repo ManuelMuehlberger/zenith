@@ -96,9 +96,9 @@ void main() {
           onFolderTap: (_) {},
           onRenamePressed: (_) {},
           onDeletePressed: (_) {},
-          onFolderReordered: (_, __) {},
-          onPayloadDroppedIntoFolder: (_, __) {},
-          canDropIntoFolder: (_, __) => true,
+          onFolderReordered: (_, _) {},
+          onPayloadDroppedIntoFolder: (_, _) {},
+          canDropIntoFolder: (_, _) => true,
           onDragStarted: (payload) => startedPayload = payload,
           onDragEnded: () {},
         ),
@@ -140,7 +140,7 @@ void main() {
             folderId: null,
             onTemplateTap: (_) {},
             onTemplateDeletePressed: (_) {},
-            onTemplateReordered: (_, __) {},
+            onTemplateReordered: (_, _) {},
             onAddWorkoutPressed: null,
             onDragStarted: (payload) => startedPayload = payload,
             onDragEnded: () {},
@@ -230,8 +230,8 @@ void main() {
             oldIndex = from;
             newIndex = to;
           },
-          onPayloadDroppedIntoFolder: (_, __) {},
-          canDropIntoFolder: (_, __) => true,
+          onPayloadDroppedIntoFolder: (_, _) {},
+          canDropIntoFolder: (_, _) => true,
           onDragStarted: (_) {},
           onDragEnded: () {},
         ),
@@ -279,9 +279,9 @@ void main() {
             onFolderTap: (_) {},
             onRenamePressed: (_) {},
             onDeletePressed: (_) {},
-            onFolderReordered: (_, __) {},
-            onPayloadDroppedIntoFolder: (_, __) {},
-            canDropIntoFolder: (_, __) => true,
+            onFolderReordered: (_, _) {},
+            onPayloadDroppedIntoFolder: (_, _) {},
+            canDropIntoFolder: (_, _) => true,
             onDragStarted: (_) {},
             onDragEnded: () {},
           ),
@@ -330,9 +330,9 @@ void main() {
             onFolderTap: (_) {},
             onRenamePressed: (_) {},
             onDeletePressed: (_) {},
-            onFolderReordered: (_, __) {},
-            onPayloadDroppedIntoFolder: (_, __) {},
-            canDropIntoFolder: (_, __) => true,
+            onFolderReordered: (_, _) {},
+            onPayloadDroppedIntoFolder: (_, _) {},
+            canDropIntoFolder: (_, _) => true,
             onDragStarted: (_) {},
             onDragEnded: () {},
           ),
@@ -388,10 +388,10 @@ void main() {
               oldIndex = from;
               newIndex = to;
             },
-            onPayloadDroppedIntoFolder: (_, __) {
+            onPayloadDroppedIntoFolder: (_, _) {
               nestedDropCount++;
             },
-            canDropIntoFolder: (_, __) => true,
+            canDropIntoFolder: (_, _) => true,
             onDragStarted: (_) {},
             onDragEnded: () {},
           ),
@@ -405,9 +405,7 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 400));
 
-      await gesture.moveTo(
-        Offset(folderBRect.center.dx, folderBRect.top + 6),
-      );
+      await gesture.moveTo(Offset(folderBRect.center.dx, folderBRect.top + 6));
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(gapIndicatorFinder(), findsOneWidget);
@@ -447,12 +445,12 @@ void main() {
           onFolderTap: (_) {},
           onRenamePressed: (_) {},
           onDeletePressed: (_) {},
-          onFolderReordered: (_, __) {},
+          onFolderReordered: (_, _) {},
           onPayloadDroppedIntoFolder: (payload, folder) {
             droppedPayload = payload;
             droppedFolder = folder;
           },
-          canDropIntoFolder: (_, __) => true,
+          canDropIntoFolder: (_, _) => true,
           onDragStarted: (_) {},
           onDragEnded: () {},
         ),
@@ -494,7 +492,7 @@ void main() {
           folderId: null,
           onTemplateTap: (_) {},
           onTemplateDeletePressed: (_) {},
-          onTemplateReordered: (_, __) {},
+          onTemplateReordered: (_, _) {},
           onAddWorkoutPressed: null,
           onDragStarted: (_) {},
           onDragEnded: () {},
@@ -529,7 +527,7 @@ void main() {
             folderId: null,
             onTemplateTap: (_) {},
             onTemplateDeletePressed: (_) {},
-            onTemplateReordered: (_, __) {},
+            onTemplateReordered: (_, _) {},
             onAddWorkoutPressed: null,
             onDragStarted: (_) {},
             onDragEnded: () {},

@@ -184,5 +184,28 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets('renders workout notes when present', (
+      WidgetTester tester,
+    ) async {
+      final now = DateTime.now();
+      final workout = Workout(
+        id: 'notes-workout',
+        name: 'Notes Session',
+        status: WorkoutStatus.completed,
+        startedAt: now.subtract(const Duration(hours: 2)),
+        completedAt: now,
+        notes: 'Focus on controlled tempo',
+        exercises: const [],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(home: WorkoutDetailScreen(workout: workout)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Notes'), findsOneWidget);
+      expect(find.text('Focus on controlled tempo'), findsOneWidget);
+    });
   });
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/screens/workout_builder_screen.dart';
@@ -79,35 +81,34 @@ void main() {
     },
   );
 
-  testWidgets(
-    'WorkoutBuilderScreen shows workouts before folders',
-    (tester) async {
-      await _pumpWorkoutBuilderScreen(tester);
+  testWidgets('WorkoutBuilderScreen shows workouts before folders', (
+    tester,
+  ) async {
+    await _pumpWorkoutBuilderScreen(tester);
 
-      final addWorkoutFinder = find.text('Add workout');
-      final addFolderFinder = find.text('Add folder');
-      final loaded = await _waitForFinder(tester, addWorkoutFinder);
+    final addWorkoutFinder = find.text('Add workout');
+    final addFolderFinder = find.text('Add folder');
+    final loaded = await _waitForFinder(tester, addWorkoutFinder);
 
-      if (!loaded || addFolderFinder.evaluate().isEmpty) {
-        expect(
-          find.byType(CircularProgressIndicator),
-          findsAtLeastNWidgets(1),
-          reason:
-              'WorkoutBuilderScreen did not finish loading in the test window; skipping section order assertion.',
-        );
-        return;
-      }
-
-      final workoutButtonTop = tester.getTopLeft(addWorkoutFinder).dy;
-      final folderButtonTop = tester.getTopLeft(addFolderFinder).dy;
-
+    if (!loaded || addFolderFinder.evaluate().isEmpty) {
       expect(
-        workoutButtonTop,
-        lessThan(folderButtonTop),
-        reason: 'Expected the workouts section to render above folders.',
+        find.byType(CircularProgressIndicator),
+        findsAtLeastNWidgets(1),
+        reason:
+            'WorkoutBuilderScreen did not finish loading in the test window; skipping section order assertion.',
       );
-    },
-  );
+      return;
+    }
+
+    final workoutButtonTop = tester.getTopLeft(addWorkoutFinder).dy;
+    final folderButtonTop = tester.getTopLeft(addFolderFinder).dy;
+
+    expect(
+      workoutButtonTop,
+      lessThan(folderButtonTop),
+      reason: 'Expected the workouts section to render above folders.',
+    );
+  });
 
   testWidgets(
     'WorkoutBuilderScreen breadcrumb helper pops to an existing ancestor route',
@@ -115,22 +116,16 @@ void main() {
       final navigatorKey = GlobalKey<NavigatorState>();
 
       await tester.pumpWidget(
-        MaterialApp(
-          navigatorKey: navigatorKey,
-          home: _routePage('root'),
-        ),
+        MaterialApp(navigatorKey: navigatorKey, home: _routePage('root')),
       );
 
       final navigator = navigatorKey.currentState!;
-      navigator.push(_folderRoute('test'));
+      unawaited(navigator.push(_folderRoute('test')));
       await tester.pumpAndSettle();
-      navigator.push(_folderRoute('test2'));
+      unawaited(navigator.push(_folderRoute('test2')));
       await tester.pumpAndSettle();
 
-      final found = WorkoutBuilderScreen.popToFolderInStack(
-        navigator,
-        'test',
-      );
+      final found = WorkoutBuilderScreen.popToFolderInStack(navigator, 'test');
       await tester.pumpAndSettle();
 
       expect(found, isTrue);

@@ -13,32 +13,33 @@ void main() {
     );
   }
 
-  testWidgets('FolderCard does not preview move hint for ambient template drags', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      buildTestApp(
-        FolderCard(
-          folder: WorkoutFolder(id: 'folder-1', name: 'Push Workouts'),
-          itemCount: 3,
-          activeDragPayload: const TemplateDragPayload(
-            templateId: 'template-1',
-            index: 0,
-            parentFolderId: null,
+  testWidgets(
+    'FolderCard does not preview move hint for ambient template drags',
+    (tester) async {
+      await tester.pumpWidget(
+        buildTestApp(
+          FolderCard(
+            folder: WorkoutFolder(id: 'folder-1', name: 'Push Workouts'),
+            itemCount: 3,
+            activeDragPayload: const TemplateDragPayload(
+              templateId: 'template-1',
+              index: 0,
+              parentFolderId: null,
+            ),
+            canAcceptPayload: (_) => true,
+            onPayloadDropped: (_) {},
+            onTap: () {},
+            onRenamePressed: () {},
+            onDeletePressed: () {},
           ),
-          canAcceptPayload: (_) => true,
-          onPayloadDropped: (_) {},
-          onTap: () {},
-          onRenamePressed: () {},
-          onDeletePressed: () {},
         ),
-      ),
-    );
+      );
 
-    expect(find.text('Push Workouts'), findsOneWidget);
-    expect(find.text('Drop here to move template'), findsNothing);
-    expect(find.text('3 templates, 0 folders'), findsOneWidget);
-  });
+      expect(find.text('Push Workouts'), findsOneWidget);
+      expect(find.text('Drop here to move template'), findsNothing);
+      expect(find.text('3 templates, 0 folders'), findsOneWidget);
+    },
+  );
 
   testWidgets('FolderCard shows template move hint on direct hover', (
     tester,
@@ -47,18 +48,18 @@ void main() {
       buildTestApp(
         Column(
           children: [
-            LongPressDraggable<WorkoutBuilderDragPayload>(
-              data: const TemplateDragPayload(
+            const LongPressDraggable<WorkoutBuilderDragPayload>(
+              data: TemplateDragPayload(
                 templateId: 'template-1',
                 index: 0,
                 parentFolderId: null,
               ),
-              delay: const Duration(milliseconds: 300),
-              feedback: const Material(
+              delay: Duration(milliseconds: 300),
+              feedback: Material(
                 color: Colors.transparent,
                 child: SizedBox(width: 120, height: 40),
               ),
-              child: const SizedBox(width: 120, height: 40, child: Text('Drag me')),
+              child: SizedBox(width: 120, height: 40, child: Text('Drag me')),
             ),
             const SizedBox(height: 24),
             FolderCard(
@@ -75,7 +76,9 @@ void main() {
       ),
     );
 
-    final gesture = await tester.startGesture(tester.getCenter(find.text('Drag me')));
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Drag me')),
+    );
     await tester.pump(const Duration(milliseconds: 400));
 
     await gesture.moveTo(tester.getCenter(find.text('Hover Folder')));
@@ -94,18 +97,18 @@ void main() {
       buildTestApp(
         Column(
           children: [
-            LongPressDraggable<WorkoutBuilderDragPayload>(
-              data: const TemplateDragPayload(
+            const LongPressDraggable<WorkoutBuilderDragPayload>(
+              data: TemplateDragPayload(
                 templateId: 'template-drop',
                 index: 0,
                 parentFolderId: null,
               ),
-              delay: const Duration(milliseconds: 300),
-              feedback: const Material(
+              delay: Duration(milliseconds: 300),
+              feedback: Material(
                 color: Colors.transparent,
                 child: SizedBox(width: 120, height: 40),
               ),
-              child: const SizedBox(
+              child: SizedBox(
                 width: 120,
                 height: 40,
                 child: Text('Drop workout'),
@@ -137,10 +140,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(droppedPayload, isA<TemplateDragPayload>());
-    expect(
-      (droppedPayload as TemplateDragPayload).templateId,
-      'template-drop',
-    );
+    expect((droppedPayload as TemplateDragPayload).templateId, 'template-drop');
   });
 
   testWidgets('FolderCard hover hint does not overflow at compact width', (
@@ -152,18 +152,18 @@ void main() {
           width: 255,
           child: Column(
             children: [
-              LongPressDraggable<WorkoutBuilderDragPayload>(
-                data: const TemplateDragPayload(
+              const LongPressDraggable<WorkoutBuilderDragPayload>(
+                data: TemplateDragPayload(
                   templateId: 'template-compact',
                   index: 0,
                   parentFolderId: null,
                 ),
-                delay: const Duration(milliseconds: 300),
-                feedback: const Material(
+                delay: Duration(milliseconds: 300),
+                feedback: Material(
                   color: Colors.transparent,
                   child: SizedBox(width: 120, height: 40),
                 ),
-                child: const SizedBox(
+                child: SizedBox(
                   width: 120,
                   height: 40,
                   child: Text('Drag compact'),

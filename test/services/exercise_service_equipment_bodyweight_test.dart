@@ -58,7 +58,10 @@ void main() {
           name: 'Deadlift',
           primaryMuscleGroup: MuscleGroup.back,
           secondaryMuscleGroups: [MuscleGroup.hamstrings, MuscleGroup.glutes],
-          instructions: ['Stand with feet hip-width apart', 'Lift bar from ground'],
+          instructions: [
+            'Stand with feet hip-width apart',
+            'Lift bar from ground',
+          ],
           equipment: 'Barbell',
           image: 'deadlift.jpg',
           animation: 'deadlift.gif',
@@ -81,8 +84,12 @@ void main() {
         muscleGroupDao: mockMuscleGroupDao,
       );
 
-      when(mockExerciseDao.getAllExercises()).thenAnswer((_) async => testExercises);
-      when(mockMuscleGroupDao.getAllMuscleGroups()).thenAnswer((_) async => testMuscleGroups);
+      when(
+        mockExerciseDao.getAllExercises(),
+      ).thenAnswer((_) async => testExercises);
+      when(
+        mockMuscleGroupDao.getAllMuscleGroups(),
+      ).thenAnswer((_) async => testMuscleGroups);
 
       await exerciseService.loadExercises();
     });
@@ -91,8 +98,14 @@ void main() {
       test('should match equipment in search query (e.g., "barbell")', () {
         final resultLower = exerciseService.searchExercises('barbell');
         final resultUpper = exerciseService.searchExercises('BARBELL');
-        expect(resultLower.map((e) => e.slug).toSet(), equals({'bench-press', 'deadlift'}));
-        expect(resultUpper.map((e) => e.slug).toSet(), equals({'bench-press', 'deadlift'}));
+        expect(
+          resultLower.map((e) => e.slug).toSet(),
+          equals({'bench-press', 'deadlift'}),
+        );
+        expect(
+          resultUpper.map((e) => e.slug).toSet(),
+          equals({'bench-press', 'deadlift'}),
+        );
       });
 
       test('should match "bodyweight" keyword in search query', () {
@@ -105,8 +118,14 @@ void main() {
       test('should filter by equipment "Barbell" (case-insensitive)', () {
         final res1 = exerciseService.filterByEquipment('Barbell');
         final res2 = exerciseService.filterByEquipment('barbell');
-        expect(res1.map((e) => e.slug).toSet(), equals({'bench-press', 'deadlift'}));
-        expect(res2.map((e) => e.slug).toSet(), equals({'bench-press', 'deadlift'}));
+        expect(
+          res1.map((e) => e.slug).toSet(),
+          equals({'bench-press', 'deadlift'}),
+        );
+        expect(
+          res2.map((e) => e.slug).toSet(),
+          equals({'bench-press', 'deadlift'}),
+        );
       });
 
       test('should filter by equipment "None"', () {
@@ -128,7 +147,10 @@ void main() {
 
       test('should filter bodyweight == false', () {
         final res = exerciseService.filterByBodyweight(false);
-        expect(res.map((e) => e.slug).toSet(), equals({'bench-press', 'deadlift'}));
+        expect(
+          res.map((e) => e.slug).toSet(),
+          equals({'bench-press', 'deadlift'}),
+        );
       });
 
       test('should return all when flag is null', () {

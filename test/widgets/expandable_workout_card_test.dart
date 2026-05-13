@@ -366,4 +366,36 @@ void main() {
       expect(find.text('WS Workout'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'ExpandableWorkoutCard shows zero counts when template loader returns no exercises',
+    (WidgetTester tester) async {
+      final template = WorkoutTemplate(
+        id: 'template-empty',
+        name: 'Empty Template',
+        iconCodePoint: 0xe1a3,
+        colorValue: 0xFF2196F3,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            backgroundColor: Colors.black,
+            body: ExpandableWorkoutCard(
+              template: template,
+              loadTemplateExercises: (_) async => const [],
+              index: 0,
+              onEditPressed: () {},
+              onDeletePressed: () {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Empty Template'), findsOneWidget);
+      expect(find.text('0'), findsWidgets);
+    },
+  );
 }

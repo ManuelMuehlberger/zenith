@@ -66,13 +66,23 @@ class WorkoutTemplate {
     return WorkoutTemplate(
       id: id ?? this.id,
       name: name ?? this.name,
-      description: description == _undefined ? this.description : description as String?,
-      iconCodePoint: iconCodePoint == _undefined ? this.iconCodePoint : iconCodePoint as int?,
-      colorValue: colorValue == _undefined ? this.colorValue : colorValue as int?,
-      folderId: folderId == _undefined ? this.folderId : folderId as WorkoutFolderId?,
+      description: description == _undefined
+          ? this.description
+          : description as String?,
+      iconCodePoint: iconCodePoint == _undefined
+          ? this.iconCodePoint
+          : iconCodePoint as int?,
+      colorValue: colorValue == _undefined
+          ? this.colorValue
+          : colorValue as int?,
+      folderId: folderId == _undefined
+          ? this.folderId
+          : folderId as WorkoutFolderId?,
       notes: notes == _undefined ? this.notes : notes as String?,
       lastUsed: lastUsed == _undefined ? this.lastUsed : lastUsed as String?,
-      orderIndex: orderIndex == _undefined ? this.orderIndex : orderIndex as int?,
+      orderIndex: orderIndex == _undefined
+          ? this.orderIndex
+          : orderIndex as int?,
     );
   }
 }
