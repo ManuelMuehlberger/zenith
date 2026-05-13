@@ -311,37 +311,66 @@ class DebugDataService {
     required _TrainingWeekType weekType,
     required _TrainingDayType dayType,
   }) {
-    final trendGain = profile.units == Units.metric ? 2.0 : 4.5;
+    final trendGain = profile.units == Units.metric ? 2.4 : 5.3;
     final latestKnownWeight = profile.weightHistory.isNotEmpty
         ? profile.weightHistory.last.value
         : _defaultBodyWeight(profile.units, profile.gender);
-    final baseline = latestKnownWeight - trendGain;
+    final trendDirection = _profileWeightTrendDirection(profile);
+    final baseline = latestKnownWeight - (trendGain * trendDirection);
+    final phase = _profileWeightPhase(profile);
 
     final weekAdjustment = switch (weekType) {
-      _TrainingWeekType.peak => profile.units == Units.metric ? 0.3 : 0.7,
-      _TrainingWeekType.deload => profile.units == Units.metric ? -0.2 : -0.4,
-      _TrainingWeekType.pause => profile.units == Units.metric ? -0.4 : -0.8,
+      _TrainingWeekType.peak => profile.units == Units.metric ? 0.4 : 0.9,
+      _TrainingWeekType.deload => profile.units == Units.metric ? -0.3 : -0.7,
+      _TrainingWeekType.pause => profile.units == Units.metric ? -0.5 : -1.0,
       _TrainingWeekType.normal => 0.0,
     };
     final dayAdjustment = switch (dayType) {
-      _TrainingDayType.peak => profile.units == Units.metric ? 0.2 : 0.4,
-      _TrainingDayType.heavy => profile.units == Units.metric ? 0.1 : 0.2,
-      _TrainingDayType.volume => profile.units == Units.metric ? 0.1 : 0.2,
-      _TrainingDayType.bad => profile.units == Units.metric ? -0.2 : -0.4,
-      _TrainingDayType.deload => profile.units == Units.metric ? -0.1 : -0.2,
+      _TrainingDayType.peak => profile.units == Units.metric ? 0.3 : 0.7,
+      _TrainingDayType.heavy => profile.units == Units.metric ? 0.2 : 0.4,
+      _TrainingDayType.volume => profile.units == Units.metric ? 0.1 : 0.3,
+      _TrainingDayType.bad => profile.units == Units.metric ? -0.3 : -0.7,
+      _TrainingDayType.deload => profile.units == Units.metric ? -0.2 : -0.4,
       _TrainingDayType.baseline => 0.0,
     };
+    final seasonalSwing =
+        sin((progress * pi * 5) + phase) *
+        (profile.units == Units.metric ? 0.55 : 1.2);
+    final reboundSwing =
+        sin((progress * pi * 2.2) + (phase / 2)) *
+        (profile.units == Units.metric ? 0.25 : 0.55);
+    final irregularShock = _random.nextDouble() < 0.18
+        ? (_random.nextDouble() - 0.5) *
+              (profile.units == Units.metric ? 1.0 : 2.2)
+        : 0.0;
     final noise =
-        (_random.nextDouble() - 0.5) *
-        (profile.units == Units.metric ? 0.6 : 1.2);
+        ((_random.nextDouble() - 0.5) + (_random.nextDouble() - 0.5)) *
+        (profile.units == Units.metric ? 0.35 : 0.8);
 
-    return _roundToNearestHalf(
+    return _roundWeightMeasurement(
       baseline +
-          (trendGain * progress) +
+          ((trendGain * progress) * trendDirection) +
           weekAdjustment +
           dayAdjustment +
+          seasonalSwing +
+          reboundSwing +
+          irregularShock +
           noise,
     );
+  }
+
+  double _profileWeightTrendDirection(UserData profile) {
+    final idHash = profile.id.codeUnits.fold<int>(0, (sum, code) => sum + code);
+    return idHash.isEven ? 1.0 : -1.0;
+  }
+
+  double _profileWeightPhase(UserData profile) {
+    final seed = profile.name.codeUnits.fold<int>(0, (sum, code) => sum + code);
+    return (seed % 360) * (pi / 180);
+  }
+
+  double _roundWeightMeasurement(double value) {
+    return (value * 10).round() / 10;
   }
 
   double _defaultBodyWeight(Units units, Gender gender) {

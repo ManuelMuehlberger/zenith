@@ -7,52 +7,56 @@ import '../theme/app_theme.dart';
 class WeightTumblerSpec {
   const WeightTumblerSpec({
     required this.minimum,
-    required this.itemCount,
-    required this.step,
+    required this.maximum,
     required this.unitLabel,
   });
 
   final double minimum;
-  final int itemCount;
-  final double step;
+  final double maximum;
   final String unitLabel;
 
   factory WeightTumblerSpec.forUnits(Units units) {
     return units == Units.metric
-        ? const WeightTumblerSpec(
-            minimum: 30,
-            itemCount: 280,
-            step: 0.5,
-            unitLabel: 'kg',
-          )
-        : const WeightTumblerSpec(
-            minimum: 66,
-            itemCount: 600,
-            step: 0.5,
-            unitLabel: 'lbs',
-          );
+        ? const WeightTumblerSpec(minimum: 30, maximum: 170, unitLabel: 'kg')
+        : const WeightTumblerSpec(minimum: 66, maximum: 366, unitLabel: 'lbs');
   }
 
-  double get maximum => minimum + ((itemCount - 1) * step);
+  int get minimumWhole => minimum.floor();
+
+  int get maximumWhole => maximum.floor();
+
+  int get wholeItemCount => maximumWhole - minimumWhole + 1;
 
   double clamp(double value) {
+    final roundedToTenths = (value * 10).round() / 10;
     if (value < minimum) {
       return minimum;
     }
     if (value > maximum) {
       return maximum;
     }
-    return value;
+    return roundedToTenths;
   }
 
-  int indexForWeight(double value) {
+  int wholeIndexForWeight(double value) {
     final clamped = clamp(value);
-    return ((clamped - minimum) / step).round();
+    return clamped.floor() - minimumWhole;
   }
 
-  double weightForIndex(int index) {
-    final safeIndex = index.clamp(0, itemCount - 1);
-    return minimum + (safeIndex * step);
+  int decimalIndexForWeight(double value) {
+    final clamped = clamp(value);
+    final whole = clamped.floorToDouble();
+    final decimal = ((clamped - whole) * 10).round();
+    return decimal.clamp(0, 9);
+  }
+
+  int wholeForIndex(int index) {
+    final safeIndex = index.clamp(0, wholeItemCount - 1);
+    return minimumWhole + safeIndex;
+  }
+
+  double weightForParts(int whole, int decimalIndex) {
+    return clamp(whole + (decimalIndex / 10));
   }
 
   double defaultWeight({Gender gender = Gender.ratherNotSay}) {
@@ -66,7 +70,6 @@ class WeightTumblerPicker extends StatelessWidget {
   final double weight;
   final Units units;
   final ValueChanged<double> onWeightChanged;
-  final FixedExtentScrollController? scrollController;
   final Key? pickerKey;
 
   const WeightTumblerPicker({
@@ -74,7 +77,6 @@ class WeightTumblerPicker extends StatelessWidget {
     required this.weight,
     required this.units,
     required this.onWeightChanged,
-    this.scrollController,
     this.pickerKey,
   });
 
@@ -83,27 +85,57 @@ class WeightTumblerPicker extends StatelessWidget {
     final textTheme = context.appText;
     final spec = WeightTumblerSpec.forUnits(units);
     final initialWeight = spec.clamp(weight);
+    var selectedWhole = initialWeight.floor();
+    var selectedDecimal = spec.decimalIndexForWeight(initialWeight);
 
-    return CupertinoPicker(
+    return Row(
       key: pickerKey,
-      itemExtent: 50,
-      scrollController:
-          scrollController ??
-          FixedExtentScrollController(
-            initialItem: spec.indexForWeight(initialWeight),
+      children: [
+        Expanded(
+          flex: 4,
+          child: CupertinoPicker(
+            itemExtent: 50,
+            scrollController: FixedExtentScrollController(
+              initialItem: spec.wholeIndexForWeight(initialWeight),
+            ),
+            onSelectedItemChanged: (index) {
+              selectedWhole = spec.wholeForIndex(index);
+              onWeightChanged(
+                spec.weightForParts(selectedWhole, selectedDecimal),
+              );
+            },
+            children: List.generate(spec.wholeItemCount, (index) {
+              final wholeValue = spec.wholeForIndex(index);
+              return Center(
+                child: Text(
+                  '$wholeValue ${spec.unitLabel}',
+                  style: textTheme.titleMedium,
+                ),
+              );
+            }),
           ),
-      onSelectedItemChanged: (index) {
-        onWeightChanged(spec.weightForIndex(index));
-      },
-      children: List.generate(spec.itemCount, (index) {
-        final weightValue = spec.weightForIndex(index);
-        return Center(
-          child: Text(
-            '${weightValue.toStringAsFixed(1)} ${spec.unitLabel}',
-            style: textTheme.titleMedium,
+        ),
+        Expanded(
+          flex: 2,
+          child: CupertinoPicker(
+            itemExtent: 50,
+            scrollController: FixedExtentScrollController(
+              initialItem: selectedDecimal,
+            ),
+            onSelectedItemChanged: (index) {
+              selectedDecimal = index;
+              onWeightChanged(
+                spec.weightForParts(selectedWhole, selectedDecimal),
+              );
+            },
+            children: List.generate(10, (index) {
+              return Center(
+                child: Text('.$index', style: textTheme.titleMedium),
+              );
+            }),
           ),
-        );
-      }),
+        ),
+      ],
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
@@ -6,8 +7,8 @@ import 'package:pull_down_button/pull_down_button.dart';
 
 import '../../constants/app_constants.dart';
 import '../../screens/insights/insights_view_data.dart';
-import '../../services/insights/workout_insights_provider.dart';
 import '../../services/insights/weight_trend_provider.dart';
+import '../../services/insights/workout_insights_provider.dart';
 import '../../services/insights/workout_trend_provider.dart';
 import '../../services/insights_service.dart';
 import '../../services/user_service.dart';
@@ -453,6 +454,66 @@ class InsightsTrendsSection extends StatelessWidget {
     required this.weightUnitLabel,
   });
 
+  List<double> _buildWeightPreviewValues(List<InsightDataPoint> data) {
+    final measuredValues = data
+        .where((point) => (point.count ?? 0) > 0)
+        .map((point) => point.value)
+        .toList();
+    if (measuredValues.isEmpty) {
+      return data.map((_) => 0.0).toList();
+    }
+
+    var lastKnown = measuredValues.first;
+    return data.map((point) {
+      if ((point.count ?? 0) > 0) {
+        lastKnown = point.value;
+      }
+      return lastKnown;
+    }).toList();
+  }
+
+  double? _buildWeightPreviewMinY(
+    List<InsightDataPoint> data,
+    String unitLabel,
+  ) {
+    final values = _buildWeightPreviewValues(
+      data,
+    ).where((value) => value > 0).toList();
+    if (values.isEmpty) {
+      return null;
+    }
+
+    final minValue = values.reduce(math.min);
+    final maxValue = values.reduce(math.max);
+    final halfSpan = math.max(
+      unitLabel == 'kg' ? 4.0 : 9.0,
+      (maxValue - minValue) * 2.5,
+    );
+    final center = (minValue + maxValue) / 2;
+    return center - halfSpan;
+  }
+
+  double? _buildWeightPreviewMaxY(
+    List<InsightDataPoint> data,
+    String unitLabel,
+  ) {
+    final values = _buildWeightPreviewValues(
+      data,
+    ).where((value) => value > 0).toList();
+    if (values.isEmpty) {
+      return null;
+    }
+
+    final minValue = values.reduce(math.min);
+    final maxValue = values.reduce(math.max);
+    final halfSpan = math.max(
+      unitLabel == 'kg' ? 4.0 : 9.0,
+      (maxValue - minValue) * 2.5,
+    );
+    final center = (minValue + maxValue) / 2;
+    return center + halfSpan;
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -511,6 +572,11 @@ class InsightsTrendsSection extends StatelessWidget {
                 filters: weightFilters,
                 provider: WeightTrendProvider(),
                 showFiltersInDetail: false,
+                compactValuesBuilder: _buildWeightPreviewValues,
+                compactMinYBuilder: (data) =>
+                    _buildWeightPreviewMinY(data, weightUnitLabel),
+                compactMaxYBuilder: (data) =>
+                    _buildWeightPreviewMaxY(data, weightUnitLabel),
                 mainValueBuilder: (data) {
                   final latestPoint = data.lastWhere(
                     (point) => point.count != null && point.count! > 0,

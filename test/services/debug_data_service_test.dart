@@ -410,7 +410,7 @@ void main() {
     test(
       'generateDebugData adds weight entries for the active profile',
       () async {
-        service.weeksToGenerate = 4;
+        service.weeksToGenerate = 12;
         service.nowProvider = () => DateTime(2025, 1, 15, 12);
         service.currentProfileProvider = () => UserData(
           id: 'user-1',
@@ -442,6 +442,14 @@ void main() {
           hasLength(workoutDao.insertedWorkouts.length),
         );
 
+        final weightValues = weightEntryDao.insertedWeightEntries
+            .map((entry) => entry.$2.value)
+            .toList();
+        final deltas = [
+          for (int i = 1; i < weightValues.length; i++)
+            weightValues[i] - weightValues[i - 1],
+        ];
+
         for (int i = 0; i < weightEntryDao.insertedWeightEntries.length; i++) {
           final seededWeight = weightEntryDao.insertedWeightEntries[i];
           final workout = workoutDao.insertedWorkouts[i];
@@ -450,6 +458,10 @@ void main() {
           expect(seededWeight.$2.timestamp, workout.completedAt);
           expect(seededWeight.$2.value, greaterThan(0));
         }
+
+        expect(weightValues.toSet().length, greaterThan(4));
+        expect(deltas.any((delta) => delta > 0), isTrue);
+        expect(deltas.any((delta) => delta < 0), isTrue);
       },
     );
   });
