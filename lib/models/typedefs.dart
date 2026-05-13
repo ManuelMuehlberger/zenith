@@ -14,7 +14,8 @@ typedef WorkoutExerciseId = String;
 typedef WorkoutSetId = String;
 
 // Exercise-related typedefs
-typedef ExerciseSlug = String; 
+// policy: allow-public-api shared identifier alias used across models/services.
+typedef ExerciseSlug = String;
 
 // Muscle group typedefs
 typedef MuscleGroupName = String;

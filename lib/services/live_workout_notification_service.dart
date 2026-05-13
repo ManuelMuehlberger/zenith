@@ -82,7 +82,7 @@ class FlutterLocalNotificationsPluginAdapter
     onDidReceiveBackgroundNotificationResponse,
   }) {
     return _flutterLocalNotificationsPlugin.initialize(
-      initializationSettings,
+      settings: initializationSettings,
       onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
       onDidReceiveBackgroundNotificationResponse:
           onDidReceiveBackgroundNotificationResponse,
@@ -121,17 +121,17 @@ class FlutterLocalNotificationsPluginAdapter
     String? payload,
   }) {
     return _flutterLocalNotificationsPlugin.show(
-      id,
-      title,
-      body,
-      notificationDetails,
+      id: id,
+      title: title,
+      body: body,
+      notificationDetails: notificationDetails,
       payload: payload,
     );
   }
 
   @override
   Future<void> cancel(int id, {String? tag}) {
-    return _flutterLocalNotificationsPlugin.cancel(id, tag: tag);
+    return _flutterLocalNotificationsPlugin.cancel(id: id, tag: tag);
   }
 }
 

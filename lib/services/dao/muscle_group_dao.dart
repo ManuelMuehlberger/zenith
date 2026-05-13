@@ -14,9 +14,7 @@ class MuscleGroupDao extends BaseDao<MuscleGroup> {
 
   @override
   Map<String, dynamic> toMap(MuscleGroup muscleGroup) {
-    return {
-      'name': muscleGroup.name,
-    };
+    return {'name': muscleGroup.name};
   }
 
   /// Get all muscle groups

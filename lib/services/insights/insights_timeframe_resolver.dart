@@ -8,33 +8,25 @@ class InsightsTimeframeResolver {
     required InsightsGrouping grouping,
   }) {
     if (weeksBack == 1) {
-      final dayStart = DateTime(
-        referenceDate.year,
-        referenceDate.month,
-        referenceDate.day,
-      );
+      final dayStart = _dayStart(referenceDate);
       return DateTime(dayStart.year, dayStart.month, dayStart.day - 6);
     }
 
     if (grouping == InsightsGrouping.day) {
-      final dayStart = DateTime(
-        referenceDate.year,
-        referenceDate.month,
-        referenceDate.day,
-      );
       return DateTime(
-        dayStart.year,
-        dayStart.month,
-        dayStart.day - ((30 * monthsBack) - 1),
+        referenceDate.year,
+        referenceDate.month - (monthsBack - 1),
+        1,
       );
     }
 
     if (grouping == InsightsGrouping.week) {
       final weekStart = _weekStart(referenceDate);
-      final slots = weeklyTimeSlots(
-        grouping: grouping,
-        effectiveMonths: monthsBack,
+      final slots = resolveSlotCount(
+        referenceDate: referenceDate,
+        monthsBack: monthsBack,
         weeksBack: weeksBack,
+        grouping: grouping,
       );
       return DateTime(
         weekStart.year,
@@ -48,6 +40,33 @@ class InsightsTimeframeResolver {
       referenceDate.month - (monthsBack - 1),
       1,
     );
+  }
+
+  static int resolveSlotCount({
+    required DateTime referenceDate,
+    required int monthsBack,
+    int? weeksBack,
+    required InsightsGrouping grouping,
+  }) {
+    if (weeksBack == 1) {
+      return 7;
+    }
+    if (grouping == InsightsGrouping.day) {
+      final windowStart = resolveWindowStart(
+        referenceDate: referenceDate,
+        monthsBack: monthsBack,
+        weeksBack: weeksBack,
+        grouping: grouping,
+      );
+      final dayAfterReference = _dayStart(
+        referenceDate,
+      ).add(const Duration(days: 1));
+      return dayAfterReference.difference(windowStart).inDays;
+    }
+    if (grouping == InsightsGrouping.week) {
+      return (monthsBack * 4.33).ceil();
+    }
+    return monthsBack;
   }
 
   static InsightsGrouping resolveGrouping({
@@ -132,10 +151,10 @@ class InsightsTimeframeResolver {
 
   static DateTime _weekStart(DateTime date) {
     final daysFromMonday = date.weekday - 1;
-    return DateTime(
-      date.year,
-      date.month,
-      date.day,
-    ).subtract(Duration(days: daysFromMonday));
+    return _dayStart(date).subtract(Duration(days: daysFromMonday));
+  }
+
+  static DateTime _dayStart(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
   }
 }

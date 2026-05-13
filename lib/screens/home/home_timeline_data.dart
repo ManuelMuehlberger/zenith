@@ -6,10 +6,7 @@ class HomeTimelineData {
   final List<TimelineListItem> items;
   final List<MonthlyWorkoutGroup> archiveGroups;
 
-  const HomeTimelineData({
-    required this.items,
-    required this.archiveGroups,
-  });
+  const HomeTimelineData({required this.items, required this.archiveGroups});
 }
 
 class HomeTimelineAssembler {
@@ -78,8 +75,8 @@ class HomeTimelineAssembler {
       if (date.year == now.year && date.month == now.month) {
         currentMonthCount++;
         currentMonthVolume += workout.totalWeight;
-      } else if (
-          date.year == lastMonthDate.year && date.month == lastMonthDate.month) {
+      } else if (date.year == lastMonthDate.year &&
+          date.month == lastMonthDate.month) {
         lastMonthCount++;
         lastMonthVolume += workout.totalWeight;
       }
@@ -100,9 +97,6 @@ class HomeTimelineAssembler {
       items.add(const TimelineFooterItem());
     }
 
-    return HomeTimelineData(
-      items: items,
-      archiveGroups: buckets.archive,
-    );
+    return HomeTimelineData(items: items, archiveGroups: buckets.archive);
   }
 }

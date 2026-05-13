@@ -20,6 +20,7 @@ class FloatingFeedbackToast {
     _removeCurrent();
 
     final overlay = Overlay.of(context, rootOverlay: true);
+    final colorScheme = context.appScheme;
     final colors = context.appColors;
     final textTheme = context.appText;
     final highlight = accentColor ?? colors.success;
@@ -55,7 +56,7 @@ class FloatingFeedbackToast {
                     );
                   },
                   child: Material(
-                    color: Colors.transparent,
+                    color: colorScheme.surface.withValues(alpha: 0),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,

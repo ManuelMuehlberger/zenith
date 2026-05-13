@@ -369,5 +369,27 @@ void main() {
         expect(databaseHelper.databaseAccessCount, 2);
       },
     );
+
+    test(
+      'importData rethrows picker failures without touching the database',
+      () async {
+        final databaseHelper = FakeDatabaseHelper(
+          databasePathValue: '${sandboxDir.path}/workout_tracker.db',
+        );
+        final pickerError = StateError('picker failed');
+
+        final service = buildService(
+          databaseHelper: databaseHelper,
+          pickFiles: ({required type, required allowMultiple}) async {
+            throw pickerError;
+          },
+        );
+
+        await expectLater(service.importData(), throwsA(same(pickerError)));
+
+        expect(databaseHelper.closeCallCount, 0);
+        expect(databaseHelper.databaseAccessCount, 1);
+      },
+    );
   });
 }

@@ -208,7 +208,10 @@ void main() {
             .where((set) => set.isCompleted)
             .toList();
         expect(completedSets, isNotEmpty);
-        expect(workoutSetDao.insertedSets.any((set) => !set.isCompleted), isTrue);
+        expect(
+          workoutSetDao.insertedSets.any((set) => !set.isCompleted),
+          isTrue,
+        );
         expect(
           completedSets.any(
             (set) =>
@@ -240,11 +243,13 @@ void main() {
             .toList();
         expect(benchSets.length, greaterThan(10));
 
-        final earlyAverageWeight = benchSets
+        final earlyAverageWeight =
+            benchSets
                 .take(10)
                 .fold<double>(0, (sum, set) => sum + set.actualWeight!) /
             10;
-        final lateAverageWeight = benchSets
+        final lateAverageWeight =
+            benchSets
                 .skip(benchSets.length - 10)
                 .fold<double>(0, (sum, set) => sum + set.actualWeight!) /
             10;
@@ -252,13 +257,16 @@ void main() {
 
         final seededTemplate = workoutTemplateDao.insertedTemplates.single;
         final templateExercises = workoutExerciseDao.insertedExercises
-            .where((exercise) => exercise.workoutTemplateId == seededTemplate.id)
+            .where(
+              (exercise) => exercise.workoutTemplateId == seededTemplate.id,
+            )
             .toList();
         expect(templateExercises, hasLength(3));
-        expect(
-          templateExercises.map((exercise) => exercise.exerciseSlug),
-          ['bench-press', 'pull-up', 'push-up'],
-        );
+        expect(templateExercises.map((exercise) => exercise.exerciseSlug), [
+          'bench-press',
+          'pull-up',
+          'push-up',
+        ]);
 
         final templateSets = workoutSetDao.insertedSets.where(
           (set) => templateExercises.any(
@@ -293,7 +301,7 @@ void main() {
         await service.generateDebugData();
 
         expect(loadExercisesCallCount, 1);
-          expect(refreshWorkoutDataCallCount, 1);
+        expect(refreshWorkoutDataCallCount, 1);
         expect(workoutDao.insertedWorkouts, hasLength(3));
         expect(
           workoutDao.insertedWorkouts.map((workout) => workout.startedAt!.day),

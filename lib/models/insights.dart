@@ -1,9 +1,5 @@
-
-enum InsightsGrouping {
-  day,
-  week,
-  month
-}
+// policy: allow-public-api shared grouping contract used by insights providers.
+enum InsightsGrouping { day, week, month }
 
 class WorkoutInsights {
   final int totalWorkouts;
@@ -48,12 +44,22 @@ class WorkoutInsights {
         totalWorkouts: _safeParseInt(map['totalWorkouts']),
         totalHours: _safeParseDouble(map['totalHours']),
         totalWeight: _safeParseDouble(map['totalWeight']),
-        trendWorkouts: _safeParseInsightDataList(map['trendWorkouts'] ?? map['monthlyWorkouts']),
-        trendHours: _safeParseInsightDataList(map['trendHours'] ?? map['monthlyHours']),
-        trendWeight: _safeParseInsightDataList(map['trendWeight'] ?? map['monthlyWeight']),
+        trendWorkouts: _safeParseInsightDataList(
+          map['trendWorkouts'] ?? map['monthlyWorkouts'],
+        ),
+        trendHours: _safeParseInsightDataList(
+          map['trendHours'] ?? map['monthlyHours'],
+        ),
+        trendWeight: _safeParseInsightDataList(
+          map['trendWeight'] ?? map['monthlyWeight'],
+        ),
         averageWorkoutDuration: _safeParseDouble(map['averageWorkoutDuration']),
-        averageWeightPerWorkout: _safeParseDouble(map['averageWeightPerWorkout']),
-        lastUpdated: DateTime.fromMillisecondsSinceEpoch(_safeParseInt(map['lastUpdated'])),
+        averageWeightPerWorkout: _safeParseDouble(
+          map['averageWeightPerWorkout'],
+        ),
+        lastUpdated: DateTime.fromMillisecondsSinceEpoch(
+          _safeParseInt(map['lastUpdated']),
+        ),
       );
     } catch (e) {
       return WorkoutInsights(
@@ -96,15 +102,12 @@ class WorkoutInsights {
           .toList();
     } catch (e) {
       try {
-        return value
-            .whereType<Map<String, dynamic>>()
-            .map((e) {
-              if (e.containsKey('month') && !e.containsKey('date')) {
-                e['date'] = e['month'];
-              }
-              return InsightDataPoint.fromMap(e);
-            })
-            .toList();
+        return value.whereType<Map<String, dynamic>>().map((e) {
+          if (e.containsKey('month') && !e.containsKey('date')) {
+            e['date'] = e['month'];
+          }
+          return InsightDataPoint.fromMap(e);
+        }).toList();
       } catch (_) {
         return [];
       }
@@ -145,7 +148,13 @@ class ExerciseInsights {
 
   factory ExerciseInsights.empty(String exerciseName) {
     final now = DateTime.now();
-    final emptyMonthlyData = List.generate(6, (i) => InsightDataPoint(date: DateTime(now.year, now.month - 5 + i, 1), value: 0.0));
+    final emptyMonthlyData = List.generate(
+      6,
+      (i) => InsightDataPoint(
+        date: DateTime(now.year, now.month - 5 + i, 1),
+        value: 0.0,
+      ),
+    );
     return ExerciseInsights(
       exerciseName: exerciseName,
       totalSessions: 0,
@@ -192,15 +201,21 @@ class ExerciseInsights {
       averageWeight: (map['averageWeight'] ?? 0.0).toDouble(),
       averageReps: (map['averageReps'] ?? 0.0).toDouble(),
       averageSets: (map['averageSets'] ?? 0.0).toDouble(),
-      monthlyVolume: (map['monthlyVolume'] as List<dynamic>?)
-          ?.map((e) => InsightDataPoint.fromMap(e as Map<String, dynamic>))
-          .toList() ?? [],
-      monthlyMaxWeight: (map['monthlyMaxWeight'] as List<dynamic>?)
-          ?.map((e) => InsightDataPoint.fromMap(e as Map<String, dynamic>))
-          .toList() ?? [],
-      monthlyFrequency: (map['monthlyFrequency'] as List<dynamic>?)
-          ?.map((e) => InsightDataPoint.fromMap(e as Map<String, dynamic>))
-          .toList() ?? [],
+      monthlyVolume:
+          (map['monthlyVolume'] as List<dynamic>?)
+              ?.map((e) => InsightDataPoint.fromMap(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      monthlyMaxWeight:
+          (map['monthlyMaxWeight'] as List<dynamic>?)
+              ?.map((e) => InsightDataPoint.fromMap(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      monthlyFrequency:
+          (map['monthlyFrequency'] as List<dynamic>?)
+              ?.map((e) => InsightDataPoint.fromMap(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       lastUpdated: DateTime.fromMillisecondsSinceEpoch(map['lastUpdated'] ?? 0),
     );
   }
@@ -253,8 +268,12 @@ class InsightDataPoint {
     return InsightDataPoint(
       date: DateTime.fromMillisecondsSinceEpoch(map['date'] ?? 0),
       value: (map['value'] ?? 0.0).toDouble(),
-      minValue: map['minValue'] != null ? (map['minValue'] as num).toDouble() : null,
-      maxValue: map['maxValue'] != null ? (map['maxValue'] as num).toDouble() : null,
+      minValue: map['minValue'] != null
+          ? (map['minValue'] as num).toDouble()
+          : null,
+      maxValue: map['maxValue'] != null
+          ? (map['maxValue'] as num).toDouble()
+          : null,
       count: map['count'] as int?,
     );
   }

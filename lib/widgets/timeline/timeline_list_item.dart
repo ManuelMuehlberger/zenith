@@ -1,6 +1,7 @@
 import '../../models/workout.dart';
 import '../../services/workout_timeline_grouping_service.dart';
 
+// policy: no-test-needed immutable display item containers are exercised via timeline assembly tests.
 sealed class TimelineListItem {
   const TimelineListItem();
 }
@@ -21,10 +22,7 @@ class TimelineDayGroupItem extends TimelineListItem {
   final DateTime date;
   final List<Workout> workouts;
 
-  const TimelineDayGroupItem({
-    required this.date,
-    required this.workouts,
-  });
+  const TimelineDayGroupItem({required this.date, required this.workouts});
 }
 
 class TimelineMonthSummaryItem extends TimelineListItem {

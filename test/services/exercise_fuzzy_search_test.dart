@@ -89,8 +89,12 @@ void main() {
         MuscleGroup.biceps,
       ];
 
-      when(mockExerciseDao.getAllExercises()).thenAnswer((_) async => testExercises);
-      when(mockMuscleGroupDao.getAllMuscleGroups()).thenAnswer((_) async => testMuscleGroups);
+      when(
+        mockExerciseDao.getAllExercises(),
+      ).thenAnswer((_) async => testExercises);
+      when(
+        mockMuscleGroupDao.getAllMuscleGroups(),
+      ).thenAnswer((_) async => testMuscleGroups);
 
       exerciseService = ExerciseService.withDependencies(
         exerciseDao: mockExerciseDao,
@@ -112,22 +116,34 @@ void main() {
       expect(result.first.name, equals('Bench Press'));
     });
 
-    test('equipment normalization: "dumbbell" finds exercise with equipment "Dumbell"', () {
-      final result = exerciseService.searchExercises('dumbbell');
-      expect(result.map((e) => e.slug), contains('biceps-curl'));
-    });
+    test(
+      'equipment normalization: "dumbbell" finds exercise with equipment "Dumbell"',
+      () {
+        final result = exerciseService.searchExercises('dumbbell');
+        expect(result.map((e) => e.slug), contains('biceps-curl'));
+      },
+    );
 
-    test('bodyweight keyword (with typo) still surfaces bodyweight exercises', () {
-      final result = exerciseService.searchExercises('bodywight');
-      // Should include bodyweight exercises like Plank / Push Up
-      expect(result.any((e) => e.slug == 'plank' || e.slug == 'push-up'), isTrue);
-    });
+    test(
+      'bodyweight keyword (with typo) still surfaces bodyweight exercises',
+      () {
+        final result = exerciseService.searchExercises('bodywight');
+        // Should include bodyweight exercises like Plank / Push Up
+        expect(
+          result.any((e) => e.slug == 'plank' || e.slug == 'push-up'),
+          isTrue,
+        );
+      },
+    );
 
-    test('avoid false positives: "weightlifter" should not match via bodyweight token', () {
-      final result = exerciseService.searchExercises('weightlifter');
-      // With cutoff 70, this should be empty for our dataset
-      expect(result, isEmpty);
-    });
+    test(
+      'avoid false positives: "weightlifter" should not match via bodyweight token',
+      () {
+        final result = exerciseService.searchExercises('weightlifter');
+        // With cutoff 70, this should be empty for our dataset
+        expect(result, isEmpty);
+      },
+    );
 
     test('contains matches keep priority over fuzzy (query "press")', () {
       // "press" is a strict substring; it should rank Bench Press at the top

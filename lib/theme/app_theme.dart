@@ -24,8 +24,9 @@ enum AppThemePreference {
 }
 
 @immutable
-class _ThemePalette {
-  const _ThemePalette({
+// policy: allow-public-api theme palette contract consumed by app theme tokens.
+class AppThemePalette {
+  const AppThemePalette({
     required this.background,
     required this.surface,
     required this.surfaceAlt,
@@ -71,7 +72,7 @@ class AppThemeColors {
 
   static const Color clear = Color(0x00000000);
 
-  static const _ThemePalette light = _ThemePalette(
+  static const AppThemePalette light = AppThemePalette(
     background: Color(0xFFF5F5F7),
     surface: Color(0xFFFFFFFF),
     surfaceAlt: Color(0xFFFFFFFF),
@@ -92,7 +93,7 @@ class AppThemeColors {
     shadow: Color(0x14000000),
   );
 
-  static const _ThemePalette dark = _ThemePalette(
+  static const AppThemePalette dark = AppThemePalette(
     background: Color(0xFF000000),
     surface: Color(0xFF212121),
     surfaceAlt: Color(0xFF1A1A1A),
@@ -117,7 +118,7 @@ class AppThemeColors {
 class AppTextStyles {
   AppTextStyles._();
 
-  static TextTheme theme(_ThemePalette palette) {
+  static TextTheme theme(AppThemePalette palette) {
     return TextTheme(
       displayLarge: TextStyle(
         fontSize: 36,
@@ -343,7 +344,7 @@ class AppTheme {
   );
 
   static ThemeData _buildTheme(
-    _ThemePalette palette,
+    AppThemePalette palette,
     Brightness brightness,
     AppThemeTokens tokens,
   ) {

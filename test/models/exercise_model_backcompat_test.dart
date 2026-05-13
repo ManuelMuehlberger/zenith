@@ -21,7 +21,10 @@ void main() {
       expect(ex.slug, 'push-up');
       expect(ex.name, 'Push-Up');
       expect(ex.primaryMuscleGroup, MuscleGroup.chest);
-      expect(ex.secondaryMuscleGroups, containsAllInOrder([MuscleGroup.triceps, MuscleGroup.shoulders]));
+      expect(
+        ex.secondaryMuscleGroups,
+        containsAllInOrder([MuscleGroup.triceps, MuscleGroup.shoulders]),
+      );
       expect(ex.instructions, containsAllInOrder(['Do this', 'Then that']));
       expect(ex.equipment, 'None');
       expect(ex.isBodyWeightExercise, isTrue);

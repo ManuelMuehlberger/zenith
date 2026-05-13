@@ -13,16 +13,16 @@ import '../models/workout_template.dart';
 import '../services/workout_session_service.dart';
 import '../services/workout_template_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/floating_feedback_toast.dart';
+import '../widgets/folder_breadcrumbs_card.dart';
 import '../widgets/main_dock_spacer.dart';
 import '../widgets/profile_icon_button.dart';
-import '../widgets/workout_builder_empty_state.dart';
 import '../widgets/reorderable_folder_list.dart';
 import '../widgets/reorderable_workout_template_list.dart';
 import '../widgets/workout_builder_drag_payload.dart';
+import '../widgets/workout_builder_empty_state.dart';
 import 'active_workout_screen.dart';
 import 'create_workout_screen.dart';
-import '../widgets/folder_breadcrumbs_card.dart';
-import '../widgets/floating_feedback_toast.dart';
 
 class WorkoutBuilderScreen extends StatefulWidget {
   final String? folderId;
@@ -487,9 +487,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
 
   void _selectFolder(String folderId) {
     final route = _buildFolderRoute(folderId);
-    Navigator.of(context)
-        .push(route)
-        .then((_) => _initialLoad());
+    Navigator.of(context).push(route).then((_) => _initialLoad());
   }
 
   void _navigateToFolderFromBreadcrumb(String? folderId) {
@@ -574,10 +572,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       final targetName = parentFolderId == null
           ? 'All Workouts'
           : _getFolderName(parentFolderId);
-      FloatingFeedbackToast.show(
-        context,
-        message: 'Moved to $targetName',
-      );
+      FloatingFeedbackToast.show(context, message: 'Moved to $targetName');
     } catch (e) {
       developer.log(
         'Failed to move folder $folderId to parent $parentFolderId: $e',

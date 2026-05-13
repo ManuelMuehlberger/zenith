@@ -7,9 +7,10 @@ import '../constants/app_constants.dart';
 import '../models/workout_template.dart';
 import '../theme/app_theme.dart';
 import 'expandable_workout_card.dart';
-import 'workout_builder_empty_state.dart';
 import 'workout_builder_drag_payload.dart';
+import 'workout_builder_empty_state.dart';
 
+// policy: no-test-needed drag integration is covered by higher-level workout drag list tests.
 class ReorderableWorkoutTemplateList extends StatefulWidget {
   final List<WorkoutTemplate> templates;
   final String? folderId;
@@ -158,120 +159,160 @@ class _ReorderableWorkoutTemplateListState
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final card = ExpandableWorkoutCard(
-          key: ValueKey(template.id),
+        final card = _buildTemplateCard(template, index);
+        final payload = _buildTemplatePayload(template, index);
+        final draggable = _buildTemplateDraggable(
+          context: context,
+          constraints: constraints,
           template: template,
           index: index,
-          onEditPressed: () => widget.onTemplateTap(template),
-          onDeletePressed: () => widget.onTemplateDeletePressed(template),
+          card: card,
+          payload: payload,
         );
 
-        final payload = TemplateDragPayload(
-          templateId: template.id,
+        return _buildTemplateDragTarget(
+          context: context,
           index: index,
-          parentFolderId: widget.folderId,
+          payload: payload,
+          draggable: draggable,
+          itemKey: itemKey,
         );
+      },
+    );
+  }
 
-        final draggable = LongPressDraggable<WorkoutBuilderDragPayload>(
-          data: payload,
-          delay: const Duration(milliseconds: 300),
-          onDragStarted: () {
-            developer.log(
-              'Drag started for template: ${template.id} at index: $index',
-            );
-            HapticFeedback.mediumImpact();
-            _draggedIndex = index;
-            _draggedOriginRectAtStart = _rectForTemplate(template.id);
-            _dragStartScrollPixels = Scrollable.maybeOf(
-              context,
-            )?.position.pixels;
-            _lastDragGlobalPosition = null;
-            _setDropIndex(null);
-            widget.onDragStarted?.call(payload);
-          },
-          onDragUpdate: (details) {
-            _lastDragGlobalPosition = details.globalPosition;
-            _maybeAutoScroll(details.globalPosition);
-            _updateDropIndexFromPointer();
-          },
-          onDragEnd: (details) {
-            developer.log(
-              'Drag ended for template: ${template.id} at index: $index',
-            );
-            if (!details.wasAccepted) {
-              _reorderUsingDropIndex(index);
-            }
-            _draggedIndex = null;
-            _draggedOriginRectAtStart = null;
-            _dragStartScrollPixels = null;
-            _lastDragGlobalPosition = null;
-            _setDropIndex(null);
-            widget.onDragEnded?.call();
-          },
-          onDraggableCanceled: (velocity, offset) {
-            developer.log(
-              'Drag canceled for template: ${template.id} at index: $index',
-            );
-            _draggedIndex = null;
-            _draggedOriginRectAtStart = null;
-            _dragStartScrollPixels = null;
-            _lastDragGlobalPosition = null;
-            _setDropIndex(null);
-          },
-          feedback: SizedBox(
-            width: constraints.maxWidth,
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: AppTheme.workoutCardBorderRadius,
-              child: Opacity(opacity: 0.92, child: card),
-            ),
-          ),
-          childWhenDragging: _buildAnimatedGapPlaceholder(
-            context,
-            visible: _dropIndex == index,
-          ),
-          child: card,
+  ExpandableWorkoutCard _buildTemplateCard(
+    WorkoutTemplate template,
+    int index,
+  ) {
+    return ExpandableWorkoutCard(
+      key: ValueKey(template.id),
+      template: template,
+      index: index,
+      onEditPressed: () => widget.onTemplateTap(template),
+      onDeletePressed: () => widget.onTemplateDeletePressed(template),
+    );
+  }
+
+  TemplateDragPayload _buildTemplatePayload(
+    WorkoutTemplate template,
+    int index,
+  ) {
+    return TemplateDragPayload(
+      templateId: template.id,
+      index: index,
+      parentFolderId: widget.folderId,
+    );
+  }
+
+  Widget _buildTemplateDraggable({
+    required BuildContext context,
+    required BoxConstraints constraints,
+    required WorkoutTemplate template,
+    required int index,
+    required ExpandableWorkoutCard card,
+    required TemplateDragPayload payload,
+  }) {
+    return LongPressDraggable<WorkoutBuilderDragPayload>(
+      data: payload,
+      delay: const Duration(milliseconds: 300),
+      onDragStarted: () {
+        developer.log(
+          'Drag started for template: ${template.id} at index: $index',
         );
+        HapticFeedback.mediumImpact();
+        _draggedIndex = index;
+        _draggedOriginRectAtStart = _rectForTemplate(template.id);
+        _dragStartScrollPixels = Scrollable.maybeOf(context)?.position.pixels;
+        _lastDragGlobalPosition = null;
+        _setDropIndex(null);
+        widget.onDragStarted?.call(payload);
+      },
+      onDragUpdate: (details) {
+        _lastDragGlobalPosition = details.globalPosition;
+        _maybeAutoScroll(details.globalPosition);
+        _updateDropIndexFromPointer();
+      },
+      onDragEnd: (details) {
+        developer.log(
+          'Drag ended for template: ${template.id} at index: $index',
+        );
+        if (!details.wasAccepted) {
+          _reorderUsingDropIndex(index);
+        }
+        _draggedIndex = null;
+        _draggedOriginRectAtStart = null;
+        _dragStartScrollPixels = null;
+        _lastDragGlobalPosition = null;
+        _setDropIndex(null);
+        widget.onDragEnded?.call();
+      },
+      onDraggableCanceled: (velocity, offset) {
+        developer.log(
+          'Drag canceled for template: ${template.id} at index: $index',
+        );
+        _draggedIndex = null;
+        _draggedOriginRectAtStart = null;
+        _dragStartScrollPixels = null;
+        _lastDragGlobalPosition = null;
+        _setDropIndex(null);
+      },
+      feedback: SizedBox(
+        width: constraints.maxWidth,
+        child: Material(
+          color: context.appScheme.surface.withValues(alpha: 0),
+          borderRadius: AppTheme.workoutCardBorderRadius,
+          child: Opacity(opacity: 0.92, child: card),
+        ),
+      ),
+      childWhenDragging: _buildAnimatedGapPlaceholder(
+        context,
+        visible: _dropIndex == index,
+      ),
+      child: card,
+    );
+  }
 
-        return DragTarget<WorkoutBuilderDragPayload>(
-          onWillAcceptWithDetails: (details) {
-            final data = details.data;
-            if (data is! TemplateDragPayload) return false;
-            if (data.parentFolderId != widget.folderId) return false;
-            final draggedIndex = data.index;
-            developer.log(
-              'Drag target will accept template at index: $index, draggedIndex: $draggedIndex',
-            );
-            return true;
-          },
-          onLeave: (data) {
-            developer.log('Drag target leave at index: $index');
-            _updateDropIndexFromPointer();
-          },
-          onAcceptWithDetails: (details) {
-            final data = details.data;
-            if (data is! TemplateDragPayload) {
-              return;
-            }
-            developer.log(
-              'Drag target accept template at index: $index for draggedIndex: ${data.index}',
-            );
-            _reorderUsingDropIndex(data.index);
-            _setDropIndex(null);
-          },
-          builder: (context, candidateData, rejectedData) {
-            final showGap = _dropIndex == index && _draggedIndex != index;
+  Widget _buildTemplateDragTarget({
+    required BuildContext context,
+    required int index,
+    required TemplateDragPayload payload,
+    required Widget draggable,
+    required GlobalKey itemKey,
+  }) {
+    return DragTarget<WorkoutBuilderDragPayload>(
+      onWillAcceptWithDetails: (details) {
+        final data = details.data;
+        if (data is! TemplateDragPayload) return false;
+        if (data.parentFolderId != widget.folderId) return false;
+        developer.log(
+          'Drag target will accept template at index: $index, draggedIndex: ${data.index}',
+        );
+        return true;
+      },
+      onLeave: (data) {
+        developer.log('Drag target leave at index: $index');
+        _updateDropIndexFromPointer();
+      },
+      onAcceptWithDetails: (details) {
+        final data = details.data;
+        if (data is! TemplateDragPayload) {
+          return;
+        }
+        developer.log(
+          'Drag target accept template at index: $index for draggedIndex: ${data.index}',
+        );
+        _reorderUsingDropIndex(data.index);
+        _setDropIndex(null);
+      },
+      builder: (context, candidateData, rejectedData) {
+        final showGap = _dropIndex == index && _draggedIndex != index;
 
-            return Column(
-              children: [
-                _buildAnimatedGapPlaceholder(
-                  context,
-                  visible: showGap,
-                ),
-                KeyedSubtree(key: itemKey, child: draggable),
-              ],
-            );
-          },
+        return Column(
+          children: [
+            _buildAnimatedGapPlaceholder(context, visible: showGap),
+            KeyedSubtree(key: itemKey, child: draggable),
+          ],
         );
       },
     );
@@ -359,7 +400,7 @@ class _ReorderableWorkoutTemplateListState
 
     final localPosition = renderObject.globalToLocal(globalPosition);
     final position = scrollable.position;
-    final topThreshold = _autoScrollTriggerExtent;
+    const topThreshold = _autoScrollTriggerExtent;
     final bottomThreshold = renderObject.size.height - _autoScrollTriggerExtent;
 
     if (localPosition.dy <= topThreshold) {

@@ -1,0 +1,110 @@
+name: Quality Gate
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: quality-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-test-and-build:
+    runs-on: ubuntu-latest
+    env:
+      CI: 'true'
+      CI_MAIN_REF: origin/main
+      GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      GITHUB_BEFORE_SHA: ${{ github.event.before }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve Flutter Stable Release
+        id: flutter_release
+        run: python3 scripts/resolve_flutter_stable.py --output github >> "$GITHUB_OUTPUT"
+
+      - name: Fetch remote refs
+        run: git fetch --no-tags origin '+refs/heads/*:refs/remotes/origin/*'
+
+      - name: Detect Preinstalled Java
+        id: detect_java
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v java >/dev/null 2>&1; then
+            echo "satisfied=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          major_version="$(java -version 2>&1 | sed -n 's/.*version "\([0-9][0-9]*\).*/\1/p' | head -n1)"
+          if [ "$major_version" = "17" ]; then
+            echo "satisfied=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "satisfied=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Detect Preinstalled Flutter
+        id: detect_flutter
+        shell: bash
+        run: |
+          set -euo pipefail
+          required_version="${{ steps.flutter_release.outputs.version }}"
+          if ! command -v flutter >/dev/null 2>&1; then
+            echo "satisfied=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          current_version="$(flutter --version --machine | python3 -c 'import json, sys; print(json.load(sys.stdin)["frameworkVersion"])')"
+          if [ "$current_version" = "$required_version" ]; then
+            echo "satisfied=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "satisfied=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Java
+        if: steps.detect_java.outputs.satisfied != 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Flutter
+        if: steps.detect_flutter.outputs.satisfied != 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ steps.flutter_release.outputs.version }}
+          channel: stable
+          cache: true
+
+      - name: Show toolchain
+        run: |
+          echo "Resolved Flutter stable: ${{ steps.flutter_release.outputs.version }}"
+          java -version
+          flutter --version
+          dart --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Diff-aware policy gates
+        run: bash scripts/ci_quality_gate.sh
+
+      - name: Build Android debug APK
+        run: flutter build apk --debug

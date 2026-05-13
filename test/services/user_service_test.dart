@@ -683,6 +683,18 @@ void main() {
         expect(userService.currentProfile, isNull);
         expect(userService.hasProfile, isFalse);
       });
+
+      test('should fall back to raw weight formatting after reset', () async {
+        when(mockUserDao.getAll()).thenAnswer((_) async => [testUser]);
+        when(
+          mockWeightEntryDao.getWeightEntriesByUserId('user123'),
+        ).thenAnswer((_) async => testWeightEntries);
+        await userService.loadUserProfile();
+
+        userService.resetForTesting();
+
+        expect(userService.formatWeight(80), '80.0');
+      });
     });
 
     group('edge cases and error handling', () {

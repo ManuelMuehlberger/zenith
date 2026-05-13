@@ -132,17 +132,12 @@ class WorkoutTrendProvider implements InsightDataProvider {
     final trendData = <InsightDataPoint>[];
 
     int slots;
-    if (grouping == InsightsGrouping.day) {
-      if (weeksBack == 1) {
-        slots = 7;
-      } else {
-        slots = 30 * monthsBack;
-      }
-    } else if (grouping == InsightsGrouping.week) {
-      slots = (monthsBack * 4.33).ceil();
-    } else {
-      slots = monthsBack;
-    }
+    slots = InsightsTimeframeResolver.resolveSlotCount(
+      referenceDate: refDate,
+      monthsBack: monthsBack,
+      weeksBack: weeksBack,
+      grouping: grouping,
+    );
 
     for (int i = slots - 1; i >= 0; i--) {
       final DateTime slotStart;

@@ -122,7 +122,9 @@ abstract class BaseDao<T> {
       logger.fine('Updated $count record(s) in $tableName');
       return count;
     } catch (e) {
-      logger.severe('Failed to update record with $idColumn $id in $tableName: $e');
+      logger.severe(
+        'Failed to update record with $idColumn $id in $tableName: $e',
+      );
       rethrow;
     }
   }
@@ -140,7 +142,9 @@ abstract class BaseDao<T> {
       logger.fine('Deleted $count record(s) from $tableName');
       return count;
     } catch (e) {
-      logger.severe('Failed to delete record with $idColumn $id from $tableName: $e');
+      logger.severe(
+        'Failed to delete record with $idColumn $id from $tableName: $e',
+      );
       rethrow;
     }
   }
@@ -162,7 +166,9 @@ abstract class BaseDao<T> {
   /// Executes a raw SQL query and returns the results as model objects
   Future<List<T>> rawQuery(String sql, [List<dynamic>? arguments]) async {
     final db = await database;
-    logger.fine('Executing raw query on $tableName: $sql with arguments: $arguments');
+    logger.fine(
+      'Executing raw query on $tableName: $sql with arguments: $arguments',
+    );
     try {
       final List<Map<String, dynamic>> maps = await db.rawQuery(sql, arguments);
       final results = maps.map((map) => fromMap(map)).toList();
@@ -177,7 +183,9 @@ abstract class BaseDao<T> {
   /// Executes a raw SQL update statement
   Future<int> rawUpdate(String sql, [List<dynamic>? arguments]) async {
     final db = await database;
-    logger.fine('Executing raw update on $tableName: $sql with arguments: $arguments');
+    logger.fine(
+      'Executing raw update on $tableName: $sql with arguments: $arguments',
+    );
     try {
       final count = await db.rawUpdate(sql, arguments);
       logger.fine('Raw update affected $count rows');
@@ -191,7 +199,9 @@ abstract class BaseDao<T> {
   /// Executes a raw SQL delete statement
   Future<int> rawDelete(String sql, [List<dynamic>? arguments]) async {
     final db = await database;
-    logger.fine('Executing raw delete on $tableName: $sql with arguments: $arguments');
+    logger.fine(
+      'Executing raw delete on $tableName: $sql with arguments: $arguments',
+    );
     try {
       final count = await db.rawDelete(sql, arguments);
       logger.fine('Raw delete affected $count rows');

@@ -167,7 +167,7 @@ void main() {
       // Clear All should now be visible and enabled
       final clearFinder = find.byKey(const Key('clear_all_button'));
       expect(clearFinder, findsOneWidget);
-      CupertinoButton clearBtn = tester.widget(clearFinder);
+      final CupertinoButton clearBtn = tester.widget(clearFinder);
       expect(clearBtn.onPressed, isNotNull);
 
       // Tap Clear All

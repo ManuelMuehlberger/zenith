@@ -256,8 +256,10 @@ void main() {
     });
 
     test('should handle long names and descriptions', () {
-      const longName = 'This is a very long workout template name that exceeds normal length';
-      const longDescription = 'This is a very long description for a workout template that contains '
+      const longName =
+          'This is a very long workout template name that exceeds normal length';
+      const longDescription =
+          'This is a very long description for a workout template that contains '
           'multiple sentences and provides detailed information about the workout routine, '
           'including exercises, sets, reps, and other important details that users should know.';
 
@@ -272,7 +274,8 @@ void main() {
 
     test('should handle special characters in name and description', () {
       const specialName = 'Übung für Körper & Geist 💪';
-      const specialDescription = 'Spécial entraînement avec caractères accentués: àáâãäåæçèéêë';
+      const specialDescription =
+          'Spécial entraînement avec caractères accentués: àáâãäåæçèéêë';
 
       final template = WorkoutTemplate(
         name: specialName,
@@ -284,11 +287,7 @@ void main() {
     });
 
     test('should handle empty strings', () {
-      final template = WorkoutTemplate(
-        name: '',
-        description: '',
-        notes: '',
-      );
+      final template = WorkoutTemplate(name: '', description: '', notes: '');
 
       expect(template.name, '');
       expect(template.description, '');
@@ -298,14 +297,14 @@ void main() {
     test('should handle ISO8601 timestamp format for lastUsed', () {
       final now = DateTime.now();
       final isoString = now.toIso8601String();
-      
+
       final template = WorkoutTemplate(
         name: 'Timestamp Test',
         lastUsed: isoString,
       );
 
       expect(template.lastUsed, isoString);
-      
+
       // Verify it can be parsed back to DateTime
       final parsedDate = DateTime.parse(template.lastUsed!);
       expect(parsedDate.year, now.year);

@@ -33,7 +33,7 @@ class DebugDataService {
   Random _random = Random();
   Future<void> Function() _loadExercises =
       ExerciseService.instance.loadExercises;
-    Future<void> Function() _refreshWorkoutData =
+  Future<void> Function() _refreshWorkoutData =
       WorkoutService.instance.loadData;
   DateTime Function() _nowProvider = DateTime.now;
   int _weeksToGenerate = 104;
@@ -59,8 +59,8 @@ class DebugDataService {
   set loadExercises(Future<void> Function() callback) =>
       _loadExercises = callback;
 
-    @visibleForTesting
-    set refreshWorkoutData(Future<void> Function() callback) =>
+  @visibleForTesting
+  set refreshWorkoutData(Future<void> Function() callback) =>
       _refreshWorkoutData = callback;
 
   @visibleForTesting
@@ -144,12 +144,10 @@ class DebugDataService {
 
   Future<void> _createWorkoutFromTemplate(
     Map<String, dynamic> template,
-    DateTime date,
-    {
-      required double progress,
-      required _TrainingDayType dayType,
-    }
-  ) async {
+    DateTime date, {
+    required double progress,
+    required _TrainingDayType dayType,
+  }) async {
     final workoutId = const Uuid().v4();
 
     final hour = 6 + _random.nextInt(15);
@@ -197,10 +195,7 @@ class DebugDataService {
         dayType,
         isAccessory: isAccessory,
       );
-      final completedSetCount = _completedSetCount(
-        dayType,
-        plannedSetCount,
-      );
+      final completedSetCount = _completedSetCount(dayType, plannedSetCount);
 
       for (int j = 0; j < plannedSetCount; j++) {
         final targetWeight = _targetWeightForSet(
@@ -223,7 +218,8 @@ class DebugDataService {
           isCompleted: j < completedSetCount,
           isBodyweightExercise: baseWeight <= 0,
           dayType: dayType,
-          isPrSet: i == prExerciseIndex &&
+          isPrSet:
+              i == prExerciseIndex &&
               j == 0 &&
               (dayType == _TrainingDayType.peak ||
                   (dayType == _TrainingDayType.heavy && progress > 0.7)),
@@ -288,7 +284,11 @@ class DebugDataService {
   ) async {
     final exercises = _templateExerciseBlueprints(templateData);
 
-    for (int exerciseIndex = 0; exerciseIndex < exercises.length; exerciseIndex++) {
+    for (
+      int exerciseIndex = 0;
+      exerciseIndex < exercises.length;
+      exerciseIndex++
+    ) {
       final exerciseData = exercises[exerciseIndex];
       final baseWeight = exerciseData['baseWeight'] as double;
       final baseReps = exerciseData['baseReps'] as int;
@@ -320,24 +320,23 @@ class DebugDataService {
   ) {
     final requiredExercises = (templateData['exercises'] as List<dynamic>)
         .map(
-          (exercise) => Map<String, dynamic>.from(
-            exercise as Map<dynamic, dynamic>,
-          ),
+          (exercise) =>
+              Map<String, dynamic>.from(exercise as Map<dynamic, dynamic>),
         )
         .toList();
-    final optionalExercises = (templateData['optionalExercises'] as List<dynamic>? ??
-            const <dynamic>[])
-        .map(
-          (exercise) => Map<String, dynamic>.from(
-            exercise as Map<dynamic, dynamic>,
-          ),
-        )
-        .where(
-          (exercise) => !requiredExercises.any(
-            (existing) => existing['slug'] == exercise['slug'],
-          ),
-        )
-        .toList();
+    final optionalExercises =
+        (templateData['optionalExercises'] as List<dynamic>? ??
+                const <dynamic>[])
+            .map(
+              (exercise) =>
+                  Map<String, dynamic>.from(exercise as Map<dynamic, dynamic>),
+            )
+            .where(
+              (exercise) => !requiredExercises.any(
+                (existing) => existing['slug'] == exercise['slug'],
+              ),
+            )
+            .toList();
 
     return [...requiredExercises, ...optionalExercises];
   }
@@ -378,24 +377,22 @@ class DebugDataService {
   ) {
     final selected = (template['exercises'] as List<dynamic>)
         .map(
-          (exercise) => Map<String, dynamic>.from(
-            exercise as Map<dynamic, dynamic>,
-          ),
+          (exercise) =>
+              Map<String, dynamic>.from(exercise as Map<dynamic, dynamic>),
         )
         .toList();
-    final optionalExercises = (template['optionalExercises'] as List<dynamic>? ??
-            const <dynamic>[])
-        .map(
-          (exercise) => Map<String, dynamic>.from(
-            exercise as Map<dynamic, dynamic>,
-          ),
-        )
-        .where(
-          (exercise) => !selected.any(
-            (existing) => existing['slug'] == exercise['slug'],
-          ),
-        )
-        .toList();
+    final optionalExercises =
+        (template['optionalExercises'] as List<dynamic>? ?? const <dynamic>[])
+            .map(
+              (exercise) =>
+                  Map<String, dynamic>.from(exercise as Map<dynamic, dynamic>),
+            )
+            .where(
+              (exercise) => !selected.any(
+                (existing) => existing['slug'] == exercise['slug'],
+              ),
+            )
+            .toList();
 
     var extrasToAdd = 0;
     switch (dayType) {
@@ -434,10 +431,7 @@ class DebugDataService {
     return _TrainingWeekType.normal;
   }
 
-  _TrainingDayType _selectDayType(
-    _TrainingWeekType weekType,
-    double progress,
-  ) {
+  _TrainingDayType _selectDayType(_TrainingWeekType weekType, double progress) {
     if (weekType == _TrainingWeekType.deload) {
       return _TrainingDayType.deload;
     }
@@ -533,10 +527,7 @@ class DebugDataService {
     }
   }
 
-  int _plannedSetCount(
-    _TrainingDayType dayType, {
-    required bool isAccessory,
-  }) {
+  int _plannedSetCount(_TrainingDayType dayType, {required bool isAccessory}) {
     switch (dayType) {
       case _TrainingDayType.peak:
         return isAccessory ? 3 : 4;
@@ -605,8 +596,8 @@ class DebugDataService {
       return 0;
     }
 
-    final progressionMultiplier = 0.88 +
-        (progress * (isAccessory ? 0.12 : 0.22));
+    final progressionMultiplier =
+        0.88 + (progress * (isAccessory ? 0.12 : 0.22));
     final dayMultiplier = switch (dayType) {
       _TrainingDayType.volume => 0.95,
       _TrainingDayType.heavy => 1.05,
@@ -622,7 +613,8 @@ class DebugDataService {
       3 => 0.94,
       _ => 0.92,
     };
-    final weight = baseWeight *
+    final weight =
+        baseWeight *
         progressionMultiplier *
         dayMultiplier *
         setMultiplier *
@@ -631,7 +623,7 @@ class DebugDataService {
   }
 
   ({double? actualWeight, int? actualReps, bool isCompleted})
-      _actualPerformanceForSet({
+  _actualPerformanceForSet({
     required double targetWeight,
     required int targetReps,
     required bool isCompleted,
@@ -650,33 +642,48 @@ class DebugDataService {
       case _TrainingDayType.bad:
         actualWeight = isBodyweightExercise
             ? 0
-            : _roundToNearestHalf(targetWeight * (0.9 + _random.nextDouble() * 0.05));
+            : _roundToNearestHalf(
+                targetWeight * (0.9 + _random.nextDouble() * 0.05),
+              );
         actualReps = max(1, targetReps - 1 - _random.nextInt(2));
       case _TrainingDayType.heavy:
         actualWeight = isBodyweightExercise
             ? 0
-            : _roundToNearestHalf(targetWeight * (1.01 + _random.nextDouble() * 0.04));
+            : _roundToNearestHalf(
+                targetWeight * (1.01 + _random.nextDouble() * 0.04),
+              );
         actualReps = max(1, targetReps - _random.nextInt(2));
       case _TrainingDayType.volume:
         actualWeight = isBodyweightExercise
             ? 0
-            : _roundToNearestHalf(targetWeight * (0.97 + _random.nextDouble() * 0.03));
+            : _roundToNearestHalf(
+                targetWeight * (0.97 + _random.nextDouble() * 0.03),
+              );
         actualReps = targetReps + _random.nextInt(3);
       case _TrainingDayType.peak:
         actualWeight = isBodyweightExercise
             ? 0
-            : _roundToNearestHalf(targetWeight * (1.03 + _random.nextDouble() * 0.05));
+            : _roundToNearestHalf(
+                targetWeight * (1.03 + _random.nextDouble() * 0.05),
+              );
         actualReps = targetReps + (_chance(0.4) ? 1 : 0);
       case _TrainingDayType.deload:
         actualWeight = isBodyweightExercise
             ? 0
-            : _roundToNearestHalf(targetWeight * (0.95 + _random.nextDouble() * 0.02));
+            : _roundToNearestHalf(
+                targetWeight * (0.95 + _random.nextDouble() * 0.02),
+              );
         actualReps = max(1, targetReps - _random.nextInt(2));
       case _TrainingDayType.baseline:
         actualWeight = isBodyweightExercise
             ? 0
-            : _roundToNearestHalf(targetWeight * (0.99 + _random.nextDouble() * 0.03));
-        actualReps = max(1, targetReps + (_chance(0.15) ? 1 : 0) - (_chance(0.1) ? 1 : 0));
+            : _roundToNearestHalf(
+                targetWeight * (0.99 + _random.nextDouble() * 0.03),
+              );
+        actualReps = max(
+          1,
+          targetReps + (_chance(0.15) ? 1 : 0) - (_chance(0.1) ? 1 : 0),
+        );
     }
 
     if (isPrSet) {
@@ -736,7 +743,11 @@ class DebugDataService {
         'exercises': [
           {'slug': 'bench-press', 'baseWeight': 60.0, 'baseReps': 8},
           {'slug': 'overhead-press', 'baseWeight': 40.0, 'baseReps': 10},
-          {'slug': 'incline-dumbbell-press', 'baseWeight': 20.0, 'baseReps': 12},
+          {
+            'slug': 'incline-dumbbell-press',
+            'baseWeight': 20.0,
+            'baseReps': 12,
+          },
           {
             'slug': 'tricep-pushdown-with-rope',
             'baseWeight': 15.0,
@@ -797,7 +808,9 @@ class DebugDataService {
         .map(
           (template) => {
             ...template,
-            'exercises': _cloneExerciseList(template['exercises'] as List<dynamic>),
+            'exercises': _cloneExerciseList(
+              template['exercises'] as List<dynamic>,
+            ),
             'optionalExercises': _cloneExerciseList(
               template['optionalExercises'] as List<dynamic>? ??
                   const <dynamic>[],
@@ -810,9 +823,8 @@ class DebugDataService {
   static List<Map<String, dynamic>> _cloneExerciseList(List<dynamic> source) {
     return source
         .map(
-          (exercise) => Map<String, dynamic>.from(
-            exercise as Map<dynamic, dynamic>,
-          ),
+          (exercise) =>
+              Map<String, dynamic>.from(exercise as Map<dynamic, dynamic>),
         )
         .toList();
   }

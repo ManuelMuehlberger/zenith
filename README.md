@@ -82,3 +82,13 @@ Coverage gate:
 - The minimum per-file coverage defaults to `80%` and can be overridden with the `ZENITH_MIN_CHANGED_FILE_COVERAGE` environment variable.
 
 Theme and token definitions now belong in `lib/theme/`. UI code should consume them through `context.appScheme`, `context.appText`, and `context.appColors`. Direct `AppThemeColors` and `AppTextStyles` references are compatibility aliases that should only shrink over time, not be added back into non-theme UI code.
+
+## CI Toolchain Image
+
+This repo supports a promoted CI toolchain image that preinstalls Java,
+Flutter, and Android SDK components for faster self-hosted CI runs. The main
+quality gate auto-detects that toolchain and skips setup steps when it is
+already present, while still keeping fallback setup steps for compatibility.
+
+See `docs/ci_toolchain_image.md` for the image lifecycle, promotion flow,
+required secrets and variables, and the runner label configuration.

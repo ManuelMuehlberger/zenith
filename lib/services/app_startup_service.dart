@@ -15,14 +15,19 @@ class AppStartupService {
     Future<void> Function()? loadWorkoutData,
     Future<void> Function()? loadUserProfile,
     Future<void> Function()? loadActiveSession,
-  })  : _initializeNotifications =
-            initializeNotifications ?? (() => LiveWorkoutNotificationService().initialize()),
-        _initializeNotificationCallback =
-            initializeNotificationCallback ?? WorkoutSessionService.instance.initializeNotificationCallback,
-        _loadExercises = loadExercises ?? ExerciseService.instance.loadExercises,
-        _loadWorkoutData = loadWorkoutData ?? WorkoutService.instance.loadData,
-        _loadUserProfile = loadUserProfile ?? UserService.instance.loadUserProfile,
-        _loadActiveSession = loadActiveSession ?? WorkoutSessionService.instance.loadActiveSession;
+  }) : _initializeNotifications =
+           initializeNotifications ??
+           (() => LiveWorkoutNotificationService().initialize()),
+       _initializeNotificationCallback =
+           initializeNotificationCallback ??
+           WorkoutSessionService.instance.initializeNotificationCallback,
+       _loadExercises = loadExercises ?? ExerciseService.instance.loadExercises,
+       _loadWorkoutData = loadWorkoutData ?? WorkoutService.instance.loadData,
+       _loadUserProfile =
+           loadUserProfile ?? UserService.instance.loadUserProfile,
+       _loadActiveSession =
+           loadActiveSession ??
+           WorkoutSessionService.instance.loadActiveSession;
 
   AppStartupService._internal() : this();
 

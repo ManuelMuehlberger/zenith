@@ -9,7 +9,12 @@ import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/screens/exercise_info_screen.dart';
 import 'package:zenith/services/insights_service.dart';
 
-Future<void> pumpUntilVisible(WidgetTester tester, Finder finder, {Duration step = const Duration(milliseconds: 50), int maxTicks = 200}) async {
+Future<void> pumpUntilVisible(
+  WidgetTester tester,
+  Finder finder, {
+  Duration step = const Duration(milliseconds: 50),
+  int maxTicks = 200,
+}) async {
   for (var i = 0; i < maxTicks; i++) {
     await tester.pump(step);
     if (finder.evaluate().isNotEmpty) return;
@@ -25,8 +30,9 @@ void main() {
       InsightsService.instance.reset();
     });
 
-    testWidgets('shows info and stats when insights data is available',
-        (tester) async {
+    testWidgets('shows info and stats when insights data is available', (
+      tester,
+    ) async {
       // Arrange: create an exercise and workouts that include this exercise slug
       final exercise = Exercise(
         slug: 'bench-press',
@@ -76,18 +82,14 @@ void main() {
 
       // Act: pump the screen
       await tester.pumpWidget(
-        MaterialApp(
-          home: ExerciseInfoScreen(
-            exercise: exercise,
-          ),
-        ),
+        MaterialApp(home: ExerciseInfoScreen(exercise: exercise)),
       );
 
       // Check for Info section elements
       expect(find.text('Bench Press'), findsOneWidget);
       expect(find.text('Chest'), findsOneWidget); // Muscle group chip
       // Instructions might be pre-rendered but hidden by SizeTransition
-      // expect(find.text('Push bar up'), findsNothing); 
+      // expect(find.text('Push bar up'), findsNothing);
 
       // Expand instructions
       await tester.tap(find.text('Instructions'));
@@ -99,7 +101,7 @@ void main() {
 
       // Assert: Stats section is visible
       expect(find.text('Statistics'), findsOneWidget);
-      
+
       // Check for stat cards (Summary Card)
       expect(find.text('Summary'), findsOneWidget);
       expect(find.text('Sessions'), findsOneWidget);
@@ -119,8 +121,9 @@ void main() {
       expect(find.text('Sets per Session'), findsOneWidget);
     });
 
-    testWidgets('shows empty-state message when no insights data',
-        (tester) async {
+    testWidgets('shows empty-state message when no insights data', (
+      tester,
+    ) async {
       // Arrange: exercise with no workout usage
       final exercise = Exercise(
         slug: 'non-existent-exercise',
@@ -136,23 +139,13 @@ void main() {
 
       // Act
       await tester.pumpWidget(
-        MaterialApp(
-          home: ExerciseInfoScreen(
-            exercise: exercise,
-          ),
-        ),
+        MaterialApp(home: ExerciseInfoScreen(exercise: exercise)),
       );
 
-      await pumpUntilVisible(
-        tester,
-        find.text('No data available'),
-      );
+      await pumpUntilVisible(tester, find.text('No data available'));
 
       // Assert: Empty-state for stats
-      expect(
-        find.text('No data available'),
-        findsOneWidget,
-      );
+      expect(find.text('No data available'), findsOneWidget);
       expect(
         find.text('Complete workouts with this exercise to see stats.'),
         findsOneWidget,
@@ -175,17 +168,13 @@ void main() {
       InsightsService.instance.setWorkoutsProvider(() async => []);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: ExerciseInfoScreen(
-            exercise: exercise,
-          ),
-        ),
+        MaterialApp(home: ExerciseInfoScreen(exercise: exercise)),
       );
 
       // Initial shows "6M" button (default)
       await pumpUntilVisible(tester, find.text('6M'));
       expect(find.text('6M'), findsOneWidget);
-      
+
       // Note: Testing PullDownButton interaction in widget tests can be complex due to overlays
       // We verify the button exists and has the correct initial label
     });
