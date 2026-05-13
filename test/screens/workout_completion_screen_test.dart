@@ -1,10 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zenith/constants/app_constants.dart';
+import 'package:zenith/models/user_data.dart';
 import 'package:zenith/models/workout.dart';
 import 'package:zenith/screens/workout_completion_screen.dart';
+import 'package:zenith/services/user_service.dart';
 
 void main() {
   group('WorkoutCompletionScreen', () {
+    setUp(() {
+      UserService.instance.currentProfileForTesting = UserData(
+        id: 'user-1',
+        name: 'Tester',
+        birthdate: DateTime(1990, 1, 1),
+        units: Units.metric,
+        weightHistory: [
+          WeightEntry(timestamp: DateTime(2026, 5, 1), value: 74.2),
+        ],
+        createdAt: DateTime(2026, 1, 1),
+        theme: 'system',
+      );
+    });
+
+    tearDown(() {
+      UserService.instance.resetForTesting();
+    });
+
     testWidgets('shows elapsed duration when completedAt is null', (
       WidgetTester tester,
     ) async {
@@ -81,6 +102,35 @@ void main() {
       for (final label in labels) {
         expect(find.text(label), findsNothing);
       }
+    });
+
+    testWidgets('shows latest weight and opens weight tumbler', (
+      WidgetTester tester,
+    ) async {
+      final startedAt = DateTime.now().subtract(const Duration(minutes: 1));
+      final session = Workout(
+        name: 'Weight Log',
+        status: WorkoutStatus.inProgress,
+        startedAt: startedAt,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(home: WorkoutCompletionScreen(session: session)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Latest: 74.2 kg'), findsOneWidget);
+
+      await tester.ensureVisible(find.byKey(const Key('weight_summary')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('weight_summary')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('post_workout_weight_picker')),
+        findsOneWidget,
+      );
+      expect(find.text('Done'), findsOneWidget);
     });
   });
 }

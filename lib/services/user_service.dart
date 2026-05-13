@@ -26,6 +26,9 @@ class UserService with ChangeNotifier {
 
   UserData? _currentProfile;
 
+  @visibleForTesting
+  set currentProfileForTesting(UserData? profile) => _currentProfile = profile;
+
   UserData? get currentProfile => _currentProfile;
   bool get hasProfile => _currentProfile != null;
 
@@ -113,6 +116,31 @@ class UserService with ChangeNotifier {
 
   Future<void> updateProfile(UserData profile) async {
     await saveUserProfile(profile);
+  }
+
+  Future<WeightEntry> recordWeightEntry({
+    required double value,
+    DateTime? timestamp,
+  }) async {
+    final profile = _currentProfile;
+    if (profile == null) {
+      _logger.warning('Cannot record weight entry without a loaded profile');
+      throw StateError('No user profile loaded');
+    }
+
+    final entry = WeightEntry(
+      timestamp: timestamp ?? DateTime.now(),
+      value: value,
+    );
+
+    await _weightEntryDao.addWeightEntryForUser(profile.id, entry);
+
+    final updatedHistory = [...profile.weightHistory, entry]
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    _currentProfile = profile.copyWith(weightHistory: updatedHistory);
+    notifyListeners();
+    return entry;
   }
 
   Future<void> clearUserData() async {

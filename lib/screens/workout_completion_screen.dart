@@ -14,6 +14,7 @@ import '../services/user_service.dart';
 import '../services/workout_session_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/navigation_helper.dart';
+import '../widgets/weight_tumbler_picker.dart';
 
 class WorkoutCompletionScreen extends StatefulWidget {
   final Workout session;
@@ -28,6 +29,7 @@ class WorkoutCompletionScreen extends StatefulWidget {
 class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
   final _notesController = TextEditingController();
   int? _selectedMood; // Using int for mood (1-5 scale)
+  double? _selectedWeight;
   Duration? _editedDuration;
   final Logger _logger = Logger('WorkoutCompletionScreen');
   late ConfettiController _confettiController;
@@ -245,6 +247,70 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                         );
                       }),
                     ),
+                    const SizedBox(height: 32),
+                    Text('Current weight', style: textTheme.titleMedium),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Optional. Log your body weight with the tumbler.',
+                      style: textTheme.labelMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      key: const Key('weight_summary'),
+                      onTap: _showWeightPicker,
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: scheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: colors.field,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                Icons.monitor_weight_outlined,
+                                color: scheme.primary,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _selectedWeightLabel(),
+                                    style: textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _selectedWeight == null
+                                        ? 'Tap to log weight'
+                                        : 'Logged for this workout',
+                                    style: textTheme.labelMedium,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              CupertinoIcons.chevron_right,
+                              color: colors.textTertiary,
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 40),
                     Row(
                       children: [
@@ -386,6 +452,35 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
     return '${d.inMinutes}m';
   }
 
+  Units get _weightUnits =>
+      UserService.instance.currentProfile?.units ?? Units.metric;
+
+  double _defaultWeightValue() {
+    if (_selectedWeight != null) {
+      return _selectedWeight!;
+    }
+
+    final history = UserService.instance.currentProfile?.weightHistory;
+    if (history != null && history.isNotEmpty) {
+      return history.last.value;
+    }
+
+    return WeightTumblerSpec.forUnits(_weightUnits).defaultWeight();
+  }
+
+  String _selectedWeightLabel() {
+    if (_selectedWeight != null) {
+      return '${_selectedWeight!.toStringAsFixed(1)} ${_weightUnits.weightUnit}';
+    }
+
+    final history = UserService.instance.currentProfile?.weightHistory;
+    if (history != null && history.isNotEmpty) {
+      return 'Latest: ${history.last.value.toStringAsFixed(1)} ${_weightUnits.weightUnit}';
+    }
+
+    return 'Log weight';
+  }
+
   void _showDurationPicker() {
     final start = widget.session.startedAt ?? DateTime.now();
     final initial =
@@ -464,6 +559,78 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
     );
   }
 
+  void _showWeightPicker() {
+    final units = _weightUnits;
+    final spec = WeightTumblerSpec.forUnits(units);
+    final initial = spec.clamp(_defaultWeightValue());
+
+    showCupertinoModalPopup(
+      context: context,
+      builder: (ctx) {
+        double temp = initial;
+        return Container(
+          height: 320,
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+              width: 0.5,
+            ),
+          ),
+          child: Column(
+            children: [
+              Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: 0.5,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CupertinoButton(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                      },
+                      child: const Text('Cancel'),
+                    ),
+                    CupertinoButton(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      onPressed: () {
+                        setState(() {
+                          _selectedWeight = spec.clamp(temp);
+                        });
+                        Navigator.of(ctx).pop();
+                      },
+                      child: Text('Done', style: context.appText.labelLarge),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: WeightTumblerPicker(
+                  pickerKey: const Key('post_workout_weight_picker'),
+                  weight: initial,
+                  units: units,
+                  onWeightChanged: (value) {
+                    temp = value;
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _completeWorkout() async {
     try {
       await WorkoutSessionService.instance.completeWorkout(
@@ -472,6 +639,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
             : _notesController.text.trim(),
         mood: _selectedMood,
         durationOverride: _editedDuration,
+        postWorkoutWeight: _selectedWeight,
       );
 
       unawaited(HapticFeedback.mediumImpact());

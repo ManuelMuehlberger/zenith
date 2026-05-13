@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../constants/app_constants.dart';
 import '../../theme/app_theme.dart';
+import '../weight_tumbler_picker.dart';
 import 'onboarding_common.dart';
 
 class NamePage extends StatefulWidget {
@@ -277,39 +278,10 @@ class WeightPage extends StatelessWidget {
               color: context.appScheme.surface,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: CupertinoPicker(
-              itemExtent: 50,
-              scrollController: FixedExtentScrollController(
-                initialItem: units == Units.metric
-                    ? ((weight - 30) * 2).round()
-                    : ((weight - 66) * 2).round(),
-              ),
-              onSelectedItemChanged: (index) {
-                if (units == Units.metric) {
-                  onWeightChanged(30 + (index / 2));
-                } else {
-                  onWeightChanged(66 + (index / 2));
-                }
-              },
-              children: units == Units.metric
-                  ? List.generate(280, (index) {
-                      final weightValue = 30 + (index / 2);
-                      return Center(
-                        child: Text(
-                          '${weightValue.toStringAsFixed(1)} kg',
-                          style: textTheme.titleMedium,
-                        ),
-                      );
-                    })
-                  : List.generate(600, (index) {
-                      final weightValue = 66 + (index / 2);
-                      return Center(
-                        child: Text(
-                          '${weightValue.toStringAsFixed(1)} lbs',
-                          style: textTheme.titleMedium,
-                        ),
-                      );
-                    }),
+            child: WeightTumblerPicker(
+              weight: weight,
+              units: units,
+              onWeightChanged: onWeightChanged,
             ),
           ),
 
