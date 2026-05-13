@@ -3,15 +3,19 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
+import '../constants/app_constants.dart';
+import '../models/user_data.dart';
 import '../models/workout.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../models/workout_template.dart';
+import 'dao/weight_entry_dao.dart';
 import 'dao/workout_dao.dart';
 import 'dao/workout_exercise_dao.dart';
 import 'dao/workout_set_dao.dart';
 import 'dao/workout_template_dao.dart';
 import 'exercise_service.dart';
+import 'user_service.dart';
 import 'workout_service.dart';
 
 enum _TrainingWeekType { normal, peak, deload, pause }
@@ -30,11 +34,16 @@ class DebugDataService {
   WorkoutExerciseDao _workoutExerciseDao = WorkoutExerciseDao();
   WorkoutSetDao _workoutSetDao = WorkoutSetDao();
   WorkoutTemplateDao _workoutTemplateDao = WorkoutTemplateDao();
+  WeightEntryDao _weightEntryDao = WeightEntryDao();
   Random _random = Random();
   Future<void> Function() _loadExercises =
       ExerciseService.instance.loadExercises;
   Future<void> Function() _refreshWorkoutData =
       WorkoutService.instance.loadData;
+  Future<void> Function() _refreshUserProfile =
+      UserService.instance.loadUserProfile;
+  UserData? Function() _currentProfileProvider = () =>
+      UserService.instance.currentProfile;
   DateTime Function() _nowProvider = DateTime.now;
   int _weeksToGenerate = 104;
 
@@ -53,6 +62,9 @@ class DebugDataService {
   set workoutTemplateDao(WorkoutTemplateDao dao) => _workoutTemplateDao = dao;
 
   @visibleForTesting
+  set weightEntryDao(WeightEntryDao dao) => _weightEntryDao = dao;
+
+  @visibleForTesting
   set random(Random random) => _random = random;
 
   @visibleForTesting
@@ -62,6 +74,14 @@ class DebugDataService {
   @visibleForTesting
   set refreshWorkoutData(Future<void> Function() callback) =>
       _refreshWorkoutData = callback;
+
+  @visibleForTesting
+  set refreshUserProfile(Future<void> Function() callback) =>
+      _refreshUserProfile = callback;
+
+  @visibleForTesting
+  set currentProfileProvider(UserData? Function() callback) =>
+      _currentProfileProvider = callback;
 
   @visibleForTesting
   set nowProvider(DateTime Function() callback) => _nowProvider = callback;
@@ -80,9 +100,12 @@ class DebugDataService {
     _workoutExerciseDao = WorkoutExerciseDao();
     _workoutSetDao = WorkoutSetDao();
     _workoutTemplateDao = WorkoutTemplateDao();
+    _weightEntryDao = WeightEntryDao();
     _random = Random();
     _loadExercises = ExerciseService.instance.loadExercises;
     _refreshWorkoutData = WorkoutService.instance.loadData;
+    _refreshUserProfile = UserService.instance.loadUserProfile;
+    _currentProfileProvider = () => UserService.instance.currentProfile;
     _nowProvider = DateTime.now;
     _weeksToGenerate = 104;
     _workoutTemplates = _defaultWorkoutTemplates();
@@ -96,6 +119,7 @@ class DebugDataService {
     await _seedWorkoutTemplates();
 
     final now = _startOfDay(_nowProvider());
+    final profile = _currentProfileProvider();
 
     for (int weekIndex = 0; weekIndex < _weeksToGenerate; weekIndex++) {
       final progress = _weeksToGenerate <= 1
@@ -118,16 +142,29 @@ class DebugDataService {
             _workoutTemplates[_random.nextInt(_workoutTemplates.length)];
         final dayType = _selectDayType(weekType, progress);
 
-        await _createWorkoutFromTemplate(
+        final workout = await _createWorkoutFromTemplate(
           template,
           workoutDate,
           progress: progress,
           dayType: dayType,
         );
+
+        if (profile != null) {
+          await _createWeightEntryForWorkout(
+            profile: profile,
+            workout: workout,
+            progress: progress,
+            weekType: weekType,
+            dayType: dayType,
+          );
+        }
       }
     }
 
     _logger.info('Debug data generation complete.');
+    if (profile != null) {
+      await _refreshUserProfile();
+    }
     await _refreshWorkoutData();
   }
 
@@ -142,7 +179,7 @@ class DebugDataService {
     dayType: _TrainingDayType.baseline,
   );
 
-  Future<void> _createWorkoutFromTemplate(
+  Future<Workout> _createWorkoutFromTemplate(
     Map<String, dynamic> template,
     DateTime date, {
     required double progress,
@@ -239,6 +276,76 @@ class DebugDataService {
         await _workoutSetDao.insert(set);
       }
     }
+
+    return workout;
+  }
+
+  Future<void> _createWeightEntryForWorkout({
+    required UserData profile,
+    required Workout workout,
+    required double progress,
+    required _TrainingWeekType weekType,
+    required _TrainingDayType dayType,
+  }) async {
+    final timestamp = workout.completedAt ?? workout.startedAt;
+    if (timestamp == null) {
+      return;
+    }
+
+    final value = _generateBodyWeight(
+      profile: profile,
+      progress: progress,
+      weekType: weekType,
+      dayType: dayType,
+    );
+
+    await _weightEntryDao.addWeightEntryForUser(
+      profile.id,
+      WeightEntry(timestamp: timestamp, value: value),
+    );
+  }
+
+  double _generateBodyWeight({
+    required UserData profile,
+    required double progress,
+    required _TrainingWeekType weekType,
+    required _TrainingDayType dayType,
+  }) {
+    final trendGain = profile.units == Units.metric ? 2.0 : 4.5;
+    final latestKnownWeight = profile.weightHistory.isNotEmpty
+        ? profile.weightHistory.last.value
+        : _defaultBodyWeight(profile.units);
+    final baseline = latestKnownWeight - trendGain;
+
+    final weekAdjustment = switch (weekType) {
+      _TrainingWeekType.peak => profile.units == Units.metric ? 0.3 : 0.7,
+      _TrainingWeekType.deload => profile.units == Units.metric ? -0.2 : -0.4,
+      _TrainingWeekType.pause => profile.units == Units.metric ? -0.4 : -0.8,
+      _TrainingWeekType.normal => 0.0,
+    };
+    final dayAdjustment = switch (dayType) {
+      _TrainingDayType.peak => profile.units == Units.metric ? 0.2 : 0.4,
+      _TrainingDayType.heavy => profile.units == Units.metric ? 0.1 : 0.2,
+      _TrainingDayType.volume => profile.units == Units.metric ? 0.1 : 0.2,
+      _TrainingDayType.bad => profile.units == Units.metric ? -0.2 : -0.4,
+      _TrainingDayType.deload => profile.units == Units.metric ? -0.1 : -0.2,
+      _TrainingDayType.baseline => 0.0,
+    };
+    final noise =
+        (_random.nextDouble() - 0.5) *
+        (profile.units == Units.metric ? 0.6 : 1.2);
+
+    return _roundToNearestHalf(
+      baseline +
+          (trendGain * progress) +
+          weekAdjustment +
+          dayAdjustment +
+          noise,
+    );
+  }
+
+  double _defaultBodyWeight(Units units) {
+    return units == Units.metric ? 70.0 : 154.0;
   }
 
   Future<void> _seedWorkoutTemplates() async {
