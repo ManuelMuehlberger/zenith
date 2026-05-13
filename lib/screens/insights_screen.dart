@@ -282,7 +282,10 @@ class _InsightsScreenState extends State<InsightsScreen>
 
     return [
       SliverToBoxAdapter(
-        child: InsightsGraphCardsGrid(filters: filterSnapshot),
+        child: InsightsGraphCardsGrid(
+          filters: filterSnapshot,
+          weightUnitLabel: _getWeightUnitLabel(),
+        ),
       ),
       SliverToBoxAdapter(
         child: InsightsQuickActionsCard(onBrowseExercises: _showExercisePicker),
