@@ -1,9 +1,6 @@
-import 'dart:io';
-
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sqflite/sqflite.dart' as sqflite;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:zenith/models/typedefs.dart';
 import 'package:zenith/models/workout.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
@@ -11,52 +8,111 @@ import 'package:zenith/models/workout_template.dart';
 import 'package:zenith/services/dao/workout_dao.dart';
 import 'package:zenith/services/dao/workout_exercise_dao.dart';
 import 'package:zenith/services/dao/workout_template_dao.dart';
-import 'package:zenith/services/database_helper.dart';
+
+class TestWorkoutDao extends WorkoutDao {
+  TestWorkoutDao(this._database);
+
+  final Database _database;
+
+  @override
+  Future<Database> get database async => _database;
+}
+
+class TestWorkoutTemplateDao extends WorkoutTemplateDao {
+  TestWorkoutTemplateDao(this._database);
+
+  final Database _database;
+
+  @override
+  Future<Database> get database async => _database;
+}
+
+class TestWorkoutExerciseDao extends WorkoutExerciseDao {
+  TestWorkoutExerciseDao(this._database);
+
+  final Database _database;
+
+  @override
+  Future<Database> get database async => _database;
+}
+
+Future<Database> _openTestDatabase() {
+  return databaseFactoryFfi.openDatabase(
+    inMemoryDatabasePath,
+    options: OpenDatabaseOptions(
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE Workout (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            iconCodePoint INTEGER,
+            colorValue INTEGER,
+            folderId TEXT,
+            notes TEXT,
+            lastUsed TEXT,
+            orderIndex INTEGER,
+            status INTEGER NOT NULL DEFAULT 0,
+            templateId TEXT,
+            startedAt TEXT,
+            completedAt TEXT,
+            mood INTEGER
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE WorkoutTemplate (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            iconCodePoint INTEGER,
+            colorValue INTEGER,
+            folderId TEXT,
+            notes TEXT,
+            lastUsed TEXT,
+            orderIndex INTEGER
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE WorkoutExercise (
+            id TEXT PRIMARY KEY,
+            workoutTemplateId TEXT,
+            workoutId TEXT,
+            exerciseSlug TEXT NOT NULL,
+            notes TEXT,
+            orderIndex INTEGER,
+            CHECK ((workoutTemplateId IS NOT NULL AND workoutId IS NULL) OR (workoutTemplateId IS NULL AND workoutId IS NOT NULL))
+          )
+        ''');
+      },
+    ),
+  );
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
-  final testDatabaseDirectory = Directory(
-    '${Directory.current.path}/.dart_tool/test_databases',
-  );
-
   group('WorkoutExerciseDao', () {
-    late DatabaseHelper databaseHelper;
-    late WorkoutDao workoutDao;
-    late WorkoutTemplateDao workoutTemplateDao;
-    late WorkoutExerciseDao dao;
+    late Database database;
+    late TestWorkoutDao workoutDao;
+    late TestWorkoutTemplateDao workoutTemplateDao;
+    late TestWorkoutExerciseDao dao;
 
-    setUpAll(() async {
+    setUpAll(() {
       sqfliteFfiInit();
-      sqflite.databaseFactory = databaseFactoryFfi;
-      await testDatabaseDirectory.create(recursive: true);
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(pathProviderChannel, (methodCall) async {
-            if (methodCall.method == 'getApplicationDocumentsDirectory') {
-              return testDatabaseDirectory.path;
-            }
-            return testDatabaseDirectory.path;
-          });
-    });
-
-    tearDownAll(() async {
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(pathProviderChannel, null);
-      await _deleteDatabaseFiles(testDatabaseDirectory);
     });
 
     setUp(() async {
-      await _deleteDatabaseFiles(testDatabaseDirectory);
-      databaseHelper = DatabaseHelper();
-      workoutDao = WorkoutDao();
-      workoutTemplateDao = WorkoutTemplateDao();
-      dao = WorkoutExerciseDao();
+      database = await _openTestDatabase();
+      workoutDao = TestWorkoutDao(database);
+      workoutTemplateDao = TestWorkoutTemplateDao(database);
+      dao = TestWorkoutExerciseDao(database);
     });
 
     tearDown(() async {
-      await _closeDatabaseIfCreated(databaseHelper, testDatabaseDirectory);
-      await _deleteDatabaseFiles(testDatabaseDirectory);
+      await database.close();
     });
 
     test('should have correct table name', () {
@@ -457,7 +513,7 @@ void main() {
     test(
       'returns an empty frequency map when the frequency query fails',
       () async {
-        await _closeDatabaseIfCreated(databaseHelper, testDatabaseDirectory);
+        await database.close();
 
         final frequency = await dao.getExerciseFrequency();
 
@@ -546,7 +602,7 @@ WorkoutExercise _sessionExercise({
 
 WorkoutExercise _templateExercise({
   required String id,
-  required String workoutTemplateId,
+  required WorkoutTemplateId workoutTemplateId,
   required String exerciseSlug,
   int? orderIndex,
 }) {
@@ -556,26 +612,4 @@ WorkoutExercise _templateExercise({
     exerciseSlug: exerciseSlug,
     orderIndex: orderIndex,
   );
-}
-
-Future<void> _closeDatabaseIfCreated(
-  DatabaseHelper databaseHelper,
-  Directory testDatabaseDirectory,
-) async {
-  final databaseFile = File('${testDatabaseDirectory.path}/workout_tracker.db');
-  if (await databaseFile.exists()) {
-    await databaseHelper.close();
-  }
-}
-
-Future<void> _deleteDatabaseFiles(Directory testDatabaseDirectory) async {
-  const suffixes = ['', '-wal', '-shm', '-journal'];
-  for (final suffix in suffixes) {
-    final file = File(
-      '${testDatabaseDirectory.path}/workout_tracker.db$suffix',
-    );
-    if (await file.exists()) {
-      await file.delete();
-    }
-  }
 }

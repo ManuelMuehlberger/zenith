@@ -23,46 +23,41 @@ class CompletionPage extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(24),
       child: Column(
         children: [
           const Spacer(),
           Container(
-            width: 120,
-            height: 120,
+            width: 112,
+            height: 112,
             decoration: BoxDecoration(
               color: colors.success,
-              borderRadius: BorderRadius.circular(60),
+              borderRadius: BorderRadius.circular(28),
             ),
-            child: Icon(Icons.check, size: 60, color: colorScheme.onPrimary),
+            child: Icon(Icons.check, size: 52, color: colorScheme.onPrimary),
           ),
-
           const SizedBox(height: 32),
-
           Text(
-            'Welcome, $name!',
+            'You\'re ready, ${name.isEmpty ? 'there' : name}!',
             textAlign: TextAlign.center,
             style: textTheme.displaySmall,
           ),
-
           const SizedBox(height: 16),
-
           Text(
-            'You\'re all set to start your fitness journey with a privacy-respecting, fully offline workout logger.',
+            'Your profile is ready. You can adjust these details anytime from settings.',
             textAlign: TextAlign.center,
             style: textTheme.titleMedium?.copyWith(
-              color: colors.textTertiary,
+              color: colors.textSecondary,
               height: 1.4,
             ),
           ),
-
           const SizedBox(height: 32),
 
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(color: theme.dividerColor),
             ),
             child: Column(
@@ -76,9 +71,9 @@ class CompletionPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'All your data stays on your device. No cloud, no tracking, no ads.',
+                  'Everything you entered stays local to this device unless you choose to export it.',
                   style: textTheme.bodySmall?.copyWith(
-                    color: colors.textTertiary,
+                    color: colors.textSecondary,
                   ),
                 ),
               ],
@@ -91,12 +86,19 @@ class CompletionPage extends StatelessWidget {
             width: double.infinity,
             height: 56,
             child: FilledButton(
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
               onPressed: isLoading ? null : onComplete,
               child: isLoading
                   ? CupertinoActivityIndicator(color: colorScheme.onPrimary)
                   : Text(
                       'Start Logging Workouts',
-                      style: textTheme.titleMedium,
+                      style: textTheme.titleMedium?.copyWith(
+                        color: colorScheme.onPrimary,
+                      ),
                     ),
             ),
           ),

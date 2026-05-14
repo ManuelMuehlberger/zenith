@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
 import '../../theme/app_theme.dart';
 
 class OnboardingProgressIndicator extends StatelessWidget {
@@ -21,21 +23,28 @@ class OnboardingProgressIndicator extends StatelessWidget {
       children: [
         IconButton(
           onPressed: onBack,
-          icon: Icon(Icons.arrow_back_ios, color: colorScheme.onSurface),
+          tooltip: 'Back',
+          icon: Icon(
+            CupertinoIcons.back,
+            color: colorScheme.onSurface,
+            size: 24,
+          ),
         ),
         Expanded(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(total, (index) {
-              return Container(
+              final isComplete = index < current;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
                 margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: 8,
+                width: isComplete ? 18 : 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: index < current
+                  color: isComplete
                       ? colorScheme.primary
-                      : context.appColors.textTertiary,
-                  borderRadius: BorderRadius.circular(4),
+                      : context.appColors.textTertiary.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(999),
                 ),
               );
             }),
@@ -47,39 +56,99 @@ class OnboardingProgressIndicator extends StatelessWidget {
   }
 }
 
+// policy: allow-public-api shared onboarding layout reused by multiple onboarding step pages.
+class OnboardingStepLayout extends StatelessWidget {
+  final int current;
+  final int total;
+  final VoidCallback onBack;
+  final String title;
+  final String subtitle;
+  final Widget child;
+  final Widget footer;
+
+  const OnboardingStepLayout({
+    super.key,
+    required this.current,
+    required this.total,
+    required this.onBack,
+    required this.title,
+    required this.subtitle,
+    required this.child,
+    required this.footer,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final textTheme = context.appText;
+
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          OnboardingProgressIndicator(
+            current: current,
+            total: total,
+            onBack: onBack,
+          ),
+          const SizedBox(height: 32),
+          Text(title, style: textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: textTheme.bodyLarge?.copyWith(
+              color: colors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 32),
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: child,
+            ),
+          ),
+          const SizedBox(height: 24),
+          footer,
+        ],
+      ),
+    );
+  }
+}
+
 class OnboardingNavigationButtons extends StatelessWidget {
   final bool canContinue;
   final VoidCallback onNext;
-  final VoidCallback? onBack;
+  final String label;
 
   const OnboardingNavigationButtons({
     super.key,
     required this.canContinue,
     required this.onNext,
-    this.onBack,
+    this.label = 'Continue',
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: FilledButton(
-            onPressed: canContinue ? onNext : null,
-            child: const Text('Continue'),
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: FilledButton(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
-        if (onBack != null) ...[
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: TextButton(onPressed: onBack, child: const Text('Back')),
-          ),
-        ],
-      ],
+        onPressed: canContinue ? onNext : null,
+        child: Text(
+          label,
+          style: textTheme.titleMedium?.copyWith(color: colorScheme.onPrimary),
+        ),
+      ),
     );
   }
 }

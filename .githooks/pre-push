@@ -24,5 +24,6 @@ hook_ui_run "ui policy (${base_ref}..HEAD)" "$(hook_ui_magenta)" \
   "$repo_root/scripts/check_changed_dart_policy.sh" --range "$base_ref" HEAD
 hook_ui_run "maintainability (${base_ref}..HEAD)" "$(hook_ui_blue)" \
   "$repo_root/scripts/check_changed_dart_maintainability.py" --range "$base_ref" HEAD
-hook_ui_run "tests + coverage gate (${base_ref}..HEAD)" "$(hook_ui_yellow)" \
+hook_ui_run "full suite + coverage gate (${base_ref}..HEAD)" "$(hook_ui_yellow)" \
+  env ZENITH_DISABLE_COVERAGE_CACHE=1 \
   "$repo_root/scripts/check_changed_dart_coverage.sh" --range "$base_ref" HEAD

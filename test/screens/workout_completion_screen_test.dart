@@ -104,7 +104,7 @@ void main() {
       }
     });
 
-    testWidgets('shows latest weight and opens weight tumbler', (
+    testWidgets('shows latest weight and opens weight picker wheel', (
       WidgetTester tester,
     ) async {
       final startedAt = DateTime.now().subtract(const Duration(minutes: 1));

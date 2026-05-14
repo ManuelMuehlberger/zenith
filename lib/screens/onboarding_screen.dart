@@ -22,15 +22,19 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   static final Logger _logger = Logger('OnboardingScreen');
+  static const double _backSwipeEdgeWidth = 36;
+  static const double _backSwipeTriggerDistance = 72;
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _isTrackingBackSwipe = false;
+  double _backSwipeDistance = 0;
 
   // User data
   late TextEditingController _nameController;
   late FocusNode _nameFocusNode;
   int _age = 25;
-  Gender _gender = Gender.ratherNotSay;
-  Units _units = Units.metric;
+  Gender? _gender;
+  Units? _units;
   double _weight = Gender.ratherNotSay.defaultStartingWeight(Units.metric);
   bool _hasCustomizedWeight = false;
 
@@ -56,65 +60,127 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
-        child: PageView(
-          controller: _pageController,
-          physics: const NeverScrollableScrollPhysics(),
-          onPageChanged: (index) {
-            _logger.fine(
-              'Onboarding page changed from $_currentPage to $index',
-            );
-            setState(() {
-              _currentPage = index;
-            });
-          },
+        child: Stack(
           children: [
-            WelcomePage(
-              onRestoreBackup: _handleRestoreBackup,
-              onNewUser: _nextPage,
-            ),
-            NamePage(
-              nameController: _nameController,
-              nameFocusNode: _nameFocusNode,
-              onNext: _nextPage,
-              onBack: _previousPage,
-            ),
-            AgePage(
-              age: _age,
-              onAgeChanged: (value) => setState(() => _age = value),
-              onNext: _nextPage,
-              onBack: _previousPage,
-            ),
-            GenderPage(
-              gender: _gender,
-              onGenderChanged: _updateGender,
-              onNext: _nextPage,
-              onBack: _previousPage,
-            ),
-            UnitsPage(
-              units: _units,
-              onUnitsChanged: _updateUnits,
-              onNext: _nextPage,
-              onBack: _previousPage,
-            ),
-            WeightPage(
-              weight: _weight,
-              units: _units,
-              onWeightChanged: (value) => setState(() {
-                _weight = value;
-                _hasCustomizedWeight = true;
-              }),
-              onNext: _nextPage,
-              onBack: _previousPage,
-            ),
-            CompletionPage(
-              name: _nameController.text,
-              isLoading: false,
-              onComplete: _completeOnboarding,
-            ),
+            _buildPageView(),
+            if (_currentPage > 0)
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: _backSwipeEdgeWidth,
+                child: _buildBackSwipeRegion(),
+              ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildPageView() {
+    return PageView(
+      controller: _pageController,
+      physics: const NeverScrollableScrollPhysics(),
+      onPageChanged: (index) {
+        _logger.fine('Onboarding page changed from $_currentPage to $index');
+        setState(() {
+          _currentPage = index;
+        });
+      },
+      children: [
+        WelcomePage(
+          onRestoreBackup: _handleRestoreBackup,
+          onNewUser: _nextPage,
+        ),
+        NamePage(
+          nameController: _nameController,
+          nameFocusNode: _nameFocusNode,
+          onNext: _nextPage,
+          onBack: _previousPage,
+        ),
+        AgePage(
+          age: _age,
+          onAgeChanged: (value) => setState(() => _age = value),
+          onNext: _nextPage,
+          onBack: _previousPage,
+        ),
+        GenderPage(
+          gender: _gender,
+          onGenderChanged: _updateGender,
+          onNext: _nextPage,
+          onBack: _previousPage,
+        ),
+        UnitsPage(
+          units: _units,
+          onUnitsChanged: _updateUnits,
+          onNext: _nextPage,
+          onBack: _previousPage,
+        ),
+        WeightPage(
+          weight: _weight,
+          units: _units ?? Units.metric,
+          onWeightChanged: (value) => setState(() {
+            _weight = value;
+            _hasCustomizedWeight = true;
+          }),
+          onNext: _nextPage,
+          onBack: _previousPage,
+        ),
+        CompletionPage(
+          name: _nameController.text,
+          isLoading: false,
+          onComplete: _completeOnboarding,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBackSwipeRegion() {
+    return GestureDetector(
+      key: const ValueKey('onboardingBackSwipeRegion'),
+      behavior: HitTestBehavior.translucent,
+      onHorizontalDragStart: _handleBackSwipeStart,
+      onHorizontalDragUpdate: _handleBackSwipeUpdate,
+      onHorizontalDragEnd: _handleBackSwipeEnd,
+      onHorizontalDragCancel: _resetBackSwipe,
+      child: const SizedBox.expand(),
+    );
+  }
+
+  void _handleBackSwipeStart(DragStartDetails details) {
+    _isTrackingBackSwipe =
+        _currentPage > 0 && details.globalPosition.dx <= _backSwipeEdgeWidth;
+    _backSwipeDistance = 0;
+  }
+
+  void _handleBackSwipeUpdate(DragUpdateDetails details) {
+    if (!_isTrackingBackSwipe) {
+      return;
+    }
+
+    final delta = details.primaryDelta ?? 0;
+    if (delta <= 0) {
+      return;
+    }
+
+    _backSwipeDistance += delta;
+    if (_backSwipeDistance < _backSwipeTriggerDistance) {
+      return;
+    }
+
+    _logger.fine('Edge swipe detected; returning to page ${_currentPage - 1}');
+    _isTrackingBackSwipe = false;
+    _backSwipeDistance = 0;
+    _previousPage();
+  }
+
+  void _handleBackSwipeEnd(DragEndDetails details) {
+    _resetBackSwipe();
+  }
+
+  void _resetBackSwipe() {
+    _isTrackingBackSwipe = false;
+    _backSwipeDistance = 0;
   }
 
   void _nextPage() {
@@ -148,7 +214,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return;
     }
 
-    _weight = _gender.defaultStartingWeight(_units);
+    _weight = (_gender ?? Gender.ratherNotSay).defaultStartingWeight(
+      _units ?? Units.metric,
+    );
   }
 
   void _previousPage() {
@@ -257,8 +325,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final profile = UserData(
         name: _nameController.text.trim(),
         birthdate: birthdate,
-        gender: _gender,
-        units: _units,
+        gender: _gender ?? Gender.ratherNotSay,
+        units: _units ?? Units.metric,
         weightHistory: weightHistory,
         createdAt: DateTime.now(),
         theme: 'system',

@@ -5,8 +5,8 @@ import '../models/user_data.dart';
 import '../theme/app_theme.dart';
 
 // policy: allow-public-api shared weight-wheel contract used by onboarding and workout completion flows.
-class WeightTumblerSpec {
-  const WeightTumblerSpec({
+class WeightPickerWheelSpec {
+  const WeightPickerWheelSpec({
     required this.minimum,
     required this.maximum,
     required this.unitLabel,
@@ -16,10 +16,18 @@ class WeightTumblerSpec {
   final double maximum;
   final String unitLabel;
 
-  factory WeightTumblerSpec.forUnits(Units units) {
+  factory WeightPickerWheelSpec.forUnits(Units units) {
     return units == Units.metric
-        ? const WeightTumblerSpec(minimum: 30, maximum: 170, unitLabel: 'kg')
-        : const WeightTumblerSpec(minimum: 66, maximum: 366, unitLabel: 'lbs');
+        ? const WeightPickerWheelSpec(
+            minimum: 30,
+            maximum: 170,
+            unitLabel: 'kg',
+          )
+        : const WeightPickerWheelSpec(
+            minimum: 66,
+            maximum: 366,
+            unitLabel: 'lbs',
+          );
   }
 
   int get minimumWhole => minimum.floor();
@@ -68,13 +76,13 @@ class WeightTumblerSpec {
 }
 
 // policy: allow-public-api shared weight input widget reused across onboarding and workout completion.
-class WeightTumblerPicker extends StatelessWidget {
+class WeightPickerWheel extends StatelessWidget {
   final double weight;
   final Units units;
   final ValueChanged<double> onWeightChanged;
   final Key? pickerKey;
 
-  const WeightTumblerPicker({
+  const WeightPickerWheel({
     super.key,
     required this.weight,
     required this.units,
@@ -85,7 +93,7 @@ class WeightTumblerPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = context.appText;
-    final spec = WeightTumblerSpec.forUnits(units);
+    final spec = WeightPickerWheelSpec.forUnits(units);
     final initialWeight = spec.clamp(weight);
     var selectedWhole = initialWeight.floor();
     var selectedDecimal = spec.decimalIndexForWeight(initialWeight);
