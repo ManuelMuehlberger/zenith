@@ -15,7 +15,7 @@ import '../services/user_service.dart';
 import '../services/workout_session_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/navigation_helper.dart';
-import '../widgets/weight_tumbler_picker.dart';
+import '../widgets/weight_picker_wheel.dart';
 
 class WorkoutCompletionScreen extends StatefulWidget {
   final Workout session;
@@ -284,7 +284,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
         Text('Current weight', style: textTheme.titleMedium),
         const SizedBox(height: 8),
         Text(
-          'Optional. Log your body weight with the tumbler.',
+          'Optional. Log your body weight with the picker wheel.',
           style: textTheme.labelMedium,
         ),
         const SizedBox(height: 12),
@@ -515,7 +515,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
 
     final gender =
         UserService.instance.currentProfile?.gender ?? Gender.ratherNotSay;
-    return WeightTumblerSpec.forUnits(
+    return WeightPickerWheelSpec.forUnits(
       _weightUnits,
     ).defaultWeight(gender: gender);
   }
@@ -613,7 +613,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
 
   void _showWeightPicker() {
     final units = _weightUnits;
-    final spec = WeightTumblerSpec.forUnits(units);
+    final spec = WeightPickerWheelSpec.forUnits(units);
     final initial = spec.clamp(_defaultWeightValue());
 
     showCupertinoModalPopup(
@@ -667,7 +667,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                 ),
               ),
               Expanded(
-                child: WeightTumblerPicker(
+                child: WeightPickerWheel(
                   pickerKey: const Key('post_workout_weight_picker'),
                   weight: initial,
                   units: units,

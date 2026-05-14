@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/constants/app_constants.dart';
 import 'package:zenith/models/user_data.dart';
 import 'package:zenith/theme/app_theme.dart';
-import 'package:zenith/widgets/weight_tumbler_picker.dart';
+import 'package:zenith/widgets/weight_picker_wheel.dart';
 
 void main() {
-  group('WeightTumblerPicker', () {
+  group('WeightPickerWheel', () {
     testWidgets('renders whole and decimal wheels for finer precision', (
       tester,
     ) async {
@@ -14,7 +14,7 @@ void main() {
         MaterialApp(
           theme: AppTheme.light,
           home: Scaffold(
-            body: WeightTumblerPicker(
+            body: WeightPickerWheel(
               pickerKey: const Key('weight_picker'),
               weight: 74.2,
               units: Units.metric,
@@ -31,7 +31,7 @@ void main() {
     });
 
     test('gender defaults still map to onboarding starting weights', () {
-      final metricSpec = WeightTumblerSpec.forUnits(Units.metric);
+      final metricSpec = WeightPickerWheelSpec.forUnits(Units.metric);
 
       expect(metricSpec.defaultWeight(gender: Gender.female), 60.0);
       expect(metricSpec.defaultWeight(gender: Gender.ratherNotSay), 60.0);
