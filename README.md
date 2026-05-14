@@ -74,6 +74,7 @@ Coverage gate:
 
 - `scripts/check_changed_dart_coverage.sh` is now a stable shell entrypoint that delegates to `scripts/check_changed_dart_coverage.py`.
 - The gate combines two checks from one authoritative cached `flutter test --coverage` run: all Dart tests must pass, and changed non-frontend production files must meet the coverage threshold.
+- The pre-push hook forces a fresh full-suite coverage run by setting `ZENITH_DISABLE_COVERAGE_CACHE=1`, so pushes validate against a new `flutter test --coverage` execution instead of a reused local cache.
 - The script caches that full-suite test+coverage artifact under `.dart_tool/coverage_gate/` and reuses it when no `lib/**/*.dart`, `test/**/*.dart`, `pubspec.yaml`, `pubspec.lock`, or coverage-script inputs have changed.
 - Set `ZENITH_DISABLE_COVERAGE_CACHE=1` to force a fresh coverage run.
 - Set `ZENITH_COVERAGE_CACHE_DEBUG=1` to print cache fingerprint decisions.

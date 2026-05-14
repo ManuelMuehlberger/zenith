@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zenith/constants/app_constants.dart';
 import 'package:zenith/models/user_data.dart';
 import 'package:zenith/theme/app_theme.dart';
 import 'package:zenith/widgets/onboarding/profile_setup_pages.dart';
@@ -20,13 +21,17 @@ void main() {
           MaterialApp(
             theme: AppTheme.light,
             home: Scaffold(
-              body: GenderPage(
-                gender: null,
-                onGenderChanged: (value) {
-                  selectedGender = value;
-                },
-                onNext: () {},
-                onBack: () {},
+              body: StatefulBuilder(
+                builder: (context, setState) => GenderPage(
+                  gender: selectedGender,
+                  onGenderChanged: (value) {
+                    setState(() {
+                      selectedGender = value;
+                    });
+                  },
+                  onNext: () {},
+                  onBack: () {},
+                ),
               ),
             ),
           ),
@@ -68,13 +73,17 @@ void main() {
         MaterialApp(
           theme: AppTheme.light,
           home: Scaffold(
-            body: UnitsPage(
-              units: null,
-              onUnitsChanged: (value) {
-                selectedUnits = value;
-              },
-              onNext: () {},
-              onBack: () {},
+            body: StatefulBuilder(
+              builder: (context, setState) => UnitsPage(
+                units: selectedUnits,
+                onUnitsChanged: (value) {
+                  setState(() {
+                    selectedUnits = value;
+                  });
+                },
+                onNext: () {},
+                onBack: () {},
+              ),
             ),
           ),
         ),
