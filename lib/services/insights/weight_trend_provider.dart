@@ -54,7 +54,9 @@ class WeightTrendProvider implements InsightDataProvider {
       grouping: grouping,
     );
 
-    return List.generate(slots, (index) {
+    final points = <InsightDataPoint>[];
+
+    for (var index = 0; index < slots; index++) {
       final reverseIndex = slots - index - 1;
       final slotBounds = _slotBounds(
         referenceDate: referenceDate,
@@ -66,27 +68,38 @@ class WeightTrendProvider implements InsightDataProvider {
             entry.timestamp.isBefore(slotBounds.end);
       }).toList();
 
+      if (slotEntries.isEmpty && grouping == InsightsGrouping.week) {
+        continue;
+      }
+
       if (slotEntries.isEmpty) {
-        return InsightDataPoint(
-          date: slotBounds.start,
-          value: 0,
-          minValue: 0,
-          maxValue: 0,
-          count: 0,
+        points.add(
+          InsightDataPoint(
+            date: slotBounds.start,
+            value: 0,
+            minValue: 0,
+            maxValue: 0,
+            count: 0,
+          ),
         );
+        continue;
       }
 
       final latest = slotEntries.last.value;
       final values = slotEntries.map((entry) => entry.value).toList();
 
-      return InsightDataPoint(
-        date: slotBounds.start,
-        value: latest,
-        minValue: values.reduce((a, b) => a < b ? a : b),
-        maxValue: values.reduce((a, b) => a > b ? a : b),
-        count: slotEntries.length,
+      points.add(
+        InsightDataPoint(
+          date: slotBounds.start,
+          value: latest,
+          minValue: values.reduce((a, b) => a < b ? a : b),
+          maxValue: values.reduce((a, b) => a > b ? a : b),
+          count: slotEntries.length,
+        ),
       );
-    });
+    }
+
+    return points;
   }
 
   List<WeightEntry> _getWeightHistory() {
