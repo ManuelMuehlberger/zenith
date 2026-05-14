@@ -38,8 +38,31 @@ void main() {
       expect(data, isNotEmpty);
       expect(data.last.value, 77.5);
       expect(data.last.count, 1);
+      expect(data.any((point) => point.value == 0.0), isFalse);
       expect(data.any((point) => point.value == 80.0), isTrue);
     });
+
+    test(
+      'skips empty weeks instead of emitting zero-valued placeholders',
+      () async {
+        final provider = WeightTrendProvider(
+          weightHistoryProvider: () => [
+            WeightEntry(timestamp: DateTime(2026, 4, 7, 9), value: 78.4),
+            WeightEntry(timestamp: DateTime(2026, 4, 28, 9), value: 77.9),
+          ],
+        );
+
+        final data = await provider.getData(timeframe: '6M', monthsBack: 6);
+
+        expect(data, hasLength(2));
+        expect(data.map((point) => point.date), [
+          DateTime(2026, 4, 6),
+          DateTime(2026, 4, 27),
+        ]);
+        expect(data.map((point) => point.value), [78.4, 77.9]);
+        expect(data.every((point) => (point.count ?? 0) > 0), isTrue);
+      },
+    );
 
     test('uses daily slots for 1W', () async {
       final provider = WeightTrendProvider(
