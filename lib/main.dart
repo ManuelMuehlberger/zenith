@@ -336,18 +336,21 @@ class _MainFloatingDock extends StatelessWidget {
 }
 
 class _MainDockSurface extends StatelessWidget {
-  const _MainDockSurface({required this.child});
+  const _MainDockSurface({required this.child, this.borderRadius});
 
   final Widget child;
+  final BorderRadius? borderRadius;
 
   @override
   Widget build(BuildContext context) {
+    final resolvedBorderRadius = borderRadius ?? AppTheme.mainDockBorderRadius;
+
     return ClipRRect(
-      borderRadius: AppTheme.mainDockBorderRadius,
+      borderRadius: resolvedBorderRadius,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: context.appColors.surfaceAlt,
-          borderRadius: AppTheme.mainDockBorderRadius,
+          borderRadius: resolvedBorderRadius,
           border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
           boxShadow: [
             BoxShadow(
@@ -374,8 +377,9 @@ class _WorkoutDockAction extends StatelessWidget {
       width: AppTheme.mainDockActionSize,
       height: AppTheme.mainDockActionSize,
       child: _MainDockSurface(
+        borderRadius: BorderRadius.circular(AppTheme.mainDockActionSize / 2),
         child: Material(
-          color: Colors.transparent,
+          color: context.appColors.surfaceAlt.withValues(alpha: 0),
           child: InkWell(
             onTap: onPressed,
             child: Icon(
