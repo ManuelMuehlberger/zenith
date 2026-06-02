@@ -263,6 +263,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
         opacity: animation,
         child: SizeTransition(
           sizeFactor: animation,
+          // ignore: deprecated_member_use
           axisAlignment: -1.0,
           child: child,
         ),
