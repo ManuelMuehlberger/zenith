@@ -268,7 +268,7 @@ class _MainDockButton extends StatelessWidget {
     return Tooltip(
       message: destination.label,
       child: Material(
-        color: Colors.transparent,
+        color: context.appColors.surfaceAlt.withValues(alpha: 0),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(18),
@@ -334,7 +334,9 @@ class _MainDockSurface extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [
                   Color.alphaBlend(
-                    Colors.white.withValues(alpha: isDark ? 0.08 : 0.2),
+                    context.appScheme.onSurface.withValues(
+                      alpha: isDark ? 0.08 : 0.2,
+                    ),
                     tintedGlassColor,
                   ),
                   tintedGlassColor,
@@ -361,7 +363,7 @@ class _WorkoutDockAction extends StatelessWidget {
       child: _MainDockSurface(
         borderRadius: BorderRadius.circular(AppTheme.mainDockActionSize / 2),
         child: Material(
-          color: Colors.transparent,
+          color: context.appColors.surfaceAlt.withValues(alpha: 0),
           child: InkWell(
             onTap: onPressed,
             child: Icon(

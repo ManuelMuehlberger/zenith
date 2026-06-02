@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:developer' as developer; // Add debug logging
-import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -203,16 +202,9 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
                     return Stack(
                       fit: StackFit.expand,
                       children: [
-                        // Persistent glass effect layer (covers expanded and collapsed states)
-                        ClipRRect(
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(
-                              sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                              sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-                            ),
-                            child: ColoredBox(
-                              color: headerSurface.withValues(alpha: 0.94),
-                            ),
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: headerSurface.withValues(alpha: 0.98),
                           ),
                         ),
                         // FlexibleSpaceBar handles title positioning and parallax of the large title

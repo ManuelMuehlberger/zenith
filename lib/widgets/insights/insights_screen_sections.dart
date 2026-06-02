@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -103,15 +102,9 @@ class InsightsAppBar extends StatelessWidget {
           return Stack(
             fit: StackFit.expand,
             children: [
-              ClipRRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(
-                    sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                    sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-                  ),
-                  child: ColoredBox(
-                    color: headerSurface.withValues(alpha: 0.94),
-                  ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: headerSurface.withValues(alpha: 0.98),
                 ),
               ),
               FlexibleSpaceBar(
@@ -188,90 +181,79 @@ class InsightsFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
         selectedEquipment != null ||
         selectedBodyWeight != null;
 
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(
-          sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-          sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: headerSurface.withValues(alpha: 0.96),
-            border: Border(bottom: BorderSide(color: outlineColor, width: 0.5)),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    if (hasAnyFilter) ...[
-                      CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        onPressed: onClearAll,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surface,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: outlineColor, width: 0.5),
-                          ),
-                          child: Icon(
-                            CupertinoIcons.xmark,
-                            size: 16,
-                            color: colors.textSecondary,
-                          ),
-                        ),
+    return Container(
+      decoration: BoxDecoration(color: headerSurface.withValues(alpha: 0.98)),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                if (hasAnyFilter) ...[
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: onClearAll,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: outlineColor, width: 0.5),
                       ),
-                      const SizedBox(width: 8),
-                    ],
-                    _InsightsFilterTag(
-                      title: 'Workout',
-                      isSelected: selectedWorkoutName != null,
-                      items: availableWorkoutNames,
-                      selectedItem: selectedWorkoutName,
-                      onItemSelected: (value) => onWorkoutChanged(
-                        value == selectedWorkoutName ? null : value,
+                      child: Icon(
+                        CupertinoIcons.xmark,
+                        size: 16,
+                        color: colors.textSecondary,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    _InsightsFilterTag(
-                      title: 'Muscle',
-                      isSelected: selectedMuscleGroup != null,
-                      items: muscleGroups,
-                      selectedItem: selectedMuscleGroup,
-                      onItemSelected: (value) => onMuscleChanged(
-                        value == selectedMuscleGroup ? null : value,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _InsightsFilterTag(
-                      title: 'Equipment',
-                      isSelected: selectedEquipment != null,
-                      items: equipmentList,
-                      selectedItem: selectedEquipment,
-                      onItemSelected: (value) => onEquipmentChanged(
-                        value == selectedEquipment ? null : value,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _InsightsBodyweightTag(
-                      isSelected: selectedBodyWeight == true,
-                      onPressed: onBodyWeightChanged,
-                    ),
-                  ],
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                _InsightsFilterTag(
+                  title: 'Workout',
+                  isSelected: selectedWorkoutName != null,
+                  items: availableWorkoutNames,
+                  selectedItem: selectedWorkoutName,
+                  onItemSelected: (value) => onWorkoutChanged(
+                    value == selectedWorkoutName ? null : value,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              _InsightsTimeframeDropdown(
-                timeframeOptions: timeframeOptions,
-                selectedTimeframe: selectedTimeframe,
-                onTimeframeChanged: onTimeframeChanged,
-              ),
-            ],
+                const SizedBox(width: 8),
+                _InsightsFilterTag(
+                  title: 'Muscle',
+                  isSelected: selectedMuscleGroup != null,
+                  items: muscleGroups,
+                  selectedItem: selectedMuscleGroup,
+                  onItemSelected: (value) => onMuscleChanged(
+                    value == selectedMuscleGroup ? null : value,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _InsightsFilterTag(
+                  title: 'Equipment',
+                  isSelected: selectedEquipment != null,
+                  items: equipmentList,
+                  selectedItem: selectedEquipment,
+                  onItemSelected: (value) => onEquipmentChanged(
+                    value == selectedEquipment ? null : value,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _InsightsBodyweightTag(
+                  isSelected: selectedBodyWeight == true,
+                  onPressed: onBodyWeightChanged,
+                ),
+              ],
+            ),
           ),
-        ),
+          const SizedBox(width: 8),
+          _InsightsTimeframeDropdown(
+            timeframeOptions: timeframeOptions,
+            selectedTimeframe: selectedTimeframe,
+            onTimeframeChanged: onTimeframeChanged,
+          ),
+        ],
       ),
     );
   }
