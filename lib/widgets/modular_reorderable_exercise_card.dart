@@ -207,6 +207,7 @@ class _ModularReorderableExerciseCardState
                 _buildHeader(context, isSelfDragging),
                 SizeTransition(
                   sizeFactor: _contentAnimation,
+                  // ignore: deprecated_member_use
                   axisAlignment: -1.0,
                   child: FadeTransition(
                     opacity: _contentAnimation,

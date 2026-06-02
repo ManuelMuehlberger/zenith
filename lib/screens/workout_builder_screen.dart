@@ -152,101 +152,105 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: WorkoutSessionService.instance,
+      builder: _buildWorkoutBuilderBody,
+    );
+  }
+
+  Widget _buildWorkoutBuilderBody(BuildContext context, Widget? _) {
+    final sessionService = WorkoutSessionService.instance;
+
+    if (sessionService.hasActiveSession) {
+      return ActiveWorkoutScreen(session: sessionService.currentSession!);
+    }
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          _buildHeaderSliver(context),
+          _isLoading ? _buildLoadingSliver(context) : _buildContentSliver(),
+        ],
+      ),
+    );
+  }
+
+  SliverAppBar _buildHeaderSliver(BuildContext context) {
     final headerSurface = Theme.of(context).scaffoldBackgroundColor;
     final transparentSurface = Theme.of(
       context,
     ).colorScheme.surface.withValues(alpha: 0);
 
-    return AnimatedBuilder(
-      animation: WorkoutSessionService.instance,
-      builder: (context, _) {
-        final sessionService = WorkoutSessionService.instance;
-
-        if (sessionService.hasActiveSession) {
-          return ActiveWorkoutScreen(session: sessionService.currentSession!);
-        }
-
-        return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              SliverAppBar(
-                pinned: true,
-                stretch: true,
-                centerTitle: true,
-                automaticallyImplyLeading: false,
-                leading: widget.folderId != null
-                    ? Padding(
-                        padding: const EdgeInsets.only(left: 8.0),
-                        child: Center(
-                          child: IconButton(
-                            icon: Icon(
-                              CupertinoIcons.back,
-                              color: context.appScheme.onSurface,
-                            ),
-                            onPressed: () => Navigator.of(context).maybePop(),
-                          ),
-                        ),
-                      )
-                    : const SizedBox(width: kToolbarHeight),
-                backgroundColor: headerSurface.withValues(alpha: 0),
-                elevation: 0,
-                expandedHeight:
-                    AppConstants.HEADER_EXTRA_HEIGHT + kToolbarHeight,
-                actions: [
-                  ProfileIconButton(onClosed: _reloadAfterSettingsClosed),
-                ],
-                flexibleSpace: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: headerSurface.withValues(alpha: 0.98),
-                          ),
-                        ),
-                        // FlexibleSpaceBar handles title positioning and parallax of the large title
-                        FlexibleSpaceBar(
-                          centerTitle: true,
-                          title: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [_buildSmallTitle()],
-                          ),
-                          background: ColoredBox(
-                            color: transparentSurface,
-                            child: Align(
-                              alignment: Alignment.center,
-                              child: _buildLargeTitle(),
-                            ),
-                          ),
-                          collapseMode: CollapseMode.parallax,
-                        ),
-                      ],
-                    );
-                  },
+    return SliverAppBar(
+      pinned: true,
+      stretch: true,
+      centerTitle: true,
+      automaticallyImplyLeading: false,
+      leading: widget.folderId != null
+          ? Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: Center(
+                child: IconButton(
+                  icon: Icon(
+                    CupertinoIcons.back,
+                    color: context.appScheme.onSurface,
+                  ),
+                  onPressed: () => Navigator.of(context).maybePop(),
                 ),
               ),
-              // Content
-              if (_isLoading)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32.0),
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: context.appScheme.primary,
-                      ),
-                    ),
+            )
+          : const SizedBox(width: kToolbarHeight),
+      backgroundColor: headerSurface.withValues(alpha: 0),
+      elevation: 0,
+      expandedHeight: AppConstants.HEADER_EXTRA_HEIGHT + kToolbarHeight,
+      actions: [ProfileIconButton(onClosed: _reloadAfterSettingsClosed)],
+      flexibleSpace: LayoutBuilder(
+        builder: (context, _) {
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: headerSurface.withValues(alpha: 0.98),
+                ),
+              ),
+              FlexibleSpaceBar(
+                centerTitle: true,
+                title: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [_buildSmallTitle()],
+                ),
+                background: ColoredBox(
+                  color: transparentSurface,
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: _buildLargeTitle(),
                   ),
-                )
-              else
-                SliverToBoxAdapter(child: _buildMainContentWithoutHeader()),
+                ),
+                collapseMode: CollapseMode.parallax,
+              ),
             ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
+  }
+
+  Widget _buildLoadingSliver(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32.0),
+        child: Center(
+          child: CircularProgressIndicator(color: context.appScheme.primary),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContentSliver() {
+    return SliverToBoxAdapter(child: _buildMainContentWithoutHeader());
   }
 
   Widget _buildSmallTitle() {

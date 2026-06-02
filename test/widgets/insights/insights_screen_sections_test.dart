@@ -40,10 +40,10 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light,
-          home: Scaffold(
+          home: const Scaffold(
             body: SingleChildScrollView(
               child: InsightsTrendsSection(
-                filters: const InsightsFilterSnapshot(timeframe: '6M'),
+                filters: InsightsFilterSnapshot(timeframe: '6M'),
                 weightUnitLabel: 'kg',
               ),
             ),
@@ -54,6 +54,29 @@ void main() {
 
       expect(find.text('Trends'), findsOneWidget);
       expect(find.text('Body Weight'), findsOneWidget);
+    });
+
+    testWidgets('renders the empty state copy', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: const Scaffold(
+            body: CustomScrollView(
+              slivers: <Widget>[
+                InsightsEmptyStateSliver(
+                  fadeAnimation: AlwaysStoppedAnimation<double>(1.0),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('No Activity Data'), findsOneWidget);
+      expect(
+        find.text('Complete workouts to see your insights'),
+        findsOneWidget,
+      );
     });
   });
 }
