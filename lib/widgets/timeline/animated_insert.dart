@@ -29,6 +29,7 @@ class AnimatedInsert extends StatelessWidget {
       opacity: Tween<double>(begin: 0.0, end: 1.0).animate(curved),
       child: SizeTransition(
         sizeFactor: curved,
+        // ignore: deprecated_member_use
         axisAlignment: axisAlignment,
         child: child,
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../constants/app_constants.dart';
 import '../models/workout.dart';
 import '../models/workout_template.dart';
 import '../theme/app_theme.dart';
@@ -104,12 +105,9 @@ class _ExpandableWorkoutTemplateCardState
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
-                    widget.template.iconCodePoint != null
-                        ? IconData(
-                            widget.template.iconCodePoint!,
-                            fontFamily: 'MaterialIcons',
-                          )
-                        : Icons.fitness_center,
+                    WorkoutIcons.getIconDataFromCodePoint(
+                      widget.template.iconCodePoint,
+                    ),
                     color: colorScheme.onPrimary,
                     size: 24,
                   ),
@@ -164,12 +162,9 @@ class _ExpandableWorkoutTemplateCardState
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
-                      widget.template.iconCodePoint != null
-                          ? IconData(
-                              widget.template.iconCodePoint!,
-                              fontFamily: 'MaterialIcons',
-                            )
-                          : Icons.fitness_center,
+                      WorkoutIcons.getIconDataFromCodePoint(
+                        widget.template.iconCodePoint,
+                      ),
                       color: colorScheme.onPrimary,
                       size: 24,
                     ),

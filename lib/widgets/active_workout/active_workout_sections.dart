@@ -433,6 +433,7 @@ class ActiveWorkoutExerciseList extends StatelessWidget {
             );
           },
           itemCount: session.exercises.length,
+          // ignore: deprecated_member_use
           onReorder: onReorder,
           onReorderStart: onReorderStart,
           onReorderEnd: onReorderEnd,

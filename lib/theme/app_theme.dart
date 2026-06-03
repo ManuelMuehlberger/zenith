@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 
 enum AppThemePreference {
   system('system', 'System', ThemeMode.system),
@@ -343,17 +342,6 @@ class AppTheme {
     shadow: AppThemeColors.dark.shadow,
   );
 
-  static const BottomBarThemeData _bottomBarTheme = BottomBarThemeData(
-    barDecoration: BoxDecoration(color: AppThemeColors.clear),
-    layout: BottomBarLayout(
-      offset: mainDockOffset,
-      borderRadius: mainDockBorderRadius,
-      clip: Clip.none,
-      respectSafeArea: false,
-    ),
-    scrollBehavior: BottomBarScrollBehavior(hideOnScroll: false),
-  );
-
   static ThemeData _buildTheme(
     AppThemePalette palette,
     Brightness brightness,
@@ -439,7 +427,7 @@ class AppTheme {
           textStyle: textTheme.bodyLarge,
         ),
       ),
-      extensions: <ThemeExtension<dynamic>>[tokens, _bottomBarTheme],
+      extensions: <ThemeExtension<dynamic>>[tokens],
     );
   }
 

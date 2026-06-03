@@ -81,11 +81,24 @@ jobs:
 
       - name: Set up Flutter
         if: steps.detect_flutter.outputs.satisfied != 'true'
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ steps.flutter_release.outputs.version }}
-          channel: stable
-          cache: true
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          temp_root="${RUNNER_TEMP:-${TMPDIR:-/tmp}}"
+          flutter_root="${temp_root}/flutter-${{ steps.flutter_release.outputs.version }}"
+          archive_path="${temp_root}/flutter.tar.xz"
+
+          rm -rf "${flutter_root}" "${archive_path}"
+          mkdir -p "${flutter_root}"
+
+          curl -fsSL "${{ steps.flutter_release.outputs.download_url }}" -o "${archive_path}"
+          echo "${{ steps.flutter_release.outputs.sha256 }}  ${archive_path}" | sha256sum -c -
+          tar -xJf "${archive_path}" -C "${flutter_root}" --strip-components=1
+          rm -f "${archive_path}"
+
+          "${flutter_root}/bin/flutter" config --no-analytics
+          echo "${flutter_root}/bin" >> "$GITHUB_PATH"
 
       - name: Show toolchain
         run: |

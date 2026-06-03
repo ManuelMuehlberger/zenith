@@ -1,12 +1,10 @@
 import 'dart:math' as math;
-import 'dart:ui';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_floating_bottom_bar/flutter_floating_bottom_bar.dart';
 import 'package:logging/logging.dart';
-import 'package:soft_edge_blur/soft_edge_blur.dart';
 
 import 'screens/app_wrapper.dart';
 import 'screens/create_workout_screen.dart';
@@ -118,22 +116,13 @@ class _MainScreenState extends State<MainScreen> {
       animation: AppNavigationService.instance,
       builder: (context, _) {
         final currentIndex = AppNavigationService.instance.currentTabIndex;
-        final dockWidth = math.min(
-          MediaQuery.sizeOf(context).width - (AppTheme.mainDockOffset * 2),
-          AppTheme.mainDockMaxWidth,
-        );
 
         return Scaffold(
           extendBody: true,
-          body: BottomBar(
-            showIcon: false,
-            layout: BottomBarLayout(width: dockWidth),
-            body: _MainDockBody(currentIndex: currentIndex, screens: _screens),
-            child: _MainFloatingDock(
-              currentIndex: currentIndex,
-              destinations: _destinations,
-              maxWidth: dockWidth,
-            ),
+          body: IndexedStack(index: currentIndex, children: _screens),
+          bottomNavigationBar: _MainLightweightDock(
+            currentIndex: currentIndex,
+            destinations: _destinations,
           ),
         );
       },
@@ -141,50 +130,43 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-class _MainDockBody extends StatelessWidget {
-  const _MainDockBody({required this.currentIndex, required this.screens});
+class _MainLightweightDock extends StatelessWidget {
+  const _MainLightweightDock({
+    required this.currentIndex,
+    required this.destinations,
+  });
 
   final int currentIndex;
-  final List<Widget> screens;
+  final List<_MainDockDestination> destinations;
 
   @override
   Widget build(BuildContext context) {
-    final body = IndexedStack(index: currentIndex, children: screens);
-    final blurHeight =
-        AppTheme.mainDockEdgeBlurBaseHeight +
-        MediaQuery.paddingOf(context).bottom;
-    final fadeHeight =
-        AppTheme.mainDockEdgeFadeBaseHeight +
-        MediaQuery.paddingOf(context).bottom;
+    final safeBottom = MediaQuery.paddingOf(context).bottom;
+    final showWorkoutAction = currentIndex == 1;
+    final maxWidth = math.min(
+      MediaQuery.sizeOf(context).width - (AppTheme.mainDockOffset * 2),
+      AppTheme.mainDockMaxWidth,
+    );
+    final tabWidth = math.min(
+      showWorkoutAction
+          ? AppTheme.mainDockCompactWidth
+          : AppTheme.mainDockPrimaryWidth,
+      maxWidth,
+    );
+    final dockWidth = showWorkoutAction
+        ? math.min(
+            tabWidth + AppTheme.mainDockActionGap + AppTheme.mainDockActionSize,
+            maxWidth,
+          )
+        : tabWidth;
     final fadeColor = context.appColors.dockEdgeFade;
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        SoftEdgeBlur(
-          edges: [
-            EdgeBlur(
-              type: EdgeType.bottomEdge,
-              size: blurHeight,
-              sigma: AppTheme.mainDockBlurSigma,
-              tintColor: context.appColors.overlaySoft,
-              controlPoints: [
-                ControlPoint(
-                  position: AppTheme.mainDockEdgeBlurVisibleStop,
-                  type: ControlPointType.visible,
-                ),
-                ControlPoint(position: 1, type: ControlPointType.transparent),
-              ],
-            ),
-          ],
-          child: body,
-        ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: fadeHeight,
-          child: IgnorePointer(
+    return SizedBox(
+      height: safeBottom + AppTheme.mainDockClearance,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          IgnorePointer(
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -204,132 +186,103 @@ class _MainDockBody extends StatelessWidget {
               ),
             ),
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MainFloatingDock extends StatelessWidget {
-  const _MainFloatingDock({
-    required this.currentIndex,
-    required this.destinations,
-    required this.maxWidth,
-  });
-
-  final int currentIndex;
-  final List<_MainDockDestination> destinations;
-  final double maxWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    final showWorkoutAction = currentIndex == 1;
-    final expandedWidth = math.min(AppTheme.mainDockPrimaryWidth, maxWidth);
-    final compactWidth = math.min(
-      AppTheme.mainDockCompactWidth,
-      maxWidth - AppTheme.mainDockActionSize - AppTheme.mainDockActionGap,
-    );
-
-    return SizedBox(
-      width: maxWidth,
-      height: AppTheme.mainDockHeight,
-      child: TweenAnimationBuilder<double>(
-        tween: Tween<double>(begin: 0, end: showWorkoutAction ? 1 : 0),
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
-        builder: (context, progress, _) {
-          final actionSlotWidth =
-              (AppTheme.mainDockActionSize + AppTheme.mainDockActionGap) *
-              progress;
-          final dockWidth = lerpDouble(expandedWidth, compactWidth, progress)!;
-
-          return Center(
-            child: SizedBox(
-              width: dockWidth + actionSlotWidth,
-              height: AppTheme.mainDockHeight,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: dockWidth,
-                    height: AppTheme.mainDockHeight,
-                    child: _MainDockSurface(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.mainDockItemPadding,
-                          vertical: 10,
-                        ),
-                        child: BottomBarItems(
-                          spacing: MainAxisAlignment.spaceEvenly,
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: AppTheme.mainDockOffset,
+                right: AppTheme.mainDockOffset,
+                bottom: safeBottom + AppTheme.mainDockOffset,
+              ),
+              child: SizedBox(
+                width: dockWidth,
+                height: AppTheme.mainDockHeight,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: tabWidth,
+                      height: AppTheme.mainDockHeight,
+                      child: _MainDockSurface(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             for (
                               var index = 0;
                               index < destinations.length;
                               index++
                             )
-                              BottomBarItem(
+                              _MainDockButton(
+                                destination: destinations[index],
                                 selected: index == currentIndex,
                                 onTap: () {
                                   HapticFeedback.selectionClick();
                                   AppNavigationService.instance.goToTab(index);
                                 },
-                                tooltip: destinations[index].label,
-                                icon: Icon(
-                                  destinations[index].icon,
-                                  size: AppTheme.mainDockIconSize,
-                                ),
-                                selectedIcon: Icon(
-                                  destinations[index].selectedIcon,
-                                  size: AppTheme.mainDockSelectedIconSize,
-                                ),
-                                color: context.appColors.textSecondary,
-                                selectedColor: context.appScheme.primary,
                               ),
                           ],
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(
-                    width: actionSlotWidth,
-                    child: ClipRect(
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: progress <= 0
-                            ? const SizedBox.shrink()
-                            : Padding(
-                                padding: const EdgeInsets.only(
-                                  left: AppTheme.mainDockActionGap,
-                                ),
-                                child: IgnorePointer(
-                                  ignoring: progress < 0.95,
-                                  child: Opacity(
-                                    opacity: progress,
-                                    child: Transform.translate(
-                                      offset: Offset((1 - progress) * 12, 0),
-                                      child: _WorkoutDockAction(
-                                        onPressed: () {
-                                          HapticFeedback.mediumImpact();
-                                          Navigator.of(context).push(
-                                            MaterialPageRoute<void>(
-                                              builder: (_) =>
-                                                  const CreateWorkoutScreen(),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
+                    if (showWorkoutAction) ...[
+                      const SizedBox(width: AppTheme.mainDockActionGap),
+                      _WorkoutDockAction(
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const CreateWorkoutScreen(),
+                            ),
+                          );
+                        },
                       ),
-                    ),
-                  ),
-                ],
+                    ],
+                  ],
+                ),
               ),
             ),
-          );
-        },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MainDockButton extends StatelessWidget {
+  const _MainDockButton({
+    required this.destination,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final _MainDockDestination destination;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected
+        ? context.appScheme.primary
+        : context.appColors.textSecondary;
+
+    return Tooltip(
+      message: destination.label,
+      child: Material(
+        color: context.appColors.surfaceAlt.withValues(alpha: 0),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(18),
+          child: SizedBox.square(
+            dimension: 48,
+            child: Icon(
+              selected ? destination.selectedIcon : destination.icon,
+              color: color,
+              size: selected
+                  ? AppTheme.mainDockSelectedIconSize
+                  : AppTheme.mainDockIconSize,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -344,23 +297,55 @@ class _MainDockSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolvedBorderRadius = borderRadius ?? AppTheme.mainDockBorderRadius;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = context.appScheme.primary;
+    final baseGlassColor = context.appColors.surfaceAlt.withValues(
+      alpha: isDark ? 0.68 : 0.8,
+    );
+    final tintedGlassColor = Color.alphaBlend(
+      accent.withValues(alpha: isDark ? 0.12 : 0.07),
+      baseGlassColor,
+    );
+    final outlineColor = Color.alphaBlend(
+      accent.withValues(alpha: isDark ? 0.2 : 0.14),
+      Theme.of(context).dividerColor,
+    );
 
-    return ClipRRect(
-      borderRadius: resolvedBorderRadius,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: context.appColors.surfaceAlt,
-          borderRadius: resolvedBorderRadius,
-          border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
-          boxShadow: [
-            BoxShadow(
-              color: context.appColors.shadow,
-              blurRadius: 24,
-              offset: const Offset(0, 12),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: resolvedBorderRadius,
+        border: Border.all(color: outlineColor, width: 0.75),
+        boxShadow: [
+          BoxShadow(
+            color: context.appColors.shadow,
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: resolvedBorderRadius,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color.alphaBlend(
+                    context.appScheme.onSurface.withValues(
+                      alpha: isDark ? 0.08 : 0.2,
+                    ),
+                    tintedGlassColor,
+                  ),
+                  tintedGlassColor,
+                ],
+              ),
             ),
-          ],
+            child: child,
+          ),
         ),
-        child: child,
       ),
     );
   }
@@ -373,9 +358,8 @@ class _WorkoutDockAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: AppTheme.mainDockActionSize,
-      height: AppTheme.mainDockActionSize,
+    return SizedBox.square(
+      dimension: AppTheme.mainDockActionSize,
       child: _MainDockSurface(
         borderRadius: BorderRadius.circular(AppTheme.mainDockActionSize / 2),
         child: Material(

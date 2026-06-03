@@ -51,6 +51,7 @@ class CreateWorkoutReorderableSection extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(20),
       itemCount: exercises.length,
+      // ignore: deprecated_member_use
       onReorder: onReorderExercises,
       itemBuilder: (context, index) {
         return EditExerciseCard(

@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
 import '../../services/user_service.dart';
@@ -33,12 +31,9 @@ class HomeScreenSliverAppBar extends StatelessWidget {
           return Stack(
             fit: StackFit.expand,
             children: [
-              ClipRRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-                  child: ColoredBox(
-                    color: headerSurface.withValues(alpha: 0.94),
-                  ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: headerSurface.withValues(alpha: 0.98),
                 ),
               ),
               FlexibleSpaceBar(
@@ -76,6 +71,7 @@ class _HomeScreenTitle extends StatelessWidget {
           opacity: animation,
           child: SizeTransition(
             sizeFactor: animation,
+            // ignore: deprecated_member_use
             axisAlignment: -1.0,
             child: child,
           ),
