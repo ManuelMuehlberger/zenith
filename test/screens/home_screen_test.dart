@@ -9,6 +9,21 @@ import 'package:zenith/services/workout_service.dart';
 // Reuse generated mocks from existing tests
 import '../services/workout_service_test.mocks.dart';
 
+Finder _homeVerticalScrollable() {
+  return find.byWidgetPredicate(
+    (widget) =>
+        widget is Scrollable && widget.axisDirection == AxisDirection.down,
+  );
+}
+
+Future<void> _scrollHomeUntilVisible(WidgetTester tester, Finder finder) async {
+  await tester.scrollUntilVisible(
+    finder,
+    300.0,
+    scrollable: _homeVerticalScrollable(),
+  );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -81,6 +96,7 @@ void main() {
         expect(find.byKey(const ValueKey('recent_title')), findsOneWidget);
 
         // Completed workout appears
+        await _scrollHomeUntilVisible(tester, find.text('Completed Session'));
         expect(find.text('Completed Session'), findsOneWidget);
 
         // In-progress workout should not appear in the list
@@ -123,6 +139,7 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
       await tester.pump(const Duration(milliseconds: 500));
       expect(find.byKey(const ValueKey('recent_title')), findsOneWidget);
+      await _scrollHomeUntilVisible(tester, find.text('No workouts yet'));
       expect(find.text('No workouts yet'), findsOneWidget);
       expect(find.text('In Progress Only'), findsNothing);
     });
@@ -170,8 +187,14 @@ void main() {
         await tester.pumpAndSettle();
 
         // Verify all three completed workouts show
+        await _scrollHomeUntilVisible(tester, find.text('Newest Completed'));
         expect(find.text('Newest Completed'), findsOneWidget);
+        await _scrollHomeUntilVisible(
+          tester,
+          find.text('Mid Completed (no completedAt)'),
+        );
         expect(find.text('Mid Completed (no completedAt)'), findsOneWidget);
+        await _scrollHomeUntilVisible(tester, find.text('Oldest Completed'));
         expect(find.text('Oldest Completed'), findsOneWidget);
 
         // Since verifying order in a SliverList is non-trivial with text alone,
@@ -221,6 +244,9 @@ void main() {
       await tester.pumpAndSettle();
 
       // Ensure workout is visible
+      await _scrollHomeUntilVisible(tester, find.text('Completed Session'));
+      await tester.drag(_homeVerticalScrollable(), const Offset(0, -180));
+      await tester.pumpAndSettle();
       expect(find.text('Completed Session'), findsOneWidget);
 
       // Tap the list item to navigate to detail
@@ -238,6 +264,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert: back on Home, list refreshed and workout removed
+      await _scrollHomeUntilVisible(tester, find.text('No workouts yet'));
       expect(find.text('No workouts yet'), findsOneWidget);
       expect(
         find.text('Start by creating a workout in the Builder tab'),
@@ -268,12 +295,12 @@ void main() {
       workoutService.workouts.clear();
     });
 
-    testWidgets('limits recent workouts list to 10 items', (
+    testWidgets('limits recent workouts list to 3 items', (
       WidgetTester tester,
     ) async {
-      // Arrange: 12 completed workouts
+      // Arrange: 5 completed workouts
       final now = DateTime.now();
-      final workouts = List.generate(12, (i) {
+      final workouts = List.generate(5, (i) {
         return Workout(
           id: 'w_$i',
           name: 'Completed #$i',
@@ -296,11 +323,15 @@ void main() {
       await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
       await tester.pumpAndSettle();
 
-      // Assert: items 0..9 are present, 10+ are absent
-      await tester.scrollUntilVisible(find.text('Completed #9'), 500.0);
-      expect(find.text('Completed #9'), findsOneWidget);
-      expect(find.text('Completed #10'), findsNothing);
-      expect(find.text('Completed #11'), findsNothing);
+      // Assert: only the latest 3 workouts are present.
+      await _scrollHomeUntilVisible(tester, find.text('Completed #0'));
+      expect(find.text('Completed #0'), findsOneWidget);
+      await _scrollHomeUntilVisible(tester, find.text('Completed #1'));
+      expect(find.text('Completed #1'), findsOneWidget);
+      await _scrollHomeUntilVisible(tester, find.text('Completed #2'));
+      expect(find.text('Completed #2'), findsOneWidget);
+      expect(find.text('Completed #3'), findsNothing);
+      expect(find.text('Completed #4'), findsNothing);
     });
 
     testWidgets('resuming app lifecycle triggers reload of recent workouts', (
