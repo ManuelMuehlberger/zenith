@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
 import '../main_dock_spacer.dart';
-import '../timeline/skeleton_timeline_row.dart';
 
+// policy: no-test-needed composition is covered by Home screen widget tests.
 class HomeScreenLoadingSliver extends StatelessWidget {
   const HomeScreenLoadingSliver({super.key});
 
@@ -52,23 +52,6 @@ class HomeScreenEmptyStateSliver extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class HomeScreenLoadingMoreSliver extends StatelessWidget {
-  const HomeScreenLoadingMoreSliver({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) => SkeletonTimelineRow(index: index),
-          childCount: 3,
         ),
       ),
     );

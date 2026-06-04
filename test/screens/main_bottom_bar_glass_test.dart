@@ -88,4 +88,39 @@ void main() {
     expect(AppNavigationService.instance.currentTabIndex, 0);
     expect(find.byIcon(Icons.add_rounded), findsNothing);
   });
+
+  testWidgets('workout dock action fades between tabs', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.dark, home: const MainScreen()),
+    );
+    await tester.pump();
+
+    NavigationHelper.goToTab(1);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+
+    expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+    final fadeInOpacity = tester
+        .widgetList<Opacity>(find.byType(Opacity))
+        .map((widget) => widget.opacity)
+        .where((opacity) => opacity > 0 && opacity < 1);
+    expect(fadeInOpacity, isNotEmpty);
+
+    await tester.pump(const Duration(milliseconds: 220));
+    expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+
+    NavigationHelper.goToHomeTab();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+
+    expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+    final fadeOutOpacity = tester
+        .widgetList<Opacity>(find.byType(Opacity))
+        .map((widget) => widget.opacity)
+        .where((opacity) => opacity > 0 && opacity < 1);
+    expect(fadeOutOpacity, isNotEmpty);
+
+    await tester.pump(const Duration(milliseconds: 180));
+    expect(find.byIcon(Icons.add_rounded), findsNothing);
+  });
 }

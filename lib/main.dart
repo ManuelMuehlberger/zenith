@@ -130,7 +130,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-class _MainLightweightDock extends StatelessWidget {
+class _MainLightweightDock extends StatefulWidget {
   const _MainLightweightDock({
     required this.currentIndex,
     required this.destinations,
@@ -140,25 +140,56 @@ class _MainLightweightDock extends StatelessWidget {
   final List<_MainDockDestination> destinations;
 
   @override
+  State<_MainLightweightDock> createState() => _MainLightweightDockState();
+}
+
+class _MainLightweightDockState extends State<_MainLightweightDock>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _workoutActionController;
+  late final Animation<double> _workoutActionAnimation;
+
+  bool get _showWorkoutAction => widget.currentIndex == 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _workoutActionController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+      reverseDuration: const Duration(milliseconds: 180),
+      value: _showWorkoutAction ? 1 : 0,
+    );
+    _workoutActionAnimation = CurvedAnimation(
+      parent: _workoutActionController,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _MainLightweightDock oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (_showWorkoutAction) {
+      _workoutActionController.forward();
+    } else {
+      _workoutActionController.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _workoutActionController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final safeBottom = MediaQuery.paddingOf(context).bottom;
-    final showWorkoutAction = currentIndex == 1;
     final maxWidth = math.min(
       MediaQuery.sizeOf(context).width - (AppTheme.mainDockOffset * 2),
       AppTheme.mainDockMaxWidth,
     );
-    final tabWidth = math.min(
-      showWorkoutAction
-          ? AppTheme.mainDockCompactWidth
-          : AppTheme.mainDockPrimaryWidth,
-      maxWidth,
-    );
-    final dockWidth = showWorkoutAction
-        ? math.min(
-            tabWidth + AppTheme.mainDockActionGap + AppTheme.mainDockActionSize,
-            maxWidth,
-          )
-        : tabWidth;
     final fadeColor = context.appColors.dockEdgeFade;
 
     return SizedBox(
@@ -194,51 +225,102 @@ class _MainLightweightDock extends StatelessWidget {
                 right: AppTheme.mainDockOffset,
                 bottom: safeBottom + AppTheme.mainDockOffset,
               ),
-              child: SizedBox(
-                width: dockWidth,
-                height: AppTheme.mainDockHeight,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: tabWidth,
-                      height: AppTheme.mainDockHeight,
-                      child: _MainDockSurface(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            for (
-                              var index = 0;
-                              index < destinations.length;
-                              index++
-                            )
-                              _MainDockButton(
-                                destination: destinations[index],
-                                selected: index == currentIndex,
-                                onTap: () {
-                                  HapticFeedback.selectionClick();
-                                  AppNavigationService.instance.goToTab(index);
-                                },
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (showWorkoutAction) ...[
-                      const SizedBox(width: AppTheme.mainDockActionGap),
-                      _WorkoutDockAction(
-                        onPressed: () {
-                          HapticFeedback.mediumImpact();
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => const CreateWorkoutScreen(),
+              child: AnimatedBuilder(
+                animation: _workoutActionAnimation,
+                builder: (context, _) {
+                  final actionProgress = _workoutActionAnimation.value;
+                  final preferredTabWidth =
+                      AppTheme.mainDockPrimaryWidth +
+                      (AppTheme.mainDockCompactWidth -
+                              AppTheme.mainDockPrimaryWidth) *
+                          actionProgress;
+                  final tabWidth = math.min(preferredTabWidth, maxWidth);
+                  final preferredActionWidth =
+                      (AppTheme.mainDockActionGap +
+                          AppTheme.mainDockActionSize) *
+                      actionProgress;
+                  final dockWidth = math.min(
+                    tabWidth + preferredActionWidth,
+                    maxWidth,
+                  );
+                  final actionSlotWidth = math.max(0.0, dockWidth - tabWidth);
+                  final actionVisible =
+                      _showWorkoutAction ||
+                      !_workoutActionController.isDismissed;
+
+                  return SizedBox(
+                    width: dockWidth,
+                    height: AppTheme.mainDockHeight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(
+                          width: tabWidth,
+                          height: AppTheme.mainDockHeight,
+                          child: _MainDockSurface(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                for (
+                                  var index = 0;
+                                  index < widget.destinations.length;
+                                  index++
+                                )
+                                  _MainDockButton(
+                                    destination: widget.destinations[index],
+                                    selected: index == widget.currentIndex,
+                                    onTap: () {
+                                      HapticFeedback.selectionClick();
+                                      AppNavigationService.instance.goToTab(
+                                        index,
+                                      );
+                                    },
+                                  ),
+                              ],
                             ),
-                          );
-                        },
-                      ),
-                    ],
-                  ],
-                ),
+                          ),
+                        ),
+                        if (actionVisible)
+                          SizedBox(
+                            width: actionSlotWidth,
+                            height: AppTheme.mainDockHeight,
+                            child: ClipRect(
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: IgnorePointer(
+                                  ignoring:
+                                      !_showWorkoutAction ||
+                                      actionProgress < 0.95,
+                                  child: Opacity(
+                                    opacity: actionProgress,
+                                    child: Transform.scale(
+                                      scale: 0.92 + (0.08 * actionProgress),
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          left: AppTheme.mainDockActionGap,
+                                        ),
+                                        child: _WorkoutDockAction(
+                                          onPressed: () {
+                                            HapticFeedback.mediumImpact();
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute<void>(
+                                                builder: (_) =>
+                                                    const CreateWorkoutScreen(),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
           ),

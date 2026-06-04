@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../timeline/animated_insert.dart';
 import '../timeline/timeline_list_item.dart';
 
+// policy: no-test-needed sliver composition is covered by Home screen widget tests.
 class HomeScreenTimelineSliver extends StatelessWidget {
   final GlobalKey<SliverAnimatedListState> timelineListKey;
   final List<TimelineListItem> timelineItems;
@@ -25,28 +26,8 @@ class HomeScreenTimelineSliver extends StatelessWidget {
         itemBuilder: (context, index, animation) {
           final item = timelineItems[index];
 
-          if (item is TimelineArchiveHeaderItem) {
-            return AnimatedInsert(
-              animation: animation,
-              child: SlideTransition(
-                position:
-                    Tween<Offset>(
-                      begin: const Offset(0, 0.5),
-                      end: Offset.zero,
-                    ).animate(
-                      CurvedAnimation(
-                        parent: animation,
-                        curve: Curves.easeOutCubic,
-                      ),
-                    ),
-                child: rowBuilder(item, index),
-              ),
-            );
-          }
-
           return AnimatedInsert(
             animation: animation,
-            slideInFromBottom: item is TimelineMonthSummaryItem,
             child: rowBuilder(item, index),
           );
         },
