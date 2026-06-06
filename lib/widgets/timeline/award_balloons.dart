@@ -4,6 +4,7 @@ import '../../theme/app_theme.dart';
 import 'achievement_model_view.dart';
 import 'award_stack.dart';
 
+// policy: allow-public-api compact award list widget.
 class AwardBalloons extends StatelessWidget {
   final List<Award> awards;
 
@@ -66,7 +67,7 @@ void _showAwardSheet(BuildContext context, List<Award> awards) {
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
+    backgroundColor: context.appColors.transparent,
     builder: (context) => _AwardDetailSheet(awards: awards),
   );
 }

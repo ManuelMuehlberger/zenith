@@ -11,6 +11,7 @@ class TimelineRow extends StatelessWidget {
   final DateTime timestamp;
   final int index;
   final double trackWidth;
+  final double? contentStart;
   final EdgeInsetsGeometry padding;
 
   /// The style of the timeline line (straight or curved).
@@ -44,11 +45,17 @@ class TimelineRow extends StatelessWidget {
   /// If true, the line is rendered as a dotted line.
   final bool isDotted;
 
+  /// If true, only the line segment above the node is rendered dotted.
+  final bool isTopDotted;
+
   /// Delay in milliseconds before starting the line color animation.
   final int animationDelay;
 
   /// If true, animates the line color from dim to white.
   final bool animateLineColor;
+
+  /// Scroll-driven line highlight intensity from 0.0 to 1.0.
+  final double lineHighlightProgress;
 
   const TimelineRow({
     super.key,
@@ -56,6 +63,7 @@ class TimelineRow extends StatelessWidget {
     required this.timestamp,
     required this.index,
     this.trackWidth = 46,
+    this.contentStart,
     this.padding = const EdgeInsets.symmetric(vertical: 4),
     this.style = TimelineLineStyle.straight,
     this.isNested = false,
@@ -67,8 +75,10 @@ class TimelineRow extends StatelessWidget {
     this.isExpandable = false,
     this.isExpanded = false,
     this.isDotted = false,
+    this.isTopDotted = false,
     this.animationDelay = 0,
     this.animateLineColor = false,
+    this.lineHighlightProgress = 0,
   });
 
   @override
@@ -113,9 +123,14 @@ class TimelineRow extends StatelessWidget {
                                 expansionProgress: 1.0,
                                 isExpandable: false,
                                 isDotted: isDotted,
+                                isTopDotted: isTopDotted,
                                 dimTrackColor: dimTrackColor,
                                 highlightTrackColor: highlightTrackColor,
-                                lineColor: color,
+                                lineColor: Color.lerp(
+                                  color,
+                                  highlightTrackColor,
+                                  lineHighlightProgress.clamp(0.0, 1.0),
+                                ),
                               ),
                             );
                           },
@@ -140,8 +155,14 @@ class TimelineRow extends StatelessWidget {
                                 expansionProgress: value,
                                 isExpandable: true,
                                 isDotted: isDotted,
+                                isTopDotted: isTopDotted,
                                 dimTrackColor: dimTrackColor,
                                 highlightTrackColor: highlightTrackColor,
+                                lineColor: Color.lerp(
+                                  dimTrackColor,
+                                  highlightTrackColor,
+                                  lineHighlightProgress.clamp(0.0, 1.0),
+                                ),
                               ),
                             );
                           },
@@ -157,8 +178,14 @@ class TimelineRow extends StatelessWidget {
                             expansionProgress: 1.0,
                             isExpandable: false,
                             isDotted: isDotted,
+                            isTopDotted: isTopDotted,
                             dimTrackColor: dimTrackColor,
                             highlightTrackColor: highlightTrackColor,
+                            lineColor: Color.lerp(
+                              dimTrackColor,
+                              highlightTrackColor,
+                              lineHighlightProgress.clamp(0.0, 1.0),
+                            ),
                           ),
                         ),
                 ),
@@ -173,7 +200,7 @@ class TimelineRow extends StatelessWidget {
           ),
           // The Content
           Padding(
-            padding: EdgeInsets.only(left: trackWidth),
+            padding: EdgeInsets.only(left: contentStart ?? trackWidth),
             child: child,
           ),
         ],
@@ -278,6 +305,7 @@ class _TimelineTrackPainter extends CustomPainter {
   final double expansionProgress;
   final bool isExpandable;
   final bool isDotted;
+  final bool isTopDotted;
   final Color dimTrackColor;
   final Color highlightTrackColor;
   final Color? lineColor;
@@ -294,6 +322,7 @@ class _TimelineTrackPainter extends CustomPainter {
     required this.dimTrackColor,
     required this.highlightTrackColor,
     this.isDotted = false,
+    this.isTopDotted = false,
     this.lineColor,
   });
 
@@ -359,7 +388,7 @@ class _TimelineTrackPainter extends CustomPainter {
       }
 
       // Draw top segment
-      if (isExpandable || isDotted) {
+      if (isExpandable || isDotted || isTopDotted) {
         // Case A: Minimized (Closed) - Dotted Line
         // Fade out dots as we expand (if expandable)
         // If just dotted, opacity is constant (based on effectiveColor)
@@ -372,10 +401,13 @@ class _TimelineTrackPainter extends CustomPainter {
         }
 
         if (dotsOpacity > 0.01) {
+          final expandableDotColor = Color.lerp(
+            dimTrackColor.withValues(alpha: 0),
+            effectiveColor,
+            (dotsOpacity / 0.3).clamp(0.0, 1.0),
+          )!;
           final dottedPaint = Paint()
-            ..color = isExpandable
-                ? highlightTrackColor.withValues(alpha: dotsOpacity)
-                : effectiveColor
+            ..color = isExpandable ? expandableDotColor : effectiveColor
             ..style = PaintingStyle.fill;
 
           double y = 0;
@@ -391,7 +423,7 @@ class _TimelineTrackPainter extends CustomPainter {
 
         // Case B: Maximized (Open) - Gradient Line Overlay
         // Animation: Fade In Gradient (Dim -> White)
-        if (expansionProgress > 0) {
+        if (isExpandable && expansionProgress > 0) {
           // Interpolate colors from Transparent to Target
           final topColor = Color.lerp(
             dimTrackColor.withValues(alpha: 0),
@@ -437,10 +469,13 @@ class _TimelineTrackPainter extends CustomPainter {
         }
 
         if (dotsOpacity > 0.01) {
+          final expandableDotColor = Color.lerp(
+            dimTrackColor.withValues(alpha: 0),
+            effectiveColor,
+            (dotsOpacity / 0.3).clamp(0.0, 1.0),
+          )!;
           final dottedPaint = Paint()
-            ..color = isExpandable
-                ? highlightTrackColor.withValues(alpha: dotsOpacity)
-                : effectiveColor
+            ..color = isExpandable ? expandableDotColor : effectiveColor
             ..style = PaintingStyle.fill;
 
           double y = gapEnd + 3; // Start slightly below
@@ -523,6 +558,7 @@ class _TimelineTrackPainter extends CustomPainter {
         oldDelegate.expansionProgress != expansionProgress ||
         oldDelegate.isExpandable != isExpandable ||
         oldDelegate.isDotted != isDotted ||
+        oldDelegate.isTopDotted != isTopDotted ||
         oldDelegate.dimTrackColor != dimTrackColor ||
         oldDelegate.highlightTrackColor != highlightTrackColor ||
         oldDelegate.lineColor != lineColor;

@@ -10,6 +10,7 @@ import 'package:flutter_3d_controller/src/core/modules/model_viewer/model_viewer
 import '../../theme/app_theme.dart';
 import 'award_stack.dart';
 
+// policy: allow-public-api primary widget for 3D/2D award display.
 class AchievementModelView extends StatefulWidget {
   final Award award;
   final double size;

@@ -50,6 +50,7 @@ class AppThemePalette {
     required this.info,
     required this.danger,
     required this.shadow,
+    required this.transparent,
   });
 
   final Color background;
@@ -76,12 +77,14 @@ class AppThemePalette {
   final Color info;
   final Color danger;
   final Color shadow;
+  final Color transparent;
 }
 
 class AppThemeColors {
   AppThemeColors._();
 
   static const Color clear = Color(0x00000000);
+  static const Color transparent = Color(0x00000000);
 
   static const AppThemePalette light = AppThemePalette(
     background: Color(0xFFF5F5F7),
@@ -108,6 +111,7 @@ class AppThemeColors {
     info: Color(0xFF5BB8FF),
     danger: Color(0xFFFF453A),
     shadow: Color(0x14000000),
+    transparent: Color(0x00000000),
   );
 
   static const AppThemePalette dark = AppThemePalette(
@@ -135,6 +139,7 @@ class AppThemeColors {
     info: Color(0xFF8BD3FF),
     danger: Color(0xFFFF453A),
     shadow: Color(0x2E000000),
+    transparent: Color(0x00000000),
   );
 }
 
@@ -231,6 +236,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.warning,
     required this.info,
     required this.shadow,
+    required this.transparent,
   });
 
   final Color surfaceAlt;
@@ -251,6 +257,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   final Color warning;
   final Color info;
   final Color shadow;
+  final Color transparent;
 
   @override
   AppThemeTokens copyWith({
@@ -272,6 +279,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     Color? warning,
     Color? info,
     Color? shadow,
+    Color? transparent,
   }) {
     return AppThemeTokens(
       surfaceAlt: surfaceAlt ?? this.surfaceAlt,
@@ -292,6 +300,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       warning: warning ?? this.warning,
       info: info ?? this.info,
       shadow: shadow ?? this.shadow,
+      transparent: transparent ?? this.transparent,
     );
   }
 
@@ -328,6 +337,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       warning: Color.lerp(warning, other.warning, t) ?? warning,
       info: Color.lerp(info, other.info, t) ?? info,
       shadow: Color.lerp(shadow, other.shadow, t) ?? shadow,
+      transparent: Color.lerp(transparent, other.transparent, t) ?? transparent,
     );
   }
 }
@@ -373,6 +383,7 @@ class AppTheme {
     warning: AppThemeColors.light.warning,
     info: AppThemeColors.light.info,
     shadow: AppThemeColors.light.shadow,
+    transparent: AppThemeColors.light.transparent,
   );
 
   static final AppThemeTokens darkTokens = AppThemeTokens(
@@ -394,6 +405,7 @@ class AppTheme {
     warning: AppThemeColors.dark.warning,
     info: AppThemeColors.dark.info,
     shadow: AppThemeColors.dark.shadow,
+    transparent: AppThemeColors.dark.transparent,
   );
 
   static ThemeData _buildTheme(

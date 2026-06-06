@@ -133,7 +133,7 @@ class HomeTimelineItemBuilder {
             curve: Curves.easeOutCubic,
             scale: scale,
             child: Material(
-              color: Colors.transparent,
+              color: colors.transparent,
               child: InkWell(
                 onTap: onOpenHistory,
                 borderRadius: AppTheme.workoutCardBorderRadius,

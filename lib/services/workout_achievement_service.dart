@@ -1,6 +1,7 @@
 import '../models/workout.dart';
 import '../models/workout_achievement.dart';
 
+// policy: allow-public-api core logic for calculating rewards.
 class WorkoutAchievementService {
   const WorkoutAchievementService._();
 
