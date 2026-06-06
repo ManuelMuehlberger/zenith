@@ -58,6 +58,10 @@ class HomeTimelineAssembler {
           ),
         );
       }
+
+      items.add(
+        TimelineHistoryEndcapItem(completedWorkoutCount: recentWorkouts.length),
+      );
     }
 
     return HomeTimelineData(items: items, overview: overview);

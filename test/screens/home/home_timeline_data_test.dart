@@ -78,8 +78,12 @@ void main() {
       second,
     ]);
 
-    expect(timeline.items, everyElement(isA<TimelineDayGroupItem>()));
     expect(timeline.items.whereType<TimelineDayGroupItem>(), hasLength(2));
+    expect(timeline.items.last, isA<TimelineHistoryEndcapItem>());
+    expect(
+      (timeline.items.last as TimelineHistoryEndcapItem).completedWorkoutCount,
+      4,
+    );
 
     final displayedWorkouts = timeline.items
         .whereType<TimelineDayGroupItem>()
