@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
+
 import '../constants/app_constants.dart';
 import '../models/user_data.dart';
 import '../models/workout.dart';
@@ -10,13 +11,17 @@ import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../models/workout_template.dart';
 import 'dao/weight_entry_dao.dart';
+import 'dao/workout_achievement_dao.dart';
 import 'dao/workout_dao.dart';
 import 'dao/workout_exercise_dao.dart';
 import 'dao/workout_set_dao.dart';
 import 'dao/workout_template_dao.dart';
+import 'database_service.dart';
 import 'exercise_service.dart';
 import 'user_service.dart';
+import 'workout_achievement_service.dart';
 import 'workout_service.dart';
+import 'workout_template_service.dart';
 
 enum _TrainingWeekType { normal, peak, deload, pause }
 
@@ -31,6 +36,7 @@ class DebugDataService {
 
   final Logger _logger = Logger('DebugDataService');
   WorkoutDao _workoutDao = WorkoutDao();
+  WorkoutAchievementDao _workoutAchievementDao = WorkoutAchievementDao();
   WorkoutExerciseDao _workoutExerciseDao = WorkoutExerciseDao();
   WorkoutSetDao _workoutSetDao = WorkoutSetDao();
   WorkoutTemplateDao _workoutTemplateDao = WorkoutTemplateDao();
@@ -42,15 +48,27 @@ class DebugDataService {
       WorkoutService.instance.loadData;
   Future<void> Function() _refreshUserProfile =
       UserService.instance.loadUserProfile;
+  WorkoutAchievementService _workoutAchievementService =
+      WorkoutAchievementService.instance;
   UserData? Function() _currentProfileProvider = () =>
       UserService.instance.currentProfile;
   DateTime Function() _nowProvider = DateTime.now;
+  Future<void> Function() _clearAllData = DatabaseService.instance.clearAllData;
+  Future<void> Function() _clearUserData = UserService.instance.clearUserData;
+  Future<void> Function() _clearUserWorkouts =
+      WorkoutService.instance.clearUserWorkouts;
+  Future<void> Function() _clearUserTemplates =
+      WorkoutTemplateService.instance.clearUserTemplatesAndFolders;
   int _weeksToGenerate = 104;
 
   List<Map<String, dynamic>> _workoutTemplates = _defaultWorkoutTemplates();
 
   @visibleForTesting
   set workoutDao(WorkoutDao dao) => _workoutDao = dao;
+
+  @visibleForTesting
+  set workoutAchievementDao(WorkoutAchievementDao dao) =>
+      _workoutAchievementDao = dao;
 
   @visibleForTesting
   set workoutExerciseDao(WorkoutExerciseDao dao) => _workoutExerciseDao = dao;
@@ -80,11 +98,31 @@ class DebugDataService {
       _refreshUserProfile = callback;
 
   @visibleForTesting
+  set workoutAchievementService(WorkoutAchievementService service) =>
+      _workoutAchievementService = service;
+
+  @visibleForTesting
   set currentProfileProvider(UserData? Function() callback) =>
       _currentProfileProvider = callback;
 
   @visibleForTesting
   set nowProvider(DateTime Function() callback) => _nowProvider = callback;
+
+  @visibleForTesting
+  set clearAllDataCallback(Future<void> Function() callback) =>
+      _clearAllData = callback;
+
+  @visibleForTesting
+  set clearUserDataCallback(Future<void> Function() callback) =>
+      _clearUserData = callback;
+
+  @visibleForTesting
+  set clearUserWorkoutsCallback(Future<void> Function() callback) =>
+      _clearUserWorkouts = callback;
+
+  @visibleForTesting
+  set clearUserTemplatesCallback(Future<void> Function() callback) =>
+      _clearUserTemplates = callback;
 
   @visibleForTesting
   set weeksToGenerate(int value) => _weeksToGenerate = value;
@@ -97,6 +135,7 @@ class DebugDataService {
   @visibleForTesting
   void resetForTesting() {
     _workoutDao = WorkoutDao();
+    _workoutAchievementDao = WorkoutAchievementDao();
     _workoutExerciseDao = WorkoutExerciseDao();
     _workoutSetDao = WorkoutSetDao();
     _workoutTemplateDao = WorkoutTemplateDao();
@@ -105,10 +144,24 @@ class DebugDataService {
     _loadExercises = ExerciseService.instance.loadExercises;
     _refreshWorkoutData = WorkoutService.instance.loadData;
     _refreshUserProfile = UserService.instance.loadUserProfile;
+    _workoutAchievementService = WorkoutAchievementService.instance;
     _currentProfileProvider = () => UserService.instance.currentProfile;
     _nowProvider = DateTime.now;
+    _clearAllData = DatabaseService.instance.clearAllData;
+    _clearUserData = UserService.instance.clearUserData;
+    _clearUserWorkouts = WorkoutService.instance.clearUserWorkouts;
+    _clearUserTemplates =
+        WorkoutTemplateService.instance.clearUserTemplatesAndFolders;
     _weeksToGenerate = 104;
     _workoutTemplates = _defaultWorkoutTemplates();
+  }
+
+  Future<void> clearAllData() async {
+    _logger.warning('Clearing all local data through debug service');
+    await _clearAllData();
+    await _clearUserData();
+    await _clearUserWorkouts();
+    await _clearUserTemplates();
   }
 
   Future<void> generateDebugData() async {
@@ -120,6 +173,7 @@ class DebugDataService {
 
     final now = _startOfDay(_nowProvider());
     final profile = _currentProfileProvider();
+    final generatedHistory = <Workout>[];
 
     for (int weekIndex = 0; weekIndex < _weeksToGenerate; weekIndex++) {
       final progress = _weeksToGenerate <= 1
@@ -148,6 +202,17 @@ class DebugDataService {
           progress: progress,
           dayType: dayType,
         );
+        final achievements = await _workoutAchievementService
+            .evaluateForWorkout(
+              workout,
+              history: generatedHistory,
+              earnedAt: workout.completedAt,
+            );
+        await _workoutAchievementDao.replaceAchievementsForWorkout(
+          workout.id,
+          achievements,
+        );
+        generatedHistory.add(workout.copyWith(achievements: achievements));
 
         if (profile != null) {
           await _createWeightEntryForWorkout(
@@ -210,6 +275,7 @@ class DebugDataService {
         (template['exercises'] as List<dynamic>).length;
     final prExerciseIndex = _prExerciseIndex(dayType, templateExercises.length);
 
+    final workoutExercises = <WorkoutExercise>[];
     for (int i = 0; i < templateExercises.length; i++) {
       final exerciseData = templateExercises[i];
       final exerciseId = const Uuid().v4();
@@ -233,6 +299,7 @@ class DebugDataService {
         isAccessory: isAccessory,
       );
       final completedSetCount = _completedSetCount(dayType, plannedSetCount);
+      final workoutSets = <WorkoutSet>[];
 
       for (int j = 0; j < plannedSetCount; j++) {
         final targetWeight = _targetWeightForSet(
@@ -274,10 +341,12 @@ class DebugDataService {
         );
 
         await _workoutSetDao.insert(set);
+        workoutSets.add(set);
       }
+      workoutExercises.add(workoutExercise.copyWith(sets: workoutSets));
     }
 
-    return workout;
+    return workout.copyWith(exercises: workoutExercises);
   }
 
   Future<void> _createWeightEntryForWorkout({
@@ -555,10 +624,10 @@ class DebugDataService {
   }
 
   _TrainingWeekType _selectWeekType(double progress) {
-    if (_chance(0.08)) {
+    if (_chance(0.035)) {
       return _TrainingWeekType.pause;
     }
-    if (progress > 0.65 && _chance(0.14)) {
+    if (progress > 0.65 && _chance(0.16)) {
       return _TrainingWeekType.peak;
     }
     if (_chance(progress > 0.4 ? 0.1 : 0.06)) {
@@ -732,8 +801,11 @@ class DebugDataService {
       return 0;
     }
 
+    final baseProgression = 1 - pow(1 - progress, 1.45).toDouble();
+    final mesocycleWave = sin(progress * pi * 10) * 0.025;
     final progressionMultiplier =
-        0.88 + (progress * (isAccessory ? 0.12 : 0.22));
+        0.86 +
+        ((baseProgression + mesocycleWave) * (isAccessory ? 0.12 : 0.24));
     final dayMultiplier = switch (dayType) {
       _TrainingDayType.volume => 0.95,
       _TrainingDayType.heavy => 1.05,

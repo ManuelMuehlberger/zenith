@@ -21,9 +21,13 @@ Award _awardForAchievement(
     case WorkoutAchievementType.highVolume:
       return Award(
         title: achievement.title,
+        reason: achievement.reason,
+        metrics: achievement.metrics,
         icon: Icons.local_fire_department,
         modelAsset: 'assets/achievements/achievement_cup.glb',
         thumbnailAsset: 'assets/achievements/achievement_cup.png',
+        compactThumbnailAsset:
+            'assets/achievements/achievement_cup_compact.png',
         cameraTheta: 30,
         cameraPhi: 20,
         cameraRadius: 118,
@@ -33,9 +37,13 @@ Award _awardForAchievement(
     case WorkoutAchievementType.longSession:
       return Award(
         title: achievement.title,
+        reason: achievement.reason,
+        metrics: achievement.metrics,
         icon: Icons.timer_outlined,
         modelAsset: 'assets/achievements/achievement_hourglass.glb',
         thumbnailAsset: 'assets/achievements/achievement_hourglass.png',
+        compactThumbnailAsset:
+            'assets/achievements/achievement_hourglass_compact.png',
         cameraTheta: 25,
         cameraPhi: 20,
         cameraRadius: 118,
@@ -45,21 +53,29 @@ Award _awardForAchievement(
     case WorkoutAchievementType.heavy:
       return Award(
         title: achievement.title,
+        reason: achievement.reason,
+        metrics: achievement.metrics,
         icon: Icons.fitness_center,
         modelAsset: 'assets/achievements/achievement_dumbbell.glb',
         thumbnailAsset: 'assets/achievements/achievement_dumbbell.png',
+        compactThumbnailAsset:
+            'assets/achievements/achievement_dumbbell_compact.png',
         cameraTheta: 35,
         cameraPhi: 20,
         cameraRadius: 118,
         rotationSpeed: 18,
         color: context.appColors.success,
       );
-    case WorkoutAchievementType.completed:
+    case WorkoutAchievementType.firstWorkout:
       return Award(
         title: achievement.title,
+        reason: achievement.reason,
+        metrics: achievement.metrics,
         icon: Icons.check_circle,
         modelAsset: 'assets/achievements/achievement_medal.glb',
         thumbnailAsset: 'assets/achievements/achievement_medal.png',
+        compactThumbnailAsset:
+            'assets/achievements/achievement_medal_compact.png',
         cameraTheta: 20,
         cameraPhi: 20,
         cameraRadius: 118,

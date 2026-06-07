@@ -5,10 +5,12 @@ import '../models/workout.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_folder.dart';
 import '../models/workout_set.dart';
+import 'dao/workout_achievement_dao.dart';
 import 'dao/workout_dao.dart';
 import 'dao/workout_exercise_dao.dart';
 import 'dao/workout_folder_dao.dart';
 import 'dao/workout_set_dao.dart';
+import 'workout_achievement_service.dart';
 
 class WorkoutService extends ChangeNotifier {
   static final WorkoutService _instance = WorkoutService._internal();
@@ -21,15 +23,22 @@ class WorkoutService extends ChangeNotifier {
 
   // Inject DAOs
   WorkoutDao _workoutDao = WorkoutDao();
+  WorkoutAchievementDao _workoutAchievementDao = WorkoutAchievementDao();
   WorkoutExerciseDao _workoutExerciseDao = WorkoutExerciseDao();
   WorkoutSetDao _workoutSetDao = WorkoutSetDao();
   WorkoutFolderDao _workoutFolderDao = WorkoutFolderDao();
+  WorkoutAchievementService _workoutAchievementService =
+      WorkoutAchievementService.instance;
 
   // Allow for mock injection in tests
   set workoutDao(WorkoutDao dao) => _workoutDao = dao;
+  set workoutAchievementDao(WorkoutAchievementDao dao) =>
+      _workoutAchievementDao = dao;
   set workoutExerciseDao(WorkoutExerciseDao dao) => _workoutExerciseDao = dao;
   set workoutSetDao(WorkoutSetDao dao) => _workoutSetDao = dao;
   set workoutFolderDao(WorkoutFolderDao dao) => _workoutFolderDao = dao;
+  set workoutAchievementService(WorkoutAchievementService service) =>
+      _workoutAchievementService = service;
 
   List<Workout> _workouts = [];
   List<WorkoutFolder> _folders = [];
@@ -58,6 +67,8 @@ class WorkoutService extends ChangeNotifier {
           .toList(growable: false);
       final workoutSets = await _workoutSetDao
           .getWorkoutSetsByWorkoutExerciseIds(exerciseIds);
+      final achievementsByWorkoutId = await _workoutAchievementDao
+          .getAchievementsByWorkoutIds(workoutIds);
 
       final setsByExerciseId = <String, List<WorkoutSet>>{};
       for (final workoutSet in workoutSets) {
@@ -86,6 +97,7 @@ class WorkoutService extends ChangeNotifier {
             (workout) => workout.copyWith(
               exercises:
                   exercisesByWorkoutId[workout.id] ?? const <WorkoutExercise>[],
+              achievements: achievementsByWorkoutId[workout.id] ?? const [],
             ),
           )
           .toList();
@@ -145,6 +157,50 @@ class WorkoutService extends ChangeNotifier {
     }
 
     return dates.toList()..sort();
+  }
+
+  Future<int> rebuildAchievementsForCompletedWorkouts() async {
+    _logger.info('Rebuilding achievements for completed workout history');
+
+    await loadData();
+
+    final completedWorkouts = List<Workout>.from(_workouts)
+      ..sort((a, b) {
+        final aTimestamp =
+            a.completedAt ??
+            a.startedAt ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        final bTimestamp =
+            b.completedAt ??
+            b.startedAt ??
+            DateTime.fromMillisecondsSinceEpoch(0);
+        return aTimestamp.compareTo(bTimestamp);
+      });
+
+    final priorCompletedHistory = <Workout>[];
+    var rebuiltCount = 0;
+
+    for (final workout in completedWorkouts) {
+      if (workout.status != WorkoutStatus.completed) {
+        continue;
+      }
+
+      final achievements = await _workoutAchievementService.evaluateForWorkout(
+        workout,
+        history: priorCompletedHistory,
+        earnedAt: workout.completedAt,
+      );
+      await _workoutAchievementDao.replaceAchievementsForWorkout(
+        workout.id,
+        achievements,
+      );
+      priorCompletedHistory.add(workout.copyWith(achievements: achievements));
+      rebuiltCount++;
+    }
+
+    await loadData();
+    _logger.info('Rebuilt achievements for $rebuiltCount completed workouts');
+    return rebuiltCount;
   }
 
   Future<Workout?> getLastWorkoutForExercise(String exerciseSlug) async {
@@ -262,6 +318,8 @@ class WorkoutService extends ChangeNotifier {
     }
     await _workoutExerciseDao.deleteWorkoutExercisesByWorkoutId(workoutId);
     _logger.fine('Deleted associated exercises and sets');
+    await _workoutAchievementDao.deleteAchievementsByWorkoutId(workoutId);
+    _logger.fine('Deleted associated achievements');
 
     await _workoutDao.deleteWorkout(workoutId);
     _workouts.removeWhere((w) => w.id == workoutId);

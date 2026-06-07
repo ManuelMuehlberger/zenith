@@ -51,7 +51,9 @@ class AwardBalloons extends StatelessWidget {
                     Positioned(
                       right: -7,
                       bottom: -5,
-                      child: _AwardCountBadge(count: awards.length),
+                      child: _AwardCountBadge(
+                        count: awards.length - visible.length,
+                      ),
                     ),
                 ],
               ),
@@ -80,14 +82,16 @@ class _AwardThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final thumbnailAsset = award.compactThumbnailAsset ?? award.thumbnailAsset;
+
     return SizedBox(
       width: size,
       height: size,
       child: Center(
-        child: award.thumbnailAsset == null
+        child: thumbnailAsset == null
             ? _AwardFallbackIcon(award: award, size: size)
             : Image.asset(
-                award.thumbnailAsset!,
+                thumbnailAsset,
                 width: size,
                 height: size,
                 fit: BoxFit.contain,
@@ -126,20 +130,22 @@ class _AwardCountBadge extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: scheme.primary,
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(999),
         border: Border.all(color: scheme.surface, width: 1.5),
       ),
-      child: SizedBox(
-        width: 17,
-        height: 17,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
         child: Center(
-          child: Text(
-            count.toString(),
-            style: context.appText.labelSmall?.copyWith(
-              color: scheme.onPrimary,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              height: 1,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              '+$count',
+              style: context.appText.labelSmall?.copyWith(
+                color: scheme.onPrimary,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                height: 1,
+              ),
             ),
           ),
         ),
@@ -239,7 +245,96 @@ class _AwardDetailSheetState extends State<_AwardDetailSheet> {
                 fontWeight: FontWeight.w800,
               ),
             ),
+            if ((selected.reason ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                selected.reason!.trim(),
+                key: const Key('award_reason_text'),
+                textAlign: TextAlign.center,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+            ],
+            if (selected.metrics.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                children: _visibleMetricChips(selected.metrics)
+                    .map((metric) => _AwardMetricChip(metric: metric))
+                    .toList(growable: false),
+              ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+List<_AwardMetric> _visibleMetricChips(Map<String, Object?> metrics) {
+  const labels = <String, String>{
+    'totalSets': 'Sets',
+    'completedSets': 'Done',
+    'durationMinutes': 'Min',
+    'totalWeight': 'Volume',
+    'comparisonWorkoutCount': 'Compared',
+    'totalSetsPercentileLast90Days': 'Percentile',
+  };
+
+  final result = <_AwardMetric>[];
+  for (final entry in labels.entries) {
+    final value = metrics[entry.key];
+    if (value == null) {
+      continue;
+    }
+    result.add(_AwardMetric(entry.value, _formatMetricValue(value)));
+  }
+  return result.take(4).toList(growable: false);
+}
+
+String _formatMetricValue(Object value) {
+  if (value is double) {
+    if (value == value.roundToDouble()) {
+      return value.round().toString();
+    }
+    return value.toStringAsFixed(1);
+  }
+  return value.toString();
+}
+
+class _AwardMetric {
+  const _AwardMetric(this.label, this.value);
+
+  final String label;
+  final String value;
+}
+
+class _AwardMetricChip extends StatelessWidget {
+  const _AwardMetricChip({required this.metric});
+
+  final _AwardMetric metric;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.field,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Text(
+          '${metric.label}: ${metric.value}',
+          style: context.appText.labelSmall?.copyWith(
+            color: colors.textSecondary,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );

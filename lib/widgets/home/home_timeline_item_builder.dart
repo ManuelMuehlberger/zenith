@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../constants/app_constants.dart';
 import '../../models/workout.dart';
 import '../../services/user_service.dart';
-import '../../services/workout_achievement_service.dart';
 import '../../theme/app_theme.dart';
 import '../timeline/timeline_header_row.dart';
 import '../timeline/timeline_list_item.dart';
@@ -61,7 +60,7 @@ class HomeTimelineItemBuilder {
             final isLast = workout == workouts.last;
             final achievements = buildWorkoutAchievementAwards(
               context,
-              WorkoutAchievementService.resolveForWorkout(workout),
+              workout.achievements,
             );
             return Padding(
               padding: EdgeInsets.only(bottom: isLast ? 0 : 12.0),

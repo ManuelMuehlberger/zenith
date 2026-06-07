@@ -1,18 +1,22 @@
 import 'dart:math';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/constants/app_constants.dart';
 import 'package:zenith/models/user_data.dart';
 import 'package:zenith/models/workout.dart';
+import 'package:zenith/models/workout_achievement.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/models/workout_template.dart';
 import 'package:zenith/services/dao/weight_entry_dao.dart';
+import 'package:zenith/services/dao/workout_achievement_dao.dart';
 import 'package:zenith/services/dao/workout_dao.dart';
 import 'package:zenith/services/dao/workout_exercise_dao.dart';
 import 'package:zenith/services/dao/workout_set_dao.dart';
 import 'package:zenith/services/dao/workout_template_dao.dart';
 import 'package:zenith/services/debug_data_service.dart';
+import 'package:zenith/services/workout_achievement_service.dart';
 
 class FakeWorkoutDao extends WorkoutDao {
   final List<Workout> insertedWorkouts = [];
@@ -43,6 +47,20 @@ class FakeWorkoutExerciseDao extends WorkoutExerciseDao {
   }
 }
 
+class FakeWorkoutAchievementDao extends WorkoutAchievementDao {
+  final Map<String, List<WorkoutAchievement>> achievementsByWorkoutId = {};
+
+  @override
+  Future<void> replaceAchievementsForWorkout(
+    String workoutId,
+    List<WorkoutAchievement> achievements,
+  ) async {
+    achievementsByWorkoutId[workoutId] = List<WorkoutAchievement>.from(
+      achievements,
+    );
+  }
+}
+
 class FakeWorkoutSetDao extends WorkoutSetDao {
   final List<WorkoutSet> insertedSets = [];
 
@@ -50,6 +68,60 @@ class FakeWorkoutSetDao extends WorkoutSetDao {
   Future<int> insert(WorkoutSet model) async {
     insertedSets.add(model);
     return 1;
+  }
+}
+
+class DebugRulesBundle extends CachingAssetBundle {
+  @override
+  Future<ByteData> load(String key) async {
+    return ByteData(0);
+  }
+
+  @override
+  Future<String> loadString(String key, {bool cache = true}) async {
+    return '''
+{
+  "rules": [
+    {
+      "id": "first_workout",
+      "type": "firstWorkout",
+      "title": "First Workout",
+      "reasonTemplate": "Completed your first workout ever: {workoutName}.",
+      "conditions": [
+        { "metric": "workoutCountBefore", "operator": "equals", "value": 0 }
+      ]
+    },
+    {
+      "id": "high_volume",
+      "type": "highVolume",
+      "title": "High Volume",
+      "reasonTemplate": "Completed {totalSets} sets, beating {totalSetsPercentileLast90Days}% of workouts from the last 3 months.",
+      "conditions": [
+        { "metric": "totalSets", "operator": "greaterThan", "value": 20 },
+        { "metric": "totalSetsPercentileLast90Days", "operator": "greaterThan", "value": 75 }
+      ]
+    },
+    {
+      "id": "long_session",
+      "type": "longSession",
+      "title": "Long Session",
+      "reasonTemplate": "Trained for {durationMinutes} minutes.",
+      "conditions": [
+        { "metric": "durationMinutes", "operator": "greaterThanOrEqual", "value": 60 }
+      ]
+    },
+    {
+      "id": "heavy",
+      "type": "heavy",
+      "title": "Heavy",
+      "reasonTemplate": "Moved {totalWeight} kg of completed volume.",
+      "conditions": [
+        { "metric": "totalWeight", "operator": "greaterThanOrEqual", "value": 10000 }
+      ]
+    }
+  ]
+}
+''';
   }
 }
 
@@ -131,6 +203,7 @@ void main() {
   group('DebugDataService', () {
     late DebugDataService service;
     late FakeWorkoutDao workoutDao;
+    late FakeWorkoutAchievementDao workoutAchievementDao;
     late FakeWorkoutExerciseDao workoutExerciseDao;
     late FakeWorkoutSetDao workoutSetDao;
     late FakeWorkoutTemplateDao workoutTemplateDao;
@@ -138,12 +211,17 @@ void main() {
     late int loadExercisesCallCount;
     late int refreshWorkoutDataCallCount;
     late int refreshUserProfileCallCount;
+    late int clearAllDataCallCount;
+    late int clearUserDataCallCount;
+    late int clearUserWorkoutsCallCount;
+    late int clearUserTemplatesCallCount;
 
     setUp(() {
       service = DebugDataService.instance;
       service.resetForTesting();
 
       workoutDao = FakeWorkoutDao();
+      workoutAchievementDao = FakeWorkoutAchievementDao();
       workoutExerciseDao = FakeWorkoutExerciseDao();
       workoutSetDao = FakeWorkoutSetDao();
       workoutTemplateDao = FakeWorkoutTemplateDao();
@@ -151,8 +229,13 @@ void main() {
       loadExercisesCallCount = 0;
       refreshWorkoutDataCallCount = 0;
       refreshUserProfileCallCount = 0;
+      clearAllDataCallCount = 0;
+      clearUserDataCallCount = 0;
+      clearUserWorkoutsCallCount = 0;
+      clearUserTemplatesCallCount = 0;
 
       service.workoutDao = workoutDao;
+      service.workoutAchievementDao = workoutAchievementDao;
       service.workoutExerciseDao = workoutExerciseDao;
       service.workoutSetDao = workoutSetDao;
       service.workoutTemplateDao = workoutTemplateDao;
@@ -166,12 +249,39 @@ void main() {
       service.refreshUserProfile = () async {
         refreshUserProfileCallCount++;
       };
+      service.clearAllDataCallback = () async {
+        clearAllDataCallCount++;
+      };
+      service.clearUserDataCallback = () async {
+        clearUserDataCallCount++;
+      };
+      service.clearUserWorkoutsCallback = () async {
+        clearUserWorkoutsCallCount++;
+      };
+      service.clearUserTemplatesCallback = () async {
+        clearUserTemplatesCallCount++;
+      };
+      service.workoutAchievementService = WorkoutAchievementService(
+        assetBundle: DebugRulesBundle(),
+      );
       service.currentProfileProvider = () => null;
     });
 
     tearDown(() {
       service.resetForTesting();
     });
+
+    test(
+      'clearAllData clears persisted data through service boundaries',
+      () async {
+        await service.clearAllData();
+
+        expect(clearAllDataCallCount, 1);
+        expect(clearUserDataCallCount, 1);
+        expect(clearUserWorkoutsCallCount, 1);
+        expect(clearUserTemplatesCallCount, 1);
+      },
+    );
 
     test(
       'generateDebugData creates varied two-year-style history with progression',
@@ -254,6 +364,30 @@ void main() {
                 (set.actualReps ?? 0) < (set.targetReps ?? 0),
           ),
           isTrue,
+        );
+
+        final generatedAchievements = workoutAchievementDao
+            .achievementsByWorkoutId
+            .values
+            .expand((achievements) => achievements)
+            .toList();
+        expect(generatedAchievements, isNotEmpty);
+        expect(
+          generatedAchievements.map((achievement) => achievement.type),
+          contains(WorkoutAchievementType.firstWorkout),
+        );
+        expect(
+          generatedAchievements.any(
+            (achievement) =>
+                achievement.type == WorkoutAchievementType.highVolume ||
+                achievement.type == WorkoutAchievementType.longSession ||
+                achievement.type == WorkoutAchievementType.heavy,
+          ),
+          isTrue,
+        );
+        expect(
+          generatedAchievements.map((achievement) => achievement.reason),
+          everyElement(isNotEmpty),
         );
 
         final benchExerciseIds = historyExercises

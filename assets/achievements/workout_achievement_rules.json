@@ -1,0 +1,45 @@
+{
+  "rules": [
+    {
+      "id": "first_workout",
+      "type": "firstWorkout",
+      "title": "First Workout",
+      "reasonTemplate": "Completed your first workout ever: {workoutName}.",
+      "conditions": [
+        { "metric": "workoutCountBefore", "operator": "equals", "value": 0 }
+      ]
+    },
+    {
+      "id": "high_volume",
+      "type": "highVolume",
+      "title": "High Volume",
+      "reasonTemplate": "Completed {totalSets} sets, beating {totalSetsPercentileLast90Days}% of workouts from the last 3 months.",
+      "conditions": [
+        { "metric": "totalSets", "operator": "greaterThan", "value": 20 },
+        {
+          "metric": "totalSetsPercentileLast90Days",
+          "operator": "greaterThan",
+          "value": 75
+        }
+      ]
+    },
+    {
+      "id": "long_session",
+      "type": "longSession",
+      "title": "Long Session",
+      "reasonTemplate": "Trained for {durationMinutes} minutes.",
+      "conditions": [
+        { "metric": "durationMinutes", "operator": "greaterThanOrEqual", "value": 110 }
+      ]
+    },
+    {
+      "id": "heavy",
+      "type": "heavy",
+      "title": "Heavy",
+      "reasonTemplate": "Moved {totalWeight} kg of completed volume.",
+      "conditions": [
+        { "metric": "totalWeight", "operator": "greaterThanOrEqual", "value": 10000 }
+      ]
+    }
+  ]
+}

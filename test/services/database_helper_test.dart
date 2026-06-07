@@ -370,6 +370,7 @@ void main() {
             'UserData',
             'WeightEntry',
             'Workout',
+            'WorkoutAchievement',
             'WorkoutExercise',
             'WorkoutFolder',
             'WorkoutSet',
@@ -377,6 +378,19 @@ void main() {
           ]),
         );
         expect(await columnNames(db, 'UserData'), contains('gender'));
+        expect(
+          await columnNames(db, 'WorkoutAchievement'),
+          containsAll([
+            'id',
+            'workoutId',
+            'ruleId',
+            'type',
+            'title',
+            'reason',
+            'earnedAt',
+            'metricsJson',
+          ]),
+        );
 
         final seededExercises = await db.query('Exercise', orderBy: 'slug ASC');
         expect(seededExercises.map((row) => row['slug']), [
@@ -441,10 +455,12 @@ void main() {
           'MuscleGroup',
           'UserData',
           'WeightEntry',
+          'WorkoutAchievement',
           'WorkoutTemplate',
         ]),
       );
       expect(await columnNames(db, 'UserData'), contains('gender'));
+      expect(await tableNames(db), contains('WorkoutAchievement'));
 
       final workoutSet = await db.query(
         'WorkoutSet',
@@ -463,6 +479,7 @@ void main() {
       expect(await columnNames(db, 'Workout'), contains('description'));
       expect(await columnNames(db, 'Workout'), contains('mood'));
       expect(await columnNames(db, 'UserData'), contains('gender'));
+      expect(await tableNames(db), contains('WorkoutAchievement'));
       expect(
         await columnNames(db, 'WorkoutExercise'),
         contains('workoutTemplateId'),

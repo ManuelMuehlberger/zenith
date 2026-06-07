@@ -19,7 +19,7 @@ class DatabaseHelper {
   static final Logger _logger = Logger('DatabaseHelper');
 
   static const String _dbName = 'workout_tracker.db';
-  static const int _dbVersion = 9; // Added profile gender support
+  static const int _dbVersion = 10; // Added persisted workout achievements
 
   Future<String> get databasePath async {
     final documentsDirectory = await getApplicationDocumentsDirectory();
@@ -211,6 +211,8 @@ class DatabaseHelper {
           FOREIGN KEY (workoutExerciseId) REFERENCES WorkoutExercise (id) ON DELETE CASCADE
         )
       ''');
+
+      await _createWorkoutAchievementTable(db);
 
       // Insert default muscle groups
       _logger.info('Inserting default muscle groups');
@@ -479,11 +481,38 @@ class DatabaseHelper {
         _logger.info('Version 9 upgrades completed');
       }
 
+      if (oldVersion < 10) {
+        _logger.info('Applying version 10 upgrades');
+        await _createWorkoutAchievementTable(db);
+        _logger.info('Version 10 upgrades completed');
+      }
+
       _logger.info('Database upgrade completed successfully');
     } catch (e) {
       _logger.severe('Error during database upgrade: $e');
       rethrow;
     }
+  }
+
+  Future<void> _createWorkoutAchievementTable(Database db) async {
+    _logger.info('Creating WorkoutAchievement table');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS WorkoutAchievement (
+        id TEXT PRIMARY KEY,
+        workoutId TEXT NOT NULL,
+        ruleId TEXT NOT NULL,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        earnedAt TEXT NOT NULL,
+        metricsJson TEXT NOT NULL,
+        FOREIGN KEY (workoutId) REFERENCES Workout (id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute('''
+      CREATE INDEX IF NOT EXISTS idx_WorkoutAchievement_workoutId
+      ON WorkoutAchievement (workoutId)
+    ''');
   }
 
   Future<void> close() async {

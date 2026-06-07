@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 import '../constants/app_constants.dart';
 import 'typedefs.dart';
+import 'workout_achievement.dart';
 import 'workout_exercise.dart';
 
 enum WorkoutStatus { template, inProgress, completed }
@@ -24,6 +25,7 @@ class Workout {
   final DateTime? startedAt;
   final DateTime? completedAt;
   final int? mood;
+  final List<WorkoutAchievement> achievements;
 
   Workout({
     WorkoutId? id,
@@ -41,8 +43,10 @@ class Workout {
     this.startedAt,
     this.completedAt,
     this.mood,
+    List<WorkoutAchievement> achievements = const [],
   }) : id = id ?? const Uuid().v4(),
-       exercises = List.unmodifiable(exercises);
+       exercises = List.unmodifiable(exercises),
+       achievements = List.unmodifiable(achievements);
 
   factory Workout.fromMap(Map<String, dynamic> map) {
     return Workout(
@@ -61,6 +65,7 @@ class Workout {
       completedAt: _readNullableDateTime(map, 'completedAt'),
       mood: _readNullableInt(map, 'mood'),
       exercises: [], // To be loaded separately
+      achievements: [], // To be loaded separately
     );
   }
 
@@ -99,6 +104,7 @@ class Workout {
     Object? startedAt = _undefined,
     Object? completedAt = _undefined,
     Object? mood = _undefined,
+    List<WorkoutAchievement>? achievements,
   }) {
     return Workout(
       id: id ?? this.id,
@@ -132,6 +138,7 @@ class Workout {
           ? this.completedAt
           : completedAt as DateTime?,
       mood: mood == _undefined ? this.mood : mood as int?,
+      achievements: achievements ?? this.achievements,
     );
   }
 

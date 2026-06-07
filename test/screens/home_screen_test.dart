@@ -3,11 +3,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
 import 'package:zenith/models/workout.dart';
+import 'package:zenith/models/workout_achievement.dart';
 import 'package:zenith/screens/home_screen.dart';
+import 'package:zenith/services/dao/workout_achievement_dao.dart';
 import 'package:zenith/services/workout_service.dart';
 
 // Reuse generated mocks from existing tests
 import '../services/workout_service_test.mocks.dart';
+
+class FakeWorkoutAchievementDao extends WorkoutAchievementDao {
+  @override
+  Future<Map<String, List<WorkoutAchievement>>> getAchievementsByWorkoutIds(
+    List<String> workoutIds,
+  ) async {
+    return const {};
+  }
+
+  @override
+  Future<int> deleteAchievementsByWorkoutId(String workoutId) async {
+    return 1;
+  }
+}
 
 Finder _homeVerticalScrollable() {
   return find.byWidgetPredicate(
@@ -42,6 +58,7 @@ void main() {
 
       // Inject mock DAOs
       workoutService.workoutDao = mockWorkoutDao;
+      workoutService.workoutAchievementDao = FakeWorkoutAchievementDao();
       workoutService.workoutExerciseDao = mockWorkoutExerciseDao;
       workoutService.workoutSetDao = mockWorkoutSetDao;
 

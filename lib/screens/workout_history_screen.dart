@@ -7,10 +7,10 @@ import 'package:intl/intl.dart';
 import '../constants/app_constants.dart';
 import '../models/workout.dart';
 import '../services/user_service.dart';
-import '../services/workout_achievement_service.dart';
 import '../services/workout_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/unit_converter.dart';
+import '../widgets/timeline/award_balloons.dart';
 import '../widgets/timeline/timeline_row.dart';
 import '../widgets/timeline/workout_achievement_awards.dart';
 import '../widgets/timeline/workout_timeline_card.dart';
@@ -235,7 +235,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
           final animationDelay = (cursor * 45).clamp(0, 450).toInt();
           final achievements = buildWorkoutAchievementAwards(
             context,
-            WorkoutAchievementService.resolveForWorkout(workout),
+            workout.achievements,
           );
           return GestureDetector(
             onTap: () => _openWorkoutDetail(workout),
@@ -390,6 +390,10 @@ class _MonthTimelineRow extends StatelessWidget {
     final colors = context.appColors;
     final scheme = context.appScheme;
     final textTheme = context.appText;
+    final monthAwards = buildWorkoutAchievementAwards(
+      context,
+      group.workouts.expand((workout) => workout.achievements),
+    );
 
     return TimelineRow(
       timestamp: group.key.startOfMonth,
@@ -435,6 +439,11 @@ class _MonthTimelineRow extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (monthAwards.isNotEmpty) ...[
+                    const SizedBox(width: 10),
+                    AwardBalloons(awards: monthAwards),
+                  ],
+                  const SizedBox(width: 8),
                   AnimatedRotation(
                     turns: isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 180),

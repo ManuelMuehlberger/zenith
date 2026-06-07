@@ -10,9 +10,12 @@ import '../../theme/app_theme.dart';
 class Award {
   final String title;
   final IconData icon;
+  final String? reason;
+  final Map<String, Object?> metrics;
   final Color? color;
   final String modelAsset;
   final String? thumbnailAsset;
+  final String? compactThumbnailAsset;
   final double cameraTheta;
   final double cameraPhi;
   final double cameraRadius;
@@ -22,7 +25,10 @@ class Award {
     required this.title,
     required this.icon,
     required this.modelAsset,
+    this.reason,
+    this.metrics = const {},
     this.thumbnailAsset,
+    this.compactThumbnailAsset,
     this.color,
     this.cameraTheta = 35,
     this.cameraPhi = 70,
