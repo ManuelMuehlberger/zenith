@@ -12,6 +12,7 @@ typedef WorkoutTemplateId = String;
 typedef WorkoutFolderId = String;
 typedef WorkoutExerciseId = String;
 typedef WorkoutSetId = String;
+typedef WorkoutAchievementId = String;
 
 // Exercise-related typedefs
 // policy: allow-public-api shared identifier alias used across models/services.

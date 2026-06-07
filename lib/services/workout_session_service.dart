@@ -4,12 +4,14 @@ import 'package:logging/logging.dart';
 import '../models/workout.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
+import 'dao/workout_achievement_dao.dart';
 import 'dao/workout_dao.dart';
 import 'dao/workout_exercise_dao.dart';
 import 'dao/workout_set_dao.dart';
 import 'exercise_service.dart';
 import 'live_workout_notification_service.dart';
 import 'user_service.dart';
+import 'workout_achievement_service.dart';
 import 'workout_service.dart';
 
 class WorkoutSessionService extends ChangeNotifier {
@@ -24,12 +26,16 @@ class WorkoutSessionService extends ChangeNotifier {
 
   // Inject DAOs
   WorkoutDao _workoutDao = WorkoutDao();
+  WorkoutAchievementDao _workoutAchievementDao = WorkoutAchievementDao();
   WorkoutExerciseDao _workoutExerciseDao = WorkoutExerciseDao();
   WorkoutSetDao _workoutSetDao = WorkoutSetDao();
 
   // Allow for mock injection in tests
   @visibleForTesting
   set workoutDao(WorkoutDao dao) => _workoutDao = dao;
+  @visibleForTesting
+  set workoutAchievementDao(WorkoutAchievementDao dao) =>
+      _workoutAchievementDao = dao;
   @visibleForTesting
   set workoutExerciseDao(WorkoutExerciseDao dao) => _workoutExerciseDao = dao;
   @visibleForTesting
@@ -56,6 +62,12 @@ class WorkoutSessionService extends ChangeNotifier {
   set recordWeightEntry(
     Future<void> Function(double value, DateTime timestamp) callback,
   ) => _recordWeightEntry = callback;
+
+  WorkoutAchievementService _achievementService =
+      WorkoutAchievementService.instance;
+  @visibleForTesting
+  set achievementService(WorkoutAchievementService service) =>
+      _achievementService = service;
 
   Workout? _currentSession;
   @visibleForTesting
@@ -527,6 +539,17 @@ class WorkoutSessionService extends ChangeNotifier {
     await _workoutDao.updateWorkout(completedSession);
     _logger.fine('Saved completed session to database');
 
+    final achievements = await _achievementService.evaluateForWorkout(
+      completedSession,
+      history: WorkoutService.instance.workouts,
+      earnedAt: endTime,
+    );
+    await _workoutAchievementDao.replaceAchievementsForWorkout(
+      completedSession.id,
+      achievements,
+    );
+    _logger.fine('Saved ${achievements.length} workout achievements');
+
     if (postWorkoutWeight != null) {
       await _recordWeightEntry(postWorkoutWeight, endTime);
       _logger.fine('Recorded post-workout weight entry');
@@ -537,7 +560,7 @@ class WorkoutSessionService extends ChangeNotifier {
     await _notificationService.stopService();
     await clearActiveSession();
     _logger.info('Workout session completed and cleared');
-    return completedSession;
+    return completedSession.copyWith(achievements: achievements);
   }
 
   Future<void> clearActiveSession({bool deleteFromDb = false}) async {
@@ -566,6 +589,8 @@ class WorkoutSessionService extends ChangeNotifier {
         _logger.fine('Deleting exercise: ${exercise.id}');
         await _workoutExerciseDao.deleteWorkoutExercise(exercise.id);
       }
+
+      await _workoutAchievementDao.deleteAchievementsByWorkoutId(workoutId);
 
       // Finally, delete the main workout record.
       _logger.info('Deleting workout record: $workoutId');

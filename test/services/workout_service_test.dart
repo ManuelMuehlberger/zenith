@@ -4,8 +4,10 @@ import 'package:mockito/mockito.dart';
 import 'package:zenith/models/exercise.dart';
 import 'package:zenith/models/muscle_group.dart';
 import 'package:zenith/models/workout.dart';
+import 'package:zenith/models/workout_achievement.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
+import 'package:zenith/services/dao/workout_achievement_dao.dart';
 import 'package:zenith/services/dao/workout_dao.dart';
 import 'package:zenith/services/dao/workout_exercise_dao.dart';
 import 'package:zenith/services/dao/workout_set_dao.dart';
@@ -15,16 +17,39 @@ import 'package:zenith/services/workout_service.dart';
 @GenerateMocks([WorkoutDao, WorkoutExerciseDao, WorkoutSetDao])
 import 'workout_service_test.mocks.dart';
 
+class FakeWorkoutAchievementDao extends WorkoutAchievementDao {
+  Map<String, List<WorkoutAchievement>> achievementsByWorkoutId = {};
+
+  @override
+  Future<Map<String, List<WorkoutAchievement>>> getAchievementsByWorkoutIds(
+    List<String> workoutIds,
+  ) async {
+    return {
+      for (final id in workoutIds)
+        if (achievementsByWorkoutId[id] != null)
+          id: achievementsByWorkoutId[id]!,
+    };
+  }
+
+  @override
+  Future<int> deleteAchievementsByWorkoutId(String workoutId) async {
+    achievementsByWorkoutId.remove(workoutId);
+    return 1;
+  }
+}
+
 void main() {
   group('WorkoutService Tests', () {
     late WorkoutService workoutService;
     late MockWorkoutDao mockWorkoutDao;
+    late FakeWorkoutAchievementDao fakeWorkoutAchievementDao;
     late MockWorkoutExerciseDao mockWorkoutExerciseDao;
     late MockWorkoutSetDao mockWorkoutSetDao;
 
     setUp(() {
       // Create mocks
       mockWorkoutDao = MockWorkoutDao();
+      fakeWorkoutAchievementDao = FakeWorkoutAchievementDao();
       mockWorkoutExerciseDao = MockWorkoutExerciseDao();
       mockWorkoutSetDao = MockWorkoutSetDao();
 
@@ -36,6 +61,7 @@ void main() {
 
       // Inject mocks by overriding the DAO instances in the service
       workoutService.workoutDao = mockWorkoutDao;
+      workoutService.workoutAchievementDao = fakeWorkoutAchievementDao;
       workoutService.workoutExerciseDao = mockWorkoutExerciseDao;
       workoutService.workoutSetDao = mockWorkoutSetDao;
     });

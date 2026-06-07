@@ -12,6 +12,7 @@ erDiagram
     WorkoutTemplate ||--o{ Workout : "instantiates"
     WorkoutTemplate ||--o{ WorkoutExercise : "defines"
     Workout ||--o{ WorkoutExercise : "performs"
+    Workout ||--o{ WorkoutAchievement : "earns"
     WorkoutExercise ||--o{ WorkoutSet : "has"
     Exercise ||--o{ WorkoutExercise : "is used in"
     MuscleGroup ||--o{ Exercise : "is primary for"
@@ -82,6 +83,17 @@ erDiagram
         int actualReps
         double actualWeight
         bool isCompleted
+    }
+
+    WorkoutAchievement {
+        String id PK
+        String workoutId FK
+        String ruleId
+        String type
+        String title
+        String reason
+        DateTime earnedAt
+        String metricsJson
     }
 
     Exercise {
@@ -193,6 +205,20 @@ Represents a set of an exercise within a `WorkoutExercise`. Contains both target
 | `actualWeight` | double | Nullable | Actual weight used (logged during session). |
 | `isCompleted` | bool | Not Null, Default: false | Flag indicating if the set has been completed. |
 
+### `WorkoutAchievement`
+Stores immutable achievement snapshots earned by a completed workout.
+
+| Column Name | Data Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | String | Primary Key | Unique identifier for the earned achievement. |
+| `workoutId` | String | Foreign Key (Workout.id) | The completed workout that earned the achievement. |
+| `ruleId` | String | Not Null | Identifier of the rule that awarded this achievement. |
+| `type` | String | Not Null | App-level achievement type used for visuals. |
+| `title` | String | Not Null | Snapshot of the display title at award time. |
+| `reason` | String | Not Null | Human-readable explanation of why it was awarded. |
+| `earnedAt` | DateTime | Not Null | Timestamp when the achievement was awarded. |
+| `metricsJson` | String | Not Null | JSON snapshot of relevant workout and comparison metrics. |
+
 ### `Exercise`
 A catalog of available exercises.
 
@@ -256,7 +282,11 @@ A lookup table for muscle groups.
     *   A `WorkoutExercise` can have multiple `WorkoutSet` records.
     *   Each `WorkoutSet` belongs to one `WorkoutExercise` via `workoutExerciseId`.
 
-7.  **Exercise to WorkoutExercise**: One-to-Many.
+7.  **Workout to WorkoutAchievement**: One-to-Many.
+    *   A completed `Workout` can earn multiple `WorkoutAchievement` records.
+    *   Achievement rows are snapshots; later rule edits do not rewrite old awards.
+
+8.  **Exercise to WorkoutExercise**: One-to-Many.
     *   An `Exercise` (defined by its `slug`) can be used in many `WorkoutExercise` records across different templates and sessions.
     *   Each `WorkoutExercise` references one `Exercise` via `exerciseSlug`.
 

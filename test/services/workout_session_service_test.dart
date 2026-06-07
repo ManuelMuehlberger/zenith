@@ -1,15 +1,19 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zenith/models/exercise.dart';
 import 'package:zenith/models/muscle_group.dart';
 import 'package:zenith/models/workout.dart';
+import 'package:zenith/models/workout_achievement.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
+import 'package:zenith/services/dao/workout_achievement_dao.dart';
 import 'package:zenith/services/dao/workout_dao.dart';
 import 'package:zenith/services/dao/workout_exercise_dao.dart';
 import 'package:zenith/services/dao/workout_set_dao.dart';
 import 'package:zenith/services/exercise_service.dart';
 import 'package:zenith/services/live_workout_notification_service.dart';
+import 'package:zenith/services/workout_achievement_service.dart';
 import 'package:zenith/services/workout_service.dart';
 import 'package:zenith/services/workout_session_service.dart';
 
@@ -186,6 +190,81 @@ class FakeWorkoutSetDao extends WorkoutSetDao {
   }
 }
 
+class FakeWorkoutAchievementDao extends WorkoutAchievementDao {
+  final Map<String, List<WorkoutAchievement>> _byWorkoutId = {};
+  int replaceCalls = 0;
+  int deleteCalls = 0;
+
+  @override
+  Future<void> replaceAchievementsForWorkout(
+    String workoutId,
+    List<WorkoutAchievement> achievements,
+  ) async {
+    replaceCalls++;
+    _byWorkoutId[workoutId] = List<WorkoutAchievement>.from(achievements);
+  }
+
+  @override
+  Future<int> deleteAchievementsByWorkoutId(String workoutId) async {
+    deleteCalls++;
+    _byWorkoutId.remove(workoutId);
+    return 1;
+  }
+
+  @override
+  Future<Map<String, List<WorkoutAchievement>>> getAchievementsByWorkoutIds(
+    List<String> workoutIds,
+  ) async {
+    return {
+      for (final id in workoutIds)
+        if (_byWorkoutId[id] != null) id: _byWorkoutId[id]!,
+    };
+  }
+
+  void resetCounts() {
+    replaceCalls = 0;
+    deleteCalls = 0;
+  }
+}
+
+class EmptyRulesBundle extends CachingAssetBundle {
+  @override
+  Future<ByteData> load(String key) async {
+    return ByteData(0);
+  }
+
+  @override
+  Future<String> loadString(String key, {bool cache = true}) async {
+    return '{"rules":[]}';
+  }
+}
+
+class FirstWorkoutRulesBundle extends CachingAssetBundle {
+  @override
+  Future<ByteData> load(String key) async {
+    return ByteData(0);
+  }
+
+  @override
+  Future<String> loadString(String key, {bool cache = true}) async {
+    return '''
+{
+  "rules": [
+    {
+      "id": "first_workout",
+      "type": "firstWorkout",
+      "title": "First Workout",
+      "reasonTemplate": "Completed your first workout ever: {workoutName}.",
+      "conditions": [
+        { "metric": "workoutCountBefore", "operator": "equals", "value": 0 }
+      ]
+    }
+  ]
+}
+''';
+  }
+}
+
 class FakeNotificationService implements NotificationServiceAPI {
   bool _running = false;
   int startCalls = 0;
@@ -272,6 +351,7 @@ void main() {
   group('WorkoutSessionService Tests', () {
     late WorkoutSessionService service;
     late FakeWorkoutDao workoutDao;
+    late FakeWorkoutAchievementDao workoutAchievementDao;
     late FakeWorkoutExerciseDao workoutExerciseDao;
     late FakeWorkoutSetDao workoutSetDao;
     late FakeNotificationService notificationService;
@@ -423,14 +503,19 @@ void main() {
       service = WorkoutSessionService();
 
       workoutDao = FakeWorkoutDao();
+      workoutAchievementDao = FakeWorkoutAchievementDao();
       workoutExerciseDao = FakeWorkoutExerciseDao();
       workoutSetDao = FakeWorkoutSetDao();
       notificationService = FakeNotificationService();
 
       service.workoutDao = workoutDao;
+      service.workoutAchievementDao = workoutAchievementDao;
       service.workoutExerciseDao = workoutExerciseDao;
       service.workoutSetDao = workoutSetDao;
       service.notificationService = notificationService;
+      service.achievementService = WorkoutAchievementService(
+        assetBundle: EmptyRulesBundle(),
+      );
       service.exerciseService = ExerciseService.instance;
 
       ExerciseService.instance.resetForTesting();
@@ -443,11 +528,13 @@ void main() {
       );
 
       WorkoutService.instance.workoutDao = workoutDao;
+      WorkoutService.instance.workoutAchievementDao = workoutAchievementDao;
       WorkoutService.instance.workoutExerciseDao = workoutExerciseDao;
       WorkoutService.instance.workoutSetDao = workoutSetDao;
 
       await service.clearActiveSession();
       workoutDao.resetCounts();
+      workoutAchievementDao.resetCounts();
       workoutExerciseDao.resetCounts();
       workoutSetDao.resetCounts();
       notificationService.resetCounts();
@@ -905,6 +992,32 @@ void main() {
           expect(notificationService.updateCalls, 0);
         },
       );
+
+      test('completeWorkout persists earned achievements', () async {
+        service.achievementService = WorkoutAchievementService(
+          assetBundle: FirstWorkoutRulesBundle(),
+        );
+        final session = await service.startWorkout(buildTemplate());
+        service.currentSession = session.copyWith(
+          startedAt: DateTime(2026, 1, 1, 12),
+        );
+        workoutAchievementDao.resetCounts();
+
+        final completed = await service.completeWorkout(
+          durationOverride: const Duration(minutes: 45),
+        );
+
+        expect(completed.achievements, hasLength(1));
+        expect(
+          completed.achievements.single.type,
+          WorkoutAchievementType.firstWorkout,
+        );
+        expect(workoutAchievementDao.replaceCalls, 1);
+        expect(
+          workoutAchievementDao._byWorkoutId[completed.id]!.single.reason,
+          contains('Push Day'),
+        );
+      });
     });
 
     test(

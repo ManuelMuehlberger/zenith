@@ -1,12 +1,17 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zenith/models/workout.dart';
+import 'package:zenith/models/workout_achievement.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
+import 'package:zenith/services/dao/workout_achievement_dao.dart';
 import 'package:zenith/services/dao/workout_dao.dart';
 import 'package:zenith/services/dao/workout_exercise_dao.dart';
 import 'package:zenith/services/dao/workout_set_dao.dart';
 import 'package:zenith/services/live_workout_notification_service.dart';
+import 'package:zenith/services/workout_achievement_service.dart';
+import 'package:zenith/services/workout_service.dart';
 import 'package:zenith/services/workout_session_service.dart';
 
 // Local fakes (duplicated here for isolation)
@@ -69,6 +74,46 @@ class FakeWorkoutExerciseDao extends WorkoutExerciseDao {
     final list = _byId.values.where((e) => e.workoutId == workoutId).toList()
       ..sort((a, b) => (a.orderIndex ?? 0).compareTo(b.orderIndex ?? 0));
     return list;
+  }
+}
+
+class FakeWorkoutAchievementDao extends WorkoutAchievementDao {
+  final Map<String, List<WorkoutAchievement>> _byWorkoutId = {};
+
+  @override
+  Future<void> replaceAchievementsForWorkout(
+    String workoutId,
+    List<WorkoutAchievement> achievements,
+  ) async {
+    _byWorkoutId[workoutId] = List<WorkoutAchievement>.from(achievements);
+  }
+
+  @override
+  Future<int> deleteAchievementsByWorkoutId(String workoutId) async {
+    _byWorkoutId.remove(workoutId);
+    return 1;
+  }
+
+  @override
+  Future<Map<String, List<WorkoutAchievement>>> getAchievementsByWorkoutIds(
+    List<String> workoutIds,
+  ) async {
+    return {
+      for (final id in workoutIds)
+        if (_byWorkoutId[id] != null) id: _byWorkoutId[id]!,
+    };
+  }
+}
+
+class EmptyRulesBundle extends CachingAssetBundle {
+  @override
+  Future<ByteData> load(String key) async {
+    return ByteData(0);
+  }
+
+  @override
+  Future<String> loadString(String key, {bool cache = true}) async {
+    return '{"rules":[]}';
   }
 }
 
@@ -145,6 +190,7 @@ void main() {
   group('WorkoutSessionService.completeWorkout durationOverride', () {
     late WorkoutSessionService service;
     late FakeWorkoutDao workoutDao;
+    late FakeWorkoutAchievementDao workoutAchievementDao;
     late FakeWorkoutExerciseDao workoutExerciseDao;
     late FakeWorkoutSetDao workoutSetDao;
     late FakeNotificationService notificationService;
@@ -181,14 +227,23 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       service = WorkoutSessionService();
       workoutDao = FakeWorkoutDao();
+      workoutAchievementDao = FakeWorkoutAchievementDao();
       workoutExerciseDao = FakeWorkoutExerciseDao();
       workoutSetDao = FakeWorkoutSetDao();
       notificationService = FakeNotificationService();
 
       service.workoutDao = workoutDao;
+      service.workoutAchievementDao = workoutAchievementDao;
       service.workoutExerciseDao = workoutExerciseDao;
       service.workoutSetDao = workoutSetDao;
       service.notificationService = notificationService;
+      service.achievementService = WorkoutAchievementService(
+        assetBundle: EmptyRulesBundle(),
+      );
+      WorkoutService.instance.workoutDao = workoutDao;
+      WorkoutService.instance.workoutAchievementDao = workoutAchievementDao;
+      WorkoutService.instance.workoutExerciseDao = workoutExerciseDao;
+      WorkoutService.instance.workoutSetDao = workoutSetDao;
       recordedWeights = [];
       service.recordWeightEntry = (value, timestamp) async {
         recordedWeights.add((value, timestamp));

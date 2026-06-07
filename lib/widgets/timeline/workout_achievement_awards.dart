@@ -21,6 +21,8 @@ Award _awardForAchievement(
     case WorkoutAchievementType.highVolume:
       return Award(
         title: achievement.title,
+        reason: achievement.reason,
+        metrics: achievement.metrics,
         icon: Icons.local_fire_department,
         modelAsset: 'assets/achievements/achievement_cup.glb',
         thumbnailAsset: 'assets/achievements/achievement_cup.png',
@@ -33,6 +35,8 @@ Award _awardForAchievement(
     case WorkoutAchievementType.longSession:
       return Award(
         title: achievement.title,
+        reason: achievement.reason,
+        metrics: achievement.metrics,
         icon: Icons.timer_outlined,
         modelAsset: 'assets/achievements/achievement_hourglass.glb',
         thumbnailAsset: 'assets/achievements/achievement_hourglass.png',
@@ -45,6 +49,8 @@ Award _awardForAchievement(
     case WorkoutAchievementType.heavy:
       return Award(
         title: achievement.title,
+        reason: achievement.reason,
+        metrics: achievement.metrics,
         icon: Icons.fitness_center,
         modelAsset: 'assets/achievements/achievement_dumbbell.glb',
         thumbnailAsset: 'assets/achievements/achievement_dumbbell.png',
@@ -54,9 +60,11 @@ Award _awardForAchievement(
         rotationSpeed: 18,
         color: context.appColors.success,
       );
-    case WorkoutAchievementType.completed:
+    case WorkoutAchievementType.firstWorkout:
       return Award(
         title: achievement.title,
+        reason: achievement.reason,
+        metrics: achievement.metrics,
         icon: Icons.check_circle,
         modelAsset: 'assets/achievements/achievement_medal.glb',
         thumbnailAsset: 'assets/achievements/achievement_medal.png',

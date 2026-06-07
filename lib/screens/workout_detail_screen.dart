@@ -11,6 +11,8 @@ import '../services/user_service.dart';
 import '../services/workout_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/unit_converter.dart';
+import '../widgets/timeline/award_balloons.dart';
+import '../widgets/timeline/workout_achievement_awards.dart';
 import 'exercise_info_screen.dart';
 
 class _SetMetric {
@@ -333,6 +335,41 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                   Text('Additional metrics', style: textTheme.titleMedium),
                   const SizedBox(height: 12),
                   _DetailSurface(child: _MoodBanner(moodValue: _moodValue)),
+                  if (widget.workout.achievements.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _DetailSurface(
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Achievements',
+                                  style: textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  widget.workout.achievements
+                                      .map((achievement) => achievement.title)
+                                      .join(' • '),
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: colors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          AwardBalloons(
+                            awards: buildWorkoutAchievementAwards(
+                              context,
+                              widget.workout.achievements,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   if ((widget.workout.notes ?? '').trim().isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _DetailSurface(
