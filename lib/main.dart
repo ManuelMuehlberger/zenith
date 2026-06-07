@@ -148,7 +148,9 @@ class _MainLightweightDockState extends State<_MainLightweightDock>
   late final AnimationController _workoutActionController;
   late final Animation<double> _workoutActionAnimation;
 
-  bool get _showWorkoutAction => widget.currentIndex == 1;
+  bool get _showWorkoutAction =>
+      widget.currentIndex == 1 &&
+      !WorkoutSessionService.instance.hasActiveSession;
 
   @override
   void initState() {
@@ -164,6 +166,7 @@ class _MainLightweightDockState extends State<_MainLightweightDock>
       curve: Curves.easeOutCubic,
       reverseCurve: Curves.easeInCubic,
     );
+    WorkoutSessionService.instance.addListener(_handleWorkoutSessionChanged);
   }
 
   @override
@@ -179,8 +182,21 @@ class _MainLightweightDockState extends State<_MainLightweightDock>
 
   @override
   void dispose() {
+    WorkoutSessionService.instance.removeListener(_handleWorkoutSessionChanged);
     _workoutActionController.dispose();
     super.dispose();
+  }
+
+  void _handleWorkoutSessionChanged() {
+    if (!mounted) {
+      return;
+    }
+
+    if (_showWorkoutAction) {
+      _workoutActionController.forward();
+    } else {
+      _workoutActionController.reverse();
+    }
   }
 
   @override
@@ -226,7 +242,10 @@ class _MainLightweightDockState extends State<_MainLightweightDock>
                 bottom: safeBottom + AppTheme.mainDockOffset,
               ),
               child: AnimatedBuilder(
-                animation: _workoutActionAnimation,
+                animation: Listenable.merge([
+                  _workoutActionAnimation,
+                  WorkoutSessionService.instance,
+                ]),
                 builder: (context, _) {
                   final actionProgress = _workoutActionAnimation.value;
                   final preferredTabWidth =
