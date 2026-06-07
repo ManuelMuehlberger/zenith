@@ -84,10 +84,10 @@ Award _milestoneAward(BuildContext context, WorkoutAchievement achievement) {
     _ => 'achievement_workout_1',
   };
   final color = switch (achievement.ruleId) {
-    'tenth_workout' => const Color(0xFF26A69A),
-    'fiftieth_workout' => const Color(0xFFFFB300),
-    'hundredth_workout' => const Color(0xFF7E57C2),
-    'two_hundredth_workout' => const Color(0xFFE53935),
+    'tenth_workout' => context.appColors.achievementWorkout10,
+    'fiftieth_workout' => context.appColors.achievementWorkout50,
+    'hundredth_workout' => context.appColors.achievementWorkout100,
+    'two_hundredth_workout' => context.appColors.achievementWorkout200,
     _ => context.appScheme.primary,
   };
 
@@ -125,6 +125,8 @@ Award _streakAward(BuildContext context, WorkoutAchievement achievement) {
     cameraPhi: 20,
     cameraRadius: 118,
     rotationSpeed: isSevenDay ? 12 : 16,
-    color: isSevenDay ? const Color(0xFF7E57C2) : context.appColors.success,
+    color: isSevenDay
+        ? context.appColors.achievementStreak7
+        : context.appColors.achievementStreak3,
   );
 }
