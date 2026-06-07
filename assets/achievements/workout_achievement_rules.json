@@ -10,6 +10,42 @@
       ]
     },
     {
+      "id": "tenth_workout",
+      "type": "workoutMilestone",
+      "title": "10 Workouts",
+      "reasonTemplate": "Completed workout #{workoutNumber}: {workoutName}.",
+      "conditions": [
+        { "metric": "workoutNumber", "operator": "equals", "value": 10 }
+      ]
+    },
+    {
+      "id": "fiftieth_workout",
+      "type": "workoutMilestone",
+      "title": "50 Workouts",
+      "reasonTemplate": "Completed workout #{workoutNumber}: {workoutName}.",
+      "conditions": [
+        { "metric": "workoutNumber", "operator": "equals", "value": 50 }
+      ]
+    },
+    {
+      "id": "hundredth_workout",
+      "type": "workoutMilestone",
+      "title": "100 Workouts",
+      "reasonTemplate": "Completed workout #{workoutNumber}: {workoutName}.",
+      "conditions": [
+        { "metric": "workoutNumber", "operator": "equals", "value": 100 }
+      ]
+    },
+    {
+      "id": "two_hundredth_workout",
+      "type": "workoutMilestone",
+      "title": "200 Workouts",
+      "reasonTemplate": "Completed workout #{workoutNumber}: {workoutName}.",
+      "conditions": [
+        { "metric": "workoutNumber", "operator": "equals", "value": 200 }
+      ]
+    },
+    {
       "id": "high_volume",
       "type": "highVolume",
       "title": "High Volume",
@@ -27,9 +63,30 @@
       "id": "long_session",
       "type": "longSession",
       "title": "Long Session",
-      "reasonTemplate": "Trained for {durationMinutes} minutes.",
+      "reasonTemplate": "Trained for {durationMinutes} minutes, clearing the {longSessionTargetMinutes}-minute long-session target from your recent average.",
       "conditions": [
-        { "metric": "durationMinutes", "operator": "greaterThanOrEqual", "value": 110 }
+        { "metric": "durationMinutes", "operator": "greaterThan", "value": 60 },
+        { "metric": "durationMinutes", "operator": "greaterThan", "valueMetric": "longSessionTargetMinutes" }
+      ]
+    },
+    {
+      "id": "three_day_streak",
+      "type": "workoutStreak",
+      "title": "3-Day Streak",
+      "reasonTemplate": "Completed workouts on {consecutiveWorkoutDays} consecutive days.",
+      "conditions": [
+        { "metric": "consecutiveWorkoutDays", "operator": "greaterThanOrEqual", "value": 3 },
+        { "metric": "daysSince3DayStreakAward", "operator": "greaterThanOrEqual", "value": 3 }
+      ]
+    },
+    {
+      "id": "seven_day_streak",
+      "type": "workoutStreak",
+      "title": "7-Day Streak",
+      "reasonTemplate": "Completed workouts on {consecutiveWorkoutDays} consecutive days.",
+      "conditions": [
+        { "metric": "consecutiveWorkoutDays", "operator": "greaterThanOrEqual", "value": 7 },
+        { "metric": "daysSince7DayStreakAward", "operator": "greaterThanOrEqual", "value": 7 }
       ]
     },
     {

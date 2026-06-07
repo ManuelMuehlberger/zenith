@@ -152,9 +152,29 @@ class _AchievementMetrics {
         .toList(growable: false);
 
     final durationMinutes = _durationOf(workout).inMinutes;
+    final averageDurationMinutes = _averageDurationMinutes(
+      recentHistory.map(_durationOf),
+    );
+    final longSessionTargetMinutes = averageDurationMinutes == null
+        ? null
+        : averageDurationMinutes * 1.75;
     final totalSetsPercentile = _percentileAboveHistory(
       workout.totalSets,
       recentHistory.map((candidate) => candidate.totalSets),
+    );
+    final consecutiveWorkoutDays = _consecutiveWorkoutDaysEndingAt(
+      completedAt,
+      comparableHistory,
+    );
+    final daysSince3DayStreakAward = _daysSinceLatestAchievement(
+      completedAt,
+      comparableHistory,
+      'three_day_streak',
+    );
+    final daysSince7DayStreakAward = _daysSinceLatestAchievement(
+      completedAt,
+      comparableHistory,
+      'seven_day_streak',
     );
 
     return _AchievementMetrics(
@@ -162,14 +182,78 @@ class _AchievementMetrics {
         'totalSets': workout.totalSets,
         'completedSets': workout.completedSets,
         'durationMinutes': durationMinutes,
+        'averageDurationMinutesLast90Days': averageDurationMinutes,
+        'longSessionTargetMinutes': longSessionTargetMinutes,
         'totalWeight': workout.totalWeight,
         'exerciseCount': workout.exercises.length,
         'workoutCountBefore': comparableHistory.length,
+        'workoutNumber': comparableHistory.length + 1,
         'comparisonWindowDays': comparisonWindowDays,
         'comparisonWorkoutCount': recentHistory.length,
         'totalSetsPercentileLast90Days': totalSetsPercentile,
+        'consecutiveWorkoutDays': consecutiveWorkoutDays,
+        'daysSince3DayStreakAward': daysSince3DayStreakAward,
+        'daysSince7DayStreakAward': daysSince7DayStreakAward,
       }),
     );
+  }
+
+  static double? _averageDurationMinutes(Iterable<Duration> durations) {
+    final values = durations
+        .where((duration) => duration > Duration.zero)
+        .toList(growable: false);
+    if (values.isEmpty) {
+      return null;
+    }
+    final totalMilliseconds = values.fold<int>(
+      0,
+      (sum, duration) => sum + duration.inMilliseconds,
+    );
+    return totalMilliseconds / Duration.millisecondsPerMinute / values.length;
+  }
+
+  static int _consecutiveWorkoutDaysEndingAt(
+    DateTime completedAt,
+    Iterable<Workout> history,
+  ) {
+    final workoutDates = <DateTime>{_dateOnly(completedAt)};
+    for (final workout in history) {
+      final timestamp = workout.completedAt ?? workout.startedAt;
+      if (timestamp != null) {
+        workoutDates.add(_dateOnly(timestamp));
+      }
+    }
+
+    var streak = 0;
+    var cursor = _dateOnly(completedAt);
+    while (workoutDates.contains(cursor)) {
+      streak++;
+      cursor = cursor.subtract(const Duration(days: 1));
+    }
+    return streak;
+  }
+
+  static int _daysSinceLatestAchievement(
+    DateTime completedAt,
+    Iterable<Workout> history,
+    String ruleId,
+  ) {
+    DateTime? latest;
+    for (final workout in history) {
+      for (final achievement in workout.achievements) {
+        if (achievement.ruleId != ruleId) {
+          continue;
+        }
+        if (latest == null || achievement.earnedAt.isAfter(latest)) {
+          latest = achievement.earnedAt;
+        }
+      }
+    }
+
+    if (latest == null) {
+      return 1000000;
+    }
+    return _dateOnly(completedAt).difference(_dateOnly(latest)).inDays;
   }
 
   static double? _percentileAboveHistory(
@@ -192,6 +276,10 @@ class _AchievementMetrics {
     }
     final duration = completed.difference(started);
     return duration.isNegative ? Duration.zero : duration;
+  }
+
+  static DateTime _dateOnly(DateTime value) {
+    return DateTime(value.year, value.month, value.day);
   }
 }
 
@@ -255,7 +343,9 @@ class _RuleCondition {
     return _RuleCondition(
       metric: _readString(json, 'metric'),
       operator: _readString(json, 'operator'),
-      value: json['value'],
+      value: json.containsKey('valueMetric')
+          ? _RuleMetricValue(_readString(json, 'valueMetric'))
+          : json['value'],
     );
   }
 
@@ -267,18 +357,42 @@ class _RuleCondition {
 
     switch (operator) {
       case 'equals':
-        return metricValue == value;
+        return metricValue == _resolveValue(metrics);
       case 'greaterThan':
-        return _compare(metricValue, value, (left, right) => left > right);
+        return _compare(
+          metricValue,
+          _resolveValue(metrics),
+          (left, right) => left > right,
+        );
       case 'greaterThanOrEqual':
-        return _compare(metricValue, value, (left, right) => left >= right);
+        return _compare(
+          metricValue,
+          _resolveValue(metrics),
+          (left, right) => left >= right,
+        );
       case 'lessThan':
-        return _compare(metricValue, value, (left, right) => left < right);
+        return _compare(
+          metricValue,
+          _resolveValue(metrics),
+          (left, right) => left < right,
+        );
       case 'lessThanOrEqual':
-        return _compare(metricValue, value, (left, right) => left <= right);
+        return _compare(
+          metricValue,
+          _resolveValue(metrics),
+          (left, right) => left <= right,
+        );
       default:
         throw FormatException('Unsupported achievement operator "$operator"');
     }
+  }
+
+  Object? _resolveValue(Map<String, Object?> metrics) {
+    final currentValue = value;
+    if (currentValue is _RuleMetricValue) {
+      return metrics[currentValue.metric];
+    }
+    return currentValue;
   }
 
   bool _compare(
@@ -291,6 +405,12 @@ class _RuleCondition {
     }
     return compare(left, right);
   }
+}
+
+class _RuleMetricValue {
+  const _RuleMetricValue(this.metric);
+
+  final String metric;
 }
 
 String _readString(Map<String, dynamic> json, String key) {

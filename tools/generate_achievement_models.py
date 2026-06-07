@@ -7,6 +7,7 @@ from mathutils import Vector
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "assets" / "achievements"
+NUMBER_FONT_PATH = Path("/System/Library/Fonts/SFNSRounded.ttf")
 
 
 def clear_scene():
@@ -277,6 +278,63 @@ def make_completion_star_base(face, rim, ring, accent):
     torus("small check halo", 0.36, 0.012, 0.165, accent)
 
 
+def make_workout_milestone_base(face, rim, ring, accent):
+    cylinder(
+        "colored hex milestone border",
+        1.0,
+        0.18,
+        0,
+        rim,
+        vertices=6,
+        rotation_z=math.radians(30),
+        bevel_width=0.035,
+    )
+    cylinder(
+        "inset enamel hex face",
+        0.78,
+        0.06,
+        0.115,
+        face,
+        vertices=6,
+        rotation_z=math.radians(30),
+        bevel_width=0.022,
+    )
+    torus("inner milestone ring", 0.56, 0.018, 0.138, ring)
+    torus("milestone highlight ring", 0.34, 0.01, 0.142, accent)
+
+
+def make_workout_milestone_base_wide(face, rim, ring, accent):
+    make_workout_milestone_base(face, rim, ring, accent)
+    inner_ring = bpy.data.objects.get("milestone highlight ring")
+    if inner_ring is not None:
+        inner_ring.scale = (1.28, 1.28, 1.0)
+    outer_ring = bpy.data.objects.get("inner milestone ring")
+    if outer_ring is not None:
+        outer_ring.scale = (1.06, 1.06, 1.0)
+
+
+def make_streak_base(face, rim, ring, accent):
+    prism(
+        "streak wave frame",
+        regular_points(7, 1.0, rotation=math.radians(12)),
+        0.16,
+        0,
+        rim,
+        0.04,
+    )
+    cylinder(
+        "streak rounded inner face",
+        0.76,
+        0.06,
+        0.11,
+        face,
+        vertices=72,
+        bevel_width=0.028,
+    )
+    torus("streak orbit ring", 0.58, 0.024, 0.136, ring)
+    torus("streak inner ring", 0.38, 0.012, 0.14, accent)
+
+
 def cup_emblem(rim, light):
     tube("cup bowl", [(-0.32, 0.2), (-0.24, -0.17), (0.24, -0.17), (0.32, 0.2)], light, 0.032)
     tube("cup lip", [(-0.36, 0.22), (0.36, 0.22)], light, 0.034)
@@ -408,6 +466,71 @@ def check_emblem(light, accent):
     tube("raised check", [(-0.38, -0.02), (-0.12, -0.27), (0.42, 0.28)], light, 0.055)
 
 
+def _center_object_xy(obj, target_x=0.0, target_y=0.0):
+    corners = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
+    min_x = min(corner.x for corner in corners)
+    max_x = max(corner.x for corner in corners)
+    min_y = min(corner.y for corner in corners)
+    max_y = max(corner.y for corner in corners)
+    obj.location.x += target_x - (min_x + max_x) / 2
+    obj.location.y += target_y - (min_y + max_y) / 2
+
+
+def text_emblem(text, material, size=0.72, y=-0.06, z=0.139, extrude=0.008):
+    bpy.ops.object.text_add(location=(0, y, z), rotation=(0, 0, 0))
+    obj = bpy.context.object
+    obj.name = f"imprinted {text} workout count"
+    obj.data.body = text
+    obj.data.align_x = "CENTER"
+    obj.data.align_y = "CENTER"
+    obj.data.size = size
+    obj.data.extrude = extrude
+    obj.data.bevel_depth = 0.001
+    if NUMBER_FONT_PATH.exists():
+        obj.data.font = bpy.data.fonts.load(str(NUMBER_FONT_PATH))
+    obj.data.materials.append(material)
+    bpy.ops.object.convert(target="MESH")
+    obj = bpy.context.object
+    _center_object_xy(obj, target_y=y)
+    obj.modifiers.new(name="soft number bevel", type="WEIGHTED_NORMAL")
+    return obj
+
+
+def radial_dots(count, radius, material, dot_radius=0.05, z=0.138, depth=0.01, start_angle=90):
+    for index in range(count):
+        angle = math.radians(start_angle + 360 * index / count)
+        x = math.cos(angle) * radius
+        y = math.sin(angle) * radius
+        cylinder(
+            f"radial dot {count}-{index}",
+            dot_radius,
+            depth,
+            z,
+            material,
+            vertices=32,
+            bevel_width=0.005,
+        ).location = (x, y, z)
+
+
+def milestone_emblem(number, dot_count):
+    def build(light, accent):
+        detail = bpy.data.materials.get("activity ring") or accent
+        size = 0.78 if len(number) <= 2 else 0.58
+        dot_radius = 0.445 if number in {"1", "10"} else 0.515
+        text_emblem(number, detail, size=size, y=-0.02, z=0.141, extrude=0.01)
+        radial_dots(dot_count, dot_radius, detail, dot_radius=0.042, z=0.145, depth=0.014)
+
+    return build
+
+
+def streak_emblem(days):
+    def build(light, accent):
+        text_emblem(str(days), light, size=0.74, y=0.0, z=0.144, extrude=0.012)
+        radial_dots(days, 0.5, accent, dot_radius=0.03, z=0.141, depth=0.008, start_angle=90)
+
+    return build
+
+
 def export(name):
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     path = OUT_DIR / name
@@ -424,8 +547,6 @@ def render_thumbnail(name):
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     bpy.context.scene.render.engine = "BLENDER_EEVEE_NEXT"
     bpy.context.scene.eevee.taa_render_samples = 64
-    bpy.context.scene.render.resolution_x = 128
-    bpy.context.scene.render.resolution_y = 128
     bpy.context.scene.render.film_transparent = True
     bpy.context.scene.view_settings.view_transform = "Filmic"
     bpy.context.scene.view_settings.look = "Medium High Contrast"
@@ -435,8 +556,13 @@ def render_thumbnail(name):
     camera.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
     camera.data.type = "ORTHO"
     camera.data.ortho_scale = 2.2
-    bpy.context.scene.render.filepath = str(OUT_DIR / name.replace(".glb", ".png"))
-    bpy.ops.render.render(write_still=True)
+    for size, suffix in ((128, ""), (48, "_compact")):
+        bpy.context.scene.render.resolution_x = size
+        bpy.context.scene.render.resolution_y = size
+        bpy.context.scene.render.filepath = str(
+            OUT_DIR / name.replace(".glb", f"{suffix}.png")
+        )
+        bpy.ops.render.render(write_still=True)
 
 
 def build_award(name, palette, emblem, base_builder=make_base):
@@ -492,6 +618,55 @@ PALETTES = {
         "accent": (1.0, 0.78, 0.96, 1),
         "light": (1.0, 0.94, 1.0, 1),
     },
+    "achievement_workout_1.glb": {
+        "rim": (0.16, 0.48, 1.0, 1),
+        "face": (0.02, 0.08, 0.18, 1),
+        "ring": (0.18, 0.75, 1.0, 1),
+        "accent": (0.84, 0.94, 1.0, 1),
+        "light": (0.93, 0.98, 1.0, 1),
+    },
+    "achievement_workout_10.glb": {
+        "rim": (0.06, 0.68, 0.62, 1),
+        "face": (0.01, 0.14, 0.13, 1),
+        "ring": (0.22, 0.9, 0.72, 1),
+        "accent": (0.76, 1.0, 0.88, 1),
+        "light": (0.9, 1.0, 0.96, 1),
+    },
+    "achievement_workout_50.glb": {
+        "rim": (0.56, 0.37, 0.22, 1),
+        "face": (0.15, 0.1, 0.06, 1),
+        "ring": (0.72, 0.55, 0.34, 1),
+        "accent": (0.84, 0.74, 0.58, 1),
+        "light": (0.94, 0.88, 0.78, 1),
+    },
+    "achievement_workout_100.glb": {
+        "rim": (0.08, 0.63, 0.83, 1),
+        "face": (0.02, 0.12, 0.18, 1),
+        "ring": (0.42, 0.9, 0.98, 1),
+        "accent": (0.86, 0.98, 1.0, 1),
+        "light": (0.95, 1.0, 1.0, 1),
+    },
+    "achievement_workout_200.glb": {
+        "rim": (0.9, 0.16, 0.18, 1),
+        "face": (0.22, 0.02, 0.04, 1),
+        "ring": (1.0, 0.44, 0.36, 1),
+        "accent": (1.0, 0.82, 0.68, 1),
+        "light": (1.0, 0.94, 0.88, 1),
+    },
+    "achievement_streak_3.glb": {
+        "rim": (0.12, 0.62, 0.34, 1),
+        "face": (0.02, 0.13, 0.08, 1),
+        "ring": (0.32, 0.95, 0.52, 1),
+        "accent": (0.76, 1.0, 0.72, 1),
+        "light": (0.92, 1.0, 0.9, 1),
+    },
+    "achievement_streak_7.glb": {
+        "rim": (0.36, 0.24, 0.86, 1),
+        "face": (0.05, 0.04, 0.2, 1),
+        "ring": (0.54, 0.68, 1.0, 1),
+        "accent": (0.84, 0.9, 1.0, 1),
+        "light": (0.95, 0.96, 1.0, 1),
+    },
 }
 
 
@@ -515,6 +690,26 @@ def main():
         check_emblem,
         make_completion_star_base,
     )
+    for name, number, dot_count in (
+        ("achievement_workout_1.glb", "1", 1),
+        ("achievement_workout_10.glb", "10", 2),
+        ("achievement_workout_50.glb", "50", 3),
+        ("achievement_workout_100.glb", "100", 4),
+        ("achievement_workout_200.glb", "200", 5),
+    ):
+        build_award(
+            name,
+            PALETTES[name],
+            milestone_emblem(number, dot_count),
+            make_workout_milestone_base_wide
+            if number in {"50", "100", "200"}
+            else make_workout_milestone_base,
+        )
+    for name, days in (
+        ("achievement_streak_3.glb", 3),
+        ("achievement_streak_7.glb", 7),
+    ):
+        build_award(name, PALETTES[name], streak_emblem(days), make_streak_base)
 
 
 if __name__ == "__main__":

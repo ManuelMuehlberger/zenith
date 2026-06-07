@@ -235,6 +235,12 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.success,
     required this.warning,
     required this.info,
+    required this.achievementWorkout10,
+    required this.achievementWorkout50,
+    required this.achievementWorkout100,
+    required this.achievementWorkout200,
+    required this.achievementStreak3,
+    required this.achievementStreak7,
     required this.shadow,
     required this.transparent,
   });
@@ -256,6 +262,12 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   final Color success;
   final Color warning;
   final Color info;
+  final Color achievementWorkout10;
+  final Color achievementWorkout50;
+  final Color achievementWorkout100;
+  final Color achievementWorkout200;
+  final Color achievementStreak3;
+  final Color achievementStreak7;
   final Color shadow;
   final Color transparent;
 
@@ -278,6 +290,12 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     Color? success,
     Color? warning,
     Color? info,
+    Color? achievementWorkout10,
+    Color? achievementWorkout50,
+    Color? achievementWorkout100,
+    Color? achievementWorkout200,
+    Color? achievementStreak3,
+    Color? achievementStreak7,
     Color? shadow,
     Color? transparent,
   }) {
@@ -299,6 +317,14 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       success: success ?? this.success,
       warning: warning ?? this.warning,
       info: info ?? this.info,
+      achievementWorkout10: achievementWorkout10 ?? this.achievementWorkout10,
+      achievementWorkout50: achievementWorkout50 ?? this.achievementWorkout50,
+      achievementWorkout100:
+          achievementWorkout100 ?? this.achievementWorkout100,
+      achievementWorkout200:
+          achievementWorkout200 ?? this.achievementWorkout200,
+      achievementStreak3: achievementStreak3 ?? this.achievementStreak3,
+      achievementStreak7: achievementStreak7 ?? this.achievementStreak7,
       shadow: shadow ?? this.shadow,
       transparent: transparent ?? this.transparent,
     );
@@ -336,6 +362,24 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       success: Color.lerp(success, other.success, t) ?? success,
       warning: Color.lerp(warning, other.warning, t) ?? warning,
       info: Color.lerp(info, other.info, t) ?? info,
+      achievementWorkout10:
+          Color.lerp(achievementWorkout10, other.achievementWorkout10, t) ??
+          achievementWorkout10,
+      achievementWorkout50:
+          Color.lerp(achievementWorkout50, other.achievementWorkout50, t) ??
+          achievementWorkout50,
+      achievementWorkout100:
+          Color.lerp(achievementWorkout100, other.achievementWorkout100, t) ??
+          achievementWorkout100,
+      achievementWorkout200:
+          Color.lerp(achievementWorkout200, other.achievementWorkout200, t) ??
+          achievementWorkout200,
+      achievementStreak3:
+          Color.lerp(achievementStreak3, other.achievementStreak3, t) ??
+          achievementStreak3,
+      achievementStreak7:
+          Color.lerp(achievementStreak7, other.achievementStreak7, t) ??
+          achievementStreak7,
       shadow: Color.lerp(shadow, other.shadow, t) ?? shadow,
       transparent: Color.lerp(transparent, other.transparent, t) ?? transparent,
     );
@@ -382,6 +426,12 @@ class AppTheme {
     success: AppThemeColors.light.success,
     warning: AppThemeColors.light.warning,
     info: AppThemeColors.light.info,
+    achievementWorkout10: const Color(0xFF26A69A),
+    achievementWorkout50: const Color(0xFF8B6A45),
+    achievementWorkout100: const Color(0xFF00A6B8),
+    achievementWorkout200: const Color(0xFFE53935),
+    achievementStreak3: const Color(0xFF34C759),
+    achievementStreak7: const Color(0xFF7E57C2),
     shadow: AppThemeColors.light.shadow,
     transparent: AppThemeColors.light.transparent,
   );
@@ -404,6 +454,12 @@ class AppTheme {
     success: AppThemeColors.dark.success,
     warning: AppThemeColors.dark.warning,
     info: AppThemeColors.dark.info,
+    achievementWorkout10: const Color(0xFF26A69A),
+    achievementWorkout50: const Color(0xFF8B6A45),
+    achievementWorkout100: const Color(0xFF00A6B8),
+    achievementWorkout200: const Color(0xFFE53935),
+    achievementStreak3: const Color(0xFF34C759),
+    achievementStreak7: const Color(0xFF7E57C2),
     shadow: AppThemeColors.dark.shadow,
     transparent: AppThemeColors.dark.transparent,
   );

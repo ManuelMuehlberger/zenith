@@ -42,5 +42,31 @@ void main() {
       expect(restored.earnedAt, earnedAt);
       expect(restored.metrics['totalSets'], 24);
     });
+
+    test('supports new milestone and streak achievement types', () {
+      final milestone = WorkoutAchievement(
+        workoutId: 'workout-2',
+        ruleId: 'tenth_workout',
+        type: WorkoutAchievementType.workoutMilestone,
+        title: '10 Workouts',
+        reason: 'Completed workout 10.',
+        earnedAt: DateTime.utc(2026, 2, 1),
+      );
+      final streak = WorkoutAchievement(
+        workoutId: 'workout-3',
+        ruleId: 'seven_day_streak',
+        type: WorkoutAchievementType.workoutStreak,
+        title: '7-Day Streak',
+        reason: 'Completed 7 days.',
+        earnedAt: DateTime.utc(2026, 2, 2),
+      );
+
+      expect(milestone.toMap()['type'], 'workoutMilestone');
+      expect(streak.toMap()['type'], 'workoutStreak');
+      expect(
+        WorkoutAchievement.fromMap(streak.toMap()).type,
+        WorkoutAchievementType.workoutStreak,
+      );
+    });
   });
 }
