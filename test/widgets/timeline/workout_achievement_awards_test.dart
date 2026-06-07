@@ -67,12 +67,14 @@ void main() {
       awards[1].compactThumbnailAsset,
       'assets/achievements/achievement_workout_100_compact.png',
     );
+    expect(awards[1].color, isNotNull);
     expect(awards[2].title, '7-Day Streak');
     expect(awards[2].icon, Icons.calendar_month);
     expect(
       awards[2].compactThumbnailAsset,
       'assets/achievements/achievement_streak_7_compact.png',
     );
+    expect(awards[2].color, isNotNull);
     expect(awards.last.title, 'High Volume');
     expect(awards.last.icon, Icons.local_fire_department);
     expect(
