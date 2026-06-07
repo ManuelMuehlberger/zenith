@@ -82,14 +82,16 @@ class _AwardThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final thumbnailAsset = award.compactThumbnailAsset ?? award.thumbnailAsset;
+
     return SizedBox(
       width: size,
       height: size,
       child: Center(
-        child: award.thumbnailAsset == null
+        child: thumbnailAsset == null
             ? _AwardFallbackIcon(award: award, size: size)
             : Image.asset(
-                award.thumbnailAsset!,
+                thumbnailAsset,
                 width: size,
                 height: size,
                 fit: BoxFit.contain,

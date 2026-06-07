@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
@@ -7,11 +6,8 @@ import 'package:logging/logging.dart';
 
 import '../constants/app_constants.dart';
 import '../models/user_data.dart';
-import '../services/database_service.dart';
-import '../services/debug_data_service.dart';
+import '../screens/debug_settings_screen.dart';
 import '../services/user_service.dart';
-import '../services/workout_service.dart';
-import '../services/workout_template_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/settings/settings_data_section.dart';
 import '../widgets/settings/settings_profile_section.dart';
@@ -30,8 +26,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   static final Logger _logger = Logger('SettingsScreen');
   UserData? _userProfile;
   bool _isLoading = true;
-  bool _showDebugMenu = true;
-  int _versionTapCount = 0;
 
   @override
   void initState() {
@@ -185,96 +179,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _clearAllData() async {
-    _logger.warning('Showing clear-all-data confirmation');
-    final TextEditingController confirmController = TextEditingController();
-    String confirmationText = '';
-    const String requiredText = 'DELETE MY DATA';
-
-    final confirmed = await showCupertinoModalPopup<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        final colorScheme = Theme.of(context).colorScheme;
-        final textTheme = Theme.of(context).textTheme;
-        final colors = context.appColors;
-
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setStateDialog) {
-            return CupertinoAlertDialog(
-              title: const Text('Clear All Data'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'This will permanently delete all your workout data and profile. This action cannot be undone.',
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Please type "$requiredText" below to confirm:',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: colors.textTertiary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  CupertinoTextField(
-                    controller: confirmController,
-                    placeholder: requiredText,
-                    autocorrect: false,
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                    ),
-                    onChanged: (value) {
-                      setStateDialog(() {
-                        confirmationText = value;
-                      });
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                CupertinoDialogAction(
-                  child: const Text('Cancel'),
-                  onPressed: () => Navigator.of(context).pop(false),
-                ),
-                CupertinoDialogAction(
-                  isDestructiveAction: true,
-                  onPressed: confirmationText == requiredText
-                      ? () => Navigator.of(context).pop(true)
-                      : null,
-                  child: Text(
-                    'Delete All',
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: confirmationText == requiredText
-                          ? colorScheme.error
-                          : colors.textTertiary,
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    confirmController.dispose();
-
-    if (confirmed == true) {
-      _logger.warning('Confirmed full local data deletion');
-      await DatabaseService.instance.clearAllData();
-      await UserService.instance.clearUserData();
-      await WorkoutService.instance.clearUserWorkouts();
-      await WorkoutTemplateService.instance.clearUserTemplatesAndFolders();
-      if (mounted) {
-        _showCupertinoToast('All data cleared');
-        await Future.delayed(const Duration(seconds: 1));
-        exit(0);
-      }
-    } else {
-      _logger.fine('Cancelled full local data deletion');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final double topPadding = MediaQuery.of(context).padding.top;
@@ -389,13 +293,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 16),
                 const SettingsDataSection(),
                 const SizedBox(height: 16),
-                if (_showDebugMenu) ...[
-                  _buildDebugSection(),
+                if (DebugSettingsScreen.isEnabled) ...[
+                  _buildDebugEntry(),
                   const SizedBox(height: 16),
                 ],
                 _buildAboutSection(),
-                const SizedBox(height: 16),
-                _buildDataManagementSection(),
               ],
             ),
           ),
@@ -404,95 +306,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildDebugSection() {
-    final colorScheme = context.appScheme;
-    final textTheme = context.appText;
-    final colors = context.appColors;
-
-    return Card(
-      color: colorScheme.surface,
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 4.0),
-              child: Text('Debug Menu', style: textTheme.titleLarge),
-            ),
-            ListTile(
-              leading: Icon(
-                CupertinoIcons.hammer_fill,
-                color: colors.warning,
-                size: 22,
-              ),
-              title: Text('Generate History Data', style: textTheme.bodyLarge),
-              subtitle: Text(
-                'Fill last 2 years with random workouts',
-                style: textTheme.bodyMedium,
-              ),
-              trailing: Icon(
-                CupertinoIcons.chevron_right,
-                color: colors.textSecondary,
-                size: 16,
-              ),
-              onTap: _generateDebugData,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _generateDebugData() async {
-    _logger.info('Showing debug data generation confirmation');
-    final confirmed = await showCupertinoDialog<bool>(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('Generate Data'),
-        content: const Text(
-          'This will add ~300-400 workouts to your history over the last 2 years. This operation cannot be easily undone.',
-        ),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-          CupertinoDialogAction(
-            child: const Text('Generate'),
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      _logger.info('Starting debug data generation');
-      setState(() => _isLoading = true);
-      try {
-        await DebugDataService.instance.generateDebugData();
-        _logger.info('Debug data generation completed successfully');
-        if (mounted) {
-          _showCupertinoToast('Debug data generated');
-        }
-      } catch (e, stackTrace) {
-        _logger.severe('Failed to generate debug data', e, stackTrace);
-        if (mounted) {
-          _showErrorDialog('Failed to generate data: $e');
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
-      }
-    } else {
-      _logger.fine('Cancelled debug data generation');
-    }
-  }
-
-  Widget _buildDataManagementSection() {
+  Widget _buildDebugEntry() {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
 
@@ -507,20 +321,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 4.0),
-              child: Text('Danger Zone', style: textTheme.titleLarge),
+              child: Text('Developer', style: textTheme.titleLarge),
             ),
             ListTile(
               leading: Icon(
-                CupertinoIcons.trash_fill,
-                color: colorScheme.error,
+                CupertinoIcons.wrench_fill,
+                color: colorScheme.primary,
                 size: 22,
               ),
-              title: Text(
-                'Clear All Data',
-                style: textTheme.bodyLarge?.copyWith(color: colorScheme.error),
-              ),
+              title: Text('Debug Tools', style: textTheme.bodyLarge),
               subtitle: Text(
-                'Permanently delete all data and profile',
+                'Open developer-only tools and the danger zone',
                 style: textTheme.bodyMedium,
               ),
               trailing: Icon(
@@ -528,7 +339,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 color: context.appColors.textSecondary,
                 size: 16,
               ),
-              onTap: _clearAllData,
+              onTap: () {
+                Navigator.of(context).push(
+                  CupertinoPageRoute(
+                    builder: (context) => const DebugSettingsScreen(),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -573,47 +390,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _versionTapCount++;
-                  _logger.finer(
-                    'Version easter-egg tap count=$_versionTapCount',
-                  );
-                  if (_versionTapCount >= 5) {
-                    _showDebugMenu = !_showDebugMenu;
-                    _versionTapCount = 0;
-                    _logger.info('Debug menu toggled: enabled=$_showDebugMenu');
-                    _showCupertinoToast(
-                      _showDebugMenu
-                          ? 'Debug menu enabled'
-                          : 'Debug menu disabled',
-                    );
-                  }
-                });
-              },
-              child: Row(
-                children: [
-                  Icon(
-                    CupertinoIcons.info_circle_fill,
-                    color: colorScheme.primary,
-                    size: 22,
+            Row(
+              children: [
+                Icon(
+                  CupertinoIcons.info_circle_fill,
+                  color: colorScheme.primary,
+                  size: 22,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Workout Tracker', style: textTheme.titleSmall),
+                      Text(
+                        'Version 1.0.0\nTrack your fitness journey',
+                        style: textTheme.bodySmall,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Workout Tracker', style: textTheme.titleSmall),
-                        Text(
-                          'Version 1.0.0\nTrack your fitness journey',
-                          style: textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Row(

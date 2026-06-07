@@ -1,11 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 // ignore: implementation_imports
 import 'package:flutter_3d_controller/src/core/modules/model_viewer/model_viewer.dart'
     as model_viewer;
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
 import '../../theme/app_theme.dart';
 import 'award_stack.dart';
@@ -36,6 +40,8 @@ class _AchievementModelViewState extends State<AchievementModelView> {
 
   late Flutter3DController _controller;
   late final String _modalViewerId;
+  String? _resolvedModelSrc;
+  Future<String>? _embeddedHtml;
   bool _showFallback = _isWidgetTest;
   bool _isLoaded = _isWidgetTest;
   Timer? _loadingFallbackTimer;
@@ -48,6 +54,7 @@ class _AchievementModelViewState extends State<AchievementModelView> {
     _controller = Flutter3DController();
     _modalViewerId = 'achievement-model-${identityHashCode(this)}';
     _startLoadingFallbackTimer();
+    unawaited(_resolveModelSrc());
   }
 
   @override
@@ -56,9 +63,12 @@ class _AchievementModelViewState extends State<AchievementModelView> {
     if (oldWidget.award.modelAsset != widget.award.modelAsset) {
       _loadingFallbackTimer?.cancel();
       _controller = Flutter3DController();
+      _resolvedModelSrc = null;
+      _embeddedHtml = null;
       _showFallback = _isWidgetTest;
       _isLoaded = _showFallback;
       _startLoadingFallbackTimer();
+      unawaited(_resolveModelSrc());
     }
   }
 
@@ -85,7 +95,10 @@ class _AchievementModelViewState extends State<AchievementModelView> {
     return Stack(
       alignment: Alignment.center,
       children: [
-        _usesModalViewer ? _modalViewer() : _standardViewer(),
+        if (_resolvedModelSrc != null && !kIsWeb && !_isWidgetTest)
+          _embeddedViewer()
+        else if (_resolvedModelSrc != null)
+          _usesModalViewer ? _modalViewer() : _standardViewer(),
         if (!_isLoaded)
           const Positioned.fill(
             child: IgnorePointer(
@@ -96,6 +109,100 @@ class _AchievementModelViewState extends State<AchievementModelView> {
     );
   }
 
+  Widget _embeddedViewer() {
+    _embeddedHtml ??= _AchievementEmbeddedModelHtml.build(
+      assetPath: _resolvedModelSrc!,
+      viewerId: _modalViewerId,
+      alt: widget.award.title,
+      cameraOrbit: _homeOrbit,
+      cameraControls: widget.interactive,
+      autoRotate: widget.startRotating,
+      rotationSpeed: widget.award.rotationSpeed,
+      relatedJs: _usesModalViewer ? _modalRecenterScript : null,
+    );
+
+    return FutureBuilder<String>(
+      future: _embeddedHtml,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showFallbackAward();
+          });
+          return const SizedBox.shrink();
+        }
+
+        if (!snapshot.hasData) {
+          return const SizedBox.expand();
+        }
+
+        return InAppWebView(
+          initialData: InAppWebViewInitialData(
+            data: snapshot.data!,
+            mimeType: 'text/html',
+            encoding: 'utf-8',
+            baseUrl: WebUri('https://achievement-model.local/'),
+          ),
+          initialSettings: InAppWebViewSettings(
+            transparentBackground: true,
+            javaScriptEnabled: true,
+            mediaPlaybackRequiresUserGesture: false,
+            supportZoom: false,
+            disableContextMenu: true,
+          ),
+          gestureRecognizers: widget.interactive
+              ? const <Factory<OneSequenceGestureRecognizer>>{
+                  Factory<OneSequenceGestureRecognizer>(
+                    EagerGestureRecognizer.new,
+                  ),
+                }
+              : const <Factory<OneSequenceGestureRecognizer>>{},
+          onWebViewCreated: (controller) {
+            controller.addJavaScriptHandler(
+              handlerName: 'onProgressChannel',
+              callback: (args) {
+                final progress = double.tryParse(args.first.toString()) ?? 0;
+                if (progress >= 1) {
+                  _markModelLoaded();
+                }
+              },
+            );
+            controller.addJavaScriptHandler(
+              handlerName: 'onLoadChannel',
+              callback: (_) => _markModelLoaded(),
+            );
+            controller.addJavaScriptHandler(
+              handlerName: 'onErrorChannel',
+              callback: (args) {
+                debugPrint('achievement model error: ${args.join(', ')}');
+                _showFallbackAward();
+              },
+            );
+          },
+          onReceivedError: (controller, request, error) {
+            if (request.url.path == '/favicon.ico') {
+              return;
+            }
+            debugPrint(
+              'achievement webview error: '
+              'main=${request.isForMainFrame} '
+              'url=${request.url} '
+              'type=${error.type} '
+              'description=${error.description}',
+            );
+            if (request.isForMainFrame == true) {
+              _showFallbackAward();
+            }
+          },
+          onConsoleMessage: (_, message) {
+            if (message.messageLevel == ConsoleMessageLevel.ERROR) {
+              debugPrint('achievement model viewer: ${message.message}');
+            }
+          },
+        );
+      },
+    );
+  }
+
   // The package viewer uses camera orbit controls. In the achievement modal
   // this leaves downward/free roll rotation limited. Keep the package's native
   // gestures for stability. The recenter drift runs inside the web viewer so it
@@ -103,7 +210,7 @@ class _AchievementModelViewState extends State<AchievementModelView> {
   // pointer offset.
   Widget _modalViewer() {
     return model_viewer.ModelViewer(
-      src: widget.award.modelAsset,
+      src: _resolvedModelSrc!,
       alt: widget.award.title,
       id: _modalViewerId,
       progressBarColor: context.appColors.transparent,
@@ -131,7 +238,7 @@ class _AchievementModelViewState extends State<AchievementModelView> {
       enableTouch: widget.interactive,
       progressBarColor: context.appColors.transparent,
       controller: _controller,
-      src: widget.award.modelAsset,
+      src: _resolvedModelSrc!,
       onProgress: (progress) {
         if (progress >= 1) {
           _markModelLoaded();
@@ -302,6 +409,129 @@ class _AchievementModelViewState extends State<AchievementModelView> {
   void _startLoadingFallbackTimer() {
     if (_isLoaded) return;
     _loadingFallbackTimer = Timer(_loadingFallbackDelay, _markModelLoaded);
+  }
+
+  Future<void> _resolveModelSrc() async {
+    final requestedAsset = widget.award.modelAsset;
+
+    if (mounted) {
+      setState(() => _resolvedModelSrc = requestedAsset);
+    }
+  }
+}
+
+class _AchievementEmbeddedModelHtml {
+  static Future<String>? _modelViewerScript;
+  static final Map<String, Future<String>> _modelDataUris = {};
+
+  static Future<String> build({
+    required String assetPath,
+    required String viewerId,
+    required String alt,
+    required String cameraOrbit,
+    required bool cameraControls,
+    required bool autoRotate,
+    required int rotationSpeed,
+    String? relatedJs,
+  }) async {
+    final script = await _loadModelViewerScript();
+    final modelDataUri = await _loadModelDataUri(assetPath);
+    final controls = cameraControls ? ' camera-controls' : '';
+    final rotation = autoRotate
+        ? ' auto-rotate auto-rotate-delay="500" '
+              'rotation-per-second="${rotationSpeed}deg"'
+        : '';
+
+    return '''
+<!doctype html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:," />
+  <style>
+    html, body, model-viewer {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+    }
+
+    model-viewer::part(default-progress-bar) {
+      display: none;
+    }
+  </style>
+  <script type="module">
+$script
+  </script>
+</head>
+<body>
+  <model-viewer
+    id="${htmlEscape.convert(viewerId)}"
+    src="${htmlEscape.convert(modelDataUri)}"
+    alt="${htmlEscape.convert(alt)}"
+    camera-orbit="${htmlEscape.convert(cameraOrbit)}"
+    interpolation-decay="250"
+    interaction-prompt="none"
+    disable-tap$controls$rotation>
+  </model-viewer>
+  <script>
+    (() => {
+      const notify = (handler, value) => {
+        const bridge = window.flutter_inappwebview;
+        if (bridge && bridge.callHandler) {
+          bridge.callHandler(handler, value);
+        }
+      };
+
+      customElements.whenDefined("model-viewer").then(() => {
+        const modelViewer = document.getElementById("${htmlEscape.convert(viewerId)}");
+        if (!modelViewer) return;
+
+        modelViewer.addEventListener("progress", (event) => {
+          notify("onProgressChannel", event.detail.totalProgress || 0);
+        });
+        modelViewer.addEventListener("load", () => {
+          notify("onProgressChannel", 1);
+          notify("onLoadChannel", "/model");
+        });
+        modelViewer.addEventListener("error", (event) => {
+          notify("onErrorChannel", event.detail ? JSON.stringify(event.detail) : "error");
+        });
+
+        if (modelViewer.loaded) {
+          notify("onProgressChannel", 1);
+          notify("onLoadChannel", "/model");
+        }
+      });
+    })();
+  </script>
+  ${relatedJs == null ? '' : '<script>$relatedJs</script>'}
+</body>
+</html>
+''';
+  }
+
+  static Future<String> _loadModelViewerScript() {
+    return _modelViewerScript ??= rootBundle.loadString(
+      'packages/flutter_3d_controller/assets/model_viewer.min.js',
+    );
+  }
+
+  static Future<String> _loadModelDataUri(String assetPath) {
+    return _modelDataUris.putIfAbsent(assetPath, () async {
+      final bytes = await rootBundle.load(assetPath);
+      final data = bytes.buffer.asUint8List(
+        bytes.offsetInBytes,
+        bytes.lengthInBytes,
+      );
+      return 'data:model/gltf-binary;base64,${base64Encode(data)}';
+    });
   }
 }
 

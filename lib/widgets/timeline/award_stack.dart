@@ -15,6 +15,7 @@ class Award {
   final Color? color;
   final String modelAsset;
   final String? thumbnailAsset;
+  final String? compactThumbnailAsset;
   final double cameraTheta;
   final double cameraPhi;
   final double cameraRadius;
@@ -27,6 +28,7 @@ class Award {
     this.reason,
     this.metrics = const {},
     this.thumbnailAsset,
+    this.compactThumbnailAsset,
     this.color,
     this.cameraTheta = 35,
     this.cameraPhi = 70,

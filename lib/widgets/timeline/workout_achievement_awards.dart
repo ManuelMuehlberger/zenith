@@ -26,6 +26,8 @@ Award _awardForAchievement(
         icon: Icons.local_fire_department,
         modelAsset: 'assets/achievements/achievement_cup.glb',
         thumbnailAsset: 'assets/achievements/achievement_cup.png',
+        compactThumbnailAsset:
+            'assets/achievements/achievement_cup_compact.png',
         cameraTheta: 30,
         cameraPhi: 20,
         cameraRadius: 118,
@@ -40,6 +42,8 @@ Award _awardForAchievement(
         icon: Icons.timer_outlined,
         modelAsset: 'assets/achievements/achievement_hourglass.glb',
         thumbnailAsset: 'assets/achievements/achievement_hourglass.png',
+        compactThumbnailAsset:
+            'assets/achievements/achievement_hourglass_compact.png',
         cameraTheta: 25,
         cameraPhi: 20,
         cameraRadius: 118,
@@ -54,6 +58,8 @@ Award _awardForAchievement(
         icon: Icons.fitness_center,
         modelAsset: 'assets/achievements/achievement_dumbbell.glb',
         thumbnailAsset: 'assets/achievements/achievement_dumbbell.png',
+        compactThumbnailAsset:
+            'assets/achievements/achievement_dumbbell_compact.png',
         cameraTheta: 35,
         cameraPhi: 20,
         cameraRadius: 118,
@@ -68,6 +74,8 @@ Award _awardForAchievement(
         icon: Icons.check_circle,
         modelAsset: 'assets/achievements/achievement_medal.glb',
         thumbnailAsset: 'assets/achievements/achievement_medal.png',
+        compactThumbnailAsset:
+            'assets/achievements/achievement_medal_compact.png',
         cameraTheta: 20,
         cameraPhi: 20,
         cameraRadius: 118,

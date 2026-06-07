@@ -11,6 +11,7 @@ import 'package:zenith/services/dao/workout_achievement_dao.dart';
 import 'package:zenith/services/dao/workout_dao.dart';
 import 'package:zenith/services/dao/workout_exercise_dao.dart';
 import 'package:zenith/services/dao/workout_set_dao.dart';
+import 'package:zenith/services/workout_achievement_service.dart';
 import 'package:zenith/services/workout_service.dart';
 
 // Generate mocks
@@ -19,6 +20,7 @@ import 'workout_service_test.mocks.dart';
 
 class FakeWorkoutAchievementDao extends WorkoutAchievementDao {
   Map<String, List<WorkoutAchievement>> achievementsByWorkoutId = {};
+  final List<String> replacedWorkoutIds = [];
 
   @override
   Future<Map<String, List<WorkoutAchievement>>> getAchievementsByWorkoutIds(
@@ -36,6 +38,43 @@ class FakeWorkoutAchievementDao extends WorkoutAchievementDao {
     achievementsByWorkoutId.remove(workoutId);
     return 1;
   }
+
+  @override
+  Future<void> replaceAchievementsForWorkout(
+    String workoutId,
+    List<WorkoutAchievement> achievements,
+  ) async {
+    replacedWorkoutIds.add(workoutId);
+    achievementsByWorkoutId[workoutId] = List<WorkoutAchievement>.from(
+      achievements,
+    );
+  }
+}
+
+class FakeWorkoutAchievementService extends WorkoutAchievementService {
+  FakeWorkoutAchievementService();
+
+  final Map<String, List<String>> historyIdsByWorkoutId = {};
+
+  @override
+  Future<List<WorkoutAchievement>> evaluateForWorkout(
+    Workout workout, {
+    required Iterable<Workout> history,
+    DateTime? earnedAt,
+  }) async {
+    historyIdsByWorkoutId[workout.id] = history.map((entry) => entry.id).toList();
+    return [
+      WorkoutAchievement(
+        workoutId: workout.id,
+        ruleId: 'debug-rule',
+        type: WorkoutAchievementType.firstWorkout,
+        title: 'Debug Award',
+        reason: 'Awarded for ${workout.name}',
+        earnedAt: earnedAt ?? workout.completedAt ?? DateTime(2024),
+        metrics: {'historyCount': history.length},
+      ),
+    ];
+  }
 }
 
 void main() {
@@ -43,6 +82,7 @@ void main() {
     late WorkoutService workoutService;
     late MockWorkoutDao mockWorkoutDao;
     late FakeWorkoutAchievementDao fakeWorkoutAchievementDao;
+    late FakeWorkoutAchievementService fakeWorkoutAchievementService;
     late MockWorkoutExerciseDao mockWorkoutExerciseDao;
     late MockWorkoutSetDao mockWorkoutSetDao;
 
@@ -50,6 +90,7 @@ void main() {
       // Create mocks
       mockWorkoutDao = MockWorkoutDao();
       fakeWorkoutAchievementDao = FakeWorkoutAchievementDao();
+      fakeWorkoutAchievementService = FakeWorkoutAchievementService();
       mockWorkoutExerciseDao = MockWorkoutExerciseDao();
       mockWorkoutSetDao = MockWorkoutSetDao();
 
@@ -62,6 +103,7 @@ void main() {
       // Inject mocks by overriding the DAO instances in the service
       workoutService.workoutDao = mockWorkoutDao;
       workoutService.workoutAchievementDao = fakeWorkoutAchievementDao;
+      workoutService.workoutAchievementService = fakeWorkoutAchievementService;
       workoutService.workoutExerciseDao = mockWorkoutExerciseDao;
       workoutService.workoutSetDao = mockWorkoutSetDao;
     });
@@ -127,6 +169,72 @@ void main() {
         expect(workoutService.workouts.first.exercises.length, 1);
         expect(workoutService.workouts.first.exercises.first.sets.length, 1);
       });
+
+      test(
+        'rebuildAchievementsForCompletedWorkouts processes history chronologically',
+        () async {
+          final oldest = Workout(
+            id: 'oldest',
+            name: 'Oldest',
+            exercises: const [],
+            status: WorkoutStatus.completed,
+            startedAt: DateTime(2024, 1, 1, 9),
+            completedAt: DateTime(2024, 1, 1, 10),
+          );
+          final middle = Workout(
+            id: 'middle',
+            name: 'Middle',
+            exercises: const [],
+            status: WorkoutStatus.completed,
+            startedAt: DateTime(2024, 2, 1, 9),
+            completedAt: DateTime(2024, 2, 1, 10),
+          );
+          final latest = Workout(
+            id: 'latest',
+            name: 'Latest',
+            exercises: const [],
+            status: WorkoutStatus.completed,
+            startedAt: DateTime(2024, 3, 1, 9),
+            completedAt: DateTime(2024, 3, 1, 10),
+          );
+
+          when(
+            mockWorkoutDao.getAllWorkouts(),
+          ).thenAnswer((_) async => [latest, oldest, middle]);
+          when(
+            mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutIds([
+              'latest',
+              'oldest',
+              'middle',
+            ]),
+          ).thenAnswer((_) async => []);
+          when(
+            mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseIds([]),
+          ).thenAnswer((_) async => []);
+
+          final rebuiltCount =
+              await workoutService.rebuildAchievementsForCompletedWorkouts();
+
+          expect(rebuiltCount, 3);
+          expect(fakeWorkoutAchievementDao.replacedWorkoutIds, [
+            'oldest',
+            'middle',
+            'latest',
+          ]);
+          expect(
+            fakeWorkoutAchievementService.historyIdsByWorkoutId['oldest'],
+            isEmpty,
+          );
+          expect(
+            fakeWorkoutAchievementService.historyIdsByWorkoutId['middle'],
+            ['oldest'],
+          );
+          expect(
+            fakeWorkoutAchievementService.historyIdsByWorkoutId['latest'],
+            ['oldest', 'middle'],
+          );
+        },
+      );
 
       test(
         'should stop loading related data when there are no workouts',

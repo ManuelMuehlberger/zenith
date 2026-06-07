@@ -29,7 +29,7 @@
       "title": "Long Session",
       "reasonTemplate": "Trained for {durationMinutes} minutes.",
       "conditions": [
-        { "metric": "durationMinutes", "operator": "greaterThanOrEqual", "value": 60 }
+        { "metric": "durationMinutes", "operator": "greaterThanOrEqual", "value": 110 }
       ]
     },
     {
