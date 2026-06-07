@@ -211,6 +211,10 @@ void main() {
     late int loadExercisesCallCount;
     late int refreshWorkoutDataCallCount;
     late int refreshUserProfileCallCount;
+    late int clearAllDataCallCount;
+    late int clearUserDataCallCount;
+    late int clearUserWorkoutsCallCount;
+    late int clearUserTemplatesCallCount;
 
     setUp(() {
       service = DebugDataService.instance;
@@ -225,6 +229,10 @@ void main() {
       loadExercisesCallCount = 0;
       refreshWorkoutDataCallCount = 0;
       refreshUserProfileCallCount = 0;
+      clearAllDataCallCount = 0;
+      clearUserDataCallCount = 0;
+      clearUserWorkoutsCallCount = 0;
+      clearUserTemplatesCallCount = 0;
 
       service.workoutDao = workoutDao;
       service.workoutAchievementDao = workoutAchievementDao;
@@ -241,6 +249,18 @@ void main() {
       service.refreshUserProfile = () async {
         refreshUserProfileCallCount++;
       };
+      service.clearAllDataCallback = () async {
+        clearAllDataCallCount++;
+      };
+      service.clearUserDataCallback = () async {
+        clearUserDataCallCount++;
+      };
+      service.clearUserWorkoutsCallback = () async {
+        clearUserWorkoutsCallCount++;
+      };
+      service.clearUserTemplatesCallback = () async {
+        clearUserTemplatesCallCount++;
+      };
       service.workoutAchievementService = WorkoutAchievementService(
         assetBundle: DebugRulesBundle(),
       );
@@ -250,6 +270,18 @@ void main() {
     tearDown(() {
       service.resetForTesting();
     });
+
+    test(
+      'clearAllData clears persisted data through service boundaries',
+      () async {
+        await service.clearAllData();
+
+        expect(clearAllDataCallCount, 1);
+        expect(clearUserDataCallCount, 1);
+        expect(clearUserWorkoutsCallCount, 1);
+        expect(clearUserTemplatesCallCount, 1);
+      },
+    );
 
     test(
       'generateDebugData creates varied two-year-style history with progression',

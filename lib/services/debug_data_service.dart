@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
+
 import '../constants/app_constants.dart';
 import '../models/user_data.dart';
 import '../models/workout.dart';
@@ -15,10 +16,12 @@ import 'dao/workout_dao.dart';
 import 'dao/workout_exercise_dao.dart';
 import 'dao/workout_set_dao.dart';
 import 'dao/workout_template_dao.dart';
+import 'database_service.dart';
 import 'exercise_service.dart';
 import 'user_service.dart';
 import 'workout_achievement_service.dart';
 import 'workout_service.dart';
+import 'workout_template_service.dart';
 
 enum _TrainingWeekType { normal, peak, deload, pause }
 
@@ -50,6 +53,12 @@ class DebugDataService {
   UserData? Function() _currentProfileProvider = () =>
       UserService.instance.currentProfile;
   DateTime Function() _nowProvider = DateTime.now;
+  Future<void> Function() _clearAllData = DatabaseService.instance.clearAllData;
+  Future<void> Function() _clearUserData = UserService.instance.clearUserData;
+  Future<void> Function() _clearUserWorkouts =
+      WorkoutService.instance.clearUserWorkouts;
+  Future<void> Function() _clearUserTemplates =
+      WorkoutTemplateService.instance.clearUserTemplatesAndFolders;
   int _weeksToGenerate = 104;
 
   List<Map<String, dynamic>> _workoutTemplates = _defaultWorkoutTemplates();
@@ -100,6 +109,22 @@ class DebugDataService {
   set nowProvider(DateTime Function() callback) => _nowProvider = callback;
 
   @visibleForTesting
+  set clearAllDataCallback(Future<void> Function() callback) =>
+      _clearAllData = callback;
+
+  @visibleForTesting
+  set clearUserDataCallback(Future<void> Function() callback) =>
+      _clearUserData = callback;
+
+  @visibleForTesting
+  set clearUserWorkoutsCallback(Future<void> Function() callback) =>
+      _clearUserWorkouts = callback;
+
+  @visibleForTesting
+  set clearUserTemplatesCallback(Future<void> Function() callback) =>
+      _clearUserTemplates = callback;
+
+  @visibleForTesting
   set weeksToGenerate(int value) => _weeksToGenerate = value;
 
   @visibleForTesting
@@ -122,8 +147,21 @@ class DebugDataService {
     _workoutAchievementService = WorkoutAchievementService.instance;
     _currentProfileProvider = () => UserService.instance.currentProfile;
     _nowProvider = DateTime.now;
+    _clearAllData = DatabaseService.instance.clearAllData;
+    _clearUserData = UserService.instance.clearUserData;
+    _clearUserWorkouts = WorkoutService.instance.clearUserWorkouts;
+    _clearUserTemplates =
+        WorkoutTemplateService.instance.clearUserTemplatesAndFolders;
     _weeksToGenerate = 104;
     _workoutTemplates = _defaultWorkoutTemplates();
+  }
+
+  Future<void> clearAllData() async {
+    _logger.warning('Clearing all local data through debug service');
+    await _clearAllData();
+    await _clearUserData();
+    await _clearUserWorkouts();
+    await _clearUserTemplates();
   }
 
   Future<void> generateDebugData() async {
