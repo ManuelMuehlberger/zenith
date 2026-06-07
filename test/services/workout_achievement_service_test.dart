@@ -1,11 +1,9 @@
-import 'dart:typed_data';
-
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/models/workout.dart';
+import 'package:zenith/models/workout_achievement.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
-import 'package:zenith/models/workout_achievement.dart';
 import 'package:zenith/services/workout_achievement_service.dart';
 
 class StringAssetBundle extends CachingAssetBundle {

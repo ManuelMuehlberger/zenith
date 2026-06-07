@@ -2,6 +2,7 @@ import '../../models/typedefs.dart';
 import '../../models/workout_achievement.dart';
 import 'base_dao.dart';
 
+// policy: allow-public-api DAO used by workout achievement persistence flows.
 class WorkoutAchievementDao extends BaseDao<WorkoutAchievement> {
   WorkoutAchievementDao() : super('WorkoutAchievementDao');
 
