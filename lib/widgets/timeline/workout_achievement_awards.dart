@@ -18,6 +18,12 @@ Award _awardForAchievement(
   WorkoutAchievement achievement,
 ) {
   switch (achievement.type) {
+    case WorkoutAchievementType.firstWorkout:
+      return _milestoneAward(context, achievement);
+    case WorkoutAchievementType.workoutMilestone:
+      return _milestoneAward(context, achievement);
+    case WorkoutAchievementType.workoutStreak:
+      return _streakAward(context, achievement);
     case WorkoutAchievementType.highVolume:
       return Award(
         title: achievement.title,
@@ -66,21 +72,59 @@ Award _awardForAchievement(
         rotationSpeed: 18,
         color: context.appColors.success,
       );
-    case WorkoutAchievementType.firstWorkout:
-      return Award(
-        title: achievement.title,
-        reason: achievement.reason,
-        metrics: achievement.metrics,
-        icon: Icons.check_circle,
-        modelAsset: 'assets/achievements/achievement_medal.glb',
-        thumbnailAsset: 'assets/achievements/achievement_medal.png',
-        compactThumbnailAsset:
-            'assets/achievements/achievement_medal_compact.png',
-        cameraTheta: 20,
-        cameraPhi: 20,
-        cameraRadius: 118,
-        rotationSpeed: 14,
-        color: context.appScheme.primary,
-      );
   }
+}
+
+Award _milestoneAward(BuildContext context, WorkoutAchievement achievement) {
+  final assetName = switch (achievement.ruleId) {
+    'tenth_workout' => 'achievement_workout_10',
+    'fiftieth_workout' => 'achievement_workout_50',
+    'hundredth_workout' => 'achievement_workout_100',
+    'two_hundredth_workout' => 'achievement_workout_200',
+    _ => 'achievement_workout_1',
+  };
+  final color = switch (achievement.ruleId) {
+    'tenth_workout' => const Color(0xFF26A69A),
+    'fiftieth_workout' => const Color(0xFFFFB300),
+    'hundredth_workout' => const Color(0xFF7E57C2),
+    'two_hundredth_workout' => const Color(0xFFE53935),
+    _ => context.appScheme.primary,
+  };
+
+  return Award(
+    title: achievement.title,
+    reason: achievement.reason,
+    metrics: achievement.metrics,
+    icon: Icons.hexagon_outlined,
+    modelAsset: 'assets/achievements/$assetName.glb',
+    thumbnailAsset: 'assets/achievements/$assetName.png',
+    compactThumbnailAsset: 'assets/achievements/${assetName}_compact.png',
+    cameraTheta: 18,
+    cameraPhi: 20,
+    cameraRadius: 118,
+    rotationSpeed: 14,
+    color: color,
+  );
+}
+
+Award _streakAward(BuildContext context, WorkoutAchievement achievement) {
+  final isSevenDay = achievement.ruleId == 'seven_day_streak';
+  final assetName = isSevenDay
+      ? 'achievement_streak_7'
+      : 'achievement_streak_3';
+
+  return Award(
+    title: achievement.title,
+    reason: achievement.reason,
+    metrics: achievement.metrics,
+    icon: isSevenDay ? Icons.calendar_month : Icons.calendar_today,
+    modelAsset: 'assets/achievements/$assetName.glb',
+    thumbnailAsset: 'assets/achievements/$assetName.png',
+    compactThumbnailAsset: 'assets/achievements/${assetName}_compact.png',
+    cameraTheta: 24,
+    cameraPhi: 20,
+    cameraRadius: 118,
+    rotationSpeed: isSevenDay ? 12 : 16,
+    color: isSevenDay ? const Color(0xFF7E57C2) : context.appColors.success,
+  );
 }

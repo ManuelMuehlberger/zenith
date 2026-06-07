@@ -6,7 +6,14 @@ import 'package:uuid/uuid.dart';
 import 'typedefs.dart';
 
 // policy: allow-public-api core model for achievement system.
-enum WorkoutAchievementType { firstWorkout, highVolume, longSession, heavy }
+enum WorkoutAchievementType {
+  firstWorkout,
+  highVolume,
+  longSession,
+  heavy,
+  workoutMilestone,
+  workoutStreak,
+}
 
 @immutable
 // policy: allow-public-api data model for tracking workout milestones.

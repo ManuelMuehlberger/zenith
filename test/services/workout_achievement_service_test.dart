@@ -160,6 +160,148 @@ void main() {
         );
       },
     );
+
+    test('awards dynamic long session above recent average target', () async {
+      const dynamicRulesJson = '''
+{
+  "rules": [
+    {
+      "id": "long_session",
+      "type": "longSession",
+      "title": "Long Session",
+      "reasonTemplate": "Trained for {durationMinutes} minutes against {longSessionTargetMinutes}.",
+      "conditions": [
+        { "metric": "durationMinutes", "operator": "greaterThan", "value": 60 },
+        { "metric": "durationMinutes", "operator": "greaterThan", "valueMetric": "longSessionTargetMinutes" }
+      ]
+    }
+  ]
+}
+''';
+      final service = WorkoutAchievementService(
+        assetBundle: StringAssetBundle(dynamicRulesJson),
+      );
+      final now = DateTime(2026, 6, 1, 12);
+      final workout = _workout(
+        id: 'current',
+        sets: 3,
+        completedAt: now,
+        duration: const Duration(minutes: 80),
+      );
+      final history = [
+        _workout(
+          id: 'old-1',
+          sets: 3,
+          completedAt: now.subtract(const Duration(days: 10)),
+          duration: const Duration(minutes: 40),
+        ),
+        _workout(
+          id: 'old-2',
+          sets: 3,
+          completedAt: now.subtract(const Duration(days: 20)),
+          duration: const Duration(minutes: 50),
+        ),
+      ];
+
+      final awards = await service.evaluateForWorkout(
+        workout,
+        history: history,
+      );
+
+      expect(awards.map((award) => award.type), [
+        WorkoutAchievementType.longSession,
+      ]);
+      expect(awards.single.metrics['averageDurationMinutesLast90Days'], 45);
+      expect(awards.single.metrics['longSessionTargetMinutes'], 78.75);
+    });
+
+    test('awards workout milestone by workout number', () async {
+      const milestoneRulesJson = '''
+{
+  "rules": [
+    {
+      "id": "tenth_workout",
+      "type": "workoutMilestone",
+      "title": "10 Workouts",
+      "reasonTemplate": "Completed workout #{workoutNumber}.",
+      "conditions": [
+        { "metric": "workoutNumber", "operator": "equals", "value": 10 }
+      ]
+    }
+  ]
+}
+''';
+      final service = WorkoutAchievementService(
+        assetBundle: StringAssetBundle(milestoneRulesJson),
+      );
+      final now = DateTime(2026, 6, 1, 12);
+      final history = List.generate(
+        9,
+        (index) => _workout(
+          id: 'old-$index',
+          sets: 3,
+          completedAt: now.subtract(Duration(days: 10 - index)),
+        ),
+      );
+
+      final awards = await service.evaluateForWorkout(
+        _workout(id: 'current', sets: 3, completedAt: now),
+        history: history,
+      );
+
+      expect(awards.single.type, WorkoutAchievementType.workoutMilestone);
+      expect(awards.single.metrics['workoutNumber'], 10);
+    });
+
+    test('awards streak once cooldown has elapsed', () async {
+      const streakRulesJson = '''
+{
+  "rules": [
+    {
+      "id": "three_day_streak",
+      "type": "workoutStreak",
+      "title": "3-Day Streak",
+      "reasonTemplate": "{consecutiveWorkoutDays} days.",
+      "conditions": [
+        { "metric": "consecutiveWorkoutDays", "operator": "greaterThanOrEqual", "value": 3 },
+        { "metric": "daysSince3DayStreakAward", "operator": "greaterThanOrEqual", "value": 3 }
+      ]
+    }
+  ]
+}
+''';
+      final service = WorkoutAchievementService(
+        assetBundle: StringAssetBundle(streakRulesJson),
+      );
+      final now = DateTime(2026, 6, 7, 12);
+      final priorAward = WorkoutAchievement(
+        workoutId: 'old-award',
+        ruleId: 'three_day_streak',
+        type: WorkoutAchievementType.workoutStreak,
+        title: '3-Day Streak',
+        reason: '3 days.',
+        earnedAt: DateTime(2026, 6, 4, 12),
+      );
+      final history = [
+        _workout(
+          id: 'old-award',
+          sets: 3,
+          completedAt: DateTime(2026, 6, 4, 12),
+          achievements: [priorAward],
+        ),
+        _workout(id: 'old-1', sets: 3, completedAt: DateTime(2026, 6, 5, 12)),
+        _workout(id: 'old-2', sets: 3, completedAt: DateTime(2026, 6, 6, 12)),
+      ];
+
+      final awards = await service.evaluateForWorkout(
+        _workout(id: 'current', sets: 3, completedAt: now),
+        history: history,
+      );
+
+      expect(awards.single.type, WorkoutAchievementType.workoutStreak);
+      expect(awards.single.metrics['consecutiveWorkoutDays'], 4);
+      expect(awards.single.metrics['daysSince3DayStreakAward'], 3);
+    });
   });
 }
 
@@ -167,6 +309,8 @@ Workout _workout({
   required String id,
   required int sets,
   DateTime? completedAt,
+  Duration duration = const Duration(minutes: 45),
+  List<WorkoutAchievement> achievements = const [],
 }) {
   final end = completedAt ?? DateTime(2026, 1, 1, 12);
   final exercise = WorkoutExercise(
@@ -189,8 +333,9 @@ Workout _workout({
     id: id,
     name: 'Push Day',
     status: WorkoutStatus.completed,
-    startedAt: end.subtract(const Duration(minutes: 45)),
+    startedAt: end.subtract(duration),
     completedAt: end,
     exercises: [exercise],
+    achievements: achievements,
   );
 }
