@@ -41,7 +41,15 @@ void main() {
     expect(awards, hasLength(2));
     expect(awards.first.title, 'First Workout');
     expect(awards.first.icon, Icons.check_circle);
+    expect(
+      awards.first.compactThumbnailAsset,
+      'assets/achievements/achievement_medal_compact.png',
+    );
     expect(awards.last.title, 'High Volume');
     expect(awards.last.icon, Icons.local_fire_department);
+    expect(
+      awards.last.compactThumbnailAsset,
+      'assets/achievements/achievement_cup_compact.png',
+    );
   });
 }

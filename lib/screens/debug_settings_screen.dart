@@ -5,13 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
 import '../models/workout.dart';
-import '../services/database_service.dart';
 import '../services/debug_data_service.dart';
-import '../services/user_service.dart';
 import '../services/workout_service.dart';
-import '../services/workout_template_service.dart';
 import '../theme/app_theme.dart';
 
+// policy: allow-public-api developer-only screen for local data tooling.
 class DebugSettingsScreen extends StatefulWidget {
   const DebugSettingsScreen({super.key});
 
@@ -245,8 +243,8 @@ class _DebugSettingsScreenState extends State<DebugSettingsScreen> {
     }
 
     await _runBusyAction(() async {
-      final rebuiltCount =
-          await WorkoutService.instance.rebuildAchievementsForCompletedWorkouts();
+      final rebuiltCount = await WorkoutService.instance
+          .rebuildAchievementsForCompletedWorkouts();
       if (mounted) {
         _showCupertinoToast('Rebuilt achievements for $rebuiltCount workouts');
       }
@@ -332,10 +330,7 @@ class _DebugSettingsScreenState extends State<DebugSettingsScreen> {
     }
 
     await _runBusyAction(() async {
-      await DatabaseService.instance.clearAllData();
-      await UserService.instance.clearUserData();
-      await WorkoutService.instance.clearUserWorkouts();
-      await WorkoutTemplateService.instance.clearUserTemplatesAndFolders();
+      await DebugDataService.instance.clearAllData();
       if (mounted) {
         _showCupertinoToast('All data cleared');
         await Future.delayed(const Duration(seconds: 1));
@@ -377,10 +372,7 @@ class _DebugSettingsScreenState extends State<DebugSettingsScreen> {
             opacity: 1,
             duration: const Duration(milliseconds: 200),
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
                 color: colors.surfaceAlt.withValues(alpha: 0.92),
                 borderRadius: BorderRadius.circular(16),

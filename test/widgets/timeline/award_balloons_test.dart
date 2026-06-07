@@ -25,4 +25,30 @@ void main() {
     expect(find.text('+2'), findsOneWidget);
     expect(find.text('5'), findsNothing);
   });
+
+  testWidgets('prefers compact thumbnail assets for small stacked chips', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AwardBalloons(
+            awards: [
+              Award(
+                title: 'Compact',
+                icon: Icons.star,
+                modelAsset: 'missing.glb',
+                thumbnailAsset: 'assets/achievements/full.png',
+                compactThumbnailAsset: 'assets/achievements/compact.png',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final image = tester.widget<Image>(find.byType(Image));
+    final provider = image.image as AssetImage;
+    expect(provider.assetName, 'assets/achievements/compact.png');
+  });
 }
