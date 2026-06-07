@@ -31,6 +31,11 @@ class AppThemePalette {
     required this.surfaceAlt,
     required this.field,
     required this.dockEdgeFade,
+    required this.dockSurface,
+    required this.dockSurfaceTop,
+    required this.dockOutline,
+    required this.dockSelected,
+    required this.dockUnselected,
     required this.overlayStrong,
     required this.overlayMedium,
     required this.overlaySoft,
@@ -45,6 +50,7 @@ class AppThemePalette {
     required this.info,
     required this.danger,
     required this.shadow,
+    required this.transparent,
   });
 
   final Color background;
@@ -52,6 +58,11 @@ class AppThemePalette {
   final Color surfaceAlt;
   final Color field;
   final Color dockEdgeFade;
+  final Color dockSurface;
+  final Color dockSurfaceTop;
+  final Color dockOutline;
+  final Color dockSelected;
+  final Color dockUnselected;
   final Color overlayStrong;
   final Color overlayMedium;
   final Color overlaySoft;
@@ -66,12 +77,14 @@ class AppThemePalette {
   final Color info;
   final Color danger;
   final Color shadow;
+  final Color transparent;
 }
 
 class AppThemeColors {
   AppThemeColors._();
 
   static const Color clear = Color(0x00000000);
+  static const Color transparent = Color(0x00000000);
 
   static const AppThemePalette light = AppThemePalette(
     background: Color(0xFFF5F5F7),
@@ -79,6 +92,11 @@ class AppThemeColors {
     surfaceAlt: Color(0xFFFFFFFF),
     field: Color(0xFFECEEF2),
     dockEdgeFade: Color(0xFFFFFFFF),
+    dockSurface: Color(0xEAE8F4FF),
+    dockSurfaceTop: Color(0xFFFFFFFF),
+    dockOutline: Color(0x2E1D4F91),
+    dockSelected: Color(0xFF075FCA),
+    dockUnselected: Color(0xFF475467),
     overlayStrong: Color(0xF2FFFFFF),
     overlayMedium: Color(0xD9FFFFFF),
     overlaySoft: Color(0x99FFFFFF),
@@ -93,6 +111,7 @@ class AppThemeColors {
     info: Color(0xFF5BB8FF),
     danger: Color(0xFFFF453A),
     shadow: Color(0x14000000),
+    transparent: Color(0x00000000),
   );
 
   static const AppThemePalette dark = AppThemePalette(
@@ -101,6 +120,11 @@ class AppThemeColors {
     surfaceAlt: Color(0xFF1A1A1A),
     field: Color(0xFF2C2C2E),
     dockEdgeFade: Color(0xFF000000),
+    dockSurface: Color(0xB72A3541),
+    dockSurfaceTop: Color(0xBD414A55),
+    dockOutline: Color(0x7AC6E2FF),
+    dockSelected: Color(0xFF76B9FF),
+    dockUnselected: Color(0xFFB0B0B0),
     overlayStrong: Color(0xCC000000),
     overlayMedium: Color(0x8A000000),
     overlaySoft: Color(0x33000000),
@@ -115,6 +139,7 @@ class AppThemeColors {
     info: Color(0xFF8BD3FF),
     danger: Color(0xFFFF453A),
     shadow: Color(0x2E000000),
+    transparent: Color(0x00000000),
   );
 }
 
@@ -196,6 +221,11 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.surfaceAlt,
     required this.field,
     required this.dockEdgeFade,
+    required this.dockSurface,
+    required this.dockSurfaceTop,
+    required this.dockOutline,
+    required this.dockSelected,
+    required this.dockUnselected,
     required this.overlayStrong,
     required this.overlayMedium,
     required this.overlaySoft,
@@ -206,11 +236,17 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.warning,
     required this.info,
     required this.shadow,
+    required this.transparent,
   });
 
   final Color surfaceAlt;
   final Color field;
   final Color dockEdgeFade;
+  final Color dockSurface;
+  final Color dockSurfaceTop;
+  final Color dockOutline;
+  final Color dockSelected;
+  final Color dockUnselected;
   final Color overlayStrong;
   final Color overlayMedium;
   final Color overlaySoft;
@@ -221,12 +257,18 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   final Color warning;
   final Color info;
   final Color shadow;
+  final Color transparent;
 
   @override
   AppThemeTokens copyWith({
     Color? surfaceAlt,
     Color? field,
     Color? dockEdgeFade,
+    Color? dockSurface,
+    Color? dockSurfaceTop,
+    Color? dockOutline,
+    Color? dockSelected,
+    Color? dockUnselected,
     Color? overlayStrong,
     Color? overlayMedium,
     Color? overlaySoft,
@@ -237,11 +279,17 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     Color? warning,
     Color? info,
     Color? shadow,
+    Color? transparent,
   }) {
     return AppThemeTokens(
       surfaceAlt: surfaceAlt ?? this.surfaceAlt,
       field: field ?? this.field,
       dockEdgeFade: dockEdgeFade ?? this.dockEdgeFade,
+      dockSurface: dockSurface ?? this.dockSurface,
+      dockSurfaceTop: dockSurfaceTop ?? this.dockSurfaceTop,
+      dockOutline: dockOutline ?? this.dockOutline,
+      dockSelected: dockSelected ?? this.dockSelected,
+      dockUnselected: dockUnselected ?? this.dockUnselected,
       overlayStrong: overlayStrong ?? this.overlayStrong,
       overlayMedium: overlayMedium ?? this.overlayMedium,
       overlaySoft: overlaySoft ?? this.overlaySoft,
@@ -252,6 +300,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       warning: warning ?? this.warning,
       info: info ?? this.info,
       shadow: shadow ?? this.shadow,
+      transparent: transparent ?? this.transparent,
     );
   }
 
@@ -266,6 +315,14 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       field: Color.lerp(field, other.field, t) ?? field,
       dockEdgeFade:
           Color.lerp(dockEdgeFade, other.dockEdgeFade, t) ?? dockEdgeFade,
+      dockSurface: Color.lerp(dockSurface, other.dockSurface, t) ?? dockSurface,
+      dockSurfaceTop:
+          Color.lerp(dockSurfaceTop, other.dockSurfaceTop, t) ?? dockSurfaceTop,
+      dockOutline: Color.lerp(dockOutline, other.dockOutline, t) ?? dockOutline,
+      dockSelected:
+          Color.lerp(dockSelected, other.dockSelected, t) ?? dockSelected,
+      dockUnselected:
+          Color.lerp(dockUnselected, other.dockUnselected, t) ?? dockUnselected,
       overlayStrong:
           Color.lerp(overlayStrong, other.overlayStrong, t) ?? overlayStrong,
       overlayMedium:
@@ -280,6 +337,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       warning: Color.lerp(warning, other.warning, t) ?? warning,
       info: Color.lerp(info, other.info, t) ?? info,
       shadow: Color.lerp(shadow, other.shadow, t) ?? shadow,
+      transparent: Color.lerp(transparent, other.transparent, t) ?? transparent,
     );
   }
 }
@@ -290,10 +348,7 @@ class AppTheme {
   static const double mainDockHeight = 64;
   static const double mainDockOffset = 18;
   static const double mainDockMaxWidth = 420;
-  static const double mainDockBlurSigma = 14;
-  static const double mainDockEdgeBlurBaseHeight = mainDockClearance * 1.6;
-  static const double mainDockEdgeBlurVisibleStop = 0.24;
-  static const double mainDockEdgeFadeBaseHeight = mainDockClearance * 2.1;
+  static const double mainDockBlurSigma = 6;
   static const double mainDockEdgeFadeMidStop = 0.6;
   static const double mainDockEdgeFadeShoulderOpacity = 0.12;
   static const double mainDockEdgeFadeBottomOpacity = 0.78;
@@ -303,7 +358,6 @@ class AppTheme {
   static const double mainDockCompactWidth = 188;
   static const double mainDockActionSize = 64;
   static const double mainDockActionGap = 14;
-  static const double mainDockItemPadding = 14;
   static const BorderRadius mainDockBorderRadius = BorderRadius.all(
     Radius.circular(28),
   );
@@ -314,6 +368,11 @@ class AppTheme {
     surfaceAlt: AppThemeColors.light.surfaceAlt,
     field: AppThemeColors.light.field,
     dockEdgeFade: AppThemeColors.light.dockEdgeFade,
+    dockSurface: AppThemeColors.light.dockSurface,
+    dockSurfaceTop: AppThemeColors.light.dockSurfaceTop,
+    dockOutline: AppThemeColors.light.dockOutline,
+    dockSelected: AppThemeColors.light.dockSelected,
+    dockUnselected: AppThemeColors.light.dockUnselected,
     overlayStrong: AppThemeColors.light.overlayStrong,
     overlayMedium: AppThemeColors.light.overlayMedium,
     overlaySoft: AppThemeColors.light.overlaySoft,
@@ -324,12 +383,18 @@ class AppTheme {
     warning: AppThemeColors.light.warning,
     info: AppThemeColors.light.info,
     shadow: AppThemeColors.light.shadow,
+    transparent: AppThemeColors.light.transparent,
   );
 
   static final AppThemeTokens darkTokens = AppThemeTokens(
     surfaceAlt: AppThemeColors.dark.surfaceAlt,
     field: AppThemeColors.dark.field,
     dockEdgeFade: AppThemeColors.dark.dockEdgeFade,
+    dockSurface: AppThemeColors.dark.dockSurface,
+    dockSurfaceTop: AppThemeColors.dark.dockSurfaceTop,
+    dockOutline: AppThemeColors.dark.dockOutline,
+    dockSelected: AppThemeColors.dark.dockSelected,
+    dockUnselected: AppThemeColors.dark.dockUnselected,
     overlayStrong: AppThemeColors.dark.overlayStrong,
     overlayMedium: AppThemeColors.dark.overlayMedium,
     overlaySoft: AppThemeColors.dark.overlaySoft,
@@ -340,6 +405,7 @@ class AppTheme {
     warning: AppThemeColors.dark.warning,
     info: AppThemeColors.dark.info,
     shadow: AppThemeColors.dark.shadow,
+    transparent: AppThemeColors.dark.transparent,
   );
 
   static ThemeData _buildTheme(

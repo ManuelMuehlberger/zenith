@@ -38,8 +38,7 @@ void main() {
       final decoration = widget.decoration;
       if (decoration is BoxDecoration) {
         return decoration.borderRadius == AppTheme.mainDockBorderRadius &&
-            decoration.border != null &&
-            decoration.boxShadow?.isNotEmpty == true;
+            decoration.border != null;
       }
       return false;
     });
@@ -52,6 +51,47 @@ void main() {
     });
     expect(hasDockFrame, isTrue);
     expect(hasDockTintGradient, isTrue);
+  });
+
+  testWidgets('MainScreen lightweight dock uses light theme dock colors', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.light, home: const MainScreen()),
+    );
+    await tester.pump();
+
+    final homeIcon = tester.widget<Icon>(find.byIcon(Icons.home_rounded));
+    final workoutsIcon = tester.widget<Icon>(
+      find.byIcon(Icons.fitness_center_outlined),
+    );
+    expect(homeIcon.color, AppTheme.lightTokens.dockSelected);
+    expect(workoutsIcon.color, AppTheme.lightTokens.dockUnselected);
+
+    final decoratedWidgets = tester
+        .widgetList(find.byType(DecoratedBox))
+        .whereType<DecoratedBox>()
+        .toList();
+    final hasLightDockFrame = decoratedWidgets.any((widget) {
+      final decoration = widget.decoration;
+      if (decoration is BoxDecoration) {
+        return decoration.borderRadius == AppTheme.mainDockBorderRadius &&
+            decoration.border?.top.color == AppTheme.lightTokens.dockOutline;
+      }
+      return false;
+    });
+    final hasLightDockGradient = decoratedWidgets.any((widget) {
+      final decoration = widget.decoration;
+      if (decoration is BoxDecoration) {
+        final gradient = decoration.gradient;
+        return gradient is LinearGradient &&
+            gradient.colors.contains(AppTheme.lightTokens.dockSurfaceTop) &&
+            gradient.colors.contains(AppTheme.lightTokens.dockSurface);
+      }
+      return false;
+    });
+    expect(hasLightDockFrame, isTrue);
+    expect(hasLightDockGradient, isTrue);
   });
 
   testWidgets('NavigationHelper switches tabs through AppNavigationService', (

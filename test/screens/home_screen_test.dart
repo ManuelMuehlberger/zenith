@@ -45,8 +45,9 @@ void main() {
       workoutService.workoutExerciseDao = mockWorkoutExerciseDao;
       workoutService.workoutSetDao = mockWorkoutSetDao;
 
-      // Clear any previous state
-      workoutService.workouts.clear();
+      when(mockWorkoutDao.getAllWorkouts()).thenAnswer((_) async => const []);
+      await workoutService.loadData();
+      clearInteractions(mockWorkoutDao);
     });
 
     testWidgets(
@@ -143,6 +144,31 @@ void main() {
       expect(find.text('No workouts yet'), findsOneWidget);
       expect(find.text('In Progress Only'), findsNothing);
     });
+
+    testWidgets(
+      'switches from greeting to recent title after the timer elapses',
+      (WidgetTester tester) async {
+        when(mockWorkoutDao.getAllWorkouts()).thenAnswer((_) async => const []);
+        when(
+          mockWorkoutExerciseDao.getWorkoutExercisesByWorkoutIds(any),
+        ).thenAnswer((_) async => []);
+        when(
+          mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseIds(any),
+        ).thenAnswer((_) async => []);
+
+        await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const ValueKey('greeting_title')), findsOneWidget);
+        expect(find.byKey(const ValueKey('recent_title')), findsNothing);
+
+        await tester.pump(const Duration(seconds: 2));
+        await tester.pump(const Duration(milliseconds: 500));
+
+        expect(find.byKey(const ValueKey('greeting_title')), findsNothing);
+        expect(find.byKey(const ValueKey('recent_title')), findsOneWidget);
+      },
+    );
 
     testWidgets(
       'sorts completed workouts by completedAt descending (fallback to startedAt)',
@@ -291,8 +317,9 @@ void main() {
       workoutService.workoutExerciseDao = mockWorkoutExerciseDao;
       workoutService.workoutSetDao = mockWorkoutSetDao;
 
-      // Clear any previous state
-      workoutService.workouts.clear();
+      when(mockWorkoutDao.getAllWorkouts()).thenAnswer((_) async => const []);
+      await workoutService.loadData();
+      clearInteractions(mockWorkoutDao);
     });
 
     testWidgets('limits recent workouts list to 3 items', (

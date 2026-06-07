@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
@@ -7,6 +8,7 @@ import 'package:logging/logging.dart';
 import '../../models/workout.dart';
 import '../../screens/home/home_timeline_data.dart';
 import '../../screens/workout_detail_screen.dart';
+import '../../screens/workout_history_screen.dart';
 import '../../services/workout_session_service.dart';
 import '../../utils/navigation_helper.dart';
 
@@ -71,6 +73,19 @@ class HomeScreenActions {
     if (result == true) {
       unawaited(loadWorkouts());
     }
+  }
+
+  static Future<void> openWorkoutHistory({
+    required BuildContext context,
+    required Future<void> Function() loadWorkouts,
+  }) async {
+    await Navigator.push<void>(
+      context,
+      CupertinoPageRoute<void>(
+        builder: (context) => const WorkoutHistoryScreen(),
+      ),
+    );
+    unawaited(loadWorkouts());
   }
 
   static Future<void> startWorkout({

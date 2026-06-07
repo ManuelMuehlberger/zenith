@@ -11,8 +11,24 @@ class Award {
   final String title;
   final IconData icon;
   final Color? color;
+  final String modelAsset;
+  final String? thumbnailAsset;
+  final double cameraTheta;
+  final double cameraPhi;
+  final double cameraRadius;
+  final int rotationSpeed;
 
-  const Award({required this.title, required this.icon, this.color});
+  const Award({
+    required this.title,
+    required this.icon,
+    required this.modelAsset,
+    this.thumbnailAsset,
+    this.color,
+    this.cameraTheta = 35,
+    this.cameraPhi = 70,
+    this.cameraRadius = 2.7,
+    this.rotationSpeed = 18,
+  });
 }
 
 /// Stacked award icons (up to 3 visible) that opens a Cupertino modal

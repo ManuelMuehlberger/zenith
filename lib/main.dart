@@ -344,8 +344,8 @@ class _MainDockButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = selected
-        ? context.appScheme.primary
-        : context.appColors.textSecondary;
+        ? context.appColors.dockSelected
+        : context.appColors.dockUnselected;
 
     return Tooltip(
       message: destination.label,
@@ -379,50 +379,26 @@ class _MainDockSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolvedBorderRadius = borderRadius ?? AppTheme.mainDockBorderRadius;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent = context.appScheme.primary;
-    final baseGlassColor = context.appColors.surfaceAlt.withValues(
-      alpha: isDark ? 0.68 : 0.8,
-    );
-    final tintedGlassColor = Color.alphaBlend(
-      accent.withValues(alpha: isDark ? 0.12 : 0.07),
-      baseGlassColor,
-    );
-    final outlineColor = Color.alphaBlend(
-      accent.withValues(alpha: isDark ? 0.2 : 0.14),
-      Theme.of(context).dividerColor,
-    );
+    final appColors = context.appColors;
 
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: resolvedBorderRadius,
-        border: Border.all(color: outlineColor, width: 0.75),
-        boxShadow: [
-          BoxShadow(
-            color: context.appColors.shadow,
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(color: appColors.dockOutline, width: 0.75),
       ),
       child: ClipRRect(
         borderRadius: resolvedBorderRadius,
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+          filter: ImageFilter.blur(
+            sigmaX: AppTheme.mainDockBlurSigma,
+            sigmaY: AppTheme.mainDockBlurSigma,
+          ),
           child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Color.alphaBlend(
-                    context.appScheme.onSurface.withValues(
-                      alpha: isDark ? 0.08 : 0.2,
-                    ),
-                    tintedGlassColor,
-                  ),
-                  tintedGlassColor,
-                ],
+                colors: [appColors.dockSurfaceTop, appColors.dockSurface],
               ),
             ),
             child: child,
@@ -450,7 +426,7 @@ class _WorkoutDockAction extends StatelessWidget {
             onTap: onPressed,
             child: Icon(
               Icons.add_rounded,
-              color: context.appScheme.primary,
+              color: context.appColors.dockSelected,
               size: AppTheme.mainDockSelectedIconSize,
             ),
           ),

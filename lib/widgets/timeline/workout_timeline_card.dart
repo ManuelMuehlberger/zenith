@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../models/workout.dart';
 import '../../theme/app_theme.dart';
+import 'award_balloons.dart';
+import 'award_stack.dart';
 
 class WorkoutTimelineCard extends StatelessWidget {
   final Workout workout;
   final String primaryMetricsLabel;
+  final List<Award> achievements;
 
   /// Used for workouts shown inside an expanded month. Makes the card a bit
   /// more compact to communicate hierarchy.
@@ -15,6 +18,7 @@ class WorkoutTimelineCard extends StatelessWidget {
     super.key,
     required this.workout,
     required this.primaryMetricsLabel,
+    this.achievements = const [],
     this.compact = false,
   });
 
@@ -52,6 +56,10 @@ class WorkoutTimelineCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                if (achievements.isNotEmpty) ...[
+                  const SizedBox(width: 10),
+                  AwardBalloons(awards: achievements),
+                ],
               ],
             ),
             SizedBox(height: compact ? 4 : 6),

@@ -10,6 +10,10 @@ class HomeScreenTimelineRow extends StatelessWidget {
   final int index;
   final List<TimelineListItem> timelineItems;
   final Future<void> Function(Workout workout) onOpenWorkout;
+  final VoidCallback onOpenHistory;
+  final double lineHighlightProgress;
+  final double historyPullProgress;
+  final bool historyDetentArmed;
 
   const HomeScreenTimelineRow({
     super.key,
@@ -17,6 +21,10 @@ class HomeScreenTimelineRow extends StatelessWidget {
     required this.index,
     required this.timelineItems,
     required this.onOpenWorkout,
+    required this.onOpenHistory,
+    required this.lineHighlightProgress,
+    required this.historyPullProgress,
+    required this.historyDetentArmed,
   });
 
   @override
@@ -24,6 +32,10 @@ class HomeScreenTimelineRow extends StatelessWidget {
     return HomeTimelineItemBuilder(
       items: timelineItems,
       onOpenWorkout: onOpenWorkout,
+      onOpenHistory: onOpenHistory,
+      lineHighlightProgress: lineHighlightProgress,
+      historyPullProgress: historyPullProgress,
+      historyDetentArmed: historyDetentArmed,
     ).build(context, item, index);
   }
 }
