@@ -167,9 +167,13 @@ class WorkoutService extends ChangeNotifier {
     final completedWorkouts = List<Workout>.from(_workouts)
       ..sort((a, b) {
         final aTimestamp =
-            a.completedAt ?? a.startedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+            a.completedAt ??
+            a.startedAt ??
+            DateTime.fromMillisecondsSinceEpoch(0);
         final bTimestamp =
-            b.completedAt ?? b.startedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+            b.completedAt ??
+            b.startedAt ??
+            DateTime.fromMillisecondsSinceEpoch(0);
         return aTimestamp.compareTo(bTimestamp);
       });
 

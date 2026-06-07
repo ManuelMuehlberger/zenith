@@ -62,7 +62,9 @@ class FakeWorkoutAchievementService extends WorkoutAchievementService {
     required Iterable<Workout> history,
     DateTime? earnedAt,
   }) async {
-    historyIdsByWorkoutId[workout.id] = history.map((entry) => entry.id).toList();
+    historyIdsByWorkoutId[workout.id] = history
+        .map((entry) => entry.id)
+        .toList();
     return [
       WorkoutAchievement(
         workoutId: workout.id,
@@ -212,8 +214,8 @@ void main() {
             mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseIds([]),
           ).thenAnswer((_) async => []);
 
-          final rebuiltCount =
-              await workoutService.rebuildAchievementsForCompletedWorkouts();
+          final rebuiltCount = await workoutService
+              .rebuildAchievementsForCompletedWorkouts();
 
           expect(rebuiltCount, 3);
           expect(fakeWorkoutAchievementDao.replacedWorkoutIds, [
