@@ -332,9 +332,8 @@ class _CustomExerciseCreatorScreenState
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _instructions.length,
-                      onReorder: (oldIndex, newIndex) {
+                      onReorderItem: (oldIndex, newIndex) {
                         setState(() {
-                          if (newIndex > oldIndex) newIndex--;
                           final item = _instructions.removeAt(oldIndex);
                           _instructions.insert(newIndex, item);
                         });
