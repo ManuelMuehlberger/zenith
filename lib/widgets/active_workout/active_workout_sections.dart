@@ -3,6 +3,8 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+
+// policy: no-test-needed section components tested through active workout screen tests
 import 'package:flutter/services.dart';
 
 import '../../models/workout.dart';

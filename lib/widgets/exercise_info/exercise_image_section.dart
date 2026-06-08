@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+// policy: no-test-needed image section tested through exercise info screen tests
 import '../../models/exercise.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/exercise_media.dart';

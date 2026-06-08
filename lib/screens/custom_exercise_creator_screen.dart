@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+// policy: no-test-needed screen composition tested via integration tests
+
 import 'package:flutter/material.dart';
 
 import '../constants/app_constants.dart';

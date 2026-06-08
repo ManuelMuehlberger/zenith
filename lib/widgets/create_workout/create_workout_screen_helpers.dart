@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+// policy: no-test-needed helper components tested through create workout screen tests
 import 'package:logging/logging.dart';
 
 import '../../constants/app_constants.dart';

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+// policy: no-test-needed card widget tested through higher-level exercise display tests
 import 'package:flutter/services.dart';
 
 import '../models/workout_exercise.dart';

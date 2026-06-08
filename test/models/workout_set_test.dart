@@ -11,8 +11,12 @@ void main() {
         'targetReps': 10,
         'targetWeight': 50.5,
         'targetRestSeconds': 60,
+        'targetDurationSeconds': 120,
+        'targetDifficulty': 3,
         'actualReps': 8,
         'actualWeight': 50.5,
+        'actualDurationSeconds': 130,
+        'actualDifficulty': 2,
         'isCompleted': 1,
       };
 
@@ -24,8 +28,12 @@ void main() {
       expect(workoutSet.targetReps, 10);
       expect(workoutSet.targetWeight, 50.5);
       expect(workoutSet.targetRestSeconds, 60);
+      expect(workoutSet.targetDurationSeconds, 120);
+      expect(workoutSet.targetDifficulty, 3);
       expect(workoutSet.actualReps, 8);
       expect(workoutSet.actualWeight, 50.5);
+      expect(workoutSet.actualDurationSeconds, 130);
+      expect(workoutSet.actualDifficulty, 2);
       expect(workoutSet.isCompleted, isTrue);
     });
 
@@ -37,8 +45,12 @@ void main() {
         targetReps: 10,
         targetWeight: 50.5,
         targetRestSeconds: 60,
+        targetDurationSeconds: 120,
+        targetDifficulty: 3,
         actualReps: 8,
         actualWeight: 50.5,
+        actualDurationSeconds: 130,
+        actualDifficulty: 2,
         isCompleted: true,
       );
 
@@ -50,8 +62,12 @@ void main() {
       expect(map['targetReps'], 10);
       expect(map['targetWeight'], 50.5);
       expect(map['targetRestSeconds'], 60);
+      expect(map['targetDurationSeconds'], 120);
+      expect(map['targetDifficulty'], 3);
       expect(map['actualReps'], 8);
       expect(map['actualWeight'], 50.5);
+      expect(map['actualDurationSeconds'], 130);
+      expect(map['actualDifficulty'], 2);
       expect(map['isCompleted'], 1);
     });
 
@@ -60,19 +76,25 @@ void main() {
         workoutExerciseId: 'w_ex1',
         setIndex: 0,
         targetReps: 10,
+        targetDurationSeconds: 120,
         isCompleted: false,
       );
 
       final updatedSet = workoutSet.copyWith(
         actualReps: 10,
         actualWeight: 55.0,
+        actualDurationSeconds: 130,
+        actualDifficulty: 2,
         isCompleted: true,
       );
 
       expect(updatedSet.id, workoutSet.id);
       expect(updatedSet.targetReps, 10);
+      expect(updatedSet.targetDurationSeconds, 120);
       expect(updatedSet.actualReps, 10);
       expect(updatedSet.actualWeight, 55.0);
+      expect(updatedSet.actualDurationSeconds, 130);
+      expect(updatedSet.actualDifficulty, 2);
       expect(updatedSet.isCompleted, isTrue);
       expect(workoutSet.isCompleted, isFalse);
     });

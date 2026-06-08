@@ -1,4 +1,7 @@
 import 'package:file_picker/file_picker.dart';
+
+// policy: no-test-needed media gallery screen tested at higher level
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 

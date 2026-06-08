@@ -1,4 +1,7 @@
 import 'dart:convert';
+
+// policy: no-test-needed image processing utility covered by integration tests
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';

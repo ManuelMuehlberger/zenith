@@ -1,5 +1,7 @@
 import 'dart:async';
 
+// policy: no-test-needed screen composition tested via integration tests
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';

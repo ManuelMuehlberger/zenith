@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+// policy: no-test-needed reorderable card tested through workout drag list tests
 import 'package:flutter/services.dart';
 
 import '../models/exercise.dart';

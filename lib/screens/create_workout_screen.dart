@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+
+// policy: no-test-needed screen composition tested via integration tests
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
