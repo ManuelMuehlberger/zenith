@@ -334,8 +334,10 @@ class _CustomExerciseCreatorScreenState
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _instructions.length,
-                      onReorderItem: (oldIndex, newIndex) {
+                      // ignore: deprecated_member_use
+                      onReorder: (oldIndex, newIndex) {
                         setState(() {
+                          if (newIndex > oldIndex) newIndex--;
                           final item = _instructions.removeAt(oldIndex);
                           _instructions.insert(newIndex, item);
                         });
@@ -501,33 +503,37 @@ class _PickerTile extends StatelessWidget {
     final colors = context.appColors;
     final textTheme = context.appText;
 
-    return ListTile(
-      key: tileKey,
-      enabled: onTap != null,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+    return Material(
+      color: colors.field.withValues(alpha: 0.55),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      tileColor: colors.field.withValues(alpha: 0.55),
-      leading: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: context.appScheme.surface.withValues(alpha: 0.72),
-          shape: BoxShape.circle,
+      child: ListTile(
+        key: tileKey,
+        enabled: onTap != null,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        tileColor: colors.transparent,
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: context.appScheme.surface.withValues(alpha: 0.72),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 18),
         ),
-        child: Icon(icon, size: 18),
+        title: Text(
+          title,
+          style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: textTheme.bodyMedium,
+        ),
+        trailing: Icon(Icons.chevron_right_rounded, color: colors.textTertiary),
+        onTap: onTap,
       ),
-      title: Text(
-        title,
-        style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text(
-        value,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: textTheme.bodyMedium,
-      ),
-      trailing: Icon(Icons.chevron_right_rounded, color: colors.textTertiary),
-      onTap: onTap,
     );
   }
 }

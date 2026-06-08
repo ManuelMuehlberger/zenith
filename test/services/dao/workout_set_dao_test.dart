@@ -26,8 +26,12 @@ Future<Database> _openTestDatabase() {
             targetReps INTEGER,
             targetWeight REAL,
             targetRestSeconds INTEGER,
+            targetDurationSeconds INTEGER,
+            targetDifficulty INTEGER,
             actualReps INTEGER,
             actualWeight REAL,
+            actualDurationSeconds INTEGER,
+            actualDifficulty INTEGER,
             isCompleted INTEGER DEFAULT 0
           )
         ''');
@@ -43,8 +47,12 @@ WorkoutSet _workoutSet({
   int? targetReps,
   double? targetWeight,
   int? targetRestSeconds,
+  int? targetDurationSeconds,
+  int? targetDifficulty,
   int? actualReps,
   double? actualWeight,
+  int? actualDurationSeconds,
+  int? actualDifficulty,
   bool isCompleted = false,
 }) {
   return WorkoutSet(
@@ -54,8 +62,12 @@ WorkoutSet _workoutSet({
     targetReps: targetReps,
     targetWeight: targetWeight,
     targetRestSeconds: targetRestSeconds,
+    targetDurationSeconds: targetDurationSeconds,
+    targetDifficulty: targetDifficulty,
     actualReps: actualReps,
     actualWeight: actualWeight,
+    actualDurationSeconds: actualDurationSeconds,
+    actualDifficulty: actualDifficulty,
     isCompleted: isCompleted,
   );
 }
@@ -105,8 +117,12 @@ void main() {
       expect(map['targetReps'], 10);
       expect(map['targetWeight'], 50.0);
       expect(map['targetRestSeconds'], 60);
+      expect(map['targetDurationSeconds'], isNull);
+      expect(map['targetDifficulty'], isNull);
       expect(map['actualReps'], 8);
       expect(map['actualWeight'], 50.0);
+      expect(map['actualDurationSeconds'], isNull);
+      expect(map['actualDifficulty'], isNull);
       expect(map['isCompleted'], 1);
     });
 
@@ -118,8 +134,12 @@ void main() {
         'targetReps': 12,
         'targetWeight': 40.0,
         'targetRestSeconds': 90,
+        'targetDurationSeconds': 1200,
+        'targetDifficulty': 6,
         'actualReps': 12,
         'actualWeight': 40.0,
+        'actualDurationSeconds': 1180,
+        'actualDifficulty': 7,
         'isCompleted': 1,
       };
 
@@ -131,8 +151,12 @@ void main() {
       expect(workoutSet.targetReps, 12);
       expect(workoutSet.targetWeight, 40.0);
       expect(workoutSet.targetRestSeconds, 90);
+      expect(workoutSet.targetDurationSeconds, 1200);
+      expect(workoutSet.targetDifficulty, 6);
       expect(workoutSet.actualReps, 12);
       expect(workoutSet.actualWeight, 40.0);
+      expect(workoutSet.actualDurationSeconds, 1180);
+      expect(workoutSet.actualDifficulty, 7);
       expect(workoutSet.isCompleted, true);
     });
 
@@ -144,8 +168,12 @@ void main() {
         'targetReps': null,
         'targetWeight': null,
         'targetRestSeconds': null,
+        'targetDurationSeconds': null,
+        'targetDifficulty': null,
         'actualReps': null,
         'actualWeight': null,
+        'actualDurationSeconds': null,
+        'actualDifficulty': null,
         'isCompleted': 0,
       };
 
@@ -157,8 +185,12 @@ void main() {
       expect(workoutSet.targetReps, isNull);
       expect(workoutSet.targetWeight, isNull);
       expect(workoutSet.targetRestSeconds, isNull);
+      expect(workoutSet.targetDurationSeconds, isNull);
+      expect(workoutSet.targetDifficulty, isNull);
       expect(workoutSet.actualReps, isNull);
       expect(workoutSet.actualWeight, isNull);
+      expect(workoutSet.actualDurationSeconds, isNull);
+      expect(workoutSet.actualDifficulty, isNull);
       expect(workoutSet.isCompleted, false);
     });
 
@@ -182,8 +214,12 @@ void main() {
         targetReps: 8,
         targetWeight: 72.5,
         targetRestSeconds: 90,
+        targetDurationSeconds: 600,
+        targetDifficulty: 8,
         actualReps: 7,
         actualWeight: 70.0,
+        actualDurationSeconds: 580,
+        actualDifficulty: 7,
         isCompleted: true,
       );
 
@@ -198,8 +234,12 @@ void main() {
       expect(retrieved.targetReps, 8);
       expect(retrieved.targetWeight, 72.5);
       expect(retrieved.targetRestSeconds, 90);
+      expect(retrieved.targetDurationSeconds, 600);
+      expect(retrieved.targetDifficulty, 8);
       expect(retrieved.actualReps, 7);
       expect(retrieved.actualWeight, 70.0);
+      expect(retrieved.actualDurationSeconds, 580);
+      expect(retrieved.actualDifficulty, 7);
       expect(retrieved.isCompleted, isTrue);
     });
 
