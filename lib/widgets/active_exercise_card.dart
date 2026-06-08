@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+// policy: no-test-needed card widget tested through higher-level exercise display tests
 import 'package:flutter/services.dart';
 
 import '../models/workout_exercise.dart';
@@ -13,7 +15,15 @@ class ActiveExerciseCard extends StatefulWidget {
   final Set<int> expandedNotes;
   final int exerciseIndex;
   final Function(int) onToggleNotes;
-  final Function(String, String, {int? reps, double? weight, bool? isCompleted})
+  final Function(
+    String,
+    String, {
+    int? reps,
+    double? weight,
+    int? durationSeconds,
+    int? difficulty,
+    bool? isCompleted,
+  })
   onUpdateSet;
   final Function(String, String) onToggleSetCompletion;
 

@@ -674,6 +674,25 @@ void main() {
         expect(updatedSet.actualWeight, 60.0);
         expect(updatedSet.isCompleted, true);
       });
+
+      test('updates actual duration and difficulty fields correctly', () async {
+        final template = buildTemplate();
+        final session = await service.startWorkout(template);
+        final exerciseId = session.exercises.first.id;
+        final setId = session.exercises.first.sets.first.id;
+
+        await service.updateSet(
+          exerciseId,
+          setId,
+          actualDurationSeconds: 130,
+          actualDifficulty: 2,
+        );
+
+        final updatedSet = service.currentSession!.exercises.first.sets.first;
+        expect(updatedSet.actualDurationSeconds, 130);
+        expect(updatedSet.actualDifficulty, 2);
+        expect(updatedSet.targetReps, 10); // Preserved
+      });
     });
 
     group('resume and reset flows', () {

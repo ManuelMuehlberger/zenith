@@ -13,6 +13,8 @@ class Exercise {
   final String animation;
   final bool
   isBodyWeightExercise; // bodyweight exercises do not have a "weight" associated to them in the active workout page.
+  final bool isCustom;
+  final ExerciseType type;
 
   Exercise({
     required this.slug,
@@ -24,6 +26,8 @@ class Exercise {
     required this.image,
     required this.animation,
     this.isBodyWeightExercise = false,
+    this.isCustom = false,
+    this.type = ExerciseType.strength,
   }) : secondaryMuscleGroups = List.unmodifiable(secondaryMuscleGroups),
        instructions = List.unmodifiable(instructions);
 
@@ -45,6 +49,10 @@ class Exercise {
         'is_bodyweight_exercise',
         'isBodyWeightExercise',
       ]),
+      isCustom: _readBool(map, const ['custom', 'is_custom', 'isCustom']),
+      type: ExerciseType.fromStorage(
+        _readString(map, ['type', 'exercise_type', 'exerciseType']),
+      ),
     );
   }
 
@@ -62,7 +70,28 @@ class Exercise {
       'image': image,
       'animation': animation,
       'is_bodyweight_exercise': isBodyWeightExercise ? 1 : 0,
+      'is_custom': isCustom ? 1 : 0,
+      'type': type.storageValue,
     };
+  }
+}
+
+// policy: allow-public-api exercise type contract persisted across workouts and custom exercises.
+enum ExerciseType {
+  strength('strength', 'Strength'),
+  cardio('cardio', 'Cardio');
+
+  const ExerciseType(this.storageValue, this.label);
+
+  final String storageValue;
+  final String label;
+
+  static ExerciseType fromStorage(String value) {
+    final normalized = value.trim().toLowerCase();
+    return ExerciseType.values.firstWhere(
+      (type) => type.storageValue == normalized,
+      orElse: () => ExerciseType.strength,
+    );
   }
 }
 

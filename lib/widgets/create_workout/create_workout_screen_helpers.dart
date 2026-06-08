@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+// policy: no-test-needed helper components tested through create workout screen tests
 import 'package:logging/logging.dart';
 
 import '../../constants/app_constants.dart';
@@ -121,11 +123,13 @@ List<WorkoutExercise> createWorkoutExercisesFromExercises({
       exerciseDetail: selectedExercise,
       sets: const [],
     );
+    final isCardio = selectedExercise.type == ExerciseType.cardio;
     final defaultSet = WorkoutSet(
       workoutExerciseId: workoutExercise.id,
       setIndex: 0,
-      targetReps: 10,
-      targetWeight: 0.0,
+      targetReps: isCardio ? null : 10,
+      targetWeight: isCardio ? null : 0.0,
+      targetDurationSeconds: isCardio ? 600 : null,
     );
     return workoutExercise.copyWith(sets: [defaultSet]);
   }).toList();

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+// policy: no-test-needed screen composition tested via integration tests
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -138,6 +140,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     String setId, {
     int? reps,
     double? weight,
+    int? durationSeconds,
+    int? difficulty,
     bool? isCompleted,
   }) {
     unawaited(
@@ -146,6 +150,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         setId,
         reps: reps,
         weight: weight,
+        durationSeconds: durationSeconds,
+        difficulty: difficulty,
         isCompleted: isCompleted,
       ),
     );
@@ -156,17 +162,22 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     String setId, {
     int? reps,
     double? weight,
+    int? durationSeconds,
+    int? difficulty,
     bool? isCompleted,
   }) async {
     _logger.fine(
       'Updating set $setId for exercise $exerciseId '
-      'reps=$reps weight=$weight isCompleted=$isCompleted',
+      'reps=$reps weight=$weight duration=$durationSeconds '
+      'difficulty=$difficulty isCompleted=$isCompleted',
     );
     await WorkoutSessionService.instance.updateSet(
       exerciseId,
       setId,
       actualReps: reps,
       actualWeight: weight,
+      actualDurationSeconds: durationSeconds,
+      actualDifficulty: difficulty,
       isCompleted: isCompleted,
     );
     final updatedSession = WorkoutSessionService.instance.currentSession;
@@ -206,11 +217,16 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
     final exercise = _currentSession.exercises[exerciseIndex];
     final lastSet = exercise.sets.isNotEmpty ? exercise.sets.last : null;
+    final isCardio = exercise.exerciseDetail?.type == ExerciseType.cardio;
     final newSet = WorkoutSet(
       workoutExerciseId: exerciseId,
       setIndex: exercise.sets.length,
-      actualReps: lastSet?.actualReps ?? 10,
-      actualWeight: lastSet?.actualWeight ?? 0.0,
+      actualReps: isCardio ? null : (lastSet?.actualReps ?? 10),
+      actualWeight: isCardio ? null : (lastSet?.actualWeight ?? 0.0),
+      actualDurationSeconds: isCardio
+          ? (lastSet?.actualDurationSeconds ?? 600)
+          : null,
+      actualDifficulty: isCardio ? lastSet?.actualDifficulty : null,
       isCompleted: false,
     );
 
@@ -332,11 +348,13 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         final newWorkoutExerciseId =
             "${DateTime.now().millisecondsSinceEpoch}_${selectedExercise.slug}_wex";
 
+        final isCardio = selectedExercise.type == ExerciseType.cardio;
         final templateSet = WorkoutSet(
           workoutExerciseId: newWorkoutExerciseId,
           setIndex: 0,
-          targetReps: 10,
-          targetWeight: 0.0,
+          targetReps: isCardio ? null : 10,
+          targetWeight: isCardio ? null : 0.0,
+          targetDurationSeconds: isCardio ? 600 : null,
         );
 
         return WorkoutExercise(

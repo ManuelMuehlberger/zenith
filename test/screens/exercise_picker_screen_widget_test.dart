@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/models/exercise.dart';
 import 'package:zenith/models/muscle_group.dart';
+import 'package:zenith/screens/custom_exercise_creator_screen.dart';
 import 'package:zenith/screens/exercise_picker_screen.dart';
 import 'package:zenith/services/dao/exercise_dao.dart';
 import 'package:zenith/services/dao/muscle_group_dao.dart';
@@ -14,6 +15,20 @@ class _FakeExerciseDao extends ExerciseDao {
 
   @override
   Future<List<Exercise>> getAllExercises() async => seed;
+
+  @override
+  Future<Exercise?> getExerciseBySlug(String slug) async {
+    for (final exercise in seed) {
+      if (exercise.slug == slug) return exercise;
+    }
+    return null;
+  }
+
+  @override
+  Future<Exercise> createCustomExercise(Exercise exercise) async {
+    seed.add(exercise);
+    return exercise;
+  }
 }
 
 class _FakeMuscleGroupDao extends MuscleGroupDao {
@@ -443,4 +458,113 @@ void main() {
       expect(find.byIcon(CupertinoIcons.chevron_right), findsOneWidget);
     },
   );
+
+  testWidgets('plus button opens custom creator and returns saved exercise', (
+    tester,
+  ) async {
+    final exercises = <Exercise>[];
+    ExerciseService.instance.setDependenciesForTesting(
+      exerciseDao: _FakeExerciseDao(exercises),
+      muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.chest]),
+      seedExercises: exercises,
+      seedMuscleGroups: ['Chest'],
+    );
+
+    Exercise? selectedExercise;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: ElevatedButton(
+              onPressed: () async {
+                selectedExercise = await Navigator.push<Exercise>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ExercisePickerScreen(),
+                  ),
+                );
+              },
+              child: const Text('Open Picker'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open Picker'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('create_custom_exercise_button')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('custom_exercise_name_field')),
+      'Wall Sit',
+    );
+    await tester.tap(find.byKey(const Key('primary_muscle_picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Chest'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(selectedExercise, isNotNull);
+    expect(selectedExercise!.slug, 'custom-wall-sit');
+    expect(selectedExercise!.isCustom, isTrue);
+    expect(selectedExercise!.isBodyWeightExercise, isTrue);
+  });
+
+  testWidgets('custom creator can save a cardio exercise', (tester) async {
+    final exercises = <Exercise>[];
+    ExerciseService.instance.setDependenciesForTesting(
+      exerciseDao: _FakeExerciseDao(exercises),
+      muscleGroupDao: _FakeMuscleGroupDao(MuscleGroup.values.toList()),
+      seedExercises: exercises,
+      seedMuscleGroups: MuscleGroup.values.map((group) => group.name).toList(),
+    );
+
+    Exercise? createdExercise;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: ElevatedButton(
+              onPressed: () async {
+                createdExercise = await Navigator.push<Exercise>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CustomExerciseCreatorScreen(),
+                  ),
+                );
+              },
+              child: const Text('Open Creator'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open Creator'));
+    await tester.pumpAndSettle();
+    expect(find.byType(CustomExerciseCreatorScreen), findsOneWidget);
+    expect(find.byKey(const Key('custom_exercise_name_field')), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const Key('custom_exercise_name_field')),
+      'Tempo Run',
+    );
+    await tester.tap(find.byKey(const Key('primary_muscle_picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Chest'));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView).first, const Offset(0, -400));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('cardio_type_label')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(createdExercise, isNotNull);
+    expect(createdExercise!.type, ExerciseType.cardio);
+    expect(createdExercise!.primaryMuscleGroup, MuscleGroup.chest);
+    expect(createdExercise!.isBodyWeightExercise, isTrue);
+  });
 }

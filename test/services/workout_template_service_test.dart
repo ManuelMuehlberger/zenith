@@ -264,6 +264,47 @@ void main() {
       },
     );
 
+    test(
+      'loadFolders should recover from DAO errors with an empty cache',
+      () async {
+        when(
+          mockFolderDao.getAllWorkoutFoldersOrdered(),
+        ).thenThrow(Exception('boom'));
+
+        await service.loadFolders();
+
+        expect(service.folders, isEmpty);
+        verify(mockFolderDao.getAllWorkoutFoldersOrdered()).called(1);
+      },
+    );
+
+    test(
+      'clearUserTemplatesAndFolders should delete all templates and folders',
+      () async {
+        when(
+          mockFolderDao.getAllWorkoutFoldersOrdered(),
+        ).thenAnswer((_) async => testFolders);
+        when(
+          mockTemplateDao.getAllWorkoutTemplatesOrdered(),
+        ).thenAnswer((_) async => testTemplates);
+        when(
+          mockTemplateDao.deleteWorkoutTemplate(any),
+        ).thenAnswer((_) async => 1);
+        when(mockFolderDao.deleteWorkoutFolder(any)).thenAnswer((_) async => 1);
+
+        await service.loadFolders();
+        await service.clearUserTemplatesAndFolders();
+
+        verify(mockTemplateDao.getAllWorkoutTemplatesOrdered()).called(1);
+        verify(mockTemplateDao.deleteWorkoutTemplate('template123')).called(1);
+        verify(mockTemplateDao.deleteWorkoutTemplate('template456')).called(1);
+        verify(mockTemplateDao.deleteWorkoutTemplate('template789')).called(1);
+        verify(mockFolderDao.deleteWorkoutFolder('folder123')).called(1);
+        verify(mockFolderDao.deleteWorkoutFolder('folder456')).called(1);
+        expect(service.folders, isEmpty);
+      },
+    );
+
     group('Folder Operations', () {
       test('loadFolders should load folders into cache', () async {
         when(
@@ -298,6 +339,92 @@ void main() {
         final result = service.getFolderById('not-found');
 
         expect(result, isNull);
+      });
+
+      test(
+        'getFoldersInParentSync should return sorted direct children',
+        () async {
+          final unsortedFolders = [
+            WorkoutFolder(id: 'root', name: 'Root', depth: 0, orderIndex: 0),
+            WorkoutFolder(
+              id: 'child-b',
+              name: 'Child B',
+              parentFolderId: 'root',
+              depth: 1,
+              orderIndex: 2,
+            ),
+            WorkoutFolder(
+              id: 'child-a',
+              name: 'Child A',
+              parentFolderId: 'root',
+              depth: 1,
+              orderIndex: 1,
+            ),
+          ];
+          when(
+            mockFolderDao.getAllWorkoutFoldersOrdered(),
+          ).thenAnswer((_) async => unsortedFolders);
+          await service.loadFolders();
+
+          final directChildren = service.getFoldersInParentSync('root');
+
+          expect(directChildren.map((folder) => folder.id), [
+            'child-a',
+            'child-b',
+          ]);
+        },
+      );
+
+      test(
+        'getFolderPathSync should resolve ancestors from root to leaf',
+        () async {
+          final nestedFolders = [
+            WorkoutFolder(id: 'root', name: 'Root', depth: 0, orderIndex: 0),
+            WorkoutFolder(
+              id: 'mid',
+              name: 'Middle',
+              parentFolderId: 'root',
+              depth: 1,
+              orderIndex: 0,
+            ),
+            WorkoutFolder(
+              id: 'leaf',
+              name: 'Leaf',
+              parentFolderId: 'mid',
+              depth: 2,
+              orderIndex: 0,
+            ),
+          ];
+          when(
+            mockFolderDao.getAllWorkoutFoldersOrdered(),
+          ).thenAnswer((_) async => nestedFolders);
+          await service.loadFolders();
+
+          final path = service.getFolderPathSync('leaf');
+
+          expect(path.map((folder) => folder.id), ['root', 'mid', 'leaf']);
+        },
+      );
+
+      test('canMoveFolderToParentSync should reject invalid targets', () async {
+        final nestedFolders = [
+          WorkoutFolder(id: 'root', name: 'Root', depth: 0, orderIndex: 0),
+          WorkoutFolder(
+            id: 'child',
+            name: 'Child',
+            parentFolderId: 'root',
+            depth: 1,
+            orderIndex: 0,
+          ),
+        ];
+        when(
+          mockFolderDao.getAllWorkoutFoldersOrdered(),
+        ).thenAnswer((_) async => nestedFolders);
+        await service.loadFolders();
+
+        expect(service.canMoveFolderToParentSync('root', 'child'), isFalse);
+        expect(service.canMoveFolderToParentSync('root', 'root'), isFalse);
+        expect(service.canMoveFolderToParentSync('missing', null), isFalse);
       });
 
       test('createFolder should create and return a new folder', () async {
@@ -493,6 +620,34 @@ void main() {
           () => service.moveFolderToParent('root-a', 'child-b'),
           throwsA(isA<StateError>()),
         );
+      });
+
+      test(
+        'moveTemplateToFolder should throw when the template is missing',
+        () async {
+          when(
+            mockTemplateDao.getWorkoutTemplateById('missing'),
+          ).thenAnswer((_) async => null);
+
+          expect(
+            () => service.moveTemplateToFolder('missing', 'folder123'),
+            throwsA(isA<Exception>()),
+          );
+        },
+      );
+
+      test('duplicateTemplate should respect an explicit new name', () async {
+        when(
+          mockTemplateDao.getWorkoutTemplateById('template123'),
+        ).thenAnswer((_) async => testTemplate);
+        when(mockTemplateDao.insert(any)).thenAnswer((_) async => 1);
+
+        final duplicated = await service.duplicateTemplate(
+          'template123',
+          newName: 'Push Day v2',
+        );
+
+        expect(duplicated.name, 'Push Day v2');
       });
 
       test('reorderFolders should reorder folders successfully', () async {

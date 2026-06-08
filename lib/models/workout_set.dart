@@ -10,10 +10,14 @@ class WorkoutSet {
   final int? targetReps;
   final double? targetWeight;
   final int? targetRestSeconds;
+  final int? targetDurationSeconds;
+  final int? targetDifficulty;
 
   // --- Logged Fields ---
   final int? actualReps;
   final double? actualWeight;
+  final int? actualDurationSeconds;
+  final int? actualDifficulty;
   final bool isCompleted;
 
   WorkoutSet({
@@ -23,8 +27,12 @@ class WorkoutSet {
     this.targetReps,
     this.targetWeight,
     this.targetRestSeconds,
+    this.targetDurationSeconds,
+    this.targetDifficulty,
     this.actualReps,
     this.actualWeight,
+    this.actualDurationSeconds,
+    this.actualDifficulty,
     this.isCompleted = false,
   }) : id = id ?? const Uuid().v4();
 
@@ -36,8 +44,12 @@ class WorkoutSet {
       'targetReps': targetReps,
       'targetWeight': targetWeight,
       'targetRestSeconds': targetRestSeconds,
+      'targetDurationSeconds': targetDurationSeconds,
+      'targetDifficulty': targetDifficulty,
       'actualReps': actualReps,
       'actualWeight': actualWeight,
+      'actualDurationSeconds': actualDurationSeconds,
+      'actualDifficulty': actualDifficulty,
       'isCompleted': isCompleted ? 1 : 0,
     };
   }
@@ -50,8 +62,12 @@ class WorkoutSet {
       targetReps: _readNullableInt(map, 'targetReps'),
       targetWeight: _readNullableDouble(map, 'targetWeight'),
       targetRestSeconds: _readNullableInt(map, 'targetRestSeconds'),
+      targetDurationSeconds: _readNullableInt(map, 'targetDurationSeconds'),
+      targetDifficulty: _readNullableInt(map, 'targetDifficulty'),
       actualReps: _readNullableInt(map, 'actualReps'),
       actualWeight: _readNullableDouble(map, 'actualWeight'),
+      actualDurationSeconds: _readNullableInt(map, 'actualDurationSeconds'),
+      actualDifficulty: _readNullableInt(map, 'actualDifficulty'),
       isCompleted: _readBool(map, 'isCompleted'),
     );
   }
@@ -63,8 +79,12 @@ class WorkoutSet {
     Object? targetReps = _undefined,
     Object? targetWeight = _undefined,
     Object? targetRestSeconds = _undefined,
+    Object? targetDurationSeconds = _undefined,
+    Object? targetDifficulty = _undefined,
     Object? actualReps = _undefined,
     Object? actualWeight = _undefined,
+    Object? actualDurationSeconds = _undefined,
+    Object? actualDifficulty = _undefined,
     Object? isCompleted = _undefined,
   }) {
     return WorkoutSet(
@@ -80,12 +100,24 @@ class WorkoutSet {
       targetRestSeconds: targetRestSeconds == _undefined
           ? this.targetRestSeconds
           : targetRestSeconds as int?,
+      targetDurationSeconds: targetDurationSeconds == _undefined
+          ? this.targetDurationSeconds
+          : targetDurationSeconds as int?,
+      targetDifficulty: targetDifficulty == _undefined
+          ? this.targetDifficulty
+          : targetDifficulty as int?,
       actualReps: actualReps == _undefined
           ? this.actualReps
           : actualReps as int?,
       actualWeight: actualWeight == _undefined
           ? this.actualWeight
           : actualWeight as double?,
+      actualDurationSeconds: actualDurationSeconds == _undefined
+          ? this.actualDurationSeconds
+          : actualDurationSeconds as int?,
+      actualDifficulty: actualDifficulty == _undefined
+          ? this.actualDifficulty
+          : actualDifficulty as int?,
       isCompleted: isCompleted == _undefined
           ? this.isCompleted
           : (isCompleted as bool?) ?? this.isCompleted,

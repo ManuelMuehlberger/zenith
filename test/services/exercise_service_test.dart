@@ -221,6 +221,37 @@ void main() {
       });
     });
 
+    group('createCustomExercise', () {
+      test('persists custom exercise and updates the cache', () async {
+        final fakeExerciseDao = _CustomExerciseDao();
+        final service = ExerciseService.withDependencies(
+          exerciseDao: fakeExerciseDao,
+          muscleGroupDao: mockMuscleGroupDao,
+        );
+
+        final exercise = await service.createCustomExercise(
+          name: 'Wall Sit',
+          primaryMuscleGroup: 'Quads',
+          secondaryMuscleGroups: ['Glutes'],
+          instructions: ['Lean against a wall', 'Hold position'],
+          equipment: 'None',
+          image: '["/tmp/wall-sit.png"]',
+          isBodyWeightExercise: true,
+        );
+
+        expect(exercise.slug, 'custom-wall-sit');
+        expect(exercise.name, 'Wall Sit');
+        expect(exercise.primaryMuscleGroup, MuscleGroup.quads);
+        expect(exercise.secondaryMuscleGroups, [MuscleGroup.glutes]);
+        expect(exercise.instructions, ['Lean against a wall', 'Hold position']);
+        expect(exercise.equipment, 'None');
+        expect(exercise.isBodyWeightExercise, isTrue);
+        expect(exercise.isCustom, isTrue);
+        expect(service.exercises, contains(exercise));
+        expect(fakeExerciseDao.created, exercise);
+      });
+    });
+
     group('searchExercises', () {
       setUp(() async {
         // Load test data into service
@@ -840,4 +871,17 @@ void main() {
       });
     });
   });
+}
+
+class _CustomExerciseDao extends ExerciseDao {
+  Exercise? created;
+
+  @override
+  Future<Exercise?> getExerciseBySlug(String slug) async => null;
+
+  @override
+  Future<Exercise> createCustomExercise(Exercise exercise) async {
+    created = exercise;
+    return exercise;
+  }
 }

@@ -29,7 +29,9 @@ Future<Database> _openTestDatabase() {
             equipment TEXT,
             image TEXT,
             animation TEXT,
-            isBodyWeightExercise INTEGER DEFAULT 0
+            isBodyWeightExercise INTEGER DEFAULT 0,
+            isCustom INTEGER DEFAULT 0,
+            type TEXT NOT NULL DEFAULT 'strength'
           )
         ''');
       },
@@ -47,6 +49,7 @@ Exercise _exercise({
   String image = '',
   String animation = '',
   bool isBodyWeightExercise = false,
+  bool isCustom = false,
 }) {
   return Exercise(
     slug: slug,
@@ -58,6 +61,7 @@ Exercise _exercise({
     image: image,
     animation: animation,
     isBodyWeightExercise: isBodyWeightExercise,
+    isCustom: isCustom,
   );
 }
 
@@ -110,6 +114,8 @@ void main() {
         'image': 'bench_press.jpg',
         'animation': 'bench_press.gif',
         'isBodyWeightExercise': 0,
+        'isCustom': 0,
+        'type': 'strength',
       });
     });
 
@@ -124,6 +130,7 @@ void main() {
         'image': null,
         'animation': null,
         'bodyweight': '1',
+        'custom': '1',
       });
 
       expect(exercise.slug, 'single-leg-squat');
@@ -141,6 +148,7 @@ void main() {
       expect(exercise.image, '');
       expect(exercise.animation, '');
       expect(exercise.isBodyWeightExercise, isTrue);
+      expect(exercise.isCustom, isTrue);
       expect(
         () => exercise.secondaryMuscleGroups.add(MuscleGroup.hamstrings),
         throwsUnsupportedError,
@@ -194,6 +202,7 @@ void main() {
           secondaryMuscleGroups: [MuscleGroup.biceps],
           instructions: ['Hang', 'Pull'],
           isBodyWeightExercise: true,
+          isCustom: true,
         ),
       ]);
 
@@ -205,6 +214,7 @@ void main() {
       ]);
       expect(exercises[0].secondaryMuscleGroups, [MuscleGroup.triceps]);
       expect(exercises[1].isBodyWeightExercise, isTrue);
+      expect(exercises[1].isCustom, isTrue);
     });
 
     test(

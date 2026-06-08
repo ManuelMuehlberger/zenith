@@ -378,6 +378,7 @@ void main() {
           ]),
         );
         expect(await columnNames(db, 'UserData'), contains('gender'));
+        expect(await columnNames(db, 'Exercise'), contains('isCustom'));
         expect(
           await columnNames(db, 'WorkoutAchievement'),
           containsAll([
@@ -403,6 +404,7 @@ void main() {
           (row) => row['slug'] == 'plank',
         );
         expect(plank['isBodyWeightExercise'], 1);
+        expect(plank['isCustom'], 0);
         expect(
           jsonDecode(plank['instructions'] as String),
           equals(['Brace core']),
@@ -460,6 +462,7 @@ void main() {
         ]),
       );
       expect(await columnNames(db, 'UserData'), contains('gender'));
+      expect(await columnNames(db, 'Exercise'), contains('isCustom'));
       expect(await tableNames(db), contains('WorkoutAchievement'));
 
       final workoutSet = await db.query(
@@ -479,6 +482,7 @@ void main() {
       expect(await columnNames(db, 'Workout'), contains('description'));
       expect(await columnNames(db, 'Workout'), contains('mood'));
       expect(await columnNames(db, 'UserData'), contains('gender'));
+      expect(await columnNames(db, 'Exercise'), contains('isCustom'));
       expect(await tableNames(db), contains('WorkoutAchievement'));
       expect(
         await columnNames(db, 'WorkoutExercise'),

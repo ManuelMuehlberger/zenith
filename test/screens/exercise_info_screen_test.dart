@@ -6,8 +6,37 @@ import 'package:zenith/models/muscle_group.dart';
 import 'package:zenith/models/workout.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
+import 'package:zenith/screens/exercise_image_gallery_screen.dart';
 import 'package:zenith/screens/exercise_info_screen.dart';
+import 'package:zenith/services/dao/exercise_dao.dart';
+import 'package:zenith/services/dao/muscle_group_dao.dart';
+import 'package:zenith/services/exercise_service.dart';
 import 'package:zenith/services/insights_service.dart';
+import 'package:zenith/widgets/exercise_info/exercise_image_section.dart';
+
+class _FakeExerciseDao extends ExerciseDao {
+  _FakeExerciseDao(this.seed);
+
+  final List<Exercise> seed;
+
+  @override
+  Future<List<Exercise>> getAllExercises() async => seed;
+
+  @override
+  Future<int> deleteExerciseBySlug(String slug) async {
+    seed.removeWhere((exercise) => exercise.slug == slug);
+    return 1;
+  }
+}
+
+class _FakeMuscleGroupDao extends MuscleGroupDao {
+  _FakeMuscleGroupDao(this.seed);
+
+  final List<MuscleGroup> seed;
+
+  @override
+  Future<List<MuscleGroup>> getAllMuscleGroups() async => seed;
+}
 
 Future<void> pumpUntilVisible(
   WidgetTester tester,
@@ -28,6 +57,7 @@ void main() {
       // Reset preferences and insights service state before each test
       SharedPreferences.setMockInitialValues({});
       InsightsService.instance.reset();
+      ExerciseService.instance.resetForTesting();
     });
 
     testWidgets('shows info and stats when insights data is available', (
@@ -152,6 +182,33 @@ void main() {
       );
     });
 
+    testWidgets('opens fullscreen gallery from the image section', (
+      tester,
+    ) async {
+      final exercise = Exercise(
+        slug: 'bench-press',
+        name: 'Bench Press',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: const [],
+        instructions: const ['Push bar up'],
+        image: 'assets/images/bench_press.png',
+        animation: '',
+      );
+
+      InsightsService.instance.setWorkoutsProvider(() async => []);
+
+      await tester.pumpWidget(
+        MaterialApp(home: ExerciseInfoScreen(exercise: exercise)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(ExerciseImageSection));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ExerciseImageGalleryScreen), findsOneWidget);
+      expect(find.text('1 / 1'), findsOneWidget);
+    });
+
     testWidgets('shows timeframe selector', (tester) async {
       // Arrange
       final exercise = Exercise(
@@ -177,6 +234,52 @@ void main() {
 
       // Note: Testing PullDownButton interaction in widget tests can be complex due to overlays
       // We verify the button exists and has the correct initial label
+    });
+
+    testWidgets('custom exercise can be deleted from the info screen', (
+      tester,
+    ) async {
+      final customExercise = Exercise(
+        slug: 'custom-tempo-run',
+        name: 'Tempo Run',
+        primaryMuscleGroup: MuscleGroup.legs,
+        secondaryMuscleGroups: const [MuscleGroup.glutes],
+        instructions: const ['Run steadily'],
+        image: '',
+        animation: '',
+        isCustom: true,
+        type: ExerciseType.cardio,
+        isBodyWeightExercise: true,
+      );
+      final exercises = [customExercise];
+      ExerciseService.instance.setDependenciesForTesting(
+        exerciseDao: _FakeExerciseDao(exercises),
+        muscleGroupDao: _FakeMuscleGroupDao(MuscleGroup.values.toList()),
+        seedExercises: exercises,
+        seedMuscleGroups: MuscleGroup.values
+            .map((group) => group.name)
+            .toList(),
+      );
+      InsightsService.instance.setWorkoutsProvider(() async => []);
+
+      await tester.pumpWidget(
+        MaterialApp(home: ExerciseInfoScreen(exercise: customExercise)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Exercise actions'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(
+        ExerciseService.instance.exercises.any(
+          (exercise) => exercise.slug == customExercise.slug,
+        ),
+        isFalse,
+      );
     });
   });
 }

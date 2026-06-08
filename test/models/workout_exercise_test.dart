@@ -93,6 +93,19 @@ void main() {
       );
     });
 
+    test('should support adding sets with duration and difficulty targets', () {
+      final exerciseWithSet = workoutExercise.addSet(
+        targetReps: 10,
+        targetDurationSeconds: 120,
+        targetDifficulty: 3,
+      );
+
+      expect(exerciseWithSet.sets, hasLength(1));
+      expect(exerciseWithSet.sets.first.targetReps, 10);
+      expect(exerciseWithSet.sets.first.targetDurationSeconds, 120);
+      expect(exerciseWithSet.sets.first.targetDifficulty, 3);
+    });
+
     test('should calculate total sets', () {
       final exerciseWithSets = workoutExercise.copyWith(
         sets: List.generate(

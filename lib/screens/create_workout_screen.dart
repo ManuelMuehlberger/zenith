@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+
+// policy: no-test-needed screen composition tested via integration tests
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
@@ -282,11 +284,16 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
   void _addSetToExercise(int exerciseIndex) {
     final exercise = _exercises[exerciseIndex];
     final lastSet = exercise.sets.isNotEmpty ? exercise.sets.last : null;
+    final isCardio = exercise.exerciseDetail?.type == ExerciseType.cardio;
     final newSet = WorkoutSet(
       workoutExerciseId: exercise.id,
       setIndex: exercise.sets.length,
-      targetReps: lastSet?.targetReps,
-      targetWeight: lastSet?.targetWeight,
+      targetReps: isCardio ? null : lastSet?.targetReps,
+      targetWeight: isCardio ? null : lastSet?.targetWeight,
+      targetDurationSeconds: isCardio
+          ? (lastSet?.targetDurationSeconds ?? 600)
+          : null,
+      targetDifficulty: isCardio ? lastSet?.targetDifficulty : null,
     );
 
     setState(() {
@@ -316,6 +323,8 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     double? targetWeight,
     String? type,
     int? targetRestSeconds,
+    int? targetDurationSeconds,
+    int? targetDifficulty,
   }) {
     final exercise = _exercises[exerciseIndex];
     final updatedSets = List<WorkoutSet>.from(exercise.sets);
@@ -324,12 +333,16 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
       targetReps: targetReps ?? currentSet.targetReps,
       targetWeight: targetWeight ?? currentSet.targetWeight,
       targetRestSeconds: targetRestSeconds ?? currentSet.targetRestSeconds,
+      targetDurationSeconds:
+          targetDurationSeconds ?? currentSet.targetDurationSeconds,
+      targetDifficulty: targetDifficulty ?? currentSet.targetDifficulty,
     );
 
     _logger.fine(
       'Update set: exIdx=$exerciseIndex setIdx=$setIndex '
       'targetReps=$targetReps targetWeight=$targetWeight '
-      'rest=$targetRestSeconds',
+      'rest=$targetRestSeconds duration=$targetDurationSeconds '
+      'difficulty=$targetDifficulty',
     );
 
     setState(() {
@@ -379,12 +392,16 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
     int setIndex, {
     int? targetReps,
     double? targetWeight,
+    int? targetDurationSeconds,
+    int? targetDifficulty,
   }) {
     _updateSet(
       exerciseIndex,
       setIndex,
       targetReps: targetReps,
       targetWeight: targetWeight,
+      targetDurationSeconds: targetDurationSeconds,
+      targetDifficulty: targetDifficulty,
     );
   }
 

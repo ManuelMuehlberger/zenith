@@ -19,6 +19,8 @@ class CreateWorkoutReorderableSection extends StatelessWidget {
     double? targetWeight,
     String? type,
     int? targetRestSeconds,
+    int? targetDurationSeconds,
+    int? targetDifficulty,
   })
   onUpdateSet;
   final void Function(int, String) onUpdateNotes;

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+// policy: no-test-needed section components tested through edit exercise card tests
 import 'package:flutter/services.dart';
 import 'package:pull_down_button/pull_down_button.dart';
 
@@ -218,12 +220,14 @@ class EditExerciseHeader extends StatelessWidget {
 
 class EditExerciseSetsList extends StatelessWidget {
   final bool isBodyWeight;
+  final bool isCardio;
   final List<WorkoutSet> sets;
   final Widget Function(WorkoutSet set, int setIndex) rowBuilder;
 
   const EditExerciseSetsList({
     super.key,
     required this.isBodyWeight,
+    required this.isCardio,
     required this.sets,
     required this.rowBuilder,
   });
@@ -244,16 +248,16 @@ class EditExerciseSetsList extends StatelessWidget {
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    'Reps',
+                    isCardio ? 'Duration' : 'Reps',
                     textAlign: TextAlign.center,
                     style: textTheme.bodySmall,
                   ),
                 ),
-                if (!isBodyWeight) ...[
+                if (isCardio || !isBodyWeight) ...[
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
-                      'Weight',
+                      isCardio ? 'Difficulty' : 'Weight',
                       textAlign: TextAlign.center,
                       style: textTheme.bodySmall,
                     ),
@@ -279,6 +283,7 @@ class EditExerciseSetsList extends StatelessWidget {
 class EditExerciseSetRow extends StatelessWidget {
   final int setIndex;
   final bool isBodyWeight;
+  final bool isCardio;
   final Widget repsInput;
   final Widget? weightInput;
   final VoidCallback onRemove;
@@ -287,6 +292,7 @@ class EditExerciseSetRow extends StatelessWidget {
     super.key,
     required this.setIndex,
     required this.isBodyWeight,
+    required this.isCardio,
     required this.repsInput,
     required this.onRemove,
     this.weightInput,
@@ -327,7 +333,7 @@ class EditExerciseSetRow extends StatelessWidget {
           const SizedBox(width: 16),
           Flexible(child: repsInput),
           const SizedBox(width: 16),
-          if (!isBodyWeight && weightInput != null) ...[
+          if ((isCardio || !isBodyWeight) && weightInput != null) ...[
             Flexible(child: weightInput!),
             const SizedBox(width: 16),
           ],

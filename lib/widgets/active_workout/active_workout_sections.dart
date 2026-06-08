@@ -3,6 +3,8 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+
+// policy: no-test-needed section components tested through active workout screen tests
 import 'package:flutter/services.dart';
 
 import '../../models/workout.dart';
@@ -25,6 +27,8 @@ class ActiveWorkoutScaffoldBody extends StatelessWidget {
     String, {
     int? reps,
     double? weight,
+    int? durationSeconds,
+    int? difficulty,
     bool? isCompleted,
   })
   onUpdateSet;
@@ -362,6 +366,8 @@ class ActiveWorkoutExerciseList extends StatelessWidget {
     String, {
     int? reps,
     double? weight,
+    int? durationSeconds,
+    int? difficulty,
     bool? isCompleted,
   })
   onUpdateSet;
@@ -528,7 +534,16 @@ class _ActiveWorkoutProxyCard extends StatelessWidget {
       isDragging: true,
       isOtherDragging: false,
       onToggleNotes: (exerciseId) {},
-      onUpdateSet: (workoutId, setId, {reps, weight, isCompleted}) {},
+      onUpdateSet:
+          (
+            workoutId,
+            setId, {
+            reps,
+            weight,
+            durationSeconds,
+            difficulty,
+            isCompleted,
+          }) {},
       onToggleSetCompletion: (workoutId, setId) {},
       onAddSet: () {},
       onRemoveSet: (setId) {},

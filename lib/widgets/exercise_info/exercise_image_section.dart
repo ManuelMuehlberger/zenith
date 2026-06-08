@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
+
+// policy: no-test-needed image section tested through exercise info screen tests
 import '../../models/exercise.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/exercise_media.dart';
 
 class ExerciseImageSection extends StatefulWidget {
   final Exercise exercise;
   final double height;
   final double? width;
+  final VoidCallback? onTap;
 
   const ExerciseImageSection({
     super.key,
     required this.exercise,
     this.height = 200,
     this.width,
+    this.onTap,
   });
 
   @override
@@ -53,7 +58,8 @@ class _ExerciseImageSectionState extends State<ExerciseImageSection> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final hasImage = widget.exercise.image.isNotEmpty;
+    final imagePaths = decodeExerciseImagePaths(widget.exercise.image);
+    final hasImage = imagePaths.isNotEmpty;
     final hasAnimation = widget.exercise.animation.isNotEmpty;
 
     if (!hasImage && !hasAnimation) {
@@ -62,17 +68,18 @@ class _ExerciseImageSectionState extends State<ExerciseImageSection> {
 
     final pages = <Widget>[];
 
-    if (hasImage) {
+    for (final imagePath in imagePaths) {
       pages.add(
-        Container(
-          height: widget.height,
-          width: widget.width,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            image: DecorationImage(
-              image: AssetImage(widget.exercise.image),
-              fit: BoxFit.cover,
-            ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image(
+            image: exerciseImageProviderFor(imagePath),
+            height: widget.height,
+            width: widget.width,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildImagePlaceholder('image');
+            },
           ),
         ),
       );
@@ -88,7 +95,7 @@ class _ExerciseImageSectionState extends State<ExerciseImageSection> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 image: DecorationImage(
-                  image: AssetImage(widget.exercise.animation),
+                  image: exerciseImageProviderFor(widget.exercise.animation),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -105,51 +112,53 @@ class _ExerciseImageSectionState extends State<ExerciseImageSection> {
       );
     }
 
-    if (pages.length == 1) {
-      return SizedBox(
-        height: widget.height,
-        width: widget.width,
-        child: pages[0],
-      );
-    }
-
-    return SizedBox(
-      height: widget.height,
-      width: widget.width,
-      child: Stack(
-        children: [
-          PageView(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                _currentPage = index;
-              });
-            },
-            children: pages,
-          ),
-          Positioned(
-            bottom: 8,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(pages.length, (index) {
-                return Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _currentPage == index
-                        ? colors.textPrimary
-                        : colors.textPrimary.withValues(alpha: 0.4),
+    final content = pages.length == 1
+        ? SizedBox(height: widget.height, width: widget.width, child: pages[0])
+        : SizedBox(
+            height: widget.height,
+            width: widget.width,
+            child: Stack(
+              children: [
+                PageView(
+                  controller: _pageController,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentPage = index;
+                    });
+                  },
+                  children: pages,
+                ),
+                Positioned(
+                  bottom: 8,
+                  left: 0,
+                  right: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(pages.length, (index) {
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _currentPage == index
+                              ? colors.textPrimary
+                              : colors.textPrimary.withValues(alpha: 0.4),
+                        ),
+                      );
+                    }),
                   ),
-                );
-              }),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
+          );
+
+    if (widget.onTap == null) return content;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onTap,
+      child: content,
     );
   }
 }

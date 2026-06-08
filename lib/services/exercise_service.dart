@@ -1,6 +1,7 @@
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 import 'package:logging/logging.dart';
 import '../models/exercise.dart';
+import '../models/muscle_group.dart';
 import 'dao/exercise_dao.dart';
 import 'dao/muscle_group_dao.dart';
 import 'dao/workout_exercise_dao.dart';
@@ -71,6 +72,132 @@ class ExerciseService {
       _logger.severe('Failed to load exercise frequency: $e');
       _exerciseFrequency = {};
     }
+  }
+
+  Future<Exercise> createCustomExercise({
+    required String name,
+    required String primaryMuscleGroup,
+    required List<String> secondaryMuscleGroups,
+    required List<String> instructions,
+    required String equipment,
+    required String image,
+    required bool isBodyWeightExercise,
+    ExerciseType type = ExerciseType.strength,
+  }) async {
+    final trimmedName = name.trim();
+    if (trimmedName.isEmpty) {
+      throw ArgumentError.value(name, 'name', 'Exercise name is required');
+    }
+
+    final exercise = Exercise(
+      slug: await _buildUniqueCustomSlug(trimmedName),
+      name: trimmedName,
+      primaryMuscleGroup: _muscleGroupFromName(primaryMuscleGroup),
+      secondaryMuscleGroups: secondaryMuscleGroups
+          .where((group) => group.trim().isNotEmpty)
+          .map(_muscleGroupFromName)
+          .toList(),
+      instructions: instructions
+          .map((instruction) => instruction.trim())
+          .where((instruction) => instruction.isNotEmpty)
+          .toList(),
+      equipment: equipment.trim(),
+      image: image.trim(),
+      animation: '',
+      isBodyWeightExercise: isBodyWeightExercise,
+      isCustom: true,
+      type: type,
+    );
+
+    await _exerciseDao.createCustomExercise(exercise);
+    _exercises = [..._exercises, exercise]
+      ..sort((a, b) => a.name.compareTo(b.name));
+    _logger.info('Created custom exercise ${exercise.slug}');
+    return exercise;
+  }
+
+  Future<Exercise> updateCustomExercise({
+    required Exercise original,
+    required String name,
+    required String primaryMuscleGroup,
+    required List<String> secondaryMuscleGroups,
+    required List<String> instructions,
+    required String equipment,
+    required String image,
+    required bool isBodyWeightExercise,
+    required ExerciseType type,
+  }) async {
+    if (!original.isCustom) {
+      throw ArgumentError('Only custom exercises can be edited');
+    }
+
+    final updated = Exercise(
+      slug: original.slug,
+      name: name.trim(),
+      primaryMuscleGroup: _muscleGroupFromName(primaryMuscleGroup),
+      secondaryMuscleGroups: secondaryMuscleGroups
+          .where((group) => group.trim().isNotEmpty)
+          .map(_muscleGroupFromName)
+          .toList(),
+      instructions: instructions
+          .map((instruction) => instruction.trim())
+          .where((instruction) => instruction.isNotEmpty)
+          .toList(),
+      equipment: equipment.trim(),
+      image: image.trim(),
+      animation: original.animation,
+      isBodyWeightExercise: isBodyWeightExercise,
+      isCustom: true,
+      type: type,
+    );
+
+    await _exerciseDao.updateExercise(updated);
+    _exercises =
+        _exercises
+            .map(
+              (exercise) => exercise.slug == updated.slug ? updated : exercise,
+            )
+            .toList()
+          ..sort((a, b) => a.name.compareTo(b.name));
+    _logger.info('Updated custom exercise ${updated.slug}');
+    return updated;
+  }
+
+  Future<void> deleteCustomExercise(Exercise exercise) async {
+    if (!exercise.isCustom) {
+      throw ArgumentError('Only custom exercises can be deleted');
+    }
+    await _exerciseDao.deleteExerciseBySlug(exercise.slug);
+    _exercises = _exercises
+        .where((candidate) => candidate.slug != exercise.slug)
+        .toList();
+    _logger.info('Deleted custom exercise ${exercise.slug}');
+  }
+
+  Future<String> _buildUniqueCustomSlug(String name) async {
+    final baseSlug = _slugify(name);
+    var slug = 'custom-$baseSlug';
+    var suffix = 2;
+
+    while (await _exerciseDao.getExerciseBySlug(slug) != null ||
+        _exercises.any((exercise) => exercise.slug == slug)) {
+      slug = 'custom-$baseSlug-$suffix';
+      suffix++;
+    }
+
+    return slug;
+  }
+
+  String _slugify(String value) {
+    final slug = value
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+        .replaceAll(RegExp(r'^-+|-+$'), '');
+    return slug.isEmpty ? 'exercise' : slug;
+  }
+
+  MuscleGroup _muscleGroupFromName(String name) {
+    return MuscleGroup.fromName(name.trim());
   }
 
   List<Exercise> searchExercises(String query) {
@@ -221,8 +348,10 @@ class ExerciseService {
         .map((mg) => mg.name.toLowerCase())
         .join(' ');
     final bodyweight = e.isBodyWeightExercise ? 'bodyweight' : '';
+    final custom = e.isCustom ? 'custom' : '';
+    final type = e.type.label.toLowerCase();
     final blob =
-        '${e.name.toLowerCase()} ${e.primaryMuscleGroup.name.toLowerCase()} $secondaries $equipment $bodyweight';
+        '${e.name.toLowerCase()} ${e.primaryMuscleGroup.name.toLowerCase()} $secondaries $equipment $bodyweight $custom $type';
     // Use a very fine-grained log level because this is called many times during fuzzy evaluation.
     _logger.finest(
       'buildSearchBlob(${e.name}) => "$blob" (len=${blob.length})',

@@ -137,8 +137,12 @@ class WorkoutSessionService extends ChangeNotifier {
           targetReps: s.targetReps,
           targetWeight: s.targetWeight,
           targetRestSeconds: s.targetRestSeconds,
+          targetDurationSeconds: s.targetDurationSeconds,
+          targetDifficulty: s.targetDifficulty,
           actualReps: null,
           actualWeight: null,
+          actualDurationSeconds: null,
+          actualDifficulty: null,
           isCompleted: false,
         ),
       );
@@ -389,10 +393,12 @@ class WorkoutSessionService extends ChangeNotifier {
     double? targetWeight,
     int? actualReps,
     double? actualWeight,
+    int? actualDurationSeconds,
+    int? actualDifficulty,
     bool? isCompleted,
   }) async {
     _logger.fine(
-      'Updating set $setId in exercise $exerciseId with: targetReps=$targetReps, targetWeight=$targetWeight, actualReps=$actualReps, actualWeight=$actualWeight, isCompleted=$isCompleted',
+      'Updating set $setId in exercise $exerciseId with: targetReps=$targetReps, targetWeight=$targetWeight, actualReps=$actualReps, actualWeight=$actualWeight, actualDurationSeconds=$actualDurationSeconds, actualDifficulty=$actualDifficulty, isCompleted=$isCompleted',
     );
     final session = _currentSession;
     if (session == null) {
@@ -422,6 +428,9 @@ class WorkoutSessionService extends ChangeNotifier {
       targetWeight: targetWeight ?? currentSet.targetWeight,
       actualReps: actualReps ?? currentSet.actualReps,
       actualWeight: actualWeight ?? currentSet.actualWeight,
+      actualDurationSeconds:
+          actualDurationSeconds ?? currentSet.actualDurationSeconds,
+      actualDifficulty: actualDifficulty ?? currentSet.actualDifficulty,
       isCompleted: isCompleted ?? currentSet.isCompleted,
     );
 

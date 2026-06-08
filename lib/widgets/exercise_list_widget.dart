@@ -228,12 +228,20 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
     });
   }
 
-  void _navigateToExerciseInfo(BuildContext context, Exercise exercise) {
-    Navigator.of(context).push(
+  Future<void> _navigateToExerciseInfo(
+    BuildContext context,
+    Exercise exercise,
+  ) async {
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ExerciseInfoScreen(exercise: exercise),
       ),
     );
+    if (!mounted) return;
+    setState(() {
+      _filteredExercises = ExerciseService.instance.exercises;
+    });
+    _filterExercises();
   }
 
   Widget _buildFilterTag({
@@ -482,6 +490,37 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                                                       .map((g) => g.name)
                                                       .join(', '),
                                                   false,
+                                                ),
+                                              if (exercise.isCustom)
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 4,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: colors.info
+                                                        .withValues(
+                                                          alpha: 0.16,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: colors.info,
+                                                      width: 1,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          14,
+                                                        ),
+                                                  ),
+                                                  child: Text(
+                                                    'Custom',
+                                                    style: textTheme.labelMedium
+                                                        ?.copyWith(
+                                                          color: colors.info,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                  ),
                                                 ),
                                             ],
                                           ),

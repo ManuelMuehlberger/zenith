@@ -109,6 +109,8 @@ class WorkoutExercise {
     int? targetReps,
     double? targetWeight,
     int? targetRestSeconds,
+    int? targetDurationSeconds,
+    int? targetDifficulty,
   }) {
     final newSet = WorkoutSet(
       workoutExerciseId: id, // Link to this WorkoutExercise instance
@@ -116,6 +118,8 @@ class WorkoutExercise {
       targetReps: targetReps,
       targetWeight: targetWeight,
       targetRestSeconds: targetRestSeconds,
+      targetDurationSeconds: targetDurationSeconds,
+      targetDifficulty: targetDifficulty,
     );
     return copyWith(sets: [...sets, newSet]);
   }
@@ -131,6 +135,8 @@ class WorkoutExercise {
     int? targetReps,
     double? targetWeight,
     int? targetRestSeconds,
+    int? targetDurationSeconds,
+    int? targetDifficulty,
     int? setIndex,
   }) {
     final updatedSets = sets.map((set) {
@@ -139,6 +145,8 @@ class WorkoutExercise {
           targetReps: targetReps,
           targetWeight: targetWeight,
           targetRestSeconds: targetRestSeconds,
+          targetDurationSeconds: targetDurationSeconds,
+          targetDifficulty: targetDifficulty,
           setIndex: setIndex,
         );
       }

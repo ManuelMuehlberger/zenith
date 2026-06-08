@@ -22,8 +22,12 @@ class WorkoutSetDao extends BaseDao<WorkoutSet> {
       'targetReps': workoutSet.targetReps,
       'targetWeight': workoutSet.targetWeight,
       'targetRestSeconds': workoutSet.targetRestSeconds,
+      'targetDurationSeconds': workoutSet.targetDurationSeconds,
+      'targetDifficulty': workoutSet.targetDifficulty,
       'actualReps': workoutSet.actualReps,
       'actualWeight': workoutSet.actualWeight,
+      'actualDurationSeconds': workoutSet.actualDurationSeconds,
+      'actualDifficulty': workoutSet.actualDifficulty,
       'isCompleted': workoutSet.isCompleted ? 1 : 0,
     };
   }

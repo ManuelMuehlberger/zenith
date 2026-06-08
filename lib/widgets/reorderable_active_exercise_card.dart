@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+
+// policy: no-test-needed reorderable card tested through workout drag list tests
 import 'package:flutter/services.dart';
 
+import '../models/exercise.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../screens/exercise_info_screen.dart';
@@ -17,7 +20,15 @@ class ReorderableActiveExerciseCard extends StatefulWidget {
   final bool isDragging;
   final bool isOtherDragging;
   final Function(int) onToggleNotes;
-  final Function(String, String, {int? reps, double? weight, bool? isCompleted})
+  final Function(
+    String,
+    String, {
+    int? reps,
+    double? weight,
+    int? durationSeconds,
+    int? difficulty,
+    bool? isCompleted,
+  })
   onUpdateSet;
   final Function(String, String) onToggleSetCompletion;
   final VoidCallback onAddSet;
@@ -344,6 +355,8 @@ class _ReorderableActiveExerciseCardState
     final textTheme = context.appText;
     final isBodyWeight =
         widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
+    final isCardio =
+        widget.exercise.exerciseDetail?.type == ExerciseType.cardio;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
       child: Column(
@@ -356,16 +369,16 @@ class _ReorderableActiveExerciseCardState
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
-                    'Reps',
+                    isCardio ? 'Duration' : 'Reps',
                     textAlign: TextAlign.center,
                     style: textTheme.bodySmall,
                   ),
                 ),
-                if (!isBodyWeight) ...[
+                if (isCardio || !isBodyWeight) ...[
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
-                      'Weight',
+                      isCardio ? 'Difficulty' : 'Weight',
                       textAlign: TextAlign.center,
                       style: textTheme.bodySmall,
                     ),
@@ -394,6 +407,8 @@ class _ReorderableActiveExerciseCardState
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final isCompleted = set.isCompleted;
+    final isCardio =
+        widget.exercise.exerciseDetail?.type == ExerciseType.cardio;
     final canComplete = _canCompleteSet(widget.exercise.id, setNumber);
     final originalSet = setNumber <= widget.exercise.sets.length
         ? widget.exercise.sets[setNumber - 1]
@@ -436,50 +451,92 @@ class _ReorderableActiveExerciseCardState
           const SizedBox(width: 16),
           Expanded(
             child: _buildDecoratedSetInput(
-              controllerKey: '${widget.exercise.id}_${set.id}_reps',
-              initialText: (set.actualReps ?? 0) > 0
-                  ? set.actualReps.toString()
-                  : "",
-              goalValue: originalSet?.targetReps?.toString(),
+              controllerKey: isCardio
+                  ? '${widget.exercise.id}_${set.id}_duration'
+                  : '${widget.exercise.id}_${set.id}_reps',
+              initialText: isCardio
+                  ? ((set.actualDurationSeconds ?? 0) > 0
+                        ? (set.actualDurationSeconds! ~/ 60).toString()
+                        : "")
+                  : ((set.actualReps ?? 0) > 0
+                        ? set.actualReps.toString()
+                        : ""),
+              goalValue: isCardio
+                  ? (originalSet?.targetDurationSeconds != null
+                        ? '${originalSet!.targetDurationSeconds! ~/ 60}'
+                        : null)
+                  : originalSet?.targetReps?.toString(),
               onChanged: (value) {
-                final reps = int.tryParse(value);
-                widget.onUpdateSet(
-                  widget.exercise.id,
-                  set.id,
-                  reps: reps ?? (value.isEmpty ? 0 : null),
-                );
-              },
-              enabled: !isCompleted,
-            ),
-          ),
-          const SizedBox(width: 16),
-          if (!(widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false))
-            Expanded(
-              child: _buildDecoratedSetInput(
-                controllerKey: '${widget.exercise.id}_${set.id}_weight',
-                initialText: (set.actualWeight ?? 0.0) > 0.0
-                    ? WorkoutSessionService.instance.formatWeight(
-                        set.actualWeight!,
-                      )
-                    : "",
-                goalValue: originalSet?.targetWeight != null
-                    ? WorkoutSessionService.instance.formatWeight(
-                        originalSet!.targetWeight!,
-                      )
-                    : null,
-                onChanged: (value) {
-                  final weight = double.tryParse(value);
+                if (isCardio) {
+                  final minutes = int.tryParse(value);
                   widget.onUpdateSet(
                     widget.exercise.id,
                     set.id,
-                    weight: weight ?? (value.isEmpty ? 0.0 : null),
+                    durationSeconds: minutes == null
+                        ? (value.isEmpty ? 0 : null)
+                        : minutes * 60,
                   );
+                } else {
+                  final reps = int.tryParse(value);
+                  widget.onUpdateSet(
+                    widget.exercise.id,
+                    set.id,
+                    reps: reps ?? (value.isEmpty ? 0 : null),
+                  );
+                }
+              },
+              enabled: !isCompleted,
+              suffixText: isCardio ? 'min' : null,
+            ),
+          ),
+          const SizedBox(width: 16),
+          if (isCardio ||
+              !(widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false))
+            Expanded(
+              child: _buildDecoratedSetInput(
+                controllerKey: isCardio
+                    ? '${widget.exercise.id}_${set.id}_difficulty'
+                    : '${widget.exercise.id}_${set.id}_weight',
+                initialText: isCardio
+                    ? (set.actualDifficulty?.toString() ?? "")
+                    : ((set.actualWeight ?? 0.0) > 0.0
+                          ? WorkoutSessionService.instance.formatWeight(
+                              set.actualWeight!,
+                            )
+                          : ""),
+                goalValue: isCardio
+                    ? originalSet?.targetDifficulty?.toString()
+                    : (originalSet?.targetWeight != null
+                          ? WorkoutSessionService.instance.formatWeight(
+                              originalSet!.targetWeight!,
+                            )
+                          : null),
+                onChanged: (value) {
+                  if (isCardio) {
+                    final difficulty = int.tryParse(value);
+                    widget.onUpdateSet(
+                      widget.exercise.id,
+                      set.id,
+                      difficulty: difficulty == null
+                          ? (value.isEmpty ? 0 : null)
+                          : difficulty.clamp(1, 10).toInt(),
+                    );
+                  } else {
+                    final weight = double.tryParse(value);
+                    widget.onUpdateSet(
+                      widget.exercise.id,
+                      set.id,
+                      weight: weight ?? (value.isEmpty ? 0.0 : null),
+                    );
+                  }
                 },
                 enabled: !isCompleted,
-                showKgSuffix: true,
+                showKgSuffix: !isCardio,
+                suffixText: isCardio ? '/10' : null,
               ),
             ),
-          if (!(widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false))
+          if (isCardio ||
+              !(widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false))
             const SizedBox(width: 16),
           SizedBox(
             width: 32,
@@ -574,6 +631,7 @@ class _ReorderableActiveExerciseCardState
     required Function(String) onChanged,
     required bool enabled,
     bool showKgSuffix = false,
+    String? suffixText,
   }) {
     final colors = context.appColors;
     final textTheme = context.appText;
@@ -616,7 +674,7 @@ class _ReorderableActiveExerciseCardState
             fillColor: enabled
                 ? colors.field.withValues(alpha: 0.5)
                 : colors.surfaceAlt,
-            suffixText: showKgSuffix ? widget.weightUnit : null,
+            suffixText: suffixText ?? (showKgSuffix ? widget.weightUnit : null),
             suffixStyle: textTheme.bodySmall,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),

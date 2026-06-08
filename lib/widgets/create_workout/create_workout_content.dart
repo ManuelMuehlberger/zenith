@@ -24,6 +24,8 @@ class CreateWorkoutContent extends StatelessWidget {
     double? targetWeight,
     String? type,
     int? targetRestSeconds,
+    int? targetDurationSeconds,
+    int? targetDifficulty,
   })
   onUpdateSet;
   final void Function(int, String) onUpdateNotes;
