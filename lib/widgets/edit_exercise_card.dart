@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../constants/app_constants.dart' show Units;
+import '../models/exercise.dart';
 import '../models/workout_exercise.dart';
 import '../models/workout_set.dart';
 import '../screens/exercise_info_screen.dart';
@@ -26,6 +27,8 @@ class EditExerciseCard extends StatefulWidget {
     double? targetWeight,
     String? type,
     int? targetRestSeconds,
+    int? targetDurationSeconds,
+    int? targetDifficulty,
   })
   onUpdateSet;
   final Function(int, String) onUpdateNotes;
@@ -99,6 +102,8 @@ class _EditExerciseCardState extends State<EditExerciseCard>
     for (final set in widget.exercise.sets) {
       final repsKey = 'reps_${widget.exercise.id}_${set.id}';
       final weightKey = 'weight_${widget.exercise.id}_${set.id}';
+      final durationKey = 'duration_${widget.exercise.id}_${set.id}';
+      final difficultyKey = 'difficulty_${widget.exercise.id}_${set.id}';
 
       _controllers[repsKey] = TextEditingController(
         text: set.targetReps?.toString() ?? '',
@@ -107,6 +112,14 @@ class _EditExerciseCardState extends State<EditExerciseCard>
         text: set.targetWeight != null
             ? WorkoutSessionService.instance.formatWeight(set.targetWeight!)
             : '',
+      );
+      _controllers[durationKey] = TextEditingController(
+        text: set.targetDurationSeconds != null
+            ? (set.targetDurationSeconds! ~/ 60).toString()
+            : '',
+      );
+      _controllers[difficultyKey] = TextEditingController(
+        text: set.targetDifficulty?.toString() ?? '',
       );
     }
 
@@ -141,6 +154,8 @@ class _EditExerciseCardState extends State<EditExerciseCard>
     for (final set in widget.exercise.sets) {
       final repsKey = 'reps_${widget.exercise.id}_${set.id}';
       final weightKey = 'weight_${widget.exercise.id}_${set.id}';
+      final durationKey = 'duration_${widget.exercise.id}_${set.id}';
+      final difficultyKey = 'difficulty_${widget.exercise.id}_${set.id}';
 
       if (!_controllers.containsKey(repsKey)) {
         _controllers[repsKey] = TextEditingController(
@@ -172,6 +187,20 @@ class _EditExerciseCardState extends State<EditExerciseCard>
         if (!isEditing && controller.text != newText) {
           controller.text = newText;
         }
+      }
+
+      if (!_controllers.containsKey(durationKey)) {
+        _controllers[durationKey] = TextEditingController(
+          text: set.targetDurationSeconds != null
+              ? (set.targetDurationSeconds! ~/ 60).toString()
+              : '',
+        );
+      }
+
+      if (!_controllers.containsKey(difficultyKey)) {
+        _controllers[difficultyKey] = TextEditingController(
+          text: set.targetDifficulty?.toString() ?? '',
+        );
       }
     }
 
@@ -316,8 +345,11 @@ class _EditExerciseCardState extends State<EditExerciseCard>
   Widget _buildSetsList() {
     final isBodyWeight =
         widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
+    final isCardio =
+        widget.exercise.exerciseDetail?.type == ExerciseType.cardio;
     return EditExerciseSetsList(
       isBodyWeight: isBodyWeight,
+      isCardio: isCardio,
       sets: widget.exercise.sets,
       rowBuilder: _buildSetRow,
     );
@@ -326,23 +358,59 @@ class _EditExerciseCardState extends State<EditExerciseCard>
   Widget _buildSetRow(WorkoutSet set, int setIndex) {
     final isBodyWeight =
         widget.exercise.exerciseDetail?.isBodyWeightExercise ?? false;
+    final isCardio =
+        widget.exercise.exerciseDetail?.type == ExerciseType.cardio;
 
     return EditExerciseSetRow(
       setIndex: setIndex,
       isBodyWeight: isBodyWeight,
-      repsInput: _buildSetInput(
-        controllerKey: 'reps_${widget.exercise.id}_${set.id}',
-        initialText: set.targetReps?.toString() ?? '',
-        onChanged: (value) {
-          final reps = int.tryParse(value);
-          widget.onUpdateSet(
-            widget.exerciseIndex,
-            setIndex,
-            targetReps: reps ?? (value.isEmpty ? 0 : null),
-          );
-        },
-      ),
-      weightInput: isBodyWeight
+      isCardio: isCardio,
+      repsInput: isCardio
+          ? _buildSetInput(
+              controllerKey: 'duration_${widget.exercise.id}_${set.id}',
+              initialText: set.targetDurationSeconds != null
+                  ? (set.targetDurationSeconds! ~/ 60).toString()
+                  : '',
+              onChanged: (value) {
+                final minutes = int.tryParse(value);
+                widget.onUpdateSet(
+                  widget.exerciseIndex,
+                  setIndex,
+                  targetDurationSeconds: minutes == null
+                      ? (value.isEmpty ? 0 : null)
+                      : minutes * 60,
+                );
+              },
+              suffixText: 'min',
+            )
+          : _buildSetInput(
+              controllerKey: 'reps_${widget.exercise.id}_${set.id}',
+              initialText: set.targetReps?.toString() ?? '',
+              onChanged: (value) {
+                final reps = int.tryParse(value);
+                widget.onUpdateSet(
+                  widget.exerciseIndex,
+                  setIndex,
+                  targetReps: reps ?? (value.isEmpty ? 0 : null),
+                );
+              },
+            ),
+      weightInput: isCardio
+          ? _buildSetInput(
+              controllerKey: 'difficulty_${widget.exercise.id}_${set.id}',
+              initialText: set.targetDifficulty?.toString() ?? '',
+              onChanged: (value) {
+                final difficulty = int.tryParse(value);
+                final clampedDifficulty = difficulty?.clamp(1, 10).toInt();
+                widget.onUpdateSet(
+                  widget.exerciseIndex,
+                  setIndex,
+                  targetDifficulty: clampedDifficulty,
+                );
+              },
+              suffixText: '/10',
+            )
+          : isBodyWeight
           ? null
           : _buildSetInput(
               controllerKey: 'weight_${widget.exercise.id}_${set.id}',
@@ -376,6 +444,7 @@ class _EditExerciseCardState extends State<EditExerciseCard>
     required String initialText,
     required Function(String) onChanged,
     bool showWeightSuffix = false,
+    String? suffixText,
   }) {
     final colors = context.appColors;
     final textTheme = context.appText;
@@ -440,7 +509,7 @@ class _EditExerciseCardState extends State<EditExerciseCard>
       decoration: InputDecoration(
         filled: true,
         fillColor: colors.field.withValues(alpha: 0.5),
-        suffixText: showWeightSuffix ? _weightUnit : null,
+        suffixText: suffixText ?? (showWeightSuffix ? _weightUnit : null),
         suffixStyle: textTheme.bodySmall,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),

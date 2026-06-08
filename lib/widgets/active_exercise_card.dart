@@ -13,7 +13,15 @@ class ActiveExerciseCard extends StatefulWidget {
   final Set<int> expandedNotes;
   final int exerciseIndex;
   final Function(int) onToggleNotes;
-  final Function(String, String, {int? reps, double? weight, bool? isCompleted})
+  final Function(
+    String,
+    String, {
+    int? reps,
+    double? weight,
+    int? durationSeconds,
+    int? difficulty,
+    bool? isCompleted,
+  })
   onUpdateSet;
   final Function(String, String) onToggleSetCompletion;
 

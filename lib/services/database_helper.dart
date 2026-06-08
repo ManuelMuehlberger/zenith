@@ -19,7 +19,7 @@ class DatabaseHelper {
   static final Logger _logger = Logger('DatabaseHelper');
 
   static const String _dbName = 'workout_tracker.db';
-  static const int _dbVersion = 10; // Added persisted workout achievements
+  static const int _dbVersion = 12; // Added cardio exercise support
 
   Future<String> get databasePath async {
     final documentsDirectory = await getApplicationDocumentsDirectory();
@@ -95,6 +95,8 @@ class DatabaseHelper {
           image TEXT,
           animation TEXT,
           isBodyWeightExercise INTEGER DEFAULT 0, -- 0 for false, 1 for true
+          isCustom INTEGER DEFAULT 0, -- 0 for bundled, 1 for user-created
+          type TEXT NOT NULL DEFAULT 'strength',
           FOREIGN KEY (primaryMuscleGroup) REFERENCES MuscleGroup (name)
         )
       ''');
@@ -205,8 +207,12 @@ class DatabaseHelper {
           targetReps INTEGER,
           targetWeight REAL,
           targetRestSeconds INTEGER,
+          targetDurationSeconds INTEGER,
+          targetDifficulty INTEGER,
           actualReps INTEGER,
           actualWeight REAL,
+          actualDurationSeconds INTEGER,
+          actualDifficulty INTEGER,
           isCompleted INTEGER DEFAULT 0, -- 0 for false, 1 for true
           FOREIGN KEY (workoutExerciseId) REFERENCES WorkoutExercise (id) ON DELETE CASCADE
         )
@@ -292,6 +298,8 @@ class DatabaseHelper {
             image TEXT,
             animation TEXT,
             isBodyWeightExercise INTEGER DEFAULT 0, -- 0 for false, 1 for true
+            isCustom INTEGER DEFAULT 0, -- 0 for bundled, 1 for user-created
+            type TEXT NOT NULL DEFAULT 'strength',
             FOREIGN KEY (primaryMuscleGroup) REFERENCES MuscleGroup (name)
           )
         ''');
@@ -413,6 +421,8 @@ class DatabaseHelper {
               image TEXT,
               animation TEXT,
               isBodyWeightExercise INTEGER DEFAULT 0, -- 0 for false, 1 for true
+              isCustom INTEGER DEFAULT 0, -- 0 for bundled, 1 for user-created
+              type TEXT NOT NULL DEFAULT 'strength',
               FOREIGN KEY (primaryMuscleGroup) REFERENCES MuscleGroup (name)
             )
           ''');
@@ -487,6 +497,18 @@ class DatabaseHelper {
         _logger.info('Version 10 upgrades completed');
       }
 
+      if (oldVersion < 11) {
+        _logger.info('Applying version 11 upgrades');
+        await _addIsCustomColumnToExercise(db);
+        _logger.info('Version 11 upgrades completed');
+      }
+
+      if (oldVersion < 12) {
+        _logger.info('Applying version 12 upgrades');
+        await _addCardioExerciseColumns(db);
+        _logger.info('Version 12 upgrades completed');
+      }
+
       _logger.info('Database upgrade completed successfully');
     } catch (e) {
       _logger.severe('Error during database upgrade: $e');
@@ -513,6 +535,57 @@ class DatabaseHelper {
       CREATE INDEX IF NOT EXISTS idx_WorkoutAchievement_workoutId
       ON WorkoutAchievement (workoutId)
     ''');
+  }
+
+  Future<void> _addIsCustomColumnToExercise(Database db) async {
+    try {
+      await db.execute(
+        'ALTER TABLE Exercise ADD COLUMN isCustom INTEGER DEFAULT 0',
+      );
+      _logger.info('Added isCustom column to Exercise table');
+    } catch (e) {
+      _logger.info('isCustom column already exists in Exercise table');
+    }
+    await db.rawUpdate(
+      'UPDATE Exercise SET isCustom = 0 WHERE isCustom IS NULL',
+    );
+  }
+
+  Future<void> _addCardioExerciseColumns(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      'Exercise',
+      "type TEXT NOT NULL DEFAULT 'strength'",
+    );
+    await _addColumnIfMissing(
+      db,
+      'WorkoutSet',
+      'targetDurationSeconds INTEGER',
+    );
+    await _addColumnIfMissing(db, 'WorkoutSet', 'targetDifficulty INTEGER');
+    await _addColumnIfMissing(
+      db,
+      'WorkoutSet',
+      'actualDurationSeconds INTEGER',
+    );
+    await _addColumnIfMissing(db, 'WorkoutSet', 'actualDifficulty INTEGER');
+    await db.rawUpdate(
+      "UPDATE Exercise SET type = 'strength' WHERE type IS NULL OR type = ''",
+    );
+  }
+
+  Future<void> _addColumnIfMissing(
+    Database db,
+    String tableName,
+    String columnDefinition,
+  ) async {
+    final columnName = columnDefinition.split(' ').first;
+    try {
+      await db.execute('ALTER TABLE $tableName ADD COLUMN $columnDefinition');
+      _logger.info('Added $columnName column to $tableName table');
+    } catch (e) {
+      _logger.info('$columnName column already exists in $tableName table');
+    }
   }
 
   Future<void> close() async {
@@ -596,6 +669,8 @@ class DatabaseHelper {
                         : (exerciseData['bodyweight'] ?? false)
                         ? 1
                         : 0)),
+              'isCustom': 0,
+              'type': 'strength',
             };
 
             // Insert the exercise into the database

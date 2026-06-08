@@ -14,6 +14,7 @@ void main() {
         image: 'bench_press.jpg',
         animation: 'bench_press.gif',
         isBodyWeightExercise: false,
+        isCustom: true,
       );
 
       expect(exercise.slug, 'bench-press');
@@ -24,6 +25,7 @@ void main() {
       expect(exercise.image, 'bench_press.jpg');
       expect(exercise.animation, 'bench_press.gif');
       expect(exercise.isBodyWeightExercise, false);
+      expect(exercise.isCustom, true);
     });
 
     test('constructor with default isBodyWeightExercise value', () {
@@ -38,6 +40,7 @@ void main() {
       );
 
       expect(exercise.isBodyWeightExercise, false);
+      expect(exercise.isCustom, false);
     });
 
     test('constructor wraps collection fields as immutable', () {
@@ -70,6 +73,7 @@ void main() {
           'image': 'bench_press.jpg',
           'animation': 'bench_press.gif',
           'is_bodyweight_exercise': false,
+          'is_custom': true,
         };
 
         final exercise = Exercise.fromMap(map);
@@ -82,6 +86,7 @@ void main() {
         expect(exercise.image, 'bench_press.jpg');
         expect(exercise.animation, 'bench_press.gif');
         expect(exercise.isBodyWeightExercise, false);
+        expect(exercise.isCustom, true);
       },
     );
 
@@ -125,6 +130,7 @@ void main() {
 
       final exercise = Exercise.fromMap(map);
       expect(exercise.isBodyWeightExercise, false);
+      expect(exercise.isCustom, false);
     });
 
     test('fromMap handles is_bodyweight_exercise as true', () {
@@ -264,6 +270,7 @@ void main() {
       expect(map['image'], 'bench_press.jpg');
       expect(map['animation'], 'bench_press.gif');
       expect(map['is_bodyweight_exercise'], 0);
+      expect(map['is_custom'], 0);
     });
 
     test('toMap handles bodyweight exercise correctly', () {

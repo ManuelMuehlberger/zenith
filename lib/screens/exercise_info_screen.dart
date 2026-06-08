@@ -7,10 +7,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/app_constants.dart';
 import '../models/exercise.dart';
+import '../screens/custom_exercise_creator_screen.dart';
+import '../screens/exercise_image_gallery_screen.dart';
+import '../services/exercise_service.dart';
 import '../services/insights/exercise_trend_provider.dart';
 import '../services/insights_service.dart';
 import '../services/user_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/exercise_media.dart';
 import '../utils/unit_converter.dart';
 import '../widgets/exercise_info/exercise_image_section.dart';
 import '../widgets/exercise_info/exercise_summary_card.dart';
@@ -33,6 +37,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
   int _selectedMonths = 6;
   String _selectedTimeframe = '6M';
   bool _useKg = true;
+  late Exercise _exercise;
 
   // Instructions expansion
   bool _isInstructionsExpanded = false;
@@ -49,6 +54,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
   @override
   void initState() {
     super.initState();
+    _exercise = widget.exercise;
     _instructionsController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -101,7 +107,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
 
     try {
       final insights = await InsightsService.instance.getExerciseInsights(
-        exerciseName: widget.exercise.slug,
+        exerciseName: _exercise.slug,
         monthsBack: _selectedMonths,
       );
       setState(() {
@@ -114,6 +120,56 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
         });
       }
     }
+  }
+
+  Future<void> _editCustomExercise() async {
+    final updated = await Navigator.of(context).push<Exercise>(
+      MaterialPageRoute(
+        builder: (context) => CustomExerciseCreatorScreen(exercise: _exercise),
+      ),
+    );
+    if (updated == null || !mounted) return;
+    setState(() => _exercise = updated);
+    await _loadExerciseInsights();
+  }
+
+  Future<void> _deleteCustomExercise() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete exercise?'),
+        content: Text('Delete ${_exercise.name}? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    await ExerciseService.instance.deleteCustomExercise(_exercise);
+    if (!mounted) return;
+    Navigator.of(context).pop<Exercise>(_exercise);
+  }
+
+  Future<void> _openExerciseGallery() async {
+    final imagePaths = decodeExerciseImagePaths(_exercise.image);
+    if (imagePaths.isEmpty) return;
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => ExerciseImageGalleryScreen(
+          imagePaths: imagePaths,
+          title: _exercise.name,
+        ),
+      ),
+    );
   }
 
   void _onTimeframeChanged(String label, int months) {
@@ -163,8 +219,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
                       Expanded(
                         flex: 4,
                         child: ExerciseImageSection(
-                          exercise: widget.exercise,
+                          exercise: _exercise,
                           height: 140,
+                          onTap: _openExerciseGallery,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -202,6 +259,38 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
         icon: Icon(CupertinoIcons.back, color: context.appScheme.onSurface),
         onPressed: () => Navigator.of(context).pop(),
       ),
+      actions: [
+        if (_exercise.isCustom)
+          PopupMenuButton<String>(
+            tooltip: 'Exercise actions',
+            icon: Icon(Icons.more_horiz, color: context.appScheme.onSurface),
+            onSelected: (value) {
+              if (value == 'edit') {
+                _editCustomExercise();
+              } else if (value == 'delete') {
+                _deleteCustomExercise();
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'edit',
+                child: ListTile(
+                  leading: Icon(Icons.edit_outlined),
+                  title: Text('Edit'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'delete',
+                child: ListTile(
+                  leading: Icon(Icons.delete_outline),
+                  title: Text('Delete'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ),
+      ],
       flexibleSpace: LayoutBuilder(
         builder: (context, constraints) {
           return Stack(
@@ -219,7 +308,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
               FlexibleSpaceBar(
                 centerTitle: true,
                 titlePadding: const EdgeInsets.only(bottom: 16),
-                title: Text(widget.exercise.name, style: textTheme.titleMedium),
+                title: Text(_exercise.name, style: textTheme.titleMedium),
                 background: Container(color: transparentSurface),
               ),
             ],
@@ -235,19 +324,19 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
       children: [
         _buildDetailRow(
           'Target',
-          widget.exercise.primaryMuscleGroup.name,
+          _exercise.primaryMuscleGroup.name,
           isPrimary: true,
         ),
-        if (widget.exercise.secondaryMuscleGroups.isNotEmpty) ...[
+        if (_exercise.secondaryMuscleGroups.isNotEmpty) ...[
           const SizedBox(height: 8),
           _buildDetailRow(
             'Synergists',
-            widget.exercise.secondaryMuscleGroups.map((m) => m.name).join(', '),
+            _exercise.secondaryMuscleGroups.map((m) => m.name).join(', '),
           ),
         ],
-        if (widget.exercise.equipment.isNotEmpty) ...[
+        if (_exercise.equipment.isNotEmpty) ...[
           const SizedBox(height: 8),
-          _buildDetailRow('Equipment', widget.exercise.equipment),
+          _buildDetailRow('Equipment', _exercise.equipment),
         ],
       ],
     );
@@ -322,10 +411,8 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
                 children: [
                   Divider(color: Theme.of(context).dividerColor, height: 1),
                   const SizedBox(height: 16),
-                  if (widget.exercise.instructions.isNotEmpty)
-                    ...widget.exercise.instructions.asMap().entries.map((
-                      entry,
-                    ) {
+                  if (_exercise.instructions.isNotEmpty)
+                    ..._exercise.instructions.asMap().entries.map((entry) {
                       final index = entry.key;
                       final instruction = entry.value;
                       return Padding(
@@ -530,7 +617,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
           icon: CupertinoIcons.chart_bar_fill,
           filters: filters,
           provider: ExerciseTrendProvider(
-            widget.exercise.slug,
+            _exercise.slug,
             ExerciseTrendType.volume,
           ),
           subLabelBuilder: (_) => _useKg ? 'kg' : 'lbs',
@@ -543,7 +630,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
           icon: CupertinoIcons.arrow_up_circle_fill,
           filters: filters,
           provider: ExerciseTrendProvider(
-            widget.exercise.slug,
+            _exercise.slug,
             ExerciseTrendType.maxWeight,
           ),
           mainValueBuilder: (data) {

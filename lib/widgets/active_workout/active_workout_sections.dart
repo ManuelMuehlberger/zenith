@@ -25,6 +25,8 @@ class ActiveWorkoutScaffoldBody extends StatelessWidget {
     String, {
     int? reps,
     double? weight,
+    int? durationSeconds,
+    int? difficulty,
     bool? isCompleted,
   })
   onUpdateSet;
@@ -362,6 +364,8 @@ class ActiveWorkoutExerciseList extends StatelessWidget {
     String, {
     int? reps,
     double? weight,
+    int? durationSeconds,
+    int? difficulty,
     bool? isCompleted,
   })
   onUpdateSet;
@@ -528,7 +532,16 @@ class _ActiveWorkoutProxyCard extends StatelessWidget {
       isDragging: true,
       isOtherDragging: false,
       onToggleNotes: (exerciseId) {},
-      onUpdateSet: (workoutId, setId, {reps, weight, isCompleted}) {},
+      onUpdateSet:
+          (
+            workoutId,
+            setId, {
+            reps,
+            weight,
+            durationSeconds,
+            difficulty,
+            isCompleted,
+          }) {},
       onToggleSetCompletion: (workoutId, setId) {},
       onAddSet: () {},
       onRemoveSet: (setId) {},

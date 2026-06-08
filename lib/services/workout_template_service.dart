@@ -759,6 +759,8 @@ class WorkoutTemplateService {
             targetReps: s.targetReps,
             targetWeight: s.targetWeight,
             targetRestSeconds: s.targetRestSeconds,
+            targetDurationSeconds: s.targetDurationSeconds,
+            targetDifficulty: s.targetDifficulty,
           );
           await _workoutSetDao.insert(set);
         }

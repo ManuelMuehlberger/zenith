@@ -28,6 +28,8 @@ class ExerciseDao extends BaseDao<Exercise> {
       'image': exercise.image,
       'animation': exercise.animation,
       'isBodyWeightExercise': exercise.isBodyWeightExercise ? 1 : 0,
+      'isCustom': exercise.isCustom ? 1 : 0,
+      'type': exercise.type.storageValue,
     };
   }
 
@@ -134,5 +136,18 @@ class ExerciseDao extends BaseDao<Exercise> {
       );
       rethrow;
     }
+  }
+
+  Future<Exercise> createCustomExercise(Exercise exercise) async {
+    await insert(exercise);
+    return exercise;
+  }
+
+  Future<int> updateExercise(Exercise exercise) async {
+    return await update(exercise, idColumn: 'slug');
+  }
+
+  Future<int> deleteExerciseBySlug(String slug) async {
+    return await delete(slug, idColumn: 'slug');
   }
 }

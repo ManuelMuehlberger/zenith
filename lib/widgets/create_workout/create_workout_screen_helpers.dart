@@ -121,11 +121,13 @@ List<WorkoutExercise> createWorkoutExercisesFromExercises({
       exerciseDetail: selectedExercise,
       sets: const [],
     );
+    final isCardio = selectedExercise.type == ExerciseType.cardio;
     final defaultSet = WorkoutSet(
       workoutExerciseId: workoutExercise.id,
       setIndex: 0,
-      targetReps: 10,
-      targetWeight: 0.0,
+      targetReps: isCardio ? null : 10,
+      targetWeight: isCardio ? null : 0.0,
+      targetDurationSeconds: isCardio ? 600 : null,
     );
     return workoutExercise.copyWith(sets: [defaultSet]);
   }).toList();
