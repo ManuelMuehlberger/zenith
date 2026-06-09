@@ -102,7 +102,10 @@ class _ExerciseImageGalleryScreenState
   }
 
   Widget _buildEmptyState() {
-    final colors = context.appColors;
+    final scheme = context.appScheme;
+    final primaryText = scheme.onPrimary;
+    final secondaryText = primaryText.withValues(alpha: 0.8);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -112,12 +115,12 @@ class _ExerciseImageGalleryScreenState
             Icon(
               Icons.add_photo_alternate_outlined,
               size: 40,
-              color: colors.textSecondary,
+              color: secondaryText,
             ),
             const SizedBox(height: 12),
             Text(
               widget.editable ? 'No pictures yet' : 'No pictures available',
-              style: context.appText.titleMedium,
+              style: context.appText.titleMedium?.copyWith(color: primaryText),
             ),
             if (widget.editable) ...[
               const SizedBox(height: 14),
@@ -137,6 +140,8 @@ class _ExerciseImageGalleryScreenState
   Widget build(BuildContext context) {
     final scheme = context.appScheme;
     final colors = context.appColors;
+    final primaryText = scheme.onPrimary;
+    final secondaryText = primaryText.withValues(alpha: 0.8);
 
     return PopScope(
       canPop: false,
@@ -149,11 +154,18 @@ class _ExerciseImageGalleryScreenState
         appBar: AppBar(
           backgroundColor: scheme.shadow.withValues(alpha: 0.68),
           surfaceTintColor: colors.transparent,
+          foregroundColor: primaryText,
           leading: IconButton(
             icon: const Icon(CupertinoIcons.back),
             onPressed: _handleBack,
           ),
-          title: Text(widget.title ?? 'Gallery'),
+          title: Text(
+            widget.title ?? 'Gallery',
+            style: context.appText.titleLarge?.copyWith(
+              color: primaryText,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           actions: [
             if (widget.editable)
               IconButton(
@@ -190,7 +202,7 @@ class _ExerciseImageGalleryScreenState
                             fit: BoxFit.contain,
                             errorBuilder: (_, _, _) => Icon(
                               Icons.broken_image_outlined,
-                              color: scheme.onSurface.withValues(alpha: 0.6),
+                              color: secondaryText,
                               size: 40,
                             ),
                           ),
@@ -216,7 +228,7 @@ class _ExerciseImageGalleryScreenState
                           child: Text(
                             '${_currentIndex + 1} / ${_imagePaths.length}',
                             style: context.appText.labelMedium?.copyWith(
-                              color: scheme.onSurface,
+                              color: primaryText,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
