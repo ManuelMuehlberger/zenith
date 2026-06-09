@@ -28,6 +28,13 @@ class FakeWorkoutAchievementDao extends WorkoutAchievementDao {
   }
 }
 
+Widget _wrap(Widget child) {
+  return MaterialApp(
+    theme: ThemeData(splashFactory: NoSplash.splashFactory),
+    home: child,
+  );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -46,9 +53,7 @@ void main() {
         exercises: const [],
       );
 
-      await tester.pumpWidget(
-        MaterialApp(home: WorkoutDetailScreen(workout: workout)),
-      );
+      await tester.pumpWidget(_wrap(WorkoutDetailScreen(workout: workout)));
       await tester.pumpAndSettle();
 
       expect(find.text('Mood: Excellent'), findsOneWidget);
@@ -117,9 +122,7 @@ void main() {
         when(mockWorkoutDao.deleteWorkout('w1')).thenAnswer((_) async => 1);
 
         // Act: pump screen and tap Delete then confirm
-        await tester.pumpWidget(
-          MaterialApp(home: WorkoutDetailScreen(workout: workout)),
-        );
+        await tester.pumpWidget(_wrap(WorkoutDetailScreen(workout: workout)));
         await tester.pumpAndSettle();
 
         // Tap the "Delete Workout" button
@@ -180,9 +183,7 @@ void main() {
         ],
       );
 
-      await tester.pumpWidget(
-        MaterialApp(home: WorkoutDetailScreen(workout: workout)),
-      );
+      await tester.pumpWidget(_wrap(WorkoutDetailScreen(workout: workout)));
       await tester.pumpAndSettle();
 
       expect(
@@ -217,9 +218,7 @@ void main() {
         exercises: const [],
       );
 
-      await tester.pumpWidget(
-        MaterialApp(home: WorkoutDetailScreen(workout: workout)),
-      );
+      await tester.pumpWidget(_wrap(WorkoutDetailScreen(workout: workout)));
       await tester.pumpAndSettle();
 
       expect(find.text('Notes'), findsOneWidget);

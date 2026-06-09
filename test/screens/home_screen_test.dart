@@ -40,6 +40,13 @@ Future<void> _scrollHomeUntilVisible(WidgetTester tester, Finder finder) async {
   );
 }
 
+Widget _wrapHome() {
+  return MaterialApp(
+    theme: ThemeData(splashFactory: NoSplash.splashFactory),
+    home: const HomeScreen(),
+  );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -99,7 +106,7 @@ void main() {
         ).thenAnswer((_) async => []);
 
         // Act
-        await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+        await tester.pumpWidget(_wrapHome());
         await tester.pumpAndSettle();
 
         // Assert
@@ -149,7 +156,7 @@ void main() {
       ).thenAnswer((_) async => []);
 
       // Act
-      await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+      await tester.pumpWidget(_wrapHome());
       await tester.pumpAndSettle();
 
       // Assert
@@ -173,7 +180,7 @@ void main() {
           mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseIds(any),
         ).thenAnswer((_) async => []);
 
-        await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+        await tester.pumpWidget(_wrapHome());
         await tester.pumpAndSettle();
 
         expect(find.byKey(const ValueKey('greeting_title')), findsOneWidget);
@@ -226,7 +233,7 @@ void main() {
           mockWorkoutSetDao.getWorkoutSetsByWorkoutExerciseIds(any),
         ).thenAnswer((_) async => []);
 
-        await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+        await tester.pumpWidget(_wrapHome());
         await tester.pumpAndSettle();
 
         // Verify all three completed workouts show
@@ -283,7 +290,7 @@ void main() {
       ).thenAnswer((_) async => 1);
 
       // Act: pump Home
-      await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+      await tester.pumpWidget(_wrapHome());
       await tester.pumpAndSettle();
 
       // Ensure workout is visible
@@ -364,7 +371,7 @@ void main() {
       ).thenAnswer((_) async => []);
 
       // Act
-      await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+      await tester.pumpWidget(_wrapHome());
       await tester.pumpAndSettle();
 
       // Assert: only the latest 3 workouts are present.
@@ -403,7 +410,7 @@ void main() {
       ).thenAnswer((_) async => []);
 
       // Act: initial pump triggers loadWorkouts once
-      await tester.pumpWidget(const MaterialApp(home: HomeScreen()));
+      await tester.pumpWidget(_wrapHome());
       await tester.pumpAndSettle();
 
       // Simulate app coming to foreground

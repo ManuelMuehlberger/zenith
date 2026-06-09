@@ -25,6 +25,11 @@ class CustomExerciseCreatorScreen extends StatefulWidget {
 
 class _CustomExerciseCreatorScreenState
     extends State<CustomExerciseCreatorScreen> {
+  static const List<EquipmentType> _cardioEquipmentOptions = [
+    EquipmentType.none,
+    EquipmentType.machine,
+  ];
+
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _instructionController = TextEditingController();
@@ -39,6 +44,12 @@ class _CustomExerciseCreatorScreenState
   bool _isSaving = false;
 
   bool get _isEditing => widget.exercise != null;
+  bool get _hasPendingInstruction =>
+      _instructionController.text.trim().isNotEmpty;
+  List<EquipmentType> get _availableEquipmentOptions =>
+      _type == ExerciseType.cardio
+      ? _cardioEquipmentOptions
+      : EquipmentType.values;
 
   @override
   void initState() {
@@ -49,8 +60,11 @@ class _CustomExerciseCreatorScreenState
     _primaryMuscleGroup = exercise?.primaryMuscleGroup;
     _secondaryMuscleGroups = exercise?.secondaryMuscleGroups.toSet() ?? {};
     _instructions.addAll(exercise?.instructions ?? const []);
-    _equipmentType = EquipmentType.fromString(exercise?.equipment ?? 'None');
     _isBodyweight = exercise?.isBodyWeightExercise ?? true;
+    _equipmentType = _normalizeEquipmentForType(
+      _type,
+      EquipmentType.fromString(exercise?.equipment ?? 'None'),
+    );
     _imagePaths.addAll(decodeExerciseImagePaths(exercise?.image ?? ''));
   }
 
@@ -94,7 +108,10 @@ class _CustomExerciseCreatorScreenState
                   .map((group) => group.name)
                   .toList(),
               instructions: _instructions,
-              equipment: _equipmentType.displayName,
+              equipment: _normalizeEquipmentForType(
+                _type,
+                _equipmentType,
+              ).displayName,
               image: _imagePaths.isEmpty ? '' : jsonEncode(_imagePaths),
               isBodyWeightExercise: _isBodyweight,
               type: _type,
@@ -107,7 +124,10 @@ class _CustomExerciseCreatorScreenState
                   .map((group) => group.name)
                   .toList(),
               instructions: _instructions,
-              equipment: _equipmentType.displayName,
+              equipment: _normalizeEquipmentForType(
+                _type,
+                _equipmentType,
+              ).displayName,
               image: _imagePaths.isEmpty ? '' : jsonEncode(_imagePaths),
               isBodyWeightExercise: _isBodyweight,
               type: _type,
@@ -166,44 +186,66 @@ class _CustomExerciseCreatorScreenState
                 children: [
                   LayoutBuilder(
                     builder: (context, constraints) {
-                      final useSideBySide = constraints.maxWidth > 580;
-                      final nameBlock = Column(
+                      final pictureSize = constraints.maxWidth < 360
+                          ? 84.0
+                          : 96.0;
+                      final nameRow = Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          TextFormField(
-                            key: const Key('custom_exercise_name_field'),
-                            controller: _nameController,
-                            textInputAction: TextInputAction.done,
-                            style: textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Exercise name',
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
-                              hintStyle: textTheme.headlineSmall?.copyWith(
-                                color: colors.textTertiary,
+                          Expanded(
+                            child: TextFormField(
+                              key: const Key('custom_exercise_name_field'),
+                              controller: _nameController,
+                              textInputAction: TextInputAction.done,
+                              style: textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
+                              decoration: InputDecoration(
+                                hintText: 'Exercise name',
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.only(top: 4),
+                                hintStyle: textTheme.headlineSmall?.copyWith(
+                                  color: colors.textTertiary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Name is required';
+                                }
+                                return null;
+                              },
                             ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Name is required';
-                              }
-                              return null;
-                            },
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            width: pictureSize,
+                            height: pictureSize,
+                            child: _TopPicturePanel(
+                              imagePaths: _imagePaths,
+                              onTap: _openImageGallery,
+                            ),
+                          ),
+                        ],
+                      );
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          nameRow,
+                          const SizedBox(height: 10),
                           _PickerTile(
                             tileKey: const Key('primary_muscle_picker'),
+                            iconKey: const Key('primary_muscle_picker_icon'),
                             icon: Icons.adjust,
                             title: 'Primary muscle',
                             value: _primaryMuscleGroup?.name ?? 'Choose',
+                            isSelected: _primaryMuscleGroup != null,
                             onTap: _pickPrimaryMuscle,
                           ),
                           const SizedBox(height: 8),
                           _PickerTile(
                             tileKey: const Key('secondary_muscles_picker'),
+                            iconKey: const Key('secondary_muscles_picker_icon'),
                             icon: Icons.hub_outlined,
                             title: 'Secondary muscles',
                             value: _secondaryMuscleGroups.isEmpty
@@ -211,33 +253,9 @@ class _CustomExerciseCreatorScreenState
                                 : _secondaryMuscleGroups
                                       .map((group) => group.name)
                                       .join(', '),
+                            isSelected: _secondaryMuscleGroups.isNotEmpty,
                             onTap: _pickSecondaryMuscles,
                           ),
-                        ],
-                      );
-                      final pictureBlock = _TopPicturePanel(
-                        imagePaths: _imagePaths,
-                        height: useSideBySide ? 112 : 132,
-                        onTap: _openImageGallery,
-                      );
-
-                      if (useSideBySide) {
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(flex: 3, child: nameBlock),
-                            const SizedBox(width: 10),
-                            SizedBox(width: 112, child: pictureBlock),
-                          ],
-                        );
-                      }
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          nameBlock,
-                          const SizedBox(height: 10),
-                          SizedBox(height: 132, child: pictureBlock),
                         ],
                       );
                     },
@@ -272,6 +290,10 @@ class _CustomExerciseCreatorScreenState
                     onSelectionChanged: (selection) {
                       setState(() {
                         _type = selection.single;
+                        _equipmentType = _normalizeEquipmentForType(
+                          _type,
+                          _equipmentType,
+                        );
                       });
                     },
                     style: ButtonStyle(
@@ -283,9 +305,12 @@ class _CustomExerciseCreatorScreenState
                   ),
                   const SizedBox(height: 14),
                   _PickerTile(
+                    tileKey: const Key('equipment_picker'),
+                    iconKey: const Key('equipment_picker_icon'),
                     title: 'Machine / equipment',
                     value: _equipmentType.displayName,
                     icon: Icons.category_outlined,
+                    isSelected: _equipmentType != EquipmentType.none,
                     onTap: _pickEquipment,
                   ),
                   const SizedBox(height: 10),
@@ -307,26 +332,35 @@ class _CustomExerciseCreatorScreenState
               title: 'Instructions',
               child: Column(
                 children: [
-                  TextFormField(
-                    key: const Key('custom_exercise_instruction_field'),
-                    controller: _instructionController,
-                    minLines: 1,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Add a step',
-                      prefixIcon: Icon(Icons.notes_outlined),
-                    ),
-                    onFieldSubmitted: (_) => _addInstruction(),
-                  ),
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: FilledButton.tonalIcon(
-                      key: const Key('custom_exercise_add_instruction_button'),
-                      onPressed: _addInstruction,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add step'),
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          key: const Key('custom_exercise_instruction_field'),
+                          controller: _instructionController,
+                          minLines: 1,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            labelText: 'Add a step',
+                            prefixIcon: Icon(Icons.notes_outlined),
+                          ),
+                          onChanged: (_) => setState(() {}),
+                          onFieldSubmitted: (_) => _addInstruction(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filledTonal(
+                        key: const Key(
+                          'custom_exercise_add_instruction_button',
+                        ),
+                        onPressed: _hasPendingInstruction
+                            ? _addInstruction
+                            : null,
+                        icon: const Icon(Icons.add_rounded),
+                        tooltip: 'Add step',
+                      ),
+                    ],
                   ),
                   if (_instructions.isNotEmpty) ...[
                     const SizedBox(height: 12),
@@ -414,10 +448,25 @@ class _CustomExerciseCreatorScreenState
       backgroundColor: context.appColors.transparent,
       elevation: 0,
       isScrollControlled: true,
-      builder: (context) => _EquipmentPickerSheet(selected: _equipmentType),
+      builder: (context) => _EquipmentPickerSheet(
+        selected: _equipmentType,
+        options: _availableEquipmentOptions,
+      ),
     );
     if (selected == null) return;
-    setState(() => _equipmentType = selected);
+    setState(
+      () => _equipmentType = _normalizeEquipmentForType(_type, selected),
+    );
+  }
+
+  EquipmentType _normalizeEquipmentForType(
+    ExerciseType type,
+    EquipmentType equipment,
+  ) {
+    if (type != ExerciseType.cardio) return equipment;
+    return _cardioEquipmentOptions.contains(equipment)
+        ? equipment
+        : EquipmentType.none;
   }
 
   Future<void> _openImageGallery() async {
@@ -486,22 +535,27 @@ class _SectionPanel extends StatelessWidget {
 class _PickerTile extends StatelessWidget {
   const _PickerTile({
     this.tileKey,
+    this.iconKey,
     required this.icon,
     required this.title,
     required this.value,
+    this.isSelected = false,
     required this.onTap,
   });
 
   final Key? tileKey;
+  final Key? iconKey;
   final IconData icon;
   final String title;
   final String value;
+  final bool isSelected;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final textTheme = context.appText;
+    final scheme = context.appScheme;
 
     return Material(
       color: colors.field.withValues(alpha: 0.55),
@@ -516,10 +570,17 @@ class _PickerTile extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: context.appScheme.surface.withValues(alpha: 0.72),
+            color: isSelected
+                ? scheme.primary.withValues(alpha: 0.14)
+                : scheme.surface.withValues(alpha: 0.72),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 18),
+          child: Icon(
+            icon,
+            key: iconKey,
+            size: 18,
+            color: isSelected ? scheme.primary : colors.textSecondary,
+          ),
         ),
         title: Text(
           title,
@@ -613,14 +674,9 @@ class _MaterialSwitchRow extends StatelessWidget {
 }
 
 class _TopPicturePanel extends StatelessWidget {
-  const _TopPicturePanel({
-    required this.imagePaths,
-    required this.height,
-    required this.onTap,
-  });
+  const _TopPicturePanel({required this.imagePaths, required this.onTap});
 
   final List<String> imagePaths;
-  final double height;
   final VoidCallback onTap;
 
   @override
@@ -636,7 +692,6 @@ class _TopPicturePanel extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Ink(
-          height: height,
           decoration: BoxDecoration(
             color: colors.field.withValues(alpha: 0.42),
             borderRadius: BorderRadius.circular(14),
@@ -658,29 +713,31 @@ class _TopPicturePanel extends StatelessWidget {
                       )
                     : const _GalleryPreviewPlaceholder(imageCount: 0),
               ),
-              Positioned(
-                right: 8,
-                top: 8,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: context.appScheme.shadow.withValues(alpha: 0.45),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 5,
+              if (hasImage)
+                Positioned(
+                  right: 8,
+                  bottom: 8,
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: scheme.primary.withValues(alpha: 0.92),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: colors.textPrimary.withValues(alpha: 0.12),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      hasImage ? '${imagePaths.length}' : 'Add',
-                      style: context.appText.labelMedium?.copyWith(
-                        color: context.appScheme.onSurface,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    child: Icon(
+                      Icons.photo_library_outlined,
+                      size: 16,
+                      color: scheme.onPrimary,
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -697,32 +754,14 @@ class _GalleryPreviewPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final textTheme = context.appText;
 
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            imageCount == 0
-                ? Icons.add_photo_alternate_outlined
-                : Icons.photo_library_outlined,
-            color: colors.textSecondary,
-            size: 28,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            imageCount == 0 ? 'Add pictures' : 'Open gallery',
-            style: textTheme.titleSmall,
-          ),
-          if (imageCount > 0) ...[
-            const SizedBox(height: 2),
-            Text(
-              '$imageCount images',
-              style: textTheme.bodySmall?.copyWith(color: colors.textSecondary),
-            ),
-          ],
-        ],
+      child: Icon(
+        imageCount == 0
+            ? Icons.add_photo_alternate_outlined
+            : Icons.photo_library_outlined,
+        color: colors.textSecondary,
+        size: 28,
       ),
     );
   }
@@ -996,9 +1035,10 @@ class _SelectionIndicator extends StatelessWidget {
 }
 
 class _EquipmentPickerSheet extends StatelessWidget {
-  const _EquipmentPickerSheet({required this.selected});
+  const _EquipmentPickerSheet({required this.selected, required this.options});
 
   final EquipmentType selected;
+  final List<EquipmentType> options;
 
   @override
   Widget build(BuildContext context) {
@@ -1061,10 +1101,10 @@ class _EquipmentPickerSheet extends StatelessWidget {
               const SizedBox(height: 14),
               Expanded(
                 child: ListView.separated(
-                  itemCount: EquipmentType.values.length,
+                  itemCount: options.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
-                    final option = EquipmentType.values[index];
+                    final option = options[index];
                     return _EquipmentOptionTile(
                       label: option.displayName,
                       selected: option == selected,

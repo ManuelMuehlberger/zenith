@@ -19,6 +19,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData(splashFactory: NoSplash.splashFactory),
           home: AppWrapper(
             onboardingStatusLoader: () async => false,
             bootstrapApp: () async {
@@ -42,6 +43,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData(splashFactory: NoSplash.splashFactory),
           home: AppWrapper(
             onboardingStatusLoader: () async => true,
             bootstrapApp: () => completer.future,
@@ -76,6 +78,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData(splashFactory: NoSplash.splashFactory),
           home: AppWrapper(
             onboardingStatusLoader: () async => true,
             bootstrapApp: bootstrap,

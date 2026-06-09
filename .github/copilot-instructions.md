@@ -22,12 +22,14 @@ scripts/lint_changed_dart.sh --range <from-ref> <to-ref>
 scripts/check_changed_dart_policy.sh --staged
 scripts/check_changed_dart_policy.sh --range <from-ref> <to-ref>
 scripts/check_changed_dart_policy.sh --all
+scripts/fast_ci.sh --staged
+scripts/fast_ci.sh --full-static --fresh-coverage --range <from-ref> <to-ref>
 
 # Enable the versioned git hooks after clone
 git config core.hooksPath .githooks
 ```
 
-Use the changed-file scripts for incremental work. `flutter analyze` is still useful, but the repo intentionally keeps the hook checks scoped to changed Dart files because the wider codebase has existing analyzer findings.
+Use the changed-file scripts for incremental work. The repo now has a stronger local runner in `scripts/fast_ci.sh`: `--staged` matches pre-commit, while `--full-static --fresh-coverage --range ...` matches the more CI-like pre-push path with full formatting and full `flutter analyze`.
 
 ## High-level architecture
 

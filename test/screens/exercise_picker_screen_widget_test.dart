@@ -39,6 +39,13 @@ class _FakeMuscleGroupDao extends MuscleGroupDao {
   Future<List<MuscleGroup>> getAllMuscleGroups() async => seed;
 }
 
+Widget _wrap(Widget child) {
+  return MaterialApp(
+    theme: ThemeData(splashFactory: NoSplash.splashFactory),
+    home: child,
+  );
+}
+
 void main() {
   setUp(() {
     ExerciseService.instance.resetForTesting();
@@ -82,7 +89,7 @@ void main() {
         seedMuscleGroups: ['Chest', 'Triceps'],
       );
 
-      await tester.pumpWidget(const MaterialApp(home: ExercisePickerScreen()));
+      await tester.pumpWidget(_wrap(const ExercisePickerScreen()));
       await tester.pumpAndSettle();
 
       // Clear All button should be hidden until a filter is selected
@@ -135,7 +142,7 @@ void main() {
       seedMuscleGroups: ['Chest'],
     );
 
-    await tester.pumpWidget(const MaterialApp(home: ExercisePickerScreen()));
+    await tester.pumpWidget(_wrap(const ExercisePickerScreen()));
     await tester.pumpAndSettle();
 
     // Find the bodyweight tag button
@@ -191,8 +198,8 @@ void main() {
 
       Exercise? selectedExercise;
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
+        _wrap(
+          Builder(
             builder: (context) => Scaffold(
               body: ElevatedButton(
                 onPressed: () async {
@@ -267,8 +274,8 @@ void main() {
 
       List<Exercise>? selectedExercises;
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
+        _wrap(
+          Builder(
             builder: (context) => Scaffold(
               body: ElevatedButton(
                 onPressed: () async {
@@ -362,7 +369,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        const MaterialApp(home: ExercisePickerScreen(multiSelect: true)),
+        _wrap(const ExercisePickerScreen(multiSelect: true)),
       );
       await tester.pumpAndSettle();
 
@@ -415,7 +422,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      const MaterialApp(home: ExercisePickerScreen(multiSelect: true)),
+      _wrap(const ExercisePickerScreen(multiSelect: true)),
     );
     await tester.pumpAndSettle();
 
@@ -449,7 +456,7 @@ void main() {
         seedMuscleGroups: ['Chest', 'Triceps'],
       );
 
-      await tester.pumpWidget(const MaterialApp(home: ExercisePickerScreen()));
+      await tester.pumpWidget(_wrap(const ExercisePickerScreen()));
       await tester.pumpAndSettle();
 
       // Should not show info button in single-select mode
@@ -472,8 +479,8 @@ void main() {
 
     Exercise? selectedExercise;
     await tester.pumpWidget(
-      MaterialApp(
-        home: Builder(
+      _wrap(
+        Builder(
           builder: (context) => Scaffold(
             body: ElevatedButton(
               onPressed: () async {
@@ -524,8 +531,8 @@ void main() {
 
     Exercise? createdExercise;
     await tester.pumpWidget(
-      MaterialApp(
-        home: Builder(
+      _wrap(
+        Builder(
           builder: (context) => Scaffold(
             body: ElevatedButton(
               onPressed: () async {
@@ -566,5 +573,163 @@ void main() {
     expect(createdExercise!.type, ExerciseType.cardio);
     expect(createdExercise!.primaryMuscleGroup, MuscleGroup.chest);
     expect(createdExercise!.isBodyWeightExercise, isTrue);
+  });
+
+  testWidgets('custom creator shows a single add-image icon when empty', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(const Scaffold(body: CustomExerciseCreatorScreen())),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.add_photo_alternate_outlined), findsOneWidget);
+  });
+
+  testWidgets('custom creator limits cardio equipment to none and machine', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(splashFactory: NoSplash.splashFactory),
+        home: const Scaffold(body: CustomExerciseCreatorScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('equipment_picker')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('equipment_picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Barbell'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Barbell'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('cardio_type_label')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('None'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('equipment_picker')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('None'), findsWidgets);
+    expect(find.text('Machine'), findsOneWidget);
+    expect(find.text('Barbell'), findsNothing);
+    expect(find.text('Dumbbell'), findsNothing);
+    expect(find.text('Cable'), findsNothing);
+  });
+
+  testWidgets('custom creator integrates add-step action into the field', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(splashFactory: NoSplash.splashFactory),
+        home: const Scaffold(body: CustomExerciseCreatorScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final instructionField = find.byKey(
+      const Key('custom_exercise_instruction_field'),
+    );
+    await tester.scrollUntilVisible(
+      instructionField,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    final addButton = find.byKey(
+      const Key('custom_exercise_add_instruction_button'),
+    );
+    expect(addButton, findsOneWidget);
+
+    var iconButton = tester.widget<IconButton>(addButton);
+    expect(iconButton.onPressed, isNull);
+
+    await tester.enterText(instructionField, 'Brace core first');
+    await tester.pump();
+
+    iconButton = tester.widget<IconButton>(addButton);
+    expect(iconButton.onPressed, isNotNull);
+
+    await tester.tap(addButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Brace core first'), findsOneWidget);
+    expect(
+      tester.widget<TextFormField>(instructionField).controller!.text,
+      isEmpty,
+    );
+  });
+
+  testWidgets('custom creator picker icons light up when values are selected', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(splashFactory: NoSplash.splashFactory),
+        home: const Scaffold(body: CustomExerciseCreatorScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final creatorContext = tester.element(
+      find.byType(CustomExerciseCreatorScreen),
+    );
+    final primaryColor = Theme.of(creatorContext).colorScheme.primary;
+
+    Icon primaryIcon = tester.widget(
+      find.byKey(const Key('primary_muscle_picker_icon')),
+    );
+    Icon secondaryIcon = tester.widget(
+      find.byKey(const Key('secondary_muscles_picker_icon')),
+    );
+    Icon equipmentIcon = tester.widget(
+      find.byKey(const Key('equipment_picker_icon')),
+    );
+
+    expect(primaryIcon.color, isNot(primaryColor));
+    expect(secondaryIcon.color, isNot(primaryColor));
+    expect(equipmentIcon.color, isNot(primaryColor));
+
+    await tester.tap(find.byKey(const Key('primary_muscle_picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Chest'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('secondary_muscles_picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Triceps'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('equipment_picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Barbell'));
+    await tester.pumpAndSettle();
+
+    primaryIcon = tester.widget(
+      find.byKey(const Key('primary_muscle_picker_icon')),
+    );
+    secondaryIcon = tester.widget(
+      find.byKey(const Key('secondary_muscles_picker_icon')),
+    );
+    equipmentIcon = tester.widget(
+      find.byKey(const Key('equipment_picker_icon')),
+    );
+
+    expect(primaryIcon.color, primaryColor);
+    expect(secondaryIcon.color, primaryColor);
+    expect(equipmentIcon.color, primaryColor);
   });
 }

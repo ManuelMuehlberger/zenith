@@ -31,7 +31,10 @@ class _FakeMuscleGroupDao extends MuscleGroupDao {
 }
 
 Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: child));
+  return MaterialApp(
+    theme: ThemeData(splashFactory: NoSplash.splashFactory),
+    home: Scaffold(body: child),
+  );
 }
 
 void main() {
@@ -260,12 +263,10 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: ExerciseListWidget(
-            onExerciseSelected: (_) {},
-            selectedExercises: const [], // Multi-select mode
-          ),
+      _wrap(
+        ExerciseListWidget(
+          onExerciseSelected: (_) {},
+          selectedExercises: const [], // Multi-select mode
         ),
       ),
     );
