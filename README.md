@@ -25,8 +25,13 @@ Run this once after cloning:
 git config core.hooksPath .githooks
 ```
 
-The hooks only operate on changed `.dart` files, and they block commit/push if
-that changed set does not pass a clean `flutter analyze`.
+The hooks now split into two scopes:
+
+- `pre-commit` runs the changed-file gate for fast local iteration.
+- `pre-push` runs the same diff-aware policy/maintainability/coverage gates plus CI-aligned static checks (`dart format lib test` and full `flutter analyze`).
+
+Independent gates run in parallel before the coverage/test step, so the hooks
+surface failures earlier and spend less time serializing work.
 
 If you want to run the same UI policy against the full app instead of just the
 delta, use:
@@ -35,12 +40,14 @@ delta, use:
 scripts/check_changed_dart_policy.sh --all
 ```
 
-The hook chain now does several things on changed Dart files:
+The hook chain now does several things:
 
-- Runs formatting and requires a clean `flutter analyze` on changed Dart files.
+- Runs formatting and requires a clean `flutter analyze` on changed Dart files during `pre-commit`.
+- Runs CI-aligned repository formatting and full static analysis during `pre-push` when the pushed diff can affect Dart analysis.
 - Runs a UI policy scan that enforces theme-only styling.
 - Runs a maintainability gate for changed production Dart files.
 - Runs a changed-file coverage gate for non-frontend Dart files.
+- Runs `flutter pub get` first when `pubspec.yaml` or `pubspec.lock` changed.
 
 Blocking policy checks:
 
@@ -81,6 +88,11 @@ Coverage gate:
 - Frontend paths are excluded from enforcement: `lib/screens/`, `lib/widgets/`, `lib/theme/`, and `lib/main.dart`.
 - Non-instrumentable files are also excluded from enforcement: `lib/models/typedefs.dart` and `lib/services/insights/insight_data_provider.dart`.
 - The minimum per-file coverage defaults to `80%` and can be overridden with the `ZENITH_MIN_CHANGED_FILE_COVERAGE` environment variable.
+
+Manual local runner:
+
+- `scripts/fast_ci.sh --staged` mirrors the fast `pre-commit` path.
+- `scripts/fast_ci.sh --full-static --fresh-coverage --range <from-ref> <to-ref>` mirrors the stronger `pre-push` path.
 
 Theme and token definitions now belong in `lib/theme/`. UI code should consume them through `context.appScheme`, `context.appText`, and `context.appColors`. Direct `AppThemeColors` and `AppTextStyles` references are compatibility aliases that should only shrink over time, not be added back into non-theme UI code.
 
