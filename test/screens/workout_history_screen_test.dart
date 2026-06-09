@@ -72,7 +72,12 @@ void main() {
         workoutSetDao.getWorkoutSetsByWorkoutExerciseIds(any),
       ).thenAnswer((_) async => []);
 
-      await tester.pumpWidget(const MaterialApp(home: WorkoutHistoryScreen()));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          home: const WorkoutHistoryScreen(),
+        ),
+      );
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 

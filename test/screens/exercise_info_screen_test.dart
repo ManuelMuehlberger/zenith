@@ -51,6 +51,13 @@ Future<void> pumpUntilVisible(
   await tester.pump();
 }
 
+Widget _wrap(Widget child) {
+  return MaterialApp(
+    theme: ThemeData(splashFactory: NoSplash.splashFactory),
+    home: child,
+  );
+}
+
 void main() {
   group('ExerciseInfoScreen', () {
     setUp(() {
@@ -111,9 +118,7 @@ void main() {
       InsightsService.instance.setWorkoutsProvider(() async => [workout]);
 
       // Act: pump the screen
-      await tester.pumpWidget(
-        MaterialApp(home: ExerciseInfoScreen(exercise: exercise)),
-      );
+      await tester.pumpWidget(_wrap(ExerciseInfoScreen(exercise: exercise)));
 
       // Check for Info section elements
       expect(find.text('Bench Press'), findsOneWidget);
@@ -168,9 +173,7 @@ void main() {
       InsightsService.instance.setWorkoutsProvider(() async => []);
 
       // Act
-      await tester.pumpWidget(
-        MaterialApp(home: ExerciseInfoScreen(exercise: exercise)),
-      );
+      await tester.pumpWidget(_wrap(ExerciseInfoScreen(exercise: exercise)));
 
       await pumpUntilVisible(tester, find.text('No data available'));
 
@@ -197,9 +200,7 @@ void main() {
 
       InsightsService.instance.setWorkoutsProvider(() async => []);
 
-      await tester.pumpWidget(
-        MaterialApp(home: ExerciseInfoScreen(exercise: exercise)),
-      );
+      await tester.pumpWidget(_wrap(ExerciseInfoScreen(exercise: exercise)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byType(ExerciseImageSection));
@@ -224,9 +225,7 @@ void main() {
       // No workouts necessary to test the selector presence
       InsightsService.instance.setWorkoutsProvider(() async => []);
 
-      await tester.pumpWidget(
-        MaterialApp(home: ExerciseInfoScreen(exercise: exercise)),
-      );
+      await tester.pumpWidget(_wrap(ExerciseInfoScreen(exercise: exercise)));
 
       // Initial shows "6M" button (default)
       await pumpUntilVisible(tester, find.text('6M'));
@@ -263,7 +262,7 @@ void main() {
       InsightsService.instance.setWorkoutsProvider(() async => []);
 
       await tester.pumpWidget(
-        MaterialApp(home: ExerciseInfoScreen(exercise: customExercise)),
+        _wrap(ExerciseInfoScreen(exercise: customExercise)),
       );
       await tester.pumpAndSettle();
 

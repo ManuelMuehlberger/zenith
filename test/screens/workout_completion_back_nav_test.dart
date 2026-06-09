@@ -38,7 +38,12 @@ void main() {
       exercises: const [],
     );
 
-    await tester.pumpWidget(MaterialApp(home: _LauncherPage(session: session)));
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(splashFactory: NoSplash.splashFactory),
+        home: _LauncherPage(session: session),
+      ),
+    );
 
     // Ensure initial page is visible
     expect(find.byKey(const Key('active_placeholder')), findsOneWidget);

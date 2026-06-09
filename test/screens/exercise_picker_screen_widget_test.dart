@@ -39,6 +39,13 @@ class _FakeMuscleGroupDao extends MuscleGroupDao {
   Future<List<MuscleGroup>> getAllMuscleGroups() async => seed;
 }
 
+Widget _wrap(Widget child) {
+  return MaterialApp(
+    theme: ThemeData(splashFactory: NoSplash.splashFactory),
+    home: child,
+  );
+}
+
 void main() {
   setUp(() {
     ExerciseService.instance.resetForTesting();
@@ -82,7 +89,7 @@ void main() {
         seedMuscleGroups: ['Chest', 'Triceps'],
       );
 
-      await tester.pumpWidget(const MaterialApp(home: ExercisePickerScreen()));
+      await tester.pumpWidget(_wrap(const ExercisePickerScreen()));
       await tester.pumpAndSettle();
 
       // Clear All button should be hidden until a filter is selected
@@ -135,7 +142,7 @@ void main() {
       seedMuscleGroups: ['Chest'],
     );
 
-    await tester.pumpWidget(const MaterialApp(home: ExercisePickerScreen()));
+    await tester.pumpWidget(_wrap(const ExercisePickerScreen()));
     await tester.pumpAndSettle();
 
     // Find the bodyweight tag button
@@ -191,8 +198,8 @@ void main() {
 
       Exercise? selectedExercise;
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
+        _wrap(
+          Builder(
             builder: (context) => Scaffold(
               body: ElevatedButton(
                 onPressed: () async {
@@ -267,8 +274,8 @@ void main() {
 
       List<Exercise>? selectedExercises;
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
+        _wrap(
+          Builder(
             builder: (context) => Scaffold(
               body: ElevatedButton(
                 onPressed: () async {
@@ -362,7 +369,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        const MaterialApp(home: ExercisePickerScreen(multiSelect: true)),
+        _wrap(const ExercisePickerScreen(multiSelect: true)),
       );
       await tester.pumpAndSettle();
 
@@ -415,7 +422,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      const MaterialApp(home: ExercisePickerScreen(multiSelect: true)),
+      _wrap(const ExercisePickerScreen(multiSelect: true)),
     );
     await tester.pumpAndSettle();
 
@@ -449,7 +456,7 @@ void main() {
         seedMuscleGroups: ['Chest', 'Triceps'],
       );
 
-      await tester.pumpWidget(const MaterialApp(home: ExercisePickerScreen()));
+      await tester.pumpWidget(_wrap(const ExercisePickerScreen()));
       await tester.pumpAndSettle();
 
       // Should not show info button in single-select mode
@@ -472,8 +479,8 @@ void main() {
 
     Exercise? selectedExercise;
     await tester.pumpWidget(
-      MaterialApp(
-        home: Builder(
+      _wrap(
+        Builder(
           builder: (context) => Scaffold(
             body: ElevatedButton(
               onPressed: () async {
@@ -524,8 +531,8 @@ void main() {
 
     Exercise? createdExercise;
     await tester.pumpWidget(
-      MaterialApp(
-        home: Builder(
+      _wrap(
+        Builder(
           builder: (context) => Scaffold(
             body: ElevatedButton(
               onPressed: () async {
@@ -572,7 +579,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: CustomExerciseCreatorScreen())),
+      _wrap(const Scaffold(body: CustomExerciseCreatorScreen())),
     );
     await tester.pumpAndSettle();
 
