@@ -266,10 +266,19 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      await pumpUntilVisible(tester, find.byTooltip('Exercise actions'));
       await tester.tap(find.byTooltip('Exercise actions'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Delete'));
+      await pumpUntilVisible(
+        tester,
+        find.byKey(const Key('exercise_action_delete')),
+      );
+      await tester.tap(find.byKey(const Key('exercise_action_delete')));
       await tester.pumpAndSettle();
+      await pumpUntilVisible(
+        tester,
+        find.widgetWithText(FilledButton, 'Delete'),
+      );
       await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
       await tester.pumpAndSettle();
 

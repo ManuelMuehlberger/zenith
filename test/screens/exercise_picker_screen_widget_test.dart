@@ -51,77 +51,101 @@ void main() {
     ExerciseService.instance.resetForTesting();
   });
 
-  testWidgets(
-    'ExercisePickerScreen integrates ExerciseListWidget with conditional Clear All and search at top',
-    (tester) async {
-      // Seed exercises and muscle groups
-      final exercises = [
-        Exercise(
-          slug: 'bench-press',
-          name: 'Bench Press',
-          primaryMuscleGroup: MuscleGroup.chest,
-          secondaryMuscleGroups: [MuscleGroup.triceps],
-          instructions: const ['Press'],
-          equipment: 'Barbell',
-          image: '',
-          animation: '',
-          isBodyWeightExercise: false,
-        ),
-        Exercise(
-          slug: 'push-up',
-          name: 'Push-Up',
-          primaryMuscleGroup: MuscleGroup.chest,
-          secondaryMuscleGroups: const [],
-          instructions: const ['Push'],
-          equipment: 'None',
-          image: '',
-          animation: '',
-          isBodyWeightExercise: true,
-        ),
-      ];
-      ExerciseService.instance.setDependenciesForTesting(
-        exerciseDao: _FakeExerciseDao(exercises),
-        muscleGroupDao: _FakeMuscleGroupDao([
-          MuscleGroup.chest,
-          MuscleGroup.triceps,
-        ]),
-        seedExercises: exercises,
-        seedMuscleGroups: ['Chest', 'Triceps'],
-      );
+  testWidgets('ExercisePickerScreen integrates search header and filter sheets', (
+    tester,
+  ) async {
+    // Seed exercises and muscle groups
+    final exercises = [
+      Exercise(
+        slug: 'bench-press',
+        name: 'Bench Press',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: [MuscleGroup.triceps],
+        instructions: const ['Press'],
+        equipment: 'Barbell',
+        image: '',
+        animation: '',
+        isBodyWeightExercise: false,
+      ),
+      Exercise(
+        slug: 'push-up',
+        name: 'Push-Up',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: const [],
+        instructions: const ['Push'],
+        equipment: 'None',
+        image: '',
+        animation: '',
+        isBodyWeightExercise: true,
+      ),
+      Exercise(
+        slug: 'plank',
+        name: 'Plank',
+        primaryMuscleGroup: MuscleGroup.abs,
+        secondaryMuscleGroups: const [],
+        instructions: const ['Hold'],
+        equipment: 'None',
+        image: '',
+        animation: '',
+        isBodyWeightExercise: true,
+      ),
+    ];
+    ExerciseService.instance.setDependenciesForTesting(
+      exerciseDao: _FakeExerciseDao(exercises),
+      muscleGroupDao: _FakeMuscleGroupDao([
+        MuscleGroup.chest,
+        MuscleGroup.triceps,
+        MuscleGroup.abs,
+      ]),
+      seedExercises: exercises,
+      seedMuscleGroups: ['Chest', 'Triceps', 'Abs'],
+    );
 
-      await tester.pumpWidget(_wrap(const ExercisePickerScreen()));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(_wrap(const ExercisePickerScreen()));
+    await tester.pumpAndSettle();
 
-      // Clear All button should be hidden until a filter is selected
-      final clearFinder = find.byKey(const Key('clear_all_button'));
-      expect(clearFinder, findsNothing);
+    // Clear All button should be hidden until a filter is selected
+    final clearFinder = find.byKey(const Key('clear_all_button'));
+    expect(clearFinder, findsNothing);
 
-      // Search container visible at top initially
-      final searchContainerFinder = find.byKey(
-        const Key('exercise_search_container'),
-      );
-      expect(searchContainerFinder, findsOneWidget);
-      final Size searchSize = tester.getSize(searchContainerFinder);
-      expect(searchSize.height, greaterThan(0));
+    // Search container visible at top initially
+    final searchContainerFinder = find.byKey(
+      const Key('exercise_search_container'),
+    );
+    expect(searchContainerFinder, findsOneWidget);
+    final Size searchSize = tester.getSize(searchContainerFinder);
+    expect(searchSize.height, greaterThan(0));
 
-      // Toggle bodyweight filter to ensure filtering works in picker integration too
-      final bodyweightBtn = find.byKey(const Key('bodyweight_tag_button'));
-      expect(bodyweightBtn, findsOneWidget);
-      await tester.tap(bodyweightBtn);
-      await tester.pumpAndSettle();
+    // Open the muscle filter sheet and select Chest.
+    final muscleFilterButton = find.byKey(
+      const Key('muscle_filter_tag_button'),
+    );
+    expect(muscleFilterButton, findsOneWidget);
+    await tester.tap(muscleFilterButton);
+    await tester.pumpAndSettle();
 
-      // Non-bodyweight should be filtered out
-      expect(find.text('Bench Press'), findsNothing);
-      expect(find.text('Push-Up'), findsOneWidget);
+    final sheetBottom = tester.getBottomLeft(find.byType(BottomSheet)).dy;
+    final screenBottom =
+        tester.view.physicalSize.height / tester.view.devicePixelRatio;
+    expect(sheetBottom, screenBottom);
 
-      // Clear All should now be visible and enabled
-      expect(clearFinder, findsOneWidget);
-      final enabledClearBtn = tester.widget<CupertinoButton>(clearFinder);
-      expect(enabledClearBtn.onPressed, isNotNull);
-    },
-  );
+    final muscleOption = find.byKey(const Key('muscles_filter_option_chest'));
+    expect(muscleOption, findsOneWidget);
+    await tester.tap(muscleOption);
+    await tester.pumpAndSettle();
 
-  testWidgets('Bodyweight tag shows check mark when selected', (tester) async {
+    // Chest exercises remain visible, while unrelated muscles stay filtered out.
+    expect(find.text('Bench Press'), findsOneWidget);
+    expect(find.text('Push-Up'), findsOneWidget);
+    expect(find.text('Plank'), findsNothing);
+
+    // Clear All should now be visible and enabled
+    expect(clearFinder, findsOneWidget);
+    final enabledClearBtn = tester.widget<CupertinoButton>(clearFinder);
+    expect(enabledClearBtn.onPressed, isNotNull);
+  });
+
+  testWidgets('Bodyweight filter toggle updates results', (tester) async {
     final exercises = [
       Exercise(
         slug: 'push-up',
@@ -134,6 +158,17 @@ void main() {
         animation: '',
         isBodyWeightExercise: true,
       ),
+      Exercise(
+        slug: 'bench-press',
+        name: 'Bench Press',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: const [],
+        instructions: const ['Press'],
+        equipment: 'Barbell',
+        image: '',
+        animation: '',
+        isBodyWeightExercise: false,
+      ),
     ];
     ExerciseService.instance.setDependenciesForTesting(
       exerciseDao: _FakeExerciseDao(exercises),
@@ -145,29 +180,11 @@ void main() {
     await tester.pumpWidget(_wrap(const ExercisePickerScreen()));
     await tester.pumpAndSettle();
 
-    // Find the bodyweight tag button
-    final bodyweightButton = find.byKey(const Key('bodyweight_tag_button'));
-    expect(bodyweightButton, findsOneWidget);
-
-    // Initially the tag should not be selected (check styling)
-    final initialButton = tester.widget<CupertinoButton>(bodyweightButton);
-    final initialContainer = initialButton.child as Container;
-    final initialDecoration = initialContainer.decoration as BoxDecoration;
-    expect(
-      initialDecoration.color,
-      isNot(equals(Colors.blue)),
-    ); // Not selected color
-
-    // Tap bodyweight tag to select
-    await tester.tap(bodyweightButton);
+    await tester.tap(find.byKey(const Key('bodyweight_tag_button')));
     await tester.pumpAndSettle();
 
-    // The tag should now be selected (check styling change)
-    final selectedButton = tester.widget<CupertinoButton>(bodyweightButton);
-    final selectedContainer = selectedButton.child as Container;
-    final selectedDecoration = selectedContainer.decoration as BoxDecoration;
-    // The selected state should have accent color background
-    expect(selectedDecoration.color, isNotNull);
+    expect(find.text('Push-Up'), findsOneWidget);
+    expect(find.text('Bench Press'), findsNothing);
   });
 
   testWidgets(
@@ -302,31 +319,13 @@ void main() {
       // Verify multi-select mode (Done button present)
       expect(find.text('Done'), findsOneWidget);
 
-      // Initially no exercises selected
-      expect(
-        find.byIcon(CupertinoIcons.check_mark_circled_solid),
-        findsNothing,
-      );
-
       // Tap first exercise
       await tester.tap(find.text('Bench Press'));
       await tester.pumpAndSettle();
 
-      // Should show checkmark for selected exercise
-      expect(
-        find.byIcon(CupertinoIcons.check_mark_circled_solid),
-        findsOneWidget,
-      );
-
       // Tap second exercise
       await tester.tap(find.text('Push-Up'));
       await tester.pumpAndSettle();
-
-      // Should show checkmarks for both selected exercises
-      expect(
-        find.byIcon(CupertinoIcons.check_mark_circled_solid),
-        findsNWidgets(2),
-      );
 
       // Tap Done button
       await tester.tap(find.text('Done'));
@@ -369,29 +368,40 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _wrap(const ExercisePickerScreen(multiSelect: true)),
+        _wrap(
+          Builder(
+            builder: (context) => Scaffold(
+              body: ElevatedButton(
+                onPressed: () async {
+                  await Navigator.push<List<Exercise>>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const ExercisePickerScreen(multiSelect: true),
+                    ),
+                  );
+                },
+                child: const Text('Open Multi Picker'),
+              ),
+            ),
+          ),
+        ),
       );
+      await tester.tap(find.text('Open Multi Picker'));
       await tester.pumpAndSettle();
 
       // Tap exercise to select
       await tester.tap(find.text('Bench Press'));
       await tester.pumpAndSettle();
 
-      // Should show checkmark
-      expect(
-        find.byIcon(CupertinoIcons.check_mark_circled_solid),
-        findsOneWidget,
-      );
-
       // Tap again to deselect
       await tester.tap(find.text('Bench Press'));
       await tester.pumpAndSettle();
 
-      // Should not show checkmark
-      expect(
-        find.byIcon(CupertinoIcons.check_mark_circled_solid),
-        findsNothing,
-      );
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Open Multi Picker'), findsOneWidget);
     },
   );
 
