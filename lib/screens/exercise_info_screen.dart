@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:pull_down_button/pull_down_button.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/app_constants.dart';
@@ -14,6 +13,7 @@ import '../services/user_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/exercise_media.dart';
 import '../utils/unit_converter.dart';
+import '../widgets/app_bottom_sheet.dart';
 import '../widgets/exercise_info/exercise_image_section.dart';
 import '../widgets/exercise_info/exercise_summary_card.dart';
 import '../widgets/insights/general_graph_card.dart';
@@ -192,6 +192,27 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
       _selectedMonths = months;
     });
     _loadExerciseInsights();
+  }
+
+  Future<void> _showTimeframeSheet() async {
+    final selected = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      backgroundColor: context.appColors.transparent,
+      elevation: 0,
+      isDismissible: true,
+      enableDrag: true,
+      isScrollControlled: true,
+      builder: (context) => _ExerciseTimeframeSheet(
+        options: _timeframeOptions,
+        selectedLabel: _selectedTimeframe,
+      ),
+    );
+    if (!mounted || selected == null) return;
+
+    final label = selected['label'] as String?;
+    final months = selected['months'] as int?;
+    if (label == null || months == null || label == _selectedTimeframe) return;
+    _onTimeframeChanged(label, months);
   }
 
   void _toggleInstructions() {
@@ -465,52 +486,41 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
           'Statistics',
           style: textTheme.headlineSmall?.copyWith(fontSize: 22),
         ),
-        PullDownButton(
-          itemBuilder: (context) => _timeframeOptions
-              .map(
-                (option) => PullDownMenuItem.selectable(
-                  title: option['label'],
-                  selected: _selectedTimeframe == option['label'],
-                  onTap: () =>
-                      _onTimeframeChanged(option['label'], option['months']),
-                ),
-              )
-              .toList(),
-          buttonBuilder: (context, showMenu) => CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: showMenu,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12.0,
-                vertical: 6.0,
+        CupertinoButton(
+          key: const Key('exercise_timeframe_button'),
+          padding: EdgeInsets.zero,
+          onPressed: _showTimeframeSheet,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12.0,
+              vertical: 6.0,
+            ),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(12.0),
+              border: Border.all(
+                color: colorScheme.outline.withValues(alpha: 0.08),
+                width: 0.5,
               ),
-              decoration: BoxDecoration(
-                color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(12.0),
-                border: Border.all(
-                  color: colorScheme.outline.withValues(alpha: 0.08),
-                  width: 0.5,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _selectedTimeframe,
-                    style: textTheme.labelMedium?.copyWith(
-                      color: colors.textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _selectedTimeframe,
+                  style: textTheme.labelMedium?.copyWith(
+                    color: colors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    CupertinoIcons.chevron_down,
-                    size: 16,
-                    color: colors.textSecondary,
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  CupertinoIcons.chevron_down,
+                  size: 16,
+                  color: colors.textSecondary,
+                ),
+              ],
             ),
           ),
         ),
@@ -742,82 +752,114 @@ class _ExerciseActionSheet extends StatelessWidget {
       );
     }
 
-    return SafeArea(
-      top: false,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.42,
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(AppConstants.SHEET_RADIUS),
-            ),
-            border: Border.all(
-              color: colorScheme.outline.withValues(alpha: 0.18),
-              width: AppConstants.CARD_STROKE_WIDTH,
-            ),
-          ),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                10,
-                16,
-                MediaQuery.of(context).padding.bottom + 12,
-              ),
+    return AppBottomSheet(
+      maxHeight: MediaQuery.of(context).size.height * 0.42,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AppBottomSheetHandle(),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerLeft,
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: colorScheme.outline.withValues(alpha: 0.45),
-                      borderRadius: BorderRadius.circular(999),
+                  Text(
+                    'EXERCISE ACTIONS',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: colors.textSecondary,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'EXERCISE ACTIONS',
-                          style: textTheme.labelMedium?.copyWith(
-                            color: colors.textSecondary,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Choose what you want to do with this custom exercise.',
-                          style: textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Choose what you want to do with this custom exercise.',
+                    style: textTheme.bodyMedium,
                   ),
-                  const SizedBox(height: 14),
-                  actionTile(
-                    value: 'edit',
-                    label: 'Edit',
-                    icon: Icons.edit_outlined,
-                  ),
-                  const SizedBox(height: 8),
-                  actionTile(
-                    value: 'delete',
-                    label: 'Delete',
-                    icon: Icons.delete_outline,
-                    color: colorScheme.error,
-                  ),
-                  const SizedBox(height: 8),
                 ],
               ),
             ),
-          ),
+            const SizedBox(height: 14),
+            actionTile(value: 'edit', label: 'Edit', icon: Icons.edit_outlined),
+            const SizedBox(height: 8),
+            actionTile(
+              value: 'delete',
+              label: 'Delete',
+              icon: Icons.delete_outline,
+              color: colorScheme.error,
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+class _ExerciseTimeframeSheet extends StatelessWidget {
+  const _ExerciseTimeframeSheet({
+    required this.options,
+    required this.selectedLabel,
+  });
+
+  final List<Map<String, dynamic>> options;
+  final String selectedLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
+    return AppBottomSheet(
+      maxHeight: MediaQuery.of(context).size.height * 0.46,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const AppBottomSheetHandle(),
+          const SizedBox(height: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'TIMEFRAME',
+                style: textTheme.labelMedium?.copyWith(
+                  color: colors.textSecondary,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Choose how much history to use for exercise statistics.',
+                style: textTheme.bodyMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: options.length,
+              itemBuilder: (context, index) {
+                final option = options[index];
+                final label = option['label'] as String;
+                final isSelected = label == selectedLabel;
+
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: index == options.length - 1 ? 0 : 8,
+                  ),
+                  child: AppBottomSheetOptionTile(
+                    key: Key('timeframe_option_${label.toLowerCase()}'),
+                    label: label,
+                    selected: isSelected,
+                    onTap: () => Navigator.of(context).pop(option),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

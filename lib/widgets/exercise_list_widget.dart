@@ -8,6 +8,7 @@ import '../screens/exercise_info_screen.dart';
 import '../services/exercise_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/exercise_media.dart';
+import 'app_bottom_sheet.dart';
 
 class ExerciseListWidget extends StatefulWidget {
   final Function(Exercise) onExerciseSelected;
@@ -863,188 +864,81 @@ class _ExerciseFilterSheetState extends State<_ExerciseFilterSheet> {
       return query.isEmpty || item.toLowerCase().contains(query);
     }).toList();
 
-    return SizedBox(
+    return AppBottomSheet(
       height: MediaQuery.of(context).size.height * widget.heightFactor,
-      child: Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppConstants.SHEET_RADIUS),
-          ),
-          border: Border.all(
-            color: colorScheme.outline.withValues(alpha: 0.18),
-            width: AppConstants.CARD_STROKE_WIDTH,
-          ),
-        ),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            10,
-            16,
-            MediaQuery.of(context).padding.bottom + 12,
-          ),
-          child: Column(
-            children: [
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: colorScheme.outline.withValues(alpha: 0.45),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.eyebrow,
-                          style: textTheme.labelMedium?.copyWith(
-                            color: colors.textSecondary,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(widget.description, style: textTheme.bodyMedium),
-                      ],
-                    ),
-                  ),
-                  if (widget.selectedItem != null)
-                    TextButton(
-                      onPressed: () =>
-                          Navigator.of(context).pop(widget.selectedItem),
-                      child: const Text('Clear'),
-                    ),
-                ],
-              ),
-              if (widget.searchHint != null) ...[
-                const SizedBox(height: 14),
-                SearchBar(
-                  controller: _searchController,
-                  leading: const Padding(
-                    padding: EdgeInsetsDirectional.only(start: 4),
-                    child: Icon(Icons.search),
-                  ),
-                  hintText: widget.searchHint,
-                  elevation: const WidgetStatePropertyAll(0),
-                  backgroundColor: WidgetStatePropertyAll(
-                    colors.field.withValues(alpha: 0.55),
-                  ),
-                  side: WidgetStatePropertyAll(
-                    BorderSide(
-                      color: colorScheme.outline.withValues(alpha: 0.16),
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 14),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: filteredItems.length,
-                  itemBuilder: (context, index) {
-                    final item = filteredItems[index];
-                    final isSelected = item == widget.selectedItem;
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        bottom: index == filteredItems.length - 1 ? 0 : 8,
-                      ),
-                      child: _ExerciseFilterOptionTile(
-                        key: Key(
-                          '${widget.title.toLowerCase()}_filter_option_${item.toLowerCase().replaceAll(' ', '_')}',
-                        ),
-                        label: item,
-                        selected: isSelected,
-                        onTap: () => Navigator.of(context).pop(item),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ExerciseFilterOptionTile extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _ExerciseFilterOptionTile({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    final textTheme = context.appText;
-    final colorScheme = context.appScheme;
-
-    return Material(
-      color: selected
-          ? colorScheme.primary.withValues(alpha: 0.12)
-          : colors.field.withValues(alpha: 0.4),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          child: Row(
+      child: Column(
+        children: [
+          const AppBottomSheetHandle(),
+          const SizedBox(height: 16),
+          Row(
             children: [
               Expanded(
-                child: Text(
-                  label,
-                  style: textTheme.titleSmall?.copyWith(
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.eyebrow,
+                      style: textTheme.labelMedium?.copyWith(
+                        color: colors.textSecondary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(widget.description, style: textTheme.bodyMedium),
+                  ],
                 ),
               ),
-              const SizedBox(width: 12),
-              _ExerciseFilterSelectionIndicator(selected: selected),
+              if (widget.selectedItem != null)
+                TextButton(
+                  onPressed: () =>
+                      Navigator.of(context).pop(widget.selectedItem),
+                  child: const Text('Clear'),
+                ),
             ],
           ),
-        ),
+          if (widget.searchHint != null) ...[
+            const SizedBox(height: 14),
+            SearchBar(
+              controller: _searchController,
+              leading: const Padding(
+                padding: EdgeInsetsDirectional.only(start: 4),
+                child: Icon(Icons.search),
+              ),
+              hintText: widget.searchHint,
+              elevation: const WidgetStatePropertyAll(0),
+              backgroundColor: WidgetStatePropertyAll(
+                colors.field.withValues(alpha: 0.55),
+              ),
+              side: WidgetStatePropertyAll(
+                BorderSide(color: colorScheme.outline.withValues(alpha: 0.16)),
+              ),
+            ),
+          ],
+          const SizedBox(height: 14),
+          Expanded(
+            child: ListView.builder(
+              itemCount: filteredItems.length,
+              itemBuilder: (context, index) {
+                final item = filteredItems[index];
+                final isSelected = item == widget.selectedItem;
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: index == filteredItems.length - 1 ? 0 : 8,
+                  ),
+                  child: AppBottomSheetOptionTile(
+                    key: Key(
+                      '${widget.title.toLowerCase()}_filter_option_${item.toLowerCase().replaceAll(' ', '_')}',
+                    ),
+                    label: item,
+                    selected: isSelected,
+                    onTap: () => Navigator.of(context).pop(item),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
-    );
-  }
-}
-
-class _ExerciseFilterSelectionIndicator extends StatelessWidget {
-  final bool selected;
-
-  const _ExerciseFilterSelectionIndicator({required this.selected});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = context.appScheme;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      width: 22,
-      height: 22,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: selected ? colorScheme.primary : colorScheme.surface,
-        border: Border.all(
-          color: selected
-              ? colorScheme.primary
-              : colorScheme.outline.withValues(alpha: 0.28),
-          width: 1.5,
-        ),
-      ),
-      child: selected
-          ? Icon(Icons.check_rounded, size: 14, color: colorScheme.onPrimary)
-          : null,
     );
   }
 }

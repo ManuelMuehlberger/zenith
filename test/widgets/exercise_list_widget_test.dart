@@ -378,6 +378,51 @@ void main() {
     },
   );
 
+  testWidgets(
+    'ExerciseListWidget - muscle filter sheet shows flush-bottom options',
+    (tester) async {
+      final exercises = [
+        Exercise(
+          slug: 'bench-press',
+          name: 'Bench Press',
+          primaryMuscleGroup: MuscleGroup.chest,
+          secondaryMuscleGroups: [MuscleGroup.triceps],
+          instructions: const ['Press'],
+          equipment: 'Barbell',
+          image: '',
+          animation: '',
+          isBodyWeightExercise: false,
+        ),
+      ];
+      ExerciseService.instance.setDependenciesForTesting(
+        exerciseDao: _FakeExerciseDao(exercises),
+        muscleGroupDao: _FakeMuscleGroupDao([
+          MuscleGroup.chest,
+          MuscleGroup.triceps,
+        ]),
+        seedExercises: exercises,
+      );
+
+      await tester.pumpWidget(
+        _wrap(ExerciseListWidget(onExerciseSelected: (_) {})),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('muscle_filter_tag_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('MUSCLE GROUP'), findsOneWidget);
+      expect(
+        find.text('Choose the muscle you want to focus on.'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('muscles_filter_option_chest')),
+        findsOneWidget,
+      );
+    },
+  );
+
   testWidgets('ExerciseListWidget - search bar is rounded without an outline', (
     tester,
   ) async {

@@ -222,7 +222,9 @@ void main() {
       expect(find.text('1 / 1'), findsOneWidget);
     });
 
-    testWidgets('shows timeframe selector', (tester) async {
+    testWidgets('opens timeframe selector sheet and shows options', (
+      tester,
+    ) async {
       // Arrange
       final exercise = Exercise(
         slug: 'squat',
@@ -242,9 +244,13 @@ void main() {
       // Initial shows "6M" button (default)
       await pumpUntilVisible(tester, find.text('6M'));
       expect(find.text('6M'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('exercise_timeframe_button')));
+      await tester.pumpAndSettle();
 
-      // Note: Testing PullDownButton interaction in widget tests can be complex due to overlays
-      // We verify the button exists and has the correct initial label
+      expect(find.text('TIMEFRAME'), findsOneWidget);
+      expect(find.byKey(const Key('timeframe_option_3m')), findsOneWidget);
+      expect(find.byKey(const Key('timeframe_option_6m')), findsOneWidget);
+      expect(find.byKey(const Key('timeframe_option_1y')), findsOneWidget);
     });
 
     testWidgets('uses themed background colors in dark mode', (tester) async {
