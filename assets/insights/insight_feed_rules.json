@@ -1,0 +1,60 @@
+{
+  "rules": [
+    {
+      "id": "training_velocity",
+      "type": "trainingVelocity",
+      "enabled": true,
+      "priority": 90,
+      "params": {
+        "recentDays": 7,
+        "baselineDays": 90,
+        "minimumDeltaPercent": 20
+      }
+    },
+    {
+      "id": "recent_achievement_shoutout",
+      "type": "recentAchievementShoutout",
+      "enabled": true,
+      "priority": 100,
+      "params": {
+        "maxAgeDays": 14
+      }
+    },
+    {
+      "id": "high_intensity_shoutout",
+      "type": "highIntensityShoutout",
+      "enabled": true,
+      "priority": 80,
+      "params": {
+        "lookbackDays": 90,
+        "minimumPercentile": 90
+      }
+    },
+    {
+      "id": "consistency_pulse",
+      "type": "consistencyPulse",
+      "enabled": true,
+      "priority": 70,
+      "params": {
+        "recentDays": 7,
+        "minimumWorkouts": 2
+      }
+    },
+    {
+      "id": "comeback_card",
+      "type": "comebackCard",
+      "enabled": true,
+      "priority": 60,
+      "params": {
+        "minGapDays": 7
+      }
+    },
+    {
+      "id": "personal_best_momentum",
+      "type": "personalBestMomentum",
+      "enabled": true,
+      "priority": 75,
+      "params": {}
+    }
+  ]
+}
