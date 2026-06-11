@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pull_down_button/pull_down_button.dart';
@@ -158,6 +156,22 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
     Navigator.of(context).pop<Exercise>(_exercise);
   }
 
+  Future<void> _showCustomExerciseActions() async {
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: context.appColors.transparent,
+      elevation: 0,
+      builder: (context) => const _ExerciseActionSheet(),
+    );
+    if (!mounted || action == null) return;
+
+    if (action == 'edit') {
+      await _editCustomExercise();
+    } else if (action == 'delete') {
+      await _deleteCustomExercise();
+    }
+  }
+
   Future<void> _openExerciseGallery() async {
     final imagePaths = decodeExerciseImagePaths(_exercise.image);
     if (imagePaths.isEmpty) return;
@@ -199,8 +213,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
 
   @override
   Widget build(BuildContext context) {
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: backgroundColor,
       body: CustomScrollView(
         slivers: [
           _buildAppBar(),
@@ -232,7 +248,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
                   _buildInstructionsSection(),
                   const SizedBox(height: 32),
                   _buildStatsHeader(),
-                  const SizedBox(height: 12), // Reduced gap
+                  const SizedBox(height: 12),
                   _buildStatsContent(),
                   SizedBox(height: MediaQuery.of(context).padding.bottom + 32),
                 ],
@@ -245,75 +261,39 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
   }
 
   Widget _buildAppBar() {
-    final textTheme = context.appText;
     final colors = context.appColors;
-    final transparentSurface = context.appScheme.surface.withValues(alpha: 0);
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
+    final headerColor = Theme.of(context).scaffoldBackgroundColor;
 
     return SliverAppBar(
       pinned: true,
       stretch: true,
-      backgroundColor: transparentSurface,
+      backgroundColor: headerColor,
       elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: colors.transparent,
+      shadowColor: colors.transparent,
       expandedHeight: 120.0,
       leading: IconButton(
-        icon: Icon(CupertinoIcons.back, color: context.appScheme.onSurface),
+        icon: Icon(CupertinoIcons.back, color: colorScheme.onSurface),
         onPressed: () => Navigator.of(context).pop(),
       ),
       actions: [
         if (_exercise.isCustom)
-          PopupMenuButton<String>(
+          IconButton(
             tooltip: 'Exercise actions',
-            icon: Icon(Icons.more_horiz, color: context.appScheme.onSurface),
-            onSelected: (value) {
-              if (value == 'edit') {
-                _editCustomExercise();
-              } else if (value == 'delete') {
-                _deleteCustomExercise();
-              }
-            },
-            itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: 'edit',
-                child: ListTile(
-                  leading: Icon(Icons.edit_outlined),
-                  title: Text('Edit'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              PopupMenuItem(
-                value: 'delete',
-                child: ListTile(
-                  leading: Icon(Icons.delete_outline),
-                  title: Text('Delete'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ],
+            icon: Icon(Icons.more_horiz, color: colorScheme.onSurface),
+            onPressed: _showCustomExerciseActions,
           ),
       ],
       flexibleSpace: LayoutBuilder(
-        builder: (context, constraints) {
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              ClipRRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(
-                    sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                    sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-                  ),
-                  child: Container(color: colors.overlayStrong),
-                ),
-              ),
-              FlexibleSpaceBar(
-                centerTitle: true,
-                titlePadding: const EdgeInsets.only(bottom: 16),
-                title: Text(_exercise.name, style: textTheme.titleMedium),
-                background: Container(color: transparentSurface),
-              ),
-            ],
-          );
-        },
+        builder: (context, constraints) => FlexibleSpaceBar(
+          centerTitle: true,
+          titlePadding: const EdgeInsets.only(bottom: 16),
+          title: Text(_exercise.name, style: textTheme.titleLarge),
+          background: ColoredBox(color: headerColor),
+        ),
       ),
     );
   }
@@ -343,8 +323,8 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
   }
 
   Widget _buildDetailRow(String label, String value, {bool isPrimary = false}) {
-    final textTheme = context.appText;
     final colorScheme = context.appScheme;
+    final textTheme = context.appText;
     final colors = context.appColors;
 
     return Column(
@@ -373,9 +353,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).dividerColor,
+          color: colorScheme.outline.withValues(alpha: 0.08),
           width: AppConstants.CARD_STROKE_WIDTH,
         ),
       ),
@@ -383,7 +363,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
         children: [
           InkWell(
             onTap: _toggleInstructions,
-            borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+            borderRadius: BorderRadius.circular(20),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -409,7 +389,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Divider(color: Theme.of(context).dividerColor, height: 1),
+                  Divider(
+                    color: colorScheme.outline.withValues(alpha: 0.08),
+                    height: 1,
+                  ),
                   const SizedBox(height: 16),
                   if (_exercise.instructions.isNotEmpty)
                     ..._exercise.instructions.asMap().entries.map((entry) {
@@ -421,11 +404,11 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
-                              width: 20,
-                              height: 20,
+                              width: 22,
+                              height: 22,
                               decoration: BoxDecoration(
                                 color: colorScheme.primary.withValues(
-                                  alpha: 0.2,
+                                  alpha: 0.18,
                                 ),
                                 shape: BoxShape.circle,
                               ),
@@ -503,9 +486,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
               ),
               decoration: BoxDecoration(
                 color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(8.0),
+                borderRadius: BorderRadius.circular(12.0),
                 border: Border.all(
-                  color: Theme.of(context).dividerColor,
+                  color: colorScheme.outline.withValues(alpha: 0.08),
                   width: 0.5,
                 ),
               ),
@@ -554,7 +537,11 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.08),
+            width: AppConstants.CARD_STROKE_WIDTH,
+          ),
         ),
         child: Center(
           child: Column(
@@ -655,9 +642,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).dividerColor,
+          color: colorScheme.outline.withValues(alpha: 0.08),
           width: AppConstants.CARD_STROKE_WIDTH,
         ),
       ),
@@ -670,12 +657,18 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
             'Weight per Set',
             _formatWeight(_exerciseInsights!.averageWeight),
           ),
-          Divider(color: Theme.of(context).dividerColor, height: 24),
+          Divider(
+            color: colorScheme.outline.withValues(alpha: 0.08),
+            height: 24,
+          ),
           _buildAverageRow(
             'Reps per Set',
             _exerciseInsights!.averageReps.toStringAsFixed(1),
           ),
-          Divider(color: Theme.of(context).dividerColor, height: 24),
+          Divider(
+            color: colorScheme.outline.withValues(alpha: 0.08),
+            height: 24,
+          ),
           _buildAverageRow(
             'Sets per Session',
             _exerciseInsights!.averageSets.toStringAsFixed(1),
@@ -701,6 +694,131 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
           style: textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
         ),
       ],
+    );
+  }
+}
+
+class _ExerciseActionSheet extends StatelessWidget {
+  const _ExerciseActionSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
+    Widget actionTile({
+      required String value,
+      required String label,
+      required IconData icon,
+      Color? color,
+    }) {
+      return Material(
+        color: colors.field.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          key: Key('exercise_action_$value'),
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => Navigator.of(context).pop(value),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            child: Row(
+              children: [
+                Icon(icon, color: color),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: textTheme.titleSmall?.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SafeArea(
+      top: false,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.42,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppConstants.SHEET_RADIUS),
+            ),
+            border: Border.all(
+              color: colorScheme.outline.withValues(alpha: 0.18),
+              width: AppConstants.CARD_STROKE_WIDTH,
+            ),
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                10,
+                16,
+                MediaQuery.of(context).padding.bottom + 12,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: colorScheme.outline.withValues(alpha: 0.45),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'EXERCISE ACTIONS',
+                          style: textTheme.labelMedium?.copyWith(
+                            color: colors.textSecondary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Choose what you want to do with this custom exercise.',
+                          style: textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  actionTile(
+                    value: 'edit',
+                    label: 'Edit',
+                    icon: Icons.edit_outlined,
+                  ),
+                  const SizedBox(height: 8),
+                  actionTile(
+                    value: 'delete',
+                    label: 'Delete',
+                    icon: Icons.delete_outline,
+                    color: colorScheme.error,
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

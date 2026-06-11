@@ -1,14 +1,13 @@
-import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:pull_down_button/pull_down_button.dart';
 
 import '../constants/app_constants.dart';
 import '../models/exercise.dart';
+import '../screens/exercise_image_gallery_screen.dart';
 import '../screens/exercise_info_screen.dart';
 import '../services/exercise_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/exercise_media.dart';
 
 class ExerciseListWidget extends StatefulWidget {
   final Function(Exercise) onExerciseSelected;
@@ -38,12 +37,11 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
   _selectedBodyweight; // null = all, true = bodyweight only, false = non-bodyweight only
   List<Exercise> _filteredExercises = [];
 
-  // Scroll controller to detect scroll direction
   final ScrollController _scrollController = ScrollController();
   bool _showSearchBar = true;
-  final double _searchBarHeight = 56.0; // Height of the search bar
+  final double _searchBarHeight = 56.0;
   final double _filterRowHeight = 52.0;
-  double _lastScrollOffset = 0.0; // Last scroll offset to track scroll distance
+  double _lastScrollOffset = 0.0;
 
   @override
   void initState() {
@@ -54,7 +52,6 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
   }
 
   Future<void> _loadExercises() async {
-    // If exercises are already loaded, use them directly
     if (ExerciseService.instance.exercises.isNotEmpty) {
       setState(() {
         _filteredExercises = ExerciseService.instance.exercises;
@@ -62,7 +59,6 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
       return;
     }
 
-    // Otherwise, load them from the service
     await ExerciseService.instance.loadExercises();
     setState(() {
       _filteredExercises = ExerciseService.instance.exercises;
@@ -75,7 +71,6 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
     final currentOffset = _scrollController.offset;
     final delta = currentOffset - _lastScrollOffset;
 
-    // Always show search bar when at the top
     if (currentOffset <= 0) {
       if (!_showSearchBar) {
         setState(() {
@@ -86,17 +81,14 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
       return;
     }
 
-    // Hysteresis check
     if (delta.abs() > AppConstants.SCROLL_HYSTERESIS_THRESHOLD) {
       if (delta > 0) {
-        // Scrolling down - hide search bar
         if (_showSearchBar) {
           setState(() {
             _showSearchBar = false;
           });
         }
       } else {
-        // Scrolling up - show search bar
         if (!_showSearchBar) {
           setState(() {
             _showSearchBar = true;
@@ -127,13 +119,9 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         color: isPrimary
-            ? colorScheme.primary.withValues(alpha: 0.2)
-            : colors.field,
-        border: Border.all(
-          color: isPrimary ? colorScheme.primary : colors.textSecondary,
-          width: 1,
-        ),
-        borderRadius: BorderRadius.circular(14),
+            ? colorScheme.primary.withValues(alpha: 0.14)
+            : colors.field.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         muscleGroup,
@@ -141,6 +129,89 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
           color: isPrimary ? colorScheme.primary : colors.textSecondary,
           fontWeight: isPrimary ? FontWeight.w600 : FontWeight.w500,
         ),
+      ),
+    );
+  }
+
+  Widget _buildExerciseMetaPill(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    Color? accentColor,
+  }) {
+    final colors = context.appColors;
+    final scheme = context.appScheme;
+    final textTheme = context.appText;
+    final tone = accentColor ?? colors.textSecondary;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: accentColor != null
+            ? tone.withValues(alpha: 0.12)
+            : colors.field.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: accentColor != null ? tone : colors.textSecondary,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: textTheme.labelMedium?.copyWith(
+              color: accentColor != null ? tone : scheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExercisePreview(BuildContext context, Exercise exercise) {
+    final colors = context.appColors;
+    final scheme = context.appScheme;
+    final imagePaths = decodeExerciseImagePaths(exercise.image);
+    final imagePath = imagePaths.isEmpty ? null : imagePaths.first;
+    final hasAnimation = exercise.animation.isNotEmpty;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        key: Key('exercise_card_image_${exercise.slug}'),
+        width: 74,
+        height: 74,
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: colors.textPrimary.withValues(alpha: 0.1)),
+        ),
+        child: imagePath == null
+            ? Center(
+                child: Icon(
+                  hasAnimation ? Icons.play_circle_outline : Icons.image,
+                  color: colors.textTertiary,
+                  size: 28,
+                ),
+              )
+            : Image(
+                image: exerciseImageProviderFor(imagePath),
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Center(
+                    child: Icon(
+                      Icons.image,
+                      color: colors.textTertiary,
+                      size: 28,
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
@@ -154,7 +225,6 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
         exercises = ExerciseService.instance.searchExercises(query);
       }
 
-      // Filter by muscle group (single selection)
       if (_selectedMuscleGroup != null) {
         exercises = exercises
             .where(
@@ -164,10 +234,8 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
             .toList();
       }
 
-      // Filter by equipment (single selection)
       if (_selectedEquipment != null) {
         exercises = exercises.where((exercise) {
-          // Handle the spelling variation in the data ("Dumbell" vs "Dumbbell")
           final exerciseEquipment = exercise.equipment;
           final normalizedExerciseEquipment = exerciseEquipment == 'Dumbell'
               ? 'Dumbbell'
@@ -176,7 +244,6 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
         }).toList();
       }
 
-      // Filter by bodyweight
       if (_selectedBodyweight != null) {
         exercises = exercises
             .where(
@@ -219,6 +286,33 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
     });
   }
 
+  Future<void> _showMuscleGroupSheet(List<String> items) async {
+    final selected = await _showSingleSelectFilterSheet(
+      title: 'Muscles',
+      eyebrow: 'MUSCLE GROUP',
+      description: 'Choose the muscle you want to focus on.',
+      items: items,
+      selectedItem: _selectedMuscleGroup,
+      searchHint: 'Search muscles',
+      heightFactor: 0.74,
+    );
+    if (selected == null || !mounted) return;
+    _toggleMuscleGroup(selected);
+  }
+
+  Future<void> _showEquipmentSheet(List<String> items) async {
+    final selected = await _showSingleSelectFilterSheet(
+      title: 'Equipment',
+      eyebrow: 'MACHINE / EQUIPMENT',
+      description: 'Choose what the movement depends on.',
+      items: items,
+      selectedItem: _selectedEquipment,
+      heightFactor: 0.52,
+    );
+    if (selected == null || !mounted) return;
+    _toggleEquipment(selected);
+  }
+
   void _clearAllFilters() {
     setState(() {
       _selectedMuscleGroup = null;
@@ -226,6 +320,34 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
       _selectedBodyweight = null;
       _filterExercises();
     });
+  }
+
+  Future<String?> _showSingleSelectFilterSheet({
+    required String title,
+    required String eyebrow,
+    required String description,
+    required List<String> items,
+    required String? selectedItem,
+    String? searchHint,
+    required double heightFactor,
+  }) {
+    return showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: context.appColors.transparent,
+      elevation: 0,
+      isDismissible: true,
+      enableDrag: true,
+      isScrollControlled: true,
+      builder: (context) => _ExerciseFilterSheet(
+        title: title,
+        eyebrow: eyebrow,
+        description: description,
+        items: items,
+        selectedItem: selectedItem,
+        searchHint: searchHint,
+        heightFactor: heightFactor,
+      ),
+    );
   }
 
   Future<void> _navigateToExerciseInfo(
@@ -244,66 +366,57 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
     _filterExercises();
   }
 
+  Future<void> _openExerciseGallery(
+    BuildContext context,
+    Exercise exercise,
+  ) async {
+    final imagePaths = decodeExerciseImagePaths(exercise.image);
+    if (imagePaths.isEmpty) return;
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => ExerciseImageGalleryScreen(
+          imagePaths: imagePaths,
+          title: exercise.name,
+        ),
+      ),
+    );
+  }
+
   Widget _buildFilterTag({
     required BuildContext context,
+    required Key buttonKey,
     required String title,
     required bool isSelected,
-    required List<String> items,
-    required Function(String) onItemSelected,
     required String? selectedItem,
+    required VoidCallback onPressed,
   }) {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
 
-    return PullDownButton(
-      itemBuilder: (context) => items
-          .map(
-            (item) => PullDownMenuItem.selectable(
-              title: item,
-              selected: selectedItem == item,
-              onTap: () => onItemSelected(item),
-            ),
-          )
-          .toList(),
-      buttonBuilder: (context, showMenu) => CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: showMenu,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? colorScheme.primary
-                : colors.field.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(10.0),
-            border: Border.all(
+    return CupertinoButton(
+      key: buttonKey,
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
+      onPressed: onPressed,
+      minimumSize: Size.zero,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            isSelected ? selectedItem! : title,
+            style: textTheme.bodyMedium?.copyWith(
               color: isSelected ? colorScheme.primary : colors.textSecondary,
-              width: 1,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                isSelected ? selectedItem! : title,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: isSelected
-                      ? colorScheme.onPrimary
-                      : colors.textSecondary,
-                  fontWeight: isSelected ? FontWeight.w600 : null,
-                ),
-              ),
-              const SizedBox(width: 2),
-              Icon(
-                CupertinoIcons.chevron_down,
-                size: 14,
-                color: isSelected
-                    ? colorScheme.onPrimary
-                    : colors.textSecondary,
-              ),
-            ],
+          const SizedBox(width: 4),
+          Icon(
+            CupertinoIcons.chevron_down,
+            size: 12,
+            color: isSelected ? colorScheme.primary : colors.textTertiary,
           ),
-        ),
+        ],
       ),
     );
   }
@@ -318,26 +431,14 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
 
     return CupertinoButton(
       key: const Key('bodyweight_tag_button'),
-      padding: EdgeInsets.zero,
+      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
       onPressed: _toggleBodyweight,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? colorScheme.primary
-              : colors.field.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(10.0),
-          border: Border.all(
-            color: isSelected ? colorScheme.primary : colors.textSecondary,
-            width: 1,
-          ),
-        ),
-        child: Text(
-          'Bodyweight',
-          style: textTheme.bodyMedium?.copyWith(
-            color: isSelected ? colorScheme.onPrimary : colors.textSecondary,
-            fontWeight: isSelected ? FontWeight.w600 : null,
-          ),
+      minimumSize: Size.zero,
+      child: Text(
+        'Bodyweight',
+        style: textTheme.bodyMedium?.copyWith(
+          color: isSelected ? colorScheme.primary : colors.textSecondary,
+          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
         ),
       ),
     );
@@ -349,38 +450,31 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
     final textTheme = context.appText;
     final colors = context.appColors;
 
-    // Use predefined muscle groups from AppMuscleGroup enum (excluding NA)
     final muscleGroups = AppMuscleGroup.values
         .where((group) => group != AppMuscleGroup.na)
         .map((group) => group.displayName)
         .toList();
 
-    // Use predefined equipment types from EquipmentType enum
     final equipmentList = EquipmentType.values
         .map((equipment) => equipment.displayName)
         .toList();
 
-    // Determine if any filter is active to enable/disable Clear All
     final bool hasAnyFilter =
         _selectedMuscleGroup != null ||
         _selectedEquipment != null ||
         _selectedBodyweight != null;
 
-    // Calculate internal header height for ExerciseListWidget's own search/filter bars
     double internalHeaderHeight = 0;
     if (widget.title != null || widget.trailing != null) {
-      // This title/trailing is for the ExerciseListWidget itself, if provided.
-      // Currently, ExercisePickerScreen doesn't pass these, so this might be 0.
       internalHeaderHeight += 48;
     }
     if (_showSearchBar) {
-      internalHeaderHeight += _searchBarHeight; // Search bar height
+      internalHeaderHeight += _searchBarHeight;
     }
-    internalHeaderHeight += _filterRowHeight; // Tag filter row height
+    internalHeaderHeight += _filterRowHeight;
 
     return Stack(
       children: [
-        // Exercise list (behind everything)
         _filteredExercises.isEmpty
             ? Center(
                 child: Column(
@@ -415,7 +509,6 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                 padding: EdgeInsets.only(
                   left: AppConstants.PAGE_HORIZONTAL_PADDING,
                   right: AppConstants.PAGE_HORIZONTAL_PADDING,
-                  // Add space for ExerciseListWidget's own headers AND any additional top padding from parent
                   top: internalHeaderHeight + widget.additionalTopPadding + 20,
                   bottom: AppConstants.PAGE_HORIZONTAL_PADDING,
                 ),
@@ -428,148 +521,154 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                       widget.selectedExercises != null;
 
                   return Padding(
-                    padding: const EdgeInsets.only(
-                      bottom: AppConstants.CARD_VERTICAL_GAP,
-                    ),
-                    child: Container(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: DecoratedBox(
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? colorScheme.primary.withValues(alpha: 0.3)
+                            ? colorScheme.primary.withValues(alpha: 0.08)
                             : colorScheme.surface,
-                        borderRadius: BorderRadius.circular(
-                          AppConstants.CARD_RADIUS,
-                        ),
+                        borderRadius: AppTheme.workoutCardBorderRadius,
                         border: Border.all(
                           color: isSelected
-                              ? colorScheme.primary
-                              : Theme.of(context).dividerColor,
-                          width: AppConstants.CARD_STROKE_WIDTH,
+                              ? colorScheme.primary.withValues(alpha: 0.42)
+                              : colorScheme.outline.withValues(alpha: 0.08),
+                          width: isSelected ? 1.5 : 1,
                         ),
                       ),
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Main tappable area for selection
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 14, 0, 14),
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () =>
+                                  _openExerciseGallery(context, exercise),
+                              child: _buildExercisePreview(context, exercise),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: CupertinoButton(
                               padding: EdgeInsets.zero,
                               onPressed: () =>
                                   widget.onExerciseSelected(exercise),
                               child: Padding(
-                                padding: const EdgeInsets.all(
-                                  AppConstants.CARD_PADDING,
+                                padding: const EdgeInsets.fromLTRB(
+                                  8,
+                                  16,
+                                  8,
+                                  16,
                                 ),
-                                child: Row(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            exercise.name,
-                                            style: textTheme.titleSmall,
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Wrap(
-                                            spacing: 6,
-                                            runSpacing: 6,
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              _buildMuscleGroupChip(
-                                                context,
-                                                exercise
-                                                    .primaryMuscleGroup
-                                                    .name,
-                                                true,
-                                              ),
-                                              if (exercise
-                                                  .secondaryMuscleGroups
-                                                  .isNotEmpty)
-                                                _buildMuscleGroupChip(
-                                                  context,
-                                                  exercise.secondaryMuscleGroups
-                                                      .map((g) => g.name)
-                                                      .join(', '),
-                                                  false,
-                                                ),
-                                              if (exercise.isCustom)
-                                                Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 12,
-                                                        vertical: 4,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: colors.info
-                                                        .withValues(
-                                                          alpha: 0.16,
-                                                        ),
-                                                    border: Border.all(
-                                                      color: colors.info,
-                                                      width: 1,
+                                              Text(
+                                                exercise.name,
+                                                style: textTheme.titleMedium
+                                                    ?.copyWith(
+                                                      color: isSelected
+                                                          ? colorScheme.primary
+                                                          : colorScheme
+                                                                .onSurface,
+                                                      fontWeight:
+                                                          FontWeight.w800,
                                                     ),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          14,
-                                                        ),
-                                                  ),
-                                                  child: Text(
-                                                    'Custom',
-                                                    style: textTheme.labelMedium
-                                                        ?.copyWith(
-                                                          color: colors.info,
-                                                          fontWeight:
-                                                              FontWeight.w600,
-                                                        ),
-                                                  ),
-                                                ),
+                                              ),
                                             ],
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        if (!isMultiSelectMode)
+                                          Icon(
+                                            key: Key(
+                                              'exercise_card_chevron_${exercise.slug}',
+                                            ),
+                                            CupertinoIcons.chevron_right,
+                                            color: colors.textSecondary,
+                                            size: 18,
+                                          ),
+                                      ],
                                     ),
-                                    if (isSelected)
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                          left: 12.0,
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 6,
+                                      children: [
+                                        _buildMuscleGroupChip(
+                                          context,
+                                          exercise.primaryMuscleGroup.name,
+                                          true,
                                         ),
-                                        child: Icon(
-                                          CupertinoIcons
-                                              .check_mark_circled_solid,
-                                          color: colorScheme.primary,
-                                          size: 24,
-                                        ),
-                                      )
-                                    else if (!isMultiSelectMode)
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                          left: 12.0,
-                                        ),
-                                        child: Icon(
-                                          CupertinoIcons.chevron_right,
-                                          color: colors.textSecondary,
-                                          size: 16,
-                                        ),
-                                      ),
+                                        if (exercise.equipment.isNotEmpty)
+                                          _buildExerciseMetaPill(
+                                            context,
+                                            label: exercise.equipment,
+                                            icon: Icons.category_outlined,
+                                          ),
+                                        if (exercise.isBodyWeightExercise)
+                                          _buildExerciseMetaPill(
+                                            context,
+                                            label: 'Bodyweight',
+                                            icon:
+                                                Icons.accessibility_new_rounded,
+                                          ),
+                                        if (exercise.isCustom)
+                                          _buildExerciseMetaPill(
+                                            context,
+                                            label: 'Custom',
+                                            icon: Icons.auto_awesome_rounded,
+                                            accentColor: colors.info,
+                                          ),
+                                      ],
+                                    ),
                                   ],
                                 ),
                               ),
                             ),
                           ),
-                          // Info button (always visible in multi-select mode, or when not selected in single-select mode)
                           if (isMultiSelectMode)
                             Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: IconButton(
-                                padding: const EdgeInsets.all(8),
-                                constraints: const BoxConstraints(),
-                                onPressed: () =>
-                                    _navigateToExerciseInfo(context, exercise),
-                                icon: Icon(
-                                  CupertinoIcons.info_circle,
-                                  color: colors.textSecondary,
-                                  size: 28,
+                              padding: const EdgeInsets.only(
+                                top: 14,
+                                right: 14,
+                                bottom: 14,
+                              ),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: IconButton(
+                                    key: Key(
+                                      'exercise_card_info_${exercise.slug}',
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints.tightFor(
+                                      width: 24,
+                                      height: 24,
+                                    ),
+                                    visualDensity: VisualDensity.compact,
+                                    onPressed: () => _navigateToExerciseInfo(
+                                      context,
+                                      exercise,
+                                    ),
+                                    icon: Icon(
+                                      CupertinoIcons.info_circle,
+                                      color: colors.textSecondary,
+                                      size: 22,
+                                    ),
+                                    tooltip: 'Exercise Info',
+                                  ),
                                 ),
-                                tooltip: 'Exercise Info',
                               ),
                             ),
                         ],
@@ -578,10 +677,6 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                   );
                 },
               ),
-
-        // Glass header overlay for search/filter bars (on top of the list, but below screen header)
-        // This Column itself is positioned at the top of the ExerciseListWidget's Stack.
-        // If additionalTopPadding is > 0, this whole Column needs to be pushed down.
         Positioned(
           top: widget.additionalTopPadding,
           left: 0,
@@ -589,152 +684,367 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Optional Title/Trailing for ExerciseListWidget itself (currently not used by ExercisePickerScreen)
               if (widget.title != null || widget.trailing != null)
-                ClipRRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(
-                      sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                      sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-                    ),
-                    child: Container(
-                      color: colors.overlayMedium,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppConstants.PAGE_HORIZONTAL_PADDING,
-                        vertical: 8.0,
-                      ),
-                      child: Row(
-                        children: [
-                          if (widget.title != null)
-                            Expanded(
-                              child: Text(
-                                widget.title!,
-                                style: Theme.of(context).textTheme.titleLarge,
-                              ),
-                            ),
-                          if (widget.trailing != null) widget.trailing!,
-                        ],
-                      ),
-                    ),
+                Container(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.PAGE_HORIZONTAL_PADDING,
+                    vertical: 8.0,
+                  ),
+                  child: Row(
+                    children: [
+                      if (widget.title != null)
+                        Expanded(
+                          child: Text(
+                            widget.title!,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                      if (widget.trailing != null) widget.trailing!,
+                    ],
                   ),
                 ),
-
-              // Search bar with glass effect (collapses on scroll with animation)
               AnimatedContainer(
                 key: const Key('exercise_search_container'),
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
                 height: _showSearchBar ? _searchBarHeight : 0,
-                child: ClipRRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(
-                      sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                      sigmaY: AppConstants.GLASS_BLUR_SIGMA,
+                color: Theme.of(context).scaffoldBackgroundColor,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppConstants.PAGE_HORIZONTAL_PADDING,
+                    vertical: 6.0,
+                  ),
+                  child: CupertinoSearchTextField(
+                    controller: _searchController,
+                    prefixInsets: const EdgeInsetsDirectional.fromSTEB(
+                      10,
+                      8,
+                      0,
+                      8,
                     ),
-                    child: Container(
-                      color: colors.overlayStrong,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppConstants.PAGE_HORIZONTAL_PADDING,
-                        vertical: 6.0,
-                      ),
-                      child: CupertinoSearchTextField(
-                        controller: _searchController,
-                        placeholder: 'Search exercises...',
-                        placeholderStyle: textTheme.bodyMedium?.copyWith(
-                          color: colors.textSecondary,
-                        ),
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colors.field.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(14.0),
-                          border: Border.all(
-                            color: colorScheme.outline.withValues(alpha: 0.8),
-                            width: 1,
-                          ),
-                        ),
-                      ),
+                    suffixInsets: const EdgeInsetsDirectional.fromSTEB(
+                      0,
+                      8,
+                      12,
+                      8,
+                    ),
+                    placeholder: 'Search exercises...',
+                    placeholderStyle: textTheme.bodyMedium?.copyWith(
+                      color: colors.textSecondary,
+                    ),
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.field.withValues(alpha: 0.82),
+                      borderRadius: BorderRadius.circular(22.0),
+                      border: Border.all(color: colors.transparent, width: 0),
                     ),
                   ),
                 ),
               ),
-
-              // iOS-style tag filters with dropdown functionality
-              ClipRRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(
-                    sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                    sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-                  ),
-                  child: Container(
-                    height: _filterRowHeight,
-                    color: colors.overlayMedium,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppConstants.PAGE_HORIZONTAL_PADDING,
-                    ),
-                    child: Row(
-                      children: [
-                        // Scrollable tags section
-                        Expanded(
-                          child: SingleChildScrollView(
-                            key: const Key('tags_scroll'),
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                // Muscle Groups Tag
-                                _buildFilterTag(
-                                  context: context,
-                                  title: 'Muscles',
-                                  isSelected: _selectedMuscleGroup != null,
-                                  items: muscleGroups,
-                                  onItemSelected: _toggleMuscleGroup,
-                                  selectedItem: _selectedMuscleGroup,
-                                ),
-                                const SizedBox(width: 8),
-                                // Equipment Tag
-                                _buildFilterTag(
-                                  context: context,
-                                  title: 'Equipment',
-                                  isSelected: _selectedEquipment != null,
-                                  items: equipmentList,
-                                  onItemSelected: _toggleEquipment,
-                                  selectedItem: _selectedEquipment,
-                                ),
-                                const SizedBox(width: 8),
-                                // Bodyweight Tag
-                                _buildBodyweightTag(
-                                  context: context,
-                                  isSelected: _selectedBodyweight == true,
-                                ),
-                                const SizedBox(width: 8),
-                              ],
+              Container(
+                height: _filterRowHeight,
+                color: Theme.of(context).scaffoldBackgroundColor,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppConstants.PAGE_HORIZONTAL_PADDING,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        key: const Key('tags_scroll'),
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildFilterTag(
+                              context: context,
+                              buttonKey: const Key('muscle_filter_tag_button'),
+                              title: 'Muscles',
+                              isSelected: _selectedMuscleGroup != null,
+                              selectedItem: _selectedMuscleGroup,
+                              onPressed: () =>
+                                  _showMuscleGroupSheet(muscleGroups),
                             ),
-                          ),
+                            const SizedBox(width: 12),
+                            _buildFilterTag(
+                              context: context,
+                              buttonKey: const Key(
+                                'equipment_filter_tag_button',
+                              ),
+                              title: 'Equipment',
+                              isSelected: _selectedEquipment != null,
+                              selectedItem: _selectedEquipment,
+                              onPressed: () =>
+                                  _showEquipmentSheet(equipmentList),
+                            ),
+                            const SizedBox(width: 12),
+                            _buildBodyweightTag(
+                              context: context,
+                              isSelected: _selectedBodyweight == true,
+                            ),
+                            SizedBox(width: hasAnyFilter ? 12 : 8),
+                          ],
                         ),
-                        if (hasAnyFilter) ...[
-                          const SizedBox(width: 8),
-                          CupertinoButton(
-                            key: const Key('clear_all_button'),
-                            padding: EdgeInsets.zero,
-                            onPressed: _clearAllFilters,
-                            child: Icon(
-                              CupertinoIcons.xmark_circle_fill,
-                              size: 24,
-                              color: colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                        const SizedBox(width: 16),
-                      ],
+                      ),
                     ),
-                  ),
+                    if (hasAnyFilter) ...[
+                      const SizedBox(width: 8),
+                      CupertinoButton(
+                        key: const Key('clear_all_button'),
+                        padding: EdgeInsets.zero,
+                        minimumSize: Size.zero,
+                        onPressed: _clearAllFilters,
+                        child: Icon(
+                          CupertinoIcons.xmark_circle_fill,
+                          size: 20,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ExerciseFilterSheet extends StatefulWidget {
+  final String title;
+  final String eyebrow;
+  final String description;
+  final List<String> items;
+  final String? selectedItem;
+  final String? searchHint;
+  final double heightFactor;
+
+  const _ExerciseFilterSheet({
+    required this.title,
+    required this.eyebrow,
+    required this.description,
+    required this.items,
+    required this.selectedItem,
+    this.searchHint,
+    required this.heightFactor,
+  });
+
+  @override
+  State<_ExerciseFilterSheet> createState() => _ExerciseFilterSheetState();
+}
+
+class _ExerciseFilterSheetState extends State<_ExerciseFilterSheet> {
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _searchController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final query = _searchController.text.trim().toLowerCase();
+    final filteredItems = widget.items.where((item) {
+      return query.isEmpty || item.toLowerCase().contains(query);
+    }).toList();
+
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * widget.heightFactor,
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppConstants.SHEET_RADIUS),
+          ),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.18),
+            width: AppConstants.CARD_STROKE_WIDTH,
+          ),
+        ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            16,
+            10,
+            16,
+            MediaQuery.of(context).padding.bottom + 12,
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: colorScheme.outline.withValues(alpha: 0.45),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.eyebrow,
+                          style: textTheme.labelMedium?.copyWith(
+                            color: colors.textSecondary,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(widget.description, style: textTheme.bodyMedium),
+                      ],
+                    ),
+                  ),
+                  if (widget.selectedItem != null)
+                    TextButton(
+                      onPressed: () =>
+                          Navigator.of(context).pop(widget.selectedItem),
+                      child: const Text('Clear'),
+                    ),
+                ],
+              ),
+              if (widget.searchHint != null) ...[
+                const SizedBox(height: 14),
+                SearchBar(
+                  controller: _searchController,
+                  leading: const Padding(
+                    padding: EdgeInsetsDirectional.only(start: 4),
+                    child: Icon(Icons.search),
+                  ),
+                  hintText: widget.searchHint,
+                  elevation: const WidgetStatePropertyAll(0),
+                  backgroundColor: WidgetStatePropertyAll(
+                    colors.field.withValues(alpha: 0.55),
+                  ),
+                  side: WidgetStatePropertyAll(
+                    BorderSide(
+                      color: colorScheme.outline.withValues(alpha: 0.16),
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 14),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: filteredItems.length,
+                  itemBuilder: (context, index) {
+                    final item = filteredItems[index];
+                    final isSelected = item == widget.selectedItem;
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        bottom: index == filteredItems.length - 1 ? 0 : 8,
+                      ),
+                      child: _ExerciseFilterOptionTile(
+                        key: Key(
+                          '${widget.title.toLowerCase()}_filter_option_${item.toLowerCase().replaceAll(' ', '_')}',
+                        ),
+                        label: item,
+                        selected: isSelected,
+                        onTap: () => Navigator.of(context).pop(item),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ExerciseFilterOptionTile extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ExerciseFilterOptionTile({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
+
+    return Material(
+      color: selected
+          ? colorScheme.primary.withValues(alpha: 0.12)
+          : colors.field.withValues(alpha: 0.4),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: textTheme.titleSmall?.copyWith(
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              _ExerciseFilterSelectionIndicator(selected: selected),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ExerciseFilterSelectionIndicator extends StatelessWidget {
+  final bool selected;
+
+  const _ExerciseFilterSelectionIndicator({required this.selected});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = context.appScheme;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: selected ? colorScheme.primary : colorScheme.surface,
+        border: Border.all(
+          color: selected
+              ? colorScheme.primary
+              : colorScheme.outline.withValues(alpha: 0.28),
+          width: 1.5,
+        ),
+      ),
+      child: selected
+          ? Icon(Icons.check_rounded, size: 14, color: colorScheme.onPrimary)
+          : null,
     );
   }
 }

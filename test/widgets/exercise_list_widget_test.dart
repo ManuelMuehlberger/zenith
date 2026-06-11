@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 
 // Test file reviewed for WorkoutSet field additions
@@ -6,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart' as mockito;
 import 'package:zenith/models/exercise.dart';
 import 'package:zenith/models/muscle_group.dart';
+import 'package:zenith/screens/exercise_image_gallery_screen.dart';
 import 'package:zenith/services/dao/exercise_dao.dart';
 import 'package:zenith/services/dao/muscle_group_dao.dart';
 import 'package:zenith/services/exercise_service.dart';
@@ -174,6 +177,13 @@ void main() {
       expect(clearFinder, findsOneWidget);
       final CupertinoButton clearBtn = tester.widget(clearFinder);
       expect(clearBtn.onPressed, isNotNull);
+      final Icon clearIcon = tester.widget(
+        find.descendant(
+          of: clearFinder,
+          matching: find.byIcon(CupertinoIcons.xmark_circle_fill),
+        ),
+      );
+      expect(clearIcon.icon, CupertinoIcons.xmark_circle_fill);
 
       // Tap Clear All
       await tester.tap(clearFinder);
@@ -280,4 +290,252 @@ void main() {
     // Verify that no exceptions were thrown during navigation
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'ExerciseListWidget - preview placeholder matches detail page icon treatment',
+    (tester) async {
+      final exercises = [
+        Exercise(
+          slug: 'air-bike',
+          name: 'Air Bike',
+          primaryMuscleGroup: MuscleGroup.cardio,
+          secondaryMuscleGroups: const [],
+          instructions: const ['Pedal hard'],
+          equipment: 'Machine',
+          image: '',
+          animation: 'assets/animations/air_bike.gif',
+          isBodyWeightExercise: true,
+          type: ExerciseType.cardio,
+        ),
+      ];
+      ExerciseService.instance.setDependenciesForTesting(
+        exerciseDao: _FakeExerciseDao(exercises),
+        muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.cardio]),
+        seedExercises: exercises,
+      );
+
+      await tester.pumpWidget(
+        _wrap(ExerciseListWidget(onExerciseSelected: (_) {})),
+      );
+      await tester.pumpAndSettle();
+
+      final preview = find.byKey(const Key('exercise_card_image_air-bike'));
+      final playIcon = find.descendant(
+        of: preview,
+        matching: find.byIcon(Icons.play_circle_outline),
+      );
+
+      expect(playIcon, findsOneWidget);
+      expect(
+        find.descendant(
+          of: preview,
+          matching: find.byIcon(Icons.directions_run_rounded),
+        ),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'ExerciseListWidget - muscle filter sheet dismisses when tapping above it',
+    (tester) async {
+      final exercises = [
+        Exercise(
+          slug: 'bench-press',
+          name: 'Bench Press',
+          primaryMuscleGroup: MuscleGroup.chest,
+          secondaryMuscleGroups: [MuscleGroup.triceps],
+          instructions: const ['Press'],
+          equipment: 'Barbell',
+          image: '',
+          animation: '',
+          isBodyWeightExercise: false,
+        ),
+      ];
+      ExerciseService.instance.setDependenciesForTesting(
+        exerciseDao: _FakeExerciseDao(exercises),
+        muscleGroupDao: _FakeMuscleGroupDao([
+          MuscleGroup.chest,
+          MuscleGroup.triceps,
+        ]),
+        seedExercises: exercises,
+      );
+
+      await tester.pumpWidget(
+        _wrap(ExerciseListWidget(onExerciseSelected: (_) {})),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('muscle_filter_tag_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('MUSCLE GROUP'), findsOneWidget);
+
+      await tester.tapAt(const Offset(20, 20));
+      await tester.pumpAndSettle();
+
+      expect(find.text('MUSCLE GROUP'), findsNothing);
+    },
+  );
+
+  testWidgets('ExerciseListWidget - search bar is rounded without an outline', (
+    tester,
+  ) async {
+    final exercises = [
+      Exercise(
+        slug: 'bench-press',
+        name: 'Bench Press',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: [MuscleGroup.triceps],
+        instructions: const ['Press'],
+        equipment: 'Barbell',
+        image: '',
+        animation: '',
+        isBodyWeightExercise: false,
+      ),
+    ];
+    ExerciseService.instance.setDependenciesForTesting(
+      exerciseDao: _FakeExerciseDao(exercises),
+      muscleGroupDao: _FakeMuscleGroupDao([
+        MuscleGroup.chest,
+        MuscleGroup.triceps,
+      ]),
+      seedExercises: exercises,
+    );
+
+    await tester.pumpWidget(
+      _wrap(ExerciseListWidget(onExerciseSelected: (_) {})),
+    );
+    await tester.pumpAndSettle();
+
+    final searchField = tester.widget<CupertinoSearchTextField>(
+      find.byType(CupertinoSearchTextField),
+    );
+    final decoration = searchField.decoration as BoxDecoration;
+    final borderRadius = decoration.borderRadius! as BorderRadius;
+    final border = decoration.border as Border;
+
+    expect(borderRadius.topLeft.x, 22);
+    expect(border.top.color, Colors.transparent);
+    expect(border.top.width, 0);
+  });
+
+  testWidgets(
+    'ExerciseListWidget - result card shows image thumb and plain action icons',
+    (tester) async {
+      final exercise = Exercise(
+        slug: 'bench-press',
+        name: 'Bench Press',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: [MuscleGroup.triceps],
+        instructions: const ['Press'],
+        equipment: 'Barbell',
+        image: jsonEncode(['assets/images/bench_press.png']),
+        animation: '',
+        isBodyWeightExercise: false,
+      );
+
+      ExerciseService.instance.setDependenciesForTesting(
+        exerciseDao: _FakeExerciseDao([exercise]),
+        muscleGroupDao: _FakeMuscleGroupDao([
+          MuscleGroup.chest,
+          MuscleGroup.triceps,
+        ]),
+        seedExercises: [exercise],
+      );
+
+      await tester.pumpWidget(
+        _wrap(ExerciseListWidget(onExerciseSelected: (_) {})),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('exercise_card_image_bench-press')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('exercise_card_image_bench-press')),
+          matching: find.byType(Image),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('exercise_card_chevron_bench-press')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<Icon>(
+              find.byKey(const Key('exercise_card_chevron_bench-press')),
+            )
+            .icon,
+        CupertinoIcons.chevron_right,
+      );
+
+      await tester.pumpWidget(
+        _wrap(
+          ExerciseListWidget(
+            onExerciseSelected: (_) {},
+            selectedExercises: const [],
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final infoButton = tester.widget<IconButton>(
+        find.byKey(const Key('exercise_card_info_bench-press')),
+      );
+      expect(infoButton.padding, EdgeInsets.zero);
+      expect(infoButton.iconSize, isNull);
+    },
+  );
+
+  testWidgets(
+    'ExerciseListWidget - tapping the preview opens the fullscreen gallery',
+    (tester) async {
+      final exercise = Exercise(
+        slug: 'bench-press',
+        name: 'Bench Press',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: [MuscleGroup.triceps],
+        instructions: const ['Press'],
+        equipment: 'Barbell',
+        image: jsonEncode(['assets/images/bench_press.png']),
+        animation: '',
+        isBodyWeightExercise: false,
+      );
+
+      ExerciseService.instance.setDependenciesForTesting(
+        exerciseDao: _FakeExerciseDao([exercise]),
+        muscleGroupDao: _FakeMuscleGroupDao([
+          MuscleGroup.chest,
+          MuscleGroup.triceps,
+        ]),
+        seedExercises: [exercise],
+      );
+
+      var selectedExerciseCount = 0;
+
+      await tester.pumpWidget(
+        _wrap(
+          ExerciseListWidget(
+            onExerciseSelected: (_) {
+              selectedExerciseCount += 1;
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('exercise_card_image_bench-press')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ExerciseImageGalleryScreen), findsOneWidget);
+      expect(find.text('1 / 1'), findsOneWidget);
+      expect(selectedExerciseCount, 0);
+    },
+  );
 }
