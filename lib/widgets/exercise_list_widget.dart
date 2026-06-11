@@ -175,32 +175,40 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
 
   Widget _buildExercisePreview(BuildContext context, Exercise exercise) {
     final colors = context.appColors;
+    final scheme = context.appScheme;
     final imagePaths = decodeExerciseImagePaths(exercise.image);
     final imagePath = imagePaths.isEmpty ? null : imagePaths.first;
+    final hasAnimation = exercise.animation.isNotEmpty;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         key: Key('exercise_card_image_${exercise.slug}'),
         width: 74,
         height: 74,
-        decoration: BoxDecoration(color: colors.field.withValues(alpha: 0.82)),
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: colors.textPrimary.withValues(alpha: 0.1)),
+        ),
         child: imagePath == null
-            ? Icon(
-                exercise.type == ExerciseType.cardio
-                    ? Icons.directions_run_rounded
-                    : Icons.image_outlined,
-                color: colors.textSecondary,
-                size: 24,
+            ? Center(
+                child: Icon(
+                  hasAnimation ? Icons.play_circle_outline : Icons.image,
+                  color: colors.textTertiary,
+                  size: 28,
+                ),
               )
             : Image(
                 image: exerciseImageProviderFor(imagePath),
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
-                  return Icon(
-                    Icons.image_outlined,
-                    color: colors.textSecondary,
-                    size: 24,
+                  return Center(
+                    child: Icon(
+                      Icons.image,
+                      color: colors.textTertiary,
+                      size: 28,
+                    ),
                   );
                 },
               ),

@@ -24,6 +24,10 @@ class ExerciseImageSection extends StatefulWidget {
 }
 
 class _ExerciseImageSectionState extends State<ExerciseImageSection> {
+  static const BorderRadius _imageRadius = BorderRadius.all(
+    Radius.circular(20),
+  );
+
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -42,7 +46,7 @@ class _ExerciseImageSectionState extends State<ExerciseImageSection> {
       width: widget.width,
       decoration: BoxDecoration(
         color: scheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: _imageRadius,
         border: Border.all(color: colors.textPrimary.withValues(alpha: 0.1)),
       ),
       child: Center(
@@ -71,7 +75,7 @@ class _ExerciseImageSectionState extends State<ExerciseImageSection> {
     for (final imagePath in imagePaths) {
       pages.add(
         ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: _imageRadius,
           child: Image(
             image: exerciseImageProviderFor(imagePath),
             height: widget.height,
@@ -93,7 +97,7 @@ class _ExerciseImageSectionState extends State<ExerciseImageSection> {
               height: widget.height,
               width: widget.width,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: _imageRadius,
                 image: DecorationImage(
                   image: exerciseImageProviderFor(widget.exercise.animation),
                   fit: BoxFit.cover,

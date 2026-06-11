@@ -292,6 +292,51 @@ void main() {
   });
 
   testWidgets(
+    'ExerciseListWidget - preview placeholder matches detail page icon treatment',
+    (tester) async {
+      final exercises = [
+        Exercise(
+          slug: 'air-bike',
+          name: 'Air Bike',
+          primaryMuscleGroup: MuscleGroup.cardio,
+          secondaryMuscleGroups: const [],
+          instructions: const ['Pedal hard'],
+          equipment: 'Machine',
+          image: '',
+          animation: 'assets/animations/air_bike.gif',
+          isBodyWeightExercise: true,
+          type: ExerciseType.cardio,
+        ),
+      ];
+      ExerciseService.instance.setDependenciesForTesting(
+        exerciseDao: _FakeExerciseDao(exercises),
+        muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.cardio]),
+        seedExercises: exercises,
+      );
+
+      await tester.pumpWidget(
+        _wrap(ExerciseListWidget(onExerciseSelected: (_) {})),
+      );
+      await tester.pumpAndSettle();
+
+      final preview = find.byKey(const Key('exercise_card_image_air-bike'));
+      final playIcon = find.descendant(
+        of: preview,
+        matching: find.byIcon(Icons.play_circle_outline),
+      );
+
+      expect(playIcon, findsOneWidget);
+      expect(
+        find.descendant(
+          of: preview,
+          matching: find.byIcon(Icons.directions_run_rounded),
+        ),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
     'ExerciseListWidget - muscle filter sheet dismisses when tapping above it',
     (tester) async {
       final exercises = [

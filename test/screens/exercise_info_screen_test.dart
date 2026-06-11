@@ -58,6 +58,18 @@ Widget _wrap(Widget child) {
   );
 }
 
+Widget _wrapWithThemes(Widget child) {
+  return MaterialApp(
+    theme: ThemeData(splashFactory: NoSplash.splashFactory),
+    darkTheme: ThemeData.dark().copyWith(
+      splashFactory: NoSplash.splashFactory,
+      scaffoldBackgroundColor: const Color(0xFF121212),
+    ),
+    themeMode: ThemeMode.dark,
+    home: child,
+  );
+}
+
 void main() {
   group('ExerciseInfoScreen', () {
     setUp(() {
@@ -233,6 +245,32 @@ void main() {
 
       // Note: Testing PullDownButton interaction in widget tests can be complex due to overlays
       // We verify the button exists and has the correct initial label
+    });
+
+    testWidgets('uses themed background colors in dark mode', (tester) async {
+      final exercise = Exercise(
+        slug: 'deadlift',
+        name: 'Deadlift',
+        primaryMuscleGroup: MuscleGroup.back,
+        secondaryMuscleGroups: const [MuscleGroup.hamstrings],
+        instructions: const [],
+        image: '',
+        animation: '',
+      );
+
+      InsightsService.instance.setWorkoutsProvider(() async => []);
+
+      await tester.pumpWidget(
+        _wrapWithThemes(ExerciseInfoScreen(exercise: exercise)),
+      );
+      await tester.pumpAndSettle();
+
+      final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
+      final appBar = tester.widget<SliverAppBar>(find.byType(SliverAppBar));
+      const expected = Color(0xFF121212);
+
+      expect(scaffold.backgroundColor, expected);
+      expect(appBar.backgroundColor, expected);
     });
 
     testWidgets('custom exercise can be deleted from the info screen', (

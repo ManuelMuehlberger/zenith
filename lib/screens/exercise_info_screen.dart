@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pull_down_button/pull_down_button.dart';
@@ -215,8 +213,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
 
   @override
   Widget build(BuildContext context) {
+    final backgroundColor = Theme.of(context).scaffoldBackgroundColor;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: backgroundColor,
       body: CustomScrollView(
         slivers: [
           _buildAppBar(),
@@ -248,7 +248,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
                   _buildInstructionsSection(),
                   const SizedBox(height: 32),
                   _buildStatsHeader(),
-                  const SizedBox(height: 12), // Reduced gap
+                  const SizedBox(height: 12),
                   _buildStatsContent(),
                   SizedBox(height: MediaQuery.of(context).padding.bottom + 32),
                 ],
@@ -261,51 +261,39 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
   }
 
   Widget _buildAppBar() {
-    final textTheme = context.appText;
     final colors = context.appColors;
-    final transparentSurface = context.appScheme.surface.withValues(alpha: 0);
+    final textTheme = context.appText;
+    final colorScheme = context.appScheme;
+    final headerColor = Theme.of(context).scaffoldBackgroundColor;
 
     return SliverAppBar(
       pinned: true,
       stretch: true,
-      backgroundColor: transparentSurface,
+      backgroundColor: headerColor,
       elevation: 0,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: colors.transparent,
+      shadowColor: colors.transparent,
       expandedHeight: 120.0,
       leading: IconButton(
-        icon: Icon(CupertinoIcons.back, color: context.appScheme.onSurface),
+        icon: Icon(CupertinoIcons.back, color: colorScheme.onSurface),
         onPressed: () => Navigator.of(context).pop(),
       ),
       actions: [
         if (_exercise.isCustom)
           IconButton(
             tooltip: 'Exercise actions',
-            icon: Icon(Icons.more_horiz, color: context.appScheme.onSurface),
+            icon: Icon(Icons.more_horiz, color: colorScheme.onSurface),
             onPressed: _showCustomExerciseActions,
           ),
       ],
       flexibleSpace: LayoutBuilder(
-        builder: (context, constraints) {
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              ClipRRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(
-                    sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                    sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-                  ),
-                  child: Container(color: colors.overlayStrong),
-                ),
-              ),
-              FlexibleSpaceBar(
-                centerTitle: true,
-                titlePadding: const EdgeInsets.only(bottom: 16),
-                title: Text(_exercise.name, style: textTheme.titleMedium),
-                background: Container(color: transparentSurface),
-              ),
-            ],
-          );
-        },
+        builder: (context, constraints) => FlexibleSpaceBar(
+          centerTitle: true,
+          titlePadding: const EdgeInsets.only(bottom: 16),
+          title: Text(_exercise.name, style: textTheme.titleLarge),
+          background: ColoredBox(color: headerColor),
+        ),
       ),
     );
   }
@@ -335,8 +323,8 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
   }
 
   Widget _buildDetailRow(String label, String value, {bool isPrimary = false}) {
-    final textTheme = context.appText;
     final colorScheme = context.appScheme;
+    final textTheme = context.appText;
     final colors = context.appColors;
 
     return Column(
@@ -365,9 +353,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).dividerColor,
+          color: colorScheme.outline.withValues(alpha: 0.08),
           width: AppConstants.CARD_STROKE_WIDTH,
         ),
       ),
@@ -375,7 +363,7 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
         children: [
           InkWell(
             onTap: _toggleInstructions,
-            borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+            borderRadius: BorderRadius.circular(20),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -401,7 +389,10 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Divider(color: Theme.of(context).dividerColor, height: 1),
+                  Divider(
+                    color: colorScheme.outline.withValues(alpha: 0.08),
+                    height: 1,
+                  ),
                   const SizedBox(height: 16),
                   if (_exercise.instructions.isNotEmpty)
                     ..._exercise.instructions.asMap().entries.map((entry) {
@@ -413,11 +404,11 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
-                              width: 20,
-                              height: 20,
+                              width: 22,
+                              height: 22,
                               decoration: BoxDecoration(
                                 color: colorScheme.primary.withValues(
-                                  alpha: 0.2,
+                                  alpha: 0.18,
                                 ),
                                 shape: BoxShape.circle,
                               ),
@@ -495,9 +486,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
               ),
               decoration: BoxDecoration(
                 color: colorScheme.surface,
-                borderRadius: BorderRadius.circular(8.0),
+                borderRadius: BorderRadius.circular(12.0),
                 border: Border.all(
-                  color: Theme.of(context).dividerColor,
+                  color: colorScheme.outline.withValues(alpha: 0.08),
                   width: 0.5,
                 ),
               ),
@@ -546,7 +537,11 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: colorScheme.outline.withValues(alpha: 0.08),
+            width: AppConstants.CARD_STROKE_WIDTH,
+          ),
         ),
         child: Center(
           child: Column(
@@ -647,9 +642,9 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).dividerColor,
+          color: colorScheme.outline.withValues(alpha: 0.08),
           width: AppConstants.CARD_STROKE_WIDTH,
         ),
       ),
@@ -662,12 +657,18 @@ class _ExerciseInfoScreenState extends State<ExerciseInfoScreen>
             'Weight per Set',
             _formatWeight(_exerciseInsights!.averageWeight),
           ),
-          Divider(color: Theme.of(context).dividerColor, height: 24),
+          Divider(
+            color: colorScheme.outline.withValues(alpha: 0.08),
+            height: 24,
+          ),
           _buildAverageRow(
             'Reps per Set',
             _exerciseInsights!.averageReps.toStringAsFixed(1),
           ),
-          Divider(color: Theme.of(context).dividerColor, height: 24),
+          Divider(
+            color: colorScheme.outline.withValues(alpha: 0.08),
+            height: 24,
+          ),
           _buildAverageRow(
             'Sets per Session',
             _exerciseInsights!.averageSets.toStringAsFixed(1),
