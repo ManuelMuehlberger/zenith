@@ -11,6 +11,7 @@ import '../screens/exercise_image_gallery_screen.dart';
 import '../services/exercise_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/exercise_media.dart';
+import '../widgets/app_bottom_sheet.dart';
 
 // policy: allow-public-api editor entry point for custom exercises.
 class CustomExerciseCreatorScreen extends StatefulWidget {
@@ -25,6 +26,9 @@ class CustomExerciseCreatorScreen extends StatefulWidget {
 
 class _CustomExerciseCreatorScreenState
     extends State<CustomExerciseCreatorScreen> {
+  static const double _sectionRadius = 20;
+  static const double _controlRadius = 16;
+
   static const List<EquipmentType> _cardioEquipmentOptions = [
     EquipmentType.none,
     EquipmentType.machine,
@@ -192,6 +196,15 @@ class _CustomExerciseCreatorScreenState
                       final nameRow = Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          SizedBox(
+                            width: pictureSize,
+                            height: pictureSize,
+                            child: _TopPicturePanel(
+                              imagePaths: _imagePaths,
+                              onTap: _openImageGallery,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: TextFormField(
                               key: const Key('custom_exercise_name_field'),
@@ -215,15 +228,6 @@ class _CustomExerciseCreatorScreenState
                                 }
                                 return null;
                               },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          SizedBox(
-                            width: pictureSize,
-                            height: pictureSize,
-                            child: _TopPicturePanel(
-                              imagePaths: _imagePaths,
-                              onTap: _openImageGallery,
                             ),
                           ),
                         ],
@@ -519,7 +523,9 @@ class _SectionPanel extends StatelessWidget {
           padding: const EdgeInsets.all(AppConstants.CARD_PADDING),
           decoration: BoxDecoration(
             color: context.appScheme.surface,
-            borderRadius: BorderRadius.circular(AppConstants.CARD_RADIUS),
+            borderRadius: BorderRadius.circular(
+              _CustomExerciseCreatorScreenState._sectionRadius,
+            ),
             border: Border.all(
               color: colors.textPrimary.withValues(alpha: 0.08),
               width: AppConstants.CARD_STROKE_WIDTH,
@@ -559,12 +565,20 @@ class _PickerTile extends StatelessWidget {
 
     return Material(
       color: colors.field.withValues(alpha: 0.55),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(
+          _CustomExerciseCreatorScreenState._controlRadius,
+        ),
+      ),
       child: ListTile(
         key: tileKey,
         enabled: onTap != null,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            _CustomExerciseCreatorScreenState._controlRadius,
+          ),
+        ),
         tileColor: colors.transparent,
         leading: Container(
           width: 36,
@@ -622,7 +636,9 @@ class _MaterialSwitchRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
         color: colors.field.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(
+          _CustomExerciseCreatorScreenState._controlRadius,
+        ),
       ),
       child: Row(
         children: [
@@ -690,11 +706,15 @@ class _TopPicturePanel extends StatelessWidget {
       child: InkWell(
         key: const Key('custom_exercise_open_gallery'),
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(
+          _CustomExerciseCreatorScreenState._controlRadius,
+        ),
         child: Ink(
           decoration: BoxDecoration(
             color: colors.field.withValues(alpha: 0.42),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(
+              _CustomExerciseCreatorScreenState._controlRadius,
+            ),
             border: Border.all(color: scheme.outline.withValues(alpha: 0.28)),
           ),
           child: Stack(
@@ -702,7 +722,9 @@ class _TopPicturePanel extends StatelessWidget {
               Positioned.fill(
                 child: hasImage
                     ? ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(
+                          _CustomExerciseCreatorScreenState._controlRadius,
+                        ),
                         child: Image(
                           image: exerciseImageProviderFor(imagePaths.first),
                           fit: BoxFit.cover,
@@ -810,116 +832,88 @@ class _MusclePickerSheetState extends State<_MusclePickerSheet> {
       return query.isEmpty || group.name.toLowerCase().contains(query);
     }).toList();
 
-    return SafeArea(
-      top: false,
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.74,
-        decoration: BoxDecoration(
-          color: context.appScheme.surface,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppConstants.SHEET_RADIUS),
-          ),
-          border: Border.all(
-            color: scheme.outline.withValues(alpha: 0.18),
-            width: AppConstants.CARD_STROKE_WIDTH,
-          ),
-        ),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            10,
-            16,
-            MediaQuery.of(context).padding.bottom + 12,
-          ),
-          child: Column(
+    return AppBottomSheet(
+      height: MediaQuery.of(context).size.height * 0.74,
+      child: Column(
+        children: [
+          const AppBottomSheetHandle(),
+          const SizedBox(height: 16),
+          Row(
             children: [
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: scheme.outline.withValues(alpha: 0.45),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          (widget.multiSelect
-                                  ? 'Secondary muscles'
-                                  : 'Primary muscle')
-                              .toUpperCase(),
-                          style: textTheme.labelMedium?.copyWith(
-                            color: colors.textSecondary,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          widget.multiSelect
-                              ? 'Choose every muscle that supports the movement.'
-                              : 'Choose the muscle the exercise is mainly built around.',
-                          style: textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (widget.multiSelect)
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(_selected),
-                      child: const Text('Done'),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              SearchBar(
-                controller: _searchController,
-                leading: const Icon(Icons.search),
-                hintText: 'Search muscles',
-                elevation: const WidgetStatePropertyAll(0),
-                backgroundColor: WidgetStatePropertyAll(
-                  colors.field.withValues(alpha: 0.55),
-                ),
-                side: WidgetStatePropertyAll(
-                  BorderSide(color: scheme.outline.withValues(alpha: 0.16)),
-                ),
-              ),
-              const SizedBox(height: 14),
               Expanded(
-                child: ListView.separated(
-                  itemCount: groups.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final group = groups[index];
-                    final selected = _selected.contains(group);
-                    return _MuscleOptionTile(
-                      label: group.name,
-                      selected: selected,
-                      multiSelect: widget.multiSelect,
-                      onTap: () {
-                        if (!widget.multiSelect) {
-                          Navigator.of(context).pop(group);
-                          return;
-                        }
-                        setState(() {
-                          if (selected) {
-                            _selected.remove(group);
-                          } else {
-                            _selected.add(group);
-                          }
-                        });
-                      },
-                    );
-                  },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      (widget.multiSelect
+                              ? 'Secondary muscles'
+                              : 'Primary muscle')
+                          .toUpperCase(),
+                      style: textTheme.labelMedium?.copyWith(
+                        color: colors.textSecondary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.multiSelect
+                          ? 'Choose every muscle that supports the movement.'
+                          : 'Choose the muscle the exercise is mainly built around.',
+                      style: textTheme.bodyMedium,
+                    ),
+                  ],
                 ),
               ),
+              if (widget.multiSelect)
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(_selected),
+                  child: const Text('Done'),
+                ),
             ],
           ),
-        ),
+          const SizedBox(height: 14),
+          SearchBar(
+            controller: _searchController,
+            leading: const Icon(Icons.search),
+            hintText: 'Search muscles',
+            elevation: const WidgetStatePropertyAll(0),
+            backgroundColor: WidgetStatePropertyAll(
+              colors.field.withValues(alpha: 0.55),
+            ),
+            side: WidgetStatePropertyAll(
+              BorderSide(color: scheme.outline.withValues(alpha: 0.16)),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Expanded(
+            child: ListView.separated(
+              itemCount: groups.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final group = groups[index];
+                final selected = _selected.contains(group);
+                return _MuscleOptionTile(
+                  label: group.name,
+                  selected: selected,
+                  multiSelect: widget.multiSelect,
+                  onTap: () {
+                    if (!widget.multiSelect) {
+                      Navigator.of(context).pop(group);
+                      return;
+                    }
+                    setState(() {
+                      if (selected) {
+                        _selected.remove(group);
+                      } else {
+                        _selected.add(group);
+                      }
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1044,123 +1038,49 @@ class _EquipmentPickerSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.appColors;
     final textTheme = context.appText;
-    final scheme = context.appScheme;
 
-    return SafeArea(
-      top: false,
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.52,
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppConstants.SHEET_RADIUS),
-          ),
-          border: Border.all(
-            color: scheme.outline.withValues(alpha: 0.18),
-            width: AppConstants.CARD_STROKE_WIDTH,
-          ),
-        ),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            10,
-            16,
-            MediaQuery.of(context).padding.bottom + 12,
-          ),
-          child: Column(
-            children: [
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: scheme.outline.withValues(alpha: 0.45),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'MACHINE / EQUIPMENT',
-                      style: textTheme.labelMedium?.copyWith(
-                        color: colors.textSecondary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Choose what the movement depends on.',
-                      style: textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              Expanded(
-                child: ListView.separated(
-                  itemCount: options.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final option = options[index];
-                    return _EquipmentOptionTile(
-                      label: option.displayName,
-                      selected: option == selected,
-                      onTap: () => Navigator.of(context).pop(option),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _EquipmentOptionTile extends StatelessWidget {
-  const _EquipmentOptionTile({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.appColors;
-    final scheme = context.appScheme;
-
-    return Material(
-      color: selected
-          ? scheme.primary.withValues(alpha: 0.12)
-          : colors.field.withValues(alpha: 0.4),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  style: context.appText.titleSmall?.copyWith(
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+    return AppBottomSheet(
+      height: MediaQuery.of(context).size.height * 0.52,
+      child: Column(
+        children: [
+          const AppBottomSheetHandle(),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'MACHINE / EQUIPMENT',
+                  style: textTheme.labelMedium?.copyWith(
+                    color: colors.textSecondary,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-              ),
-              _SelectionIndicator(selected: selected, multiSelect: false),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  'Choose what the movement depends on.',
+                  style: textTheme.bodyMedium,
+                ),
+              ],
+            ),
           ),
-        ),
+          const SizedBox(height: 14),
+          Expanded(
+            child: ListView.separated(
+              itemCount: options.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final option = options[index];
+                return AppBottomSheetOptionTile(
+                  label: option.displayName,
+                  selected: option == selected,
+                  onTap: () => Navigator.of(context).pop(option),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
