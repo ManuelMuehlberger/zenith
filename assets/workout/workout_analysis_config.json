@@ -1,0 +1,152 @@
+{
+  "version": 2,
+  "activationWeights": {
+    "primary": 1.0,
+    "secondary": 0.35
+  },
+  "radarAxes": [
+    {
+      "id": "chest",
+      "label": "Chest"
+    },
+    {
+      "id": "back",
+      "label": "Back"
+    },
+    {
+      "id": "shoulders",
+      "label": "Shoulders"
+    },
+    {
+      "id": "arms",
+      "label": "Arms"
+    },
+    {
+      "id": "core",
+      "label": "Core"
+    },
+    {
+      "id": "glutes",
+      "label": "Glutes"
+    },
+    {
+      "id": "legs",
+      "label": "Legs"
+    }
+  ],
+  "muscleContributions": {
+    "Chest": {
+      "chest": 1.0,
+      "shoulders": 0.15,
+      "arms": 0.1,
+      "core": 0.1
+    },
+    "Triceps": {
+      "arms": 1.0,
+      "shoulders": 0.2,
+      "chest": 0.1
+    },
+    "Front Deltoids": {
+      "shoulders": 1.0,
+      "chest": 0.2,
+      "arms": 0.1
+    },
+    "Core": {
+      "core": 1.0
+    },
+    "Lateral Deltoids": {
+      "shoulders": 1.0,
+      "arms": 0.08
+    },
+    "Rear Deltoids": {
+      "shoulders": 1.0,
+      "back": 0.25
+    },
+    "Shoulders": {
+      "shoulders": 1.0,
+      "arms": 0.15,
+      "chest": 0.1,
+      "back": 0.1
+    },
+    "Biceps": {
+      "arms": 1.0,
+      "back": 0.2
+    },
+    "Lats": {
+      "back": 1.0,
+      "arms": 0.25,
+      "core": 0.1
+    },
+    "Rotator Cuffs": {
+      "shoulders": 0.7,
+      "back": 0.2
+    },
+    "Quads": {
+      "legs": 1.0,
+      "glutes": 0.2,
+      "core": 0.1
+    },
+    "Hamstrings": {
+      "legs": 1.0,
+      "glutes": 0.35,
+      "core": 0.1,
+      "back": 0.1
+    },
+    "Glutes": {
+      "glutes": 1.0,
+      "legs": 0.35,
+      "core": 0.15
+    },
+    "Abductors": {
+      "glutes": 0.85,
+      "legs": 0.35,
+      "core": 0.1
+    },
+    "Adductors": {
+      "legs": 0.75,
+      "glutes": 0.35,
+      "core": 0.1
+    },
+    "Lower Back": {
+      "back": 0.75,
+      "core": 0.6,
+      "glutes": 0.15
+    },
+    "Trapezius": {
+      "back": 0.8,
+      "shoulders": 0.45
+    },
+    "Forearm Flexors": {
+      "arms": 0.7,
+      "back": 0.15
+    },
+    "Forearms": {
+      "arms": 0.7,
+      "back": 0.15
+    },
+    "Calves": {
+      "legs": 0.85
+    },
+    "Abs": {
+      "core": 1.0
+    },
+    "Obliques": {
+      "core": 1.0,
+      "back": 0.1
+    },
+    "Back": {
+      "back": 1.0,
+      "arms": 0.15,
+      "core": 0.15
+    },
+    "Legs": {
+      "legs": 1.0,
+      "glutes": 0.3,
+      "core": 0.1
+    },
+    "Cardio": {
+      "legs": 0.3,
+      "core": 0.1
+    }
+  }
+}
