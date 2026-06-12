@@ -67,7 +67,7 @@ class HomeScreenRecentActivityHeaderSliver extends StatelessWidget {
   Widget build(BuildContext context) {
     return const SliverToBoxAdapter(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+        padding: EdgeInsets.fromLTRB(0, 0, 16, 12),
         child: _SectionHeader(label: 'Recent Activity'),
       ),
     );

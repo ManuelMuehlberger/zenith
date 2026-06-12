@@ -6,9 +6,22 @@ import '../theme/app_theme.dart';
 
 // policy: allow-public-api reusable workout muscle activation radar card.
 class WorkoutMuscleActivationRadarCard extends StatefulWidget {
-  const WorkoutMuscleActivationRadarCard({super.key, required this.profile});
+  const WorkoutMuscleActivationRadarCard({
+    super.key,
+    required this.profile,
+    this.title = 'Muscle activation',
+    this.idleSubtitle = 'Tap a point to inspect the split',
+    this.showPlanned = true,
+    this.plannedLabel = 'Planned',
+    this.actualLabel = 'Actual',
+  });
 
   final WorkoutMuscleActivationProfile profile;
+  final String title;
+  final String idleSubtitle;
+  final bool showPlanned;
+  final String plannedLabel;
+  final String actualLabel;
 
   @override
   State<WorkoutMuscleActivationRadarCard> createState() =>
@@ -64,11 +77,11 @@ class _WorkoutMuscleActivationRadarCardState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Muscle activation', style: textTheme.titleMedium),
+                    Text(widget.title, style: textTheme.titleMedium),
                     const SizedBox(height: 4),
                     Text(
                       selectedPoint == null
-                          ? 'Tap a point to inspect the split'
+                          ? widget.idleSubtitle
                           : _selectedSummary(selectedPoint),
                       style: textTheme.labelMedium,
                     ),
@@ -125,15 +138,16 @@ class _WorkoutMuscleActivationRadarCardState
                   },
                 ),
                 dataSets: [
-                  RadarDataSet(
-                    dataEntries: points
-                        .map((point) => RadarEntry(value: point.planned))
-                        .toList(growable: false),
-                    borderColor: colors.textTertiary,
-                    fillColor: colors.textTertiary.withValues(alpha: 0.18),
-                    borderWidth: 1.8,
-                    entryRadius: 2.5,
-                  ),
+                  if (widget.showPlanned)
+                    RadarDataSet(
+                      dataEntries: points
+                          .map((point) => RadarEntry(value: point.planned))
+                          .toList(growable: false),
+                      borderColor: colors.textTertiary,
+                      fillColor: colors.textTertiary.withValues(alpha: 0.18),
+                      borderWidth: 1.8,
+                      entryRadius: 2.5,
+                    ),
                   RadarDataSet(
                     dataEntries: points
                         .map((point) => RadarEntry(value: point.actual))
@@ -152,13 +166,15 @@ class _WorkoutMuscleActivationRadarCardState
           const SizedBox(height: 14),
           Row(
             children: [
-              _LegendSwatch(color: colors.textTertiary),
-              const SizedBox(width: 8),
-              Text('Planned', style: textTheme.labelMedium),
-              const SizedBox(width: 18),
+              if (widget.showPlanned) ...[
+                _LegendSwatch(color: colors.textTertiary),
+                const SizedBox(width: 8),
+                Text(widget.plannedLabel, style: textTheme.labelMedium),
+                const SizedBox(width: 18),
+              ],
               _LegendSwatch(color: scheme.primary),
               const SizedBox(width: 8),
-              Text('Actual', style: textTheme.labelMedium),
+              Text(widget.actualLabel, style: textTheme.labelMedium),
             ],
           ),
         ],
@@ -168,8 +184,12 @@ class _WorkoutMuscleActivationRadarCardState
 
   String _selectedSummary(WorkoutMuscleActivationPoint point) {
     final actual = (point.actual * 100).round();
+    if (!widget.showPlanned) {
+      return '${point.label}: $actual% ${widget.actualLabel.toLowerCase()}';
+    }
     final planned = (point.planned * 100).round();
-    return '${point.label}: $actual actual / $planned planned';
+    return '${point.label}: $actual% ${widget.actualLabel.toLowerCase()}, '
+        '$planned% ${widget.plannedLabel.toLowerCase()}';
   }
 
   String _shortLabel(String label) {

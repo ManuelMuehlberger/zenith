@@ -88,6 +88,29 @@ class WorkoutMuscleActivationProfile {
       points.any((point) => point.planned > 0 || point.actual > 0);
 }
 
+// policy: allow-public-api raw planned/actual activation totals for service consumers.
+class WorkoutMuscleActivationTotals {
+  const WorkoutMuscleActivationTotals({
+    required this.plannedByAxis,
+    required this.actualByAxis,
+  });
+
+  final Map<String, double> plannedByAxis;
+  final Map<String, double> actualByAxis;
+
+  double plannedFor(String axisId) => plannedByAxis[axisId] ?? 0;
+
+  double actualFor(String axisId) => actualByAxis[axisId] ?? 0;
+
+  double completionRatioFor(String axisId) {
+    final planned = plannedFor(axisId);
+    if (planned <= 0) {
+      return 0;
+    }
+    return (actualFor(axisId) / planned).clamp(0, 1).toDouble();
+  }
+}
+
 // policy: allow-public-api service contract for computing workout muscle activation profiles.
 class WorkoutMuscleActivationService {
   WorkoutMuscleActivationService({
@@ -107,6 +130,13 @@ class WorkoutMuscleActivationService {
     return buildProfileFromConfig(workout, config);
   }
 
+  Future<WorkoutMuscleActivationProfile> buildProfileForWorkouts(
+    Iterable<Workout> workouts,
+  ) async {
+    final config = await loadConfig();
+    return buildProfileForWorkoutsFromConfig(workouts, config);
+  }
+
   Future<WorkoutMuscleActivationConfig> loadConfig() {
     return _configFuture ??= _loadConfig();
   }
@@ -121,17 +151,16 @@ class WorkoutMuscleActivationService {
     Workout workout,
     WorkoutMuscleActivationConfig config,
   ) {
-    final plannedByAxis = _emptyAxisMap(config);
-    final actualByAxis = _emptyAxisMap(config);
+    return buildProfileForWorkoutsFromConfig([workout], config);
+  }
 
-    for (final exercise in workout.exercises) {
-      _accumulateExerciseActivation(
-        exercise,
-        config,
-        plannedByAxis,
-        actualByAxis,
-      );
-    }
+  static WorkoutMuscleActivationProfile buildProfileForWorkoutsFromConfig(
+    Iterable<Workout> workouts,
+    WorkoutMuscleActivationConfig config,
+  ) {
+    final totals = buildWorkoutsAxisActivation(workouts, config);
+    final plannedByAxis = totals.plannedByAxis;
+    final actualByAxis = totals.actualByAxis;
 
     final normalizer = _normalizerFor(plannedByAxis, actualByAxis);
 
@@ -147,6 +176,89 @@ class WorkoutMuscleActivationService {
           )
           .toList(growable: false),
     );
+  }
+
+  static WorkoutMuscleActivationTotals buildWorkoutAxisActivation(
+    Workout workout,
+    WorkoutMuscleActivationConfig config,
+  ) {
+    return buildWorkoutsAxisActivation([workout], config);
+  }
+
+  static WorkoutMuscleActivationTotals buildWorkoutsAxisActivation(
+    Iterable<Workout> workouts,
+    WorkoutMuscleActivationConfig config,
+  ) {
+    final plannedByAxis = _emptyAxisMap(config);
+    final actualByAxis = _emptyAxisMap(config);
+
+    for (final workout in workouts) {
+      for (final exercise in workout.exercises) {
+        _accumulateExerciseActivation(
+          exercise,
+          config,
+          plannedByAxis,
+          actualByAxis,
+        );
+      }
+    }
+
+    return WorkoutMuscleActivationTotals(
+      plannedByAxis: Map.unmodifiable(plannedByAxis),
+      actualByAxis: Map.unmodifiable(actualByAxis),
+    );
+  }
+
+  static Map<MuscleGroup, double> buildExerciseMuscleActivation(
+    Exercise exercise,
+    WorkoutMuscleActivationConfig config,
+  ) {
+    final exerciseIntensity = exercise.exerciseIntensity;
+    final explicitActivation = exercise.muscleActivation;
+
+    if (explicitActivation.isNotEmpty) {
+      return Map.unmodifiable({
+        for (final entry in explicitActivation.entries)
+          if (entry.value > 0) entry.key: entry.value * exerciseIntensity,
+      });
+    }
+
+    final activation = <MuscleGroup, double>{};
+    _addMuscleActivation(
+      activation,
+      exercise.primaryMuscleGroup,
+      config.primaryWeight * exerciseIntensity,
+    );
+    for (final secondary in exercise.secondaryMuscleGroups) {
+      _addMuscleActivation(
+        activation,
+        secondary,
+        config.secondaryWeight * exerciseIntensity,
+      );
+    }
+    return Map.unmodifiable(activation);
+  }
+
+  static Map<String, double> buildExerciseAxisActivation(
+    Exercise exercise,
+    WorkoutMuscleActivationConfig config,
+  ) {
+    final axisWeights = _emptyAxisMap(config);
+    final muscleActivation = buildExerciseMuscleActivation(exercise, config);
+    for (final entry in muscleActivation.entries) {
+      _applyMuscleContribution(axisWeights, entry.key, entry.value, config);
+    }
+    return Map.unmodifiable(axisWeights);
+  }
+
+  static double exerciseActivationLoad(
+    Exercise exercise,
+    WorkoutMuscleActivationConfig config,
+  ) {
+    return buildExerciseMuscleActivation(
+      exercise,
+      config,
+    ).values.fold<double>(0, (sum, weight) => sum + weight);
   }
 }
 
@@ -171,7 +283,11 @@ void _accumulateExerciseActivation(
     return;
   }
 
-  final axisWeights = _axisWeightsForExercise(detail, config);
+  final axisWeights =
+      WorkoutMuscleActivationService.buildExerciseAxisActivation(
+        detail,
+        config,
+      );
   for (final entry in axisWeights.entries) {
     if (entry.value <= 0) {
       continue;
@@ -181,28 +297,6 @@ void _accumulateExerciseActivation(
     actualByAxis[entry.key] =
         (actualByAxis[entry.key] ?? 0) + actualSetCount * entry.value;
   }
-}
-
-Map<String, double> _axisWeightsForExercise(
-  Exercise detail,
-  WorkoutMuscleActivationConfig config,
-) {
-  final axisWeights = _emptyAxisMap(config);
-  _applyMuscleContribution(
-    axisWeights,
-    detail.primaryMuscleGroup,
-    config.primaryWeight,
-    config,
-  );
-  for (final secondary in detail.secondaryMuscleGroups) {
-    _applyMuscleContribution(
-      axisWeights,
-      secondary,
-      config.secondaryWeight,
-      config,
-    );
-  }
-  return axisWeights;
 }
 
 void _applyMuscleContribution(
@@ -222,6 +316,17 @@ void _applyMuscleContribution(
     axisWeights[entry.key] =
         (axisWeights[entry.key] ?? 0) + weight * entry.value;
   }
+}
+
+void _addMuscleActivation(
+  Map<MuscleGroup, double> activation,
+  MuscleGroup muscleGroup,
+  double weight,
+) {
+  if (weight <= 0) {
+    return;
+  }
+  activation[muscleGroup] = (activation[muscleGroup] ?? 0) + weight;
 }
 
 double _normalizerFor(

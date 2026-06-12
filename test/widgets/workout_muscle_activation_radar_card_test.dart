@@ -92,5 +92,50 @@ void main() {
         findsNothing,
       );
     });
+
+    testWidgets('renders actual-only mode without planned legend', (
+      WidgetTester tester,
+    ) async {
+      const profile = WorkoutMuscleActivationProfile(
+        points: [
+          WorkoutMuscleActivationPoint(
+            axisId: 'chest',
+            label: 'Chest',
+            planned: 1,
+            actual: 0.8,
+          ),
+          WorkoutMuscleActivationPoint(
+            axisId: 'back',
+            label: 'Back',
+            planned: 0.6,
+            actual: 0.5,
+          ),
+          WorkoutMuscleActivationPoint(
+            axisId: 'legs',
+            label: 'Legs',
+            planned: 0.4,
+            actual: 0.2,
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: const Scaffold(
+            body: WorkoutMuscleActivationRadarCard(
+              profile: profile,
+              showPlanned: false,
+              actualLabel: 'Intensity',
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Planned'), findsNothing);
+      expect(find.text('Intensity'), findsOneWidget);
+      expect(find.text('Actual'), findsNothing);
+    });
   });
 }
