@@ -123,7 +123,7 @@ jobs:
         run: flutter build apk --debug
 
       - name: Upload Android debug APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: android-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
