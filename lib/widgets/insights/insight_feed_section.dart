@@ -24,7 +24,7 @@ class InsightsFeedSection extends StatefulWidget {
 }
 
 class _InsightsFeedSectionState extends State<InsightsFeedSection> {
-  late Future<List<InsightFeedCard>> _cardsFuture;
+  late Future<List<InsightFeedStack>> _stacksFuture;
 
   InsightFeedService get _service =>
       widget.service ?? InsightFeedService.instance;
@@ -32,7 +32,7 @@ class _InsightsFeedSectionState extends State<InsightsFeedSection> {
   @override
   void initState() {
     super.initState();
-    _cardsFuture = _service.getCards();
+    _stacksFuture = _service.getCardStacks();
   }
 
   @override
@@ -40,7 +40,7 @@ class _InsightsFeedSectionState extends State<InsightsFeedSection> {
     super.didUpdateWidget(oldWidget);
     if (widget.service != oldWidget.service ||
         widget.refreshToken != oldWidget.refreshToken) {
-      _cardsFuture = _service.getCards(
+      _stacksFuture = _service.getCardStacks(
         forceRefresh: widget.refreshToken != oldWidget.refreshToken,
       );
     }
@@ -48,8 +48,8 @@ class _InsightsFeedSectionState extends State<InsightsFeedSection> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<InsightFeedCard>>(
-      future: _cardsFuture,
+    return FutureBuilder<List<InsightFeedStack>>(
+      future: _stacksFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Padding(
@@ -58,23 +58,283 @@ class _InsightsFeedSectionState extends State<InsightsFeedSection> {
           );
         }
 
-        final cards = snapshot.data ?? const <InsightFeedCard>[];
+        final stacks = snapshot.data ?? const <InsightFeedStack>[];
         return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+          padding: const EdgeInsets.only(top: 16, bottom: 4),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (cards.isEmpty)
-                const _InsightFeedFallbackCard()
+              if (stacks.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: _InsightFeedFallbackCard(),
+                )
               else
-                for (final card in cards) ...[
-                  InsightFeedCardWidget(card: card),
-                  const SizedBox(height: 12),
+                for (final stack in stacks) ...[
+                  _InsightFeedStackHeader(title: stack.title),
+                  const SizedBox(height: 10),
+                  _InsightFeedStackRail(cards: stack.cards),
+                  const SizedBox(height: 20),
                 ],
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class _InsightFeedStackRail extends StatefulWidget {
+  const _InsightFeedStackRail({required this.cards});
+
+  final List<InsightFeedCard> cards;
+
+  @override
+  State<_InsightFeedStackRail> createState() => _InsightFeedStackRailState();
+}
+
+class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
+  var _currentPage = 0;
+  var _dragOffset = 0.0;
+
+  @override
+  void didUpdateWidget(covariant _InsightFeedStackRail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_currentPage >= widget.cards.length) {
+      _currentPage = math.max(0, widget.cards.length - 1);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = widget.cards;
+    final hasDots = cards.length > 1;
+    final dotsHeight = hasDots ? 10.0 : 0.0;
+    final dotsGap = hasDots ? 6.0 : 0.0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardHeight = _activeCardHeight(cards, constraints.maxWidth);
+        return SizedBox(
+          key: const Key('insight_feed_stack_rail'),
+          height: cardHeight + dotsGap + dotsHeight,
+          child: Column(
+            children: [
+              SizedBox(
+                height: cardHeight,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onHorizontalDragUpdate: cards.length > 1
+                      ? (details) =>
+                            _handleHorizontalDragUpdate(details, constraints)
+                      : null,
+                  onHorizontalDragEnd: cards.length > 1
+                      ? (details) => _handleHorizontalDragEnd(
+                          details,
+                          constraints.maxWidth,
+                        )
+                      : null,
+                  onHorizontalDragCancel: cards.length > 1
+                      ? () => setState(() {
+                          _dragOffset = 0;
+                        })
+                      : null,
+                  child: ClipRect(
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: _buildSwipePages(
+                        cards: cards,
+                        width: constraints.maxWidth,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              if (hasDots) ...[
+                SizedBox(height: dotsGap),
+                _InsightFeedPageDots(
+                  currentPage: _currentPage,
+                  pageCount: cards.length,
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  List<Widget> _buildSwipePages({
+    required List<InsightFeedCard> cards,
+    required double width,
+  }) {
+    final pages = <Widget>[
+      _buildPositionedPage(card: cards[_currentPage], offset: _dragOffset),
+    ];
+    final targetPage = _targetPage(cards);
+    if (targetPage != _currentPage) {
+      final direction = targetPage > _currentPage ? 1 : -1;
+      pages.add(
+        _buildPositionedPage(
+          card: cards[targetPage],
+          offset: _dragOffset + direction * width,
+        ),
+      );
+    }
+    return pages;
+  }
+
+  Widget _buildPositionedPage({
+    required InsightFeedCard card,
+    required double offset,
+  }) {
+    return Transform.translate(
+      offset: Offset(offset, 0),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            primary: false,
+            child: SizedBox(
+              key: Key('insight_feed_page_card_${card.id}'),
+              height: _cardHeight(card),
+              child: InsightFeedCardWidget(card: card),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  int _targetPage(List<InsightFeedCard> cards) {
+    if (_dragOffset < 0 && _currentPage < cards.length - 1) {
+      return _currentPage + 1;
+    }
+    if (_dragOffset > 0 && _currentPage > 0) {
+      return _currentPage - 1;
+    }
+    return _currentPage;
+  }
+
+  void _handleHorizontalDragUpdate(
+    DragUpdateDetails details,
+    BoxConstraints constraints,
+  ) {
+    final width = constraints.maxWidth;
+    final proposedOffset = (_dragOffset + details.delta.dx).clamp(
+      -width,
+      width,
+    );
+    final canDragNext =
+        proposedOffset < 0 && _currentPage < widget.cards.length - 1;
+    final canDragPrevious = proposedOffset > 0 && _currentPage > 0;
+    setState(() {
+      _dragOffset = canDragNext || canDragPrevious ? proposedOffset : 0;
+    });
+  }
+
+  void _handleHorizontalDragEnd(DragEndDetails details, double width) {
+    final velocity = details.primaryVelocity ?? 0;
+    final shouldAdvance =
+        (_dragOffset < -width * 0.22 || velocity < -450) &&
+        _currentPage < widget.cards.length - 1;
+    final shouldGoBack =
+        (_dragOffset > width * 0.22 || velocity > 450) && _currentPage > 0;
+
+    setState(() {
+      if (shouldAdvance) {
+        _currentPage++;
+      } else if (shouldGoBack) {
+        _currentPage--;
+      }
+      _dragOffset = 0;
+    });
+  }
+
+  double _activeCardHeight(List<InsightFeedCard> cards, double width) {
+    if (cards.isEmpty) {
+      return 0;
+    }
+    final currentHeight = _cardHeight(cards[_currentPage]);
+    final targetPage = _targetPage(cards);
+    if (targetPage == _currentPage) {
+      return currentHeight;
+    }
+    final targetHeight = _cardHeight(cards[targetPage]);
+    final progress = width <= 0
+        ? 0.0
+        : (_dragOffset.abs() / width).clamp(0.0, 1.0);
+    return currentHeight + (targetHeight - currentHeight) * progress;
+  }
+
+  double _cardHeight(InsightFeedCard card) {
+    final hasVisual =
+        card.visualType != InsightFeedVisualType.none &&
+        card.visualData.isNotEmpty;
+    if (card.visualType == InsightFeedVisualType.awardPreview && hasVisual) {
+      return 142;
+    }
+    if (!hasVisual) {
+      return 148;
+    }
+    return switch (card.size) {
+      InsightFeedCardSize.compact => 220,
+      InsightFeedCardSize.wide => 264,
+      InsightFeedCardSize.featured => 396,
+    };
+  }
+}
+
+class _InsightFeedPageDots extends StatelessWidget {
+  const _InsightFeedPageDots({
+    required this.currentPage,
+    required this.pageCount,
+  });
+
+  final int currentPage;
+  final int pageCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+
+    return Row(
+      key: const Key('insight_feed_page_dots'),
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(pageCount, (index) {
+        final isActive = index == currentPage;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          width: isActive ? 16 : 6,
+          height: 6,
+          margin: EdgeInsets.only(left: index == 0 ? 0 : 5),
+          decoration: BoxDecoration(
+            color: isActive ? colors.textTertiary : colors.field,
+            borderRadius: BorderRadius.circular(999),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _InsightFeedStackHeader extends StatelessWidget {
+  const _InsightFeedStackHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: context.appText.labelMedium?.copyWith(
+        color: context.appColors.textTertiary,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.5,
+      ),
     );
   }
 }
@@ -368,6 +628,8 @@ class _VisualInsightFeedCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             card.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: textTheme.titleSmall?.copyWith(
                               color: colors.textPrimary,
                               fontWeight: FontWeight.w700,
@@ -389,6 +651,8 @@ class _VisualInsightFeedCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       card.body,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                       style: textTheme.bodyMedium?.copyWith(
                         color: colors.textSecondary,
                         height: 1.25,
@@ -398,6 +662,8 @@ class _VisualInsightFeedCard extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         card.comparisonLabel!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: textTheme.labelSmall?.copyWith(
                           color: colors.textTertiary,
                           fontWeight: FontWeight.w600,
@@ -424,9 +690,9 @@ class _VisualInsightFeedCard extends StatelessWidget {
       return 225;
     }
     return switch (card.size) {
-      InsightFeedCardSize.compact => 190,
-      InsightFeedCardSize.wide => 230,
-      InsightFeedCardSize.featured => 360,
+      InsightFeedCardSize.compact => 220,
+      InsightFeedCardSize.wide => 264,
+      InsightFeedCardSize.featured => 396,
     };
   }
 
@@ -830,59 +1096,118 @@ class _RadarVisual extends StatelessWidget {
     }
     final textTheme = context.appText;
     final colors = context.appColors;
-    return RadarChart(
-      RadarChartData(
-        radarShape: RadarShape.polygon,
-        tickCount: 4,
-        ticksTextStyle: textTheme.labelSmall?.copyWith(
-          color: colors.transparent,
-          fontSize: 1,
-        ),
-        radarBackgroundColor: colors.field.withValues(alpha: 0.18),
-        radarBorderData: BorderSide(color: Theme.of(context).dividerColor),
-        gridBorderData: BorderSide(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.75),
-          width: 0.8,
-        ),
-        tickBorderData: BorderSide(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.45),
-          width: 0.8,
-        ),
-        titlePositionPercentageOffset: 0.17,
-        titleTextStyle: textTheme.labelSmall?.copyWith(
-          color: colors.textSecondary,
-          fontWeight: FontWeight.w600,
-        ),
-        getTitle: (index, angle) {
-          final readableAngle = angle > 90 && angle < 270 ? angle + 180 : angle;
-          return RadarChartTitle(
-            text: _shortRadarLabel(_string(points[index]['label'])),
-            angle: readableAngle,
-          );
-        },
-        dataSets: [
-          RadarDataSet(
-            dataEntries: points
-                .map((point) => RadarEntry(value: _num(point['planned'])))
-                .toList(growable: false),
-            borderColor: colors.textTertiary,
-            fillColor: colors.textTertiary.withValues(alpha: 0.15),
-            borderWidth: 1.6,
-            entryRadius: 2,
+    final averageLabel = _string(data['plannedLabel']).isEmpty
+        ? '14-day workout average'
+        : _string(data['plannedLabel']);
+    final latestLabel = _string(data['actualLabel']).isEmpty
+        ? 'Last workout'
+        : _string(data['actualLabel']);
+    return Column(
+      children: [
+        Expanded(
+          child: RadarChart(
+            RadarChartData(
+              radarShape: RadarShape.polygon,
+              tickCount: 4,
+              ticksTextStyle: textTheme.labelSmall?.copyWith(
+                color: colors.transparent,
+                fontSize: 1,
+              ),
+              radarBackgroundColor: colors.field.withValues(alpha: 0.18),
+              radarBorderData: BorderSide(
+                color: Theme.of(context).dividerColor,
+              ),
+              gridBorderData: BorderSide(
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.75),
+                width: 0.8,
+              ),
+              tickBorderData: BorderSide(
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.45),
+                width: 0.8,
+              ),
+              titlePositionPercentageOffset: 0.17,
+              titleTextStyle: textTheme.labelSmall?.copyWith(
+                color: colors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+              getTitle: (index, angle) {
+                final readableAngle = angle > 90 && angle < 270
+                    ? angle + 180
+                    : angle;
+                return RadarChartTitle(
+                  text: _shortRadarLabel(_string(points[index]['label'])),
+                  angle: readableAngle,
+                );
+              },
+              dataSets: [
+                RadarDataSet(
+                  dataEntries: points
+                      .map((point) => RadarEntry(value: _num(point['planned'])))
+                      .toList(growable: false),
+                  borderColor: colors.textTertiary,
+                  fillColor: colors.textTertiary.withValues(alpha: 0.15),
+                  borderWidth: 1.6,
+                  entryRadius: 2,
+                ),
+                RadarDataSet(
+                  dataEntries: points
+                      .map((point) => RadarEntry(value: _num(point['actual'])))
+                      .toList(growable: false),
+                  borderColor: accent,
+                  fillColor: accent.withValues(alpha: 0.17),
+                  borderWidth: 2.2,
+                  entryRadius: 3,
+                ),
+              ],
+            ),
+            duration: const Duration(milliseconds: 450),
+            curve: Curves.easeOutCubic,
           ),
-          RadarDataSet(
-            dataEntries: points
-                .map((point) => RadarEntry(value: _num(point['actual'])))
-                .toList(growable: false),
-            borderColor: accent,
-            fillColor: accent.withValues(alpha: 0.17),
-            borderWidth: 2.2,
-            entryRadius: 3,
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 16,
+          runSpacing: 6,
+          alignment: WrapAlignment.center,
+          children: [
+            _RadarLegendItem(color: colors.textTertiary, label: averageLabel),
+            _RadarLegendItem(color: accent, label: latestLabel),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _RadarLegendItem extends StatelessWidget {
+  const _RadarLegendItem({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 9,
+          height: 9,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 7),
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: context.appText.labelSmall?.copyWith(
+              color: context.appColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ],
-      ),
-      duration: const Duration(milliseconds: 450),
-      curve: Curves.easeOutCubic,
+        ),
+      ],
     );
   }
 }

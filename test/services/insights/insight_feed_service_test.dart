@@ -156,6 +156,195 @@ void main() {
     expect(await service.getCards(), isEmpty);
   });
 
+  test('generates configured card stacks in priority order', () async {
+    final now = DateTime(2026, 6, 20, 12);
+    final service = InsightFeedService(
+      assetBundle: _StringAssetBundle({
+        rulesAsset: '''
+{
+  "stacks": [
+    {"id": "last_workout", "title": "Last Workout", "enabled": true, "priority": 100, "minCompletedWorkouts": 1, "maxCards": 2},
+    {"id": "recent_trends", "title": "Recent Trends", "enabled": true, "priority": 80, "minCompletedWorkouts": 3, "maxCards": 2},
+    {"id": "long_term_trends", "title": "Long-Term Trends", "enabled": true, "priority": 60, "minCompletedWorkouts": 8, "maxCards": 2}
+  ],
+  "rules": [
+    {"id": "latest", "stackId": "last_workout", "type": "latestWorkoutComparison", "enabled": true, "priority": 90, "params": {"baselineWorkouts": 4, "minBaselineWorkouts": 2}, "visual": {"enabled": true, "type": "baselineBars", "size": "wide", "params": {}}},
+    {"id": "consistency", "stackId": "recent_trends", "type": "consistencyPulse", "enabled": true, "priority": 80, "params": {"recentDays": 14, "minimumWorkouts": 2}},
+    {"id": "weight", "stackId": "long_term_trends", "type": "bodyWeightTrend", "enabled": true, "priority": 70, "params": {"lookbackDays": 90, "minSamples": 2}, "visual": {"enabled": true, "type": "bodyWeightLine", "size": "wide", "params": {}}}
+  ]
+}
+''',
+      }),
+      workoutsProvider: () async => [
+        for (var day = 8; day >= 1; day--)
+          _workout(
+            id: 'w$day',
+            completedAt: now.subtract(Duration(days: day)),
+          ),
+      ],
+      weightHistoryProvider: () => [
+        WeightEntry(
+          timestamp: now.subtract(const Duration(days: 30)),
+          value: 80,
+        ),
+        WeightEntry(
+          timestamp: now.subtract(const Duration(days: 1)),
+          value: 79,
+        ),
+      ],
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(cacheKey: 'feed-test-stacks'),
+    );
+
+    final stacks = await service.getCardStacks();
+
+    expect(stacks.map((stack) => stack.title), [
+      'Last Workout',
+      'Recent Trends',
+      'Long-Term Trends',
+    ]);
+    expect(
+      stacks[0].cards.single.type,
+      InsightFeedCardType.latestWorkoutComparison,
+    );
+    expect(stacks[1].cards.single.type, InsightFeedCardType.consistencyPulse);
+    expect(stacks[2].cards.single.type, InsightFeedCardType.bodyWeightTrend);
+  });
+
+  test('hides stacks below completed workout thresholds', () async {
+    final now = DateTime(2026, 6, 20, 12);
+    final service = InsightFeedService(
+      assetBundle: _StringAssetBundle({
+        rulesAsset: '''
+{
+  "stacks": [
+    {"id": "last_workout", "title": "Last Workout", "enabled": true, "priority": 100, "minCompletedWorkouts": 1, "maxCards": 2},
+    {"id": "recent_trends", "title": "Recent Trends", "enabled": true, "priority": 80, "minCompletedWorkouts": 3, "maxCards": 2},
+    {"id": "long_term_trends", "title": "Long-Term Trends", "enabled": true, "priority": 60, "minCompletedWorkouts": 8, "maxCards": 2}
+  ],
+  "rules": [
+    {"id": "latest", "stackId": "last_workout", "type": "latestWorkoutComparison", "enabled": true, "priority": 90, "params": {"baselineWorkouts": 2, "minBaselineWorkouts": 1}, "visual": {"enabled": true, "type": "baselineBars", "size": "wide", "params": {}}},
+    {"id": "consistency", "stackId": "recent_trends", "type": "consistencyPulse", "enabled": true, "priority": 80, "params": {"recentDays": 14, "minimumWorkouts": 1}},
+    {"id": "weight", "stackId": "long_term_trends", "type": "bodyWeightTrend", "enabled": true, "priority": 70, "params": {"lookbackDays": 90, "minSamples": 2}, "visual": {"enabled": true, "type": "bodyWeightLine", "size": "wide", "params": {}}}
+  ]
+}
+''',
+      }),
+      workoutsProvider: () async => [
+        _workout(
+          id: 'older',
+          completedAt: now.subtract(const Duration(days: 8)),
+        ),
+        _workout(
+          id: 'latest',
+          completedAt: now.subtract(const Duration(days: 1)),
+        ),
+      ],
+      weightHistoryProvider: () => [
+        WeightEntry(
+          timestamp: now.subtract(const Duration(days: 30)),
+          value: 80,
+        ),
+        WeightEntry(
+          timestamp: now.subtract(const Duration(days: 1)),
+          value: 79,
+        ),
+      ],
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(
+        cacheKey: 'feed-test-stack-thresholds',
+      ),
+    );
+
+    final stacks = await service.getCardStacks();
+
+    expect(stacks.map((stack) => stack.title), ['Last Workout']);
+    expect(
+      stacks.single.cards.single.type,
+      InsightFeedCardType.latestWorkoutComparison,
+    );
+  });
+
+  test('applies max cards per stack', () async {
+    final now = DateTime(2026, 6, 20, 12);
+    final service = InsightFeedService(
+      assetBundle: _StringAssetBundle({
+        rulesAsset: '''
+{
+  "stacks": [
+    {"id": "last_workout", "title": "Last Workout", "enabled": true, "priority": 100, "minCompletedWorkouts": 1, "maxCards": 1}
+  ],
+  "rules": [
+    {"id": "latest", "stackId": "last_workout", "type": "latestWorkoutComparison", "enabled": true, "priority": 90, "params": {"baselineWorkouts": 2, "minBaselineWorkouts": 1}, "visual": {"enabled": true, "type": "baselineBars", "size": "wide", "params": {}}},
+    {"id": "comeback", "stackId": "last_workout", "type": "comebackCard", "enabled": true, "priority": 80, "params": {"minGapDays": 7}}
+  ]
+}
+''',
+      }),
+      workoutsProvider: () async => [
+        _workout(
+          id: 'older',
+          completedAt: now.subtract(const Duration(days: 20)),
+        ),
+        _workout(
+          id: 'baseline',
+          completedAt: now.subtract(const Duration(days: 10)),
+        ),
+        _workout(
+          id: 'latest',
+          completedAt: now.subtract(const Duration(days: 1)),
+        ),
+      ],
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(cacheKey: 'feed-test-stack-max'),
+    );
+
+    final stacks = await service.getCardStacks();
+
+    expect(stacks.single.cards, hasLength(1));
+    expect(
+      stacks.single.cards.single.type,
+      InsightFeedCardType.latestWorkoutComparison,
+    );
+  });
+
+  test('legacy getCards remains globally capped and priority sorted', () async {
+    final now = DateTime(2026, 6, 20, 12);
+    final service = InsightFeedService(
+      assetBundle: _StringAssetBundle({
+        rulesAsset: '''
+{
+  "stacks": [
+    {"id": "last_workout", "title": "Last Workout", "enabled": true, "priority": 100, "minCompletedWorkouts": 1, "maxCards": 2},
+    {"id": "recent_trends", "title": "Recent Trends", "enabled": true, "priority": 80, "minCompletedWorkouts": 1, "maxCards": 2}
+  ],
+  "rules": [
+    {"id": "latest", "stackId": "last_workout", "type": "latestWorkoutComparison", "enabled": true, "priority": 90, "params": {"baselineWorkouts": 2, "minBaselineWorkouts": 1}, "visual": {"enabled": true, "type": "baselineBars", "size": "wide", "params": {}}},
+    {"id": "consistency", "stackId": "recent_trends", "type": "consistencyPulse", "enabled": true, "priority": 80, "params": {"recentDays": 14, "minimumWorkouts": 2}}
+  ]
+}
+''',
+      }),
+      workoutsProvider: () async => [
+        _workout(
+          id: 'older',
+          completedAt: now.subtract(const Duration(days: 8)),
+        ),
+        _workout(
+          id: 'latest',
+          completedAt: now.subtract(const Duration(days: 1)),
+        ),
+      ],
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(cacheKey: 'feed-test-flat-compat'),
+    );
+
+    final cards = await service.getCards(maxCards: 1);
+
+    expect(cards, hasLength(1));
+    expect(cards.single.type, InsightFeedCardType.latestWorkoutComparison);
+  });
+
   test('generates momentum, intensity, and velocity cards', () async {
     final now = DateTime(2026, 6, 20, 12);
     final service = InsightFeedService(
@@ -332,14 +521,27 @@ void main() {
     expect(types, contains(InsightFeedCardType.muscleActivationRadar));
     expect(types, contains(InsightFeedCardType.latestWorkoutComparison));
     expect(types, contains(InsightFeedCardType.bodyWeightTrend));
-    expect(
-      cards
-          .firstWhere(
-            (card) => card.type == InsightFeedCardType.muscleActivationRadar,
-          )
-          .visualType,
-      InsightFeedVisualType.radar,
+    final radar = cards.firstWhere(
+      (card) => card.type == InsightFeedCardType.muscleActivationRadar,
     );
+    expect(radar.visualType, InsightFeedVisualType.radar);
+    expect(radar.title, 'Muscle focus');
+    expect(
+      radar.body,
+      'Latest workout compared with your 14-day workout average.',
+    );
+    expect(radar.comparisonLabel, '14-day workout average');
+    expect(radar.visualData['plannedLabel'], '14-day workout average');
+    expect(radar.visualData['actualLabel'], 'Last workout');
+
+    final radarPoints = (radar.visualData['points'] as List<dynamic>)
+        .cast<Map<String, Object?>>();
+    final chestPoint = radarPoints.firstWhere(
+      (point) => point['axisId'] == 'chest',
+    );
+    expect(chestPoint['planned'], closeTo(11 / 15, 0.001));
+    expect(chestPoint['actual'], 1);
+
     expect(
       cards
           .firstWhere(

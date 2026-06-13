@@ -19,7 +19,7 @@ class DatabaseHelper {
   static final Logger _logger = Logger('DatabaseHelper');
 
   static const String _dbName = 'workout_tracker.db';
-  static const int _dbVersion = 12; // Added cardio exercise support
+  static const int _dbVersion = 14; // Added exercise intensity scalar
 
   Future<String> get databasePath async {
     final documentsDirectory = await getApplicationDocumentsDirectory();
@@ -94,6 +94,8 @@ class DatabaseHelper {
           equipment TEXT,
           image TEXT,
           animation TEXT,
+          muscleActivation TEXT, -- JSON encoded muscle intensity map
+          exerciseIntensity REAL DEFAULT 1.0,
           isBodyWeightExercise INTEGER DEFAULT 0, -- 0 for false, 1 for true
           isCustom INTEGER DEFAULT 0, -- 0 for bundled, 1 for user-created
           type TEXT NOT NULL DEFAULT 'strength',
@@ -297,6 +299,8 @@ class DatabaseHelper {
             equipment TEXT,
             image TEXT,
             animation TEXT,
+            muscleActivation TEXT, -- JSON encoded muscle intensity map
+            exerciseIntensity REAL DEFAULT 1.0,
             isBodyWeightExercise INTEGER DEFAULT 0, -- 0 for false, 1 for true
             isCustom INTEGER DEFAULT 0, -- 0 for bundled, 1 for user-created
             type TEXT NOT NULL DEFAULT 'strength',
@@ -420,6 +424,8 @@ class DatabaseHelper {
               equipment TEXT,
               image TEXT,
               animation TEXT,
+              muscleActivation TEXT, -- JSON encoded muscle intensity map
+              exerciseIntensity REAL DEFAULT 1.0,
               isBodyWeightExercise INTEGER DEFAULT 0, -- 0 for false, 1 for true
               isCustom INTEGER DEFAULT 0, -- 0 for bundled, 1 for user-created
               type TEXT NOT NULL DEFAULT 'strength',
@@ -509,6 +515,18 @@ class DatabaseHelper {
         _logger.info('Version 12 upgrades completed');
       }
 
+      if (oldVersion < 13) {
+        _logger.info('Applying version 13 upgrades');
+        await _addMuscleActivationColumnToExercise(db);
+        _logger.info('Version 13 upgrades completed');
+      }
+
+      if (oldVersion < 14) {
+        _logger.info('Applying version 14 upgrades');
+        await _addExerciseIntensityColumnToExercise(db);
+        _logger.info('Version 14 upgrades completed');
+      }
+
       _logger.info('Database upgrade completed successfully');
     } catch (e) {
       _logger.severe('Error during database upgrade: $e');
@@ -571,6 +589,21 @@ class DatabaseHelper {
     await _addColumnIfMissing(db, 'WorkoutSet', 'actualDifficulty INTEGER');
     await db.rawUpdate(
       "UPDATE Exercise SET type = 'strength' WHERE type IS NULL OR type = ''",
+    );
+  }
+
+  Future<void> _addMuscleActivationColumnToExercise(Database db) async {
+    await _addColumnIfMissing(db, 'Exercise', 'muscleActivation TEXT');
+  }
+
+  Future<void> _addExerciseIntensityColumnToExercise(Database db) async {
+    await _addColumnIfMissing(
+      db,
+      'Exercise',
+      'exerciseIntensity REAL DEFAULT 1.0',
+    );
+    await db.rawUpdate(
+      'UPDATE Exercise SET exerciseIntensity = 1.0 WHERE exerciseIntensity IS NULL',
     );
   }
 
@@ -662,6 +695,12 @@ class DatabaseHelper {
               'equipment': exerciseData['equipment'] ?? '',
               'image': exerciseData['image'] ?? '',
               'animation': exerciseData['animation'] ?? '',
+              'muscleActivation': jsonEncode(
+                exerciseData['muscle_activation'] ?? {},
+              ),
+              'exerciseIntensity':
+                  (exerciseData['exercise_intensity'] as num? ?? 1.0)
+                      .toDouble(),
               'isBodyWeightExercise': (exerciseData['bodyweight'] is bool
                   ? (exerciseData['bodyweight'] ? 1 : 0)
                   : (exerciseData['bodyweight'] is int

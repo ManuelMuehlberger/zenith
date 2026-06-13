@@ -1,7 +1,34 @@
 {
+  "stacks": [
+    {
+      "id": "last_workout",
+      "title": "Last Workout",
+      "enabled": true,
+      "priority": 100,
+      "minCompletedWorkouts": 1,
+      "maxCards": 3
+    },
+    {
+      "id": "recent_trends",
+      "title": "Recent Trends",
+      "enabled": true,
+      "priority": 80,
+      "minCompletedWorkouts": 3,
+      "maxCards": 3
+    },
+    {
+      "id": "long_term_trends",
+      "title": "Long-Term Trends",
+      "enabled": true,
+      "priority": 60,
+      "minCompletedWorkouts": 8,
+      "maxCards": 2
+    }
+  ],
   "rules": [
     {
       "id": "training_velocity",
+      "stackId": "recent_trends",
       "type": "trainingVelocity",
       "enabled": true,
       "priority": 90,
@@ -23,6 +50,7 @@
     },
     {
       "id": "recent_achievement_shoutout",
+      "stackId": "last_workout",
       "type": "recentAchievementShoutout",
       "enabled": true,
       "priority": 100,
@@ -40,6 +68,7 @@
     },
     {
       "id": "high_intensity_shoutout",
+      "stackId": "last_workout",
       "type": "highIntensityShoutout",
       "enabled": true,
       "priority": 80,
@@ -59,6 +88,7 @@
     },
     {
       "id": "consistency_pulse",
+      "stackId": "recent_trends",
       "type": "consistencyPulse",
       "enabled": true,
       "priority": 70,
@@ -78,6 +108,7 @@
     },
     {
       "id": "comeback_card",
+      "stackId": "last_workout",
       "type": "comebackCard",
       "enabled": true,
       "priority": 60,
@@ -93,6 +124,7 @@
     },
     {
       "id": "personal_best_momentum",
+      "stackId": "last_workout",
       "type": "personalBestMomentum",
       "enabled": true,
       "priority": 75,
@@ -110,6 +142,7 @@
     },
     {
       "id": "muscle_activation_radar",
+      "stackId": "last_workout",
       "type": "muscleActivationRadar",
       "enabled": true,
       "priority": 85,
@@ -128,6 +161,7 @@
     },
     {
       "id": "latest_workout_comparison",
+      "stackId": "last_workout",
       "type": "latestWorkoutComparison",
       "enabled": true,
       "priority": 78,
@@ -146,6 +180,7 @@
     },
     {
       "id": "body_weight_trend",
+      "stackId": "long_term_trends",
       "type": "bodyWeightTrend",
       "enabled": true,
       "priority": 45,

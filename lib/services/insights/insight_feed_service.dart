@@ -40,6 +40,7 @@ class InsightFeedService {
       'assets/insights/insight_feed_rules.json';
   static const String _feedCacheKey = 'insight_feed_cache';
   static const int _feedCacheVersion = 2;
+  static const int _feedStackCacheVersion = 1;
 
   final AssetBundle _assetBundle;
   final Future<List<Workout>> Function()? _workoutsProvider;
@@ -73,16 +74,37 @@ class InsightFeedService {
             now: now,
           )
           ..sort((a, b) {
-            final priorityCompare = b.priority.compareTo(a.priority);
-            if (priorityCompare != 0) {
-              return priorityCompare;
-            }
-            return a.title.compareTo(b.title);
+            return _compareCards(a, b);
           });
 
     final capped = List<InsightFeedCard>.unmodifiable(cards.take(maxCards));
     await _writeCachedCards(cacheEntryKey, capped, now);
     return capped;
+  }
+
+  Future<List<InsightFeedStack>> getCardStacks({
+    bool forceRefresh = false,
+  }) async {
+    final now = _nowProvider();
+    final cacheEntryKey = '${_cacheEntryKeyFor(now)}_stacks';
+
+    if (!forceRefresh) {
+      final cached = await _readCachedStacks(cacheEntryKey);
+      if (cached != null) {
+        return cached;
+      }
+    }
+
+    final config = await _loadConfig();
+    final workouts = await _loadWorkouts();
+    final stacks = await _generateStacks(
+      config: config,
+      workouts: workouts,
+      now: now,
+    );
+
+    await _writeCachedStacks(cacheEntryKey, stacks, now);
+    return stacks;
   }
 
   Future<void> invalidateCache() async {
@@ -116,6 +138,39 @@ class InsightFeedService {
     }
   }
 
+  Future<List<InsightFeedStack>?> _readCachedStacks(
+    String cacheEntryKey,
+  ) async {
+    try {
+      final snapshot = await _cacheStore.load();
+      final rawEntry = snapshot?.cache[cacheEntryKey];
+      if (rawEntry is! Map) {
+        return null;
+      }
+      final rawStacks = rawEntry['stacks'];
+      if (rawStacks is! List) {
+        return null;
+      }
+      if (rawEntry['version'] != _feedStackCacheVersion) {
+        return null;
+      }
+      return rawStacks
+          .map(
+            (entry) => InsightFeedStack.fromMap(
+              Map<String, dynamic>.from(entry as Map),
+            ),
+          )
+          .toList(growable: false);
+    } catch (error, stackTrace) {
+      _logger.warning(
+        'Failed to read insight feed stack cache',
+        error,
+        stackTrace,
+      );
+      return null;
+    }
+  }
+
   Future<void> _writeCachedCards(
     String cacheEntryKey,
     List<InsightFeedCard> cards,
@@ -133,6 +188,30 @@ class InsightFeedService {
       );
     } catch (error, stackTrace) {
       _logger.warning('Failed to write insight feed cache', error, stackTrace);
+    }
+  }
+
+  Future<void> _writeCachedStacks(
+    String cacheEntryKey,
+    List<InsightFeedStack> stacks,
+    DateTime now,
+  ) async {
+    try {
+      await _cacheStore.save(
+        cache: {
+          cacheEntryKey: {
+            'version': _feedStackCacheVersion,
+            'stacks': stacks.map((stack) => stack.toMap()).toList(),
+          },
+        },
+        lastUpdate: now,
+      );
+    } catch (error, stackTrace) {
+      _logger.warning(
+        'Failed to write insight feed stack cache',
+        error,
+        stackTrace,
+      );
     }
   }
 
@@ -154,22 +233,93 @@ class InsightFeedService {
       ..sort((a, b) => _workoutDate(a).compareTo(_workoutDate(b)));
   }
 
-  Future<List<InsightFeedRule>> _loadRules() async {
+  Future<InsightFeedConfig> _loadConfig() async {
     final raw = await _assetBundle.loadString(defaultRulesAsset);
     final decoded = jsonDecode(raw);
     if (decoded is! Map<String, dynamic>) {
       throw const FormatException('Insight feed rules root must be an object');
     }
-    final rulesJson = decoded['rules'];
-    if (rulesJson is! List) {
-      throw const FormatException('Insight feed rules must contain a list');
+    return InsightFeedConfig.fromMap(decoded);
+  }
+
+  Future<List<InsightFeedRule>> _loadRules() async {
+    return (await _loadConfig()).rules;
+  }
+
+  Future<List<InsightFeedStack>> _generateStacks({
+    required InsightFeedConfig config,
+    required List<Workout> workouts,
+    required DateTime now,
+  }) async {
+    if (workouts.isEmpty) {
+      return const [];
     }
-    return rulesJson
-        .map(
-          (entry) =>
-              InsightFeedRule.fromMap(Map<String, dynamic>.from(entry as Map)),
-        )
-        .toList(growable: false);
+
+    final enabledStacks =
+        config.stacks
+            .where(
+              (stack) =>
+                  stack.enabled &&
+                  workouts.length >= stack.minCompletedWorkouts &&
+                  stack.maxCards > 0,
+            )
+            .toList(growable: false)
+          ..sort((a, b) {
+            final priorityCompare = b.priority.compareTo(a.priority);
+            if (priorityCompare != 0) {
+              return priorityCompare;
+            }
+            return a.title.compareTo(b.title);
+          });
+    if (enabledStacks.isEmpty) {
+      return const [];
+    }
+
+    final enabledStackIds = enabledStacks.map((stack) => stack.id).toSet();
+    final cards = await _generateCards(
+      rules: config.rules
+          .where(
+            (rule) => rule.enabled && enabledStackIds.contains(rule.stackId),
+          )
+          .toList(growable: false),
+      workouts: workouts,
+      now: now,
+    );
+    final cardsByStack = <String, List<InsightFeedCard>>{};
+    for (final card in cards) {
+      final rule = config.rules.firstWhere(
+        (candidate) => candidate.type == card.type,
+      );
+      cardsByStack.putIfAbsent(rule.stackId, () => []).add(card);
+    }
+
+    final stacks = <InsightFeedStack>[];
+    for (final stackConfig in enabledStacks) {
+      final stackCards = cardsByStack[stackConfig.id];
+      if (stackCards == null || stackCards.isEmpty) {
+        continue;
+      }
+      stackCards.sort(_compareCards);
+      stacks.add(
+        InsightFeedStack(
+          id: stackConfig.id,
+          title: stackConfig.title,
+          priority: stackConfig.priority,
+          cards: List<InsightFeedCard>.unmodifiable(
+            stackCards.take(stackConfig.maxCards),
+          ),
+        ),
+      );
+    }
+    return List<InsightFeedStack>.unmodifiable(stacks);
+  }
+
+  int _compareCards(InsightFeedCard a, InsightFeedCard b) {
+    final priorityCompare = b.priority.compareTo(a.priority);
+    if (priorityCompare != 0) {
+      return priorityCompare;
+    }
+    return a.title.compareTo(b.title);
   }
 
   Future<List<InsightFeedCard>> _generateCards({
@@ -547,18 +697,22 @@ class InsightFeedService {
           recentWorkouts,
           config,
         );
+    final averageWindowTotals = _averageTotals(
+      windowTotals,
+      recentWorkouts.length,
+    );
     final latestTotals =
         WorkoutMuscleActivationService.buildWorkoutAxisActivation(
           recentWorkouts.first,
           config,
         );
-    final normalizer = _normalizerFor(windowTotals, latestTotals);
+    final normalizer = _normalizerFor(averageWindowTotals, latestTotals);
     final points = config.axes
         .map((axis) {
           return {
             'axisId': axis.id,
             'label': axis.label,
-            'planned': windowTotals.actualFor(axis.id) / normalizer,
+            'planned': averageWindowTotals.actualFor(axis.id) / normalizer,
             'actual': latestTotals.actualFor(axis.id) / normalizer,
           };
         })
@@ -575,16 +729,21 @@ class InsightFeedService {
     return _card(
       rule: rule,
       id: rule.id,
-      title: 'Last $recentDays days',
-      body: 'Muscle activation with your latest workout overlay.',
+      title: 'Muscle focus',
+      body:
+          'Latest workout compared with your $recentDays-day workout average.',
       metric: '${recentWorkouts.length}',
       accent: 'primary',
       icon: 'radar',
       generatedAt: now,
       sourceWorkoutId: recentWorkouts.first.id,
       detailMetricLabel: 'Recent workouts',
-      comparisonLabel: 'Latest workout overlay',
-      visualData: {'points': points},
+      comparisonLabel: '$recentDays-day workout average',
+      visualData: {
+        'points': points,
+        'plannedLabel': '$recentDays-day workout average',
+        'actualLabel': 'Last workout',
+      },
     );
   }
 
@@ -881,6 +1040,25 @@ class InsightFeedService {
       }
     }
     return maxValue <= 0 ? 1 : maxValue;
+  }
+
+  WorkoutMuscleActivationTotals _averageTotals(
+    WorkoutMuscleActivationTotals totals,
+    int workoutCount,
+  ) {
+    if (workoutCount <= 1) {
+      return totals;
+    }
+    return WorkoutMuscleActivationTotals(
+      plannedByAxis: {
+        for (final entry in totals.plannedByAxis.entries)
+          entry.key: entry.value / workoutCount,
+      },
+      actualByAxis: {
+        for (final entry in totals.actualByAxis.entries)
+          entry.key: entry.value / workoutCount,
+      },
+    );
   }
 
   DateTime _workoutDate(Workout workout) {

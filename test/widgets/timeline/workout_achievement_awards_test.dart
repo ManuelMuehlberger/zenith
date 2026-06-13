@@ -82,4 +82,78 @@ void main() {
       'assets/achievements/achievement_cup_compact.png',
     );
   });
+
+  testWidgets('maps every earnable achievement rule to an asset-backed award', (
+    tester,
+  ) async {
+    late final List<Award> awards;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) {
+            awards = buildWorkoutAchievementAwards(
+              context,
+              _allEarnableAchievements(),
+            );
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    );
+
+    expect(awards, hasLength(10));
+    expect(
+      awards.map((award) => award.modelAsset),
+      containsAll([
+        'assets/achievements/achievement_workout_1.glb',
+        'assets/achievements/achievement_workout_10.glb',
+        'assets/achievements/achievement_workout_50.glb',
+        'assets/achievements/achievement_workout_100.glb',
+        'assets/achievements/achievement_workout_200.glb',
+        'assets/achievements/achievement_cup.glb',
+        'assets/achievements/achievement_hourglass.glb',
+        'assets/achievements/achievement_streak_3.glb',
+        'assets/achievements/achievement_streak_7.glb',
+        'assets/achievements/achievement_dumbbell.glb',
+      ]),
+    );
+    expect(
+      awards.map((award) => award.compactThumbnailAsset),
+      everyElement(isNotNull),
+    );
+    expect(
+      awards.map((award) => award.previewRenderScale),
+      everyElement(lessThan(1.0)),
+    );
+  });
+}
+
+List<WorkoutAchievement> _allEarnableAchievements() {
+  return [
+    _achievement('first_workout', WorkoutAchievementType.firstWorkout),
+    _achievement('tenth_workout', WorkoutAchievementType.workoutMilestone),
+    _achievement('fiftieth_workout', WorkoutAchievementType.workoutMilestone),
+    _achievement('hundredth_workout', WorkoutAchievementType.workoutMilestone),
+    _achievement(
+      'two_hundredth_workout',
+      WorkoutAchievementType.workoutMilestone,
+    ),
+    _achievement('high_volume', WorkoutAchievementType.highVolume),
+    _achievement('long_session', WorkoutAchievementType.longSession),
+    _achievement('three_day_streak', WorkoutAchievementType.workoutStreak),
+    _achievement('seven_day_streak', WorkoutAchievementType.workoutStreak),
+    _achievement('heavy', WorkoutAchievementType.heavy),
+  ];
+}
+
+WorkoutAchievement _achievement(String ruleId, WorkoutAchievementType type) {
+  return WorkoutAchievement(
+    workoutId: 'workout-1',
+    ruleId: ruleId,
+    type: type,
+    title: ruleId,
+    reason: ruleId,
+    earnedAt: DateTime(2026, 1, 1),
+  );
 }

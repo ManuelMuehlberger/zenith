@@ -4,6 +4,7 @@ import 'package:zenith/constants/app_constants.dart';
 import 'package:zenith/models/user_data.dart';
 import 'package:zenith/theme/app_theme.dart';
 import 'package:zenith/widgets/onboarding/profile_setup_pages.dart';
+import 'package:zenith/widgets/weight_picker_wheel.dart';
 
 void main() {
   group('GenderPage', () {
@@ -103,6 +104,73 @@ void main() {
         find.widgetWithText(FilledButton, 'Continue'),
       );
       expect(enabledContinue.onPressed, isNotNull);
+    });
+  });
+
+  group('AgePage', () {
+    testWidgets('uses the larger selector radius', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: AgePage(
+              age: 25,
+              onAgeChanged: (_) {},
+              onNext: () {},
+              onBack: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final overlays = tester.widgetList<PickerSelectionOverlay>(
+        find.byType(PickerSelectionOverlay),
+      );
+
+      expect(overlays.length, 1);
+      expect(overlays.first.radius, PickerSelectionStyle.emphasizedRadius);
+    });
+  });
+
+  group('WeightPage', () {
+    testWidgets('matches the larger onboarding card and selector radii', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: WeightPage(
+              weight: 74.0,
+              units: Units.metric,
+              onWeightChanged: (_) {},
+              onNext: () {},
+              onBack: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final container = tester.widget<Container>(
+        find.byKey(WeightPage.wrapperKey),
+      );
+      final decoration = container.decoration! as BoxDecoration;
+      final borderRadius = decoration.borderRadius! as BorderRadius;
+
+      expect(borderRadius.topLeft.x, AppConstants.SHEET_RADIUS);
+      expect(borderRadius.topRight.x, AppConstants.SHEET_RADIUS);
+      expect(borderRadius.bottomLeft.x, AppConstants.SHEET_RADIUS);
+      expect(borderRadius.bottomRight.x, AppConstants.SHEET_RADIUS);
+
+      final picker = tester.widget<WeightPickerWheel>(
+        find.byType(WeightPickerWheel),
+      );
+      expect(
+        picker.selectionOverlayRadius,
+        PickerSelectionStyle.emphasizedRadius,
+      );
     });
   });
 }

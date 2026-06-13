@@ -11,6 +11,8 @@ class Exercise {
   final String equipment;
   final String image;
   final String animation;
+  final Map<MuscleGroup, double> muscleActivation;
+  final double exerciseIntensity;
   final bool
   isBodyWeightExercise; // bodyweight exercises do not have a "weight" associated to them in the active workout page.
   final bool isCustom;
@@ -25,11 +27,14 @@ class Exercise {
     this.equipment = '',
     required this.image,
     required this.animation,
+    Map<MuscleGroup, double> muscleActivation = const {},
+    this.exerciseIntensity = 1.0,
     this.isBodyWeightExercise = false,
     this.isCustom = false,
     this.type = ExerciseType.strength,
   }) : secondaryMuscleGroups = List.unmodifiable(secondaryMuscleGroups),
-       instructions = List.unmodifiable(instructions);
+       instructions = List.unmodifiable(instructions),
+       muscleActivation = Map.unmodifiable(muscleActivation);
 
   factory Exercise.fromMap(Map<String, dynamic> map) {
     return Exercise(
@@ -44,6 +49,8 @@ class Exercise {
       equipment: _readString(map, ['equipment'], fallback: ''),
       image: _readString(map, ['image'], fallback: ''),
       animation: _readString(map, ['animation'], fallback: ''),
+      muscleActivation: _readMuscleActivation(map),
+      exerciseIntensity: _readExerciseIntensity(map),
       isBodyWeightExercise: _readBool(map, const [
         'bodyweight',
         'is_bodyweight_exercise',
@@ -69,6 +76,10 @@ class Exercise {
       'equipment': equipment,
       'image': image,
       'animation': animation,
+      'muscle_activation': jsonEncode(
+        muscleActivation.map((key, value) => MapEntry(key.name, value)),
+      ),
+      'exercise_intensity': exerciseIntensity,
       'is_bodyweight_exercise': isBodyWeightExercise ? 1 : 0,
       'is_custom': isCustom ? 1 : 0,
       'type': type.storageValue,
@@ -131,9 +142,75 @@ List<MuscleGroup> _readMuscleGroups(
   );
 }
 
+Map<MuscleGroup, double> _readMuscleActivation(Map<String, dynamic> map) {
+  for (final key in const [
+    'muscleActivation',
+    'muscle_activation',
+    'muscleActivationJson',
+  ]) {
+    final value = map[key];
+    if (value == null) {
+      continue;
+    }
+    final decoded = _readDynamicMap(value, key);
+    return Map.unmodifiable(
+      decoded.map(
+        (muscleName, intensity) => MapEntry(
+          MuscleGroup.fromName(muscleName),
+          _readIntensity(intensity, muscleName),
+        ),
+      ),
+    );
+  }
+  return const {};
+}
+
+double _readExerciseIntensity(Map<String, dynamic> map) {
+  for (final key in const [
+    'exerciseIntensity',
+    'exercise_intensity',
+    'exerciseIntensityValue',
+  ]) {
+    final value = map[key];
+    if (value == null) {
+      continue;
+    }
+    return _readIntensity(value, key);
+  }
+  return 1.0;
+}
+
 List<String> _readStringList(Map<String, dynamic> map, List<String> keys) {
   final values = _readDynamicList(map, keys);
   return List<String>.unmodifiable(values.map((value) => value.toString()));
+}
+
+Map<String, dynamic> _readDynamicMap(Object value, String key) {
+  if (value is Map) {
+    return value.map(
+      (mapKey, mapValue) => MapEntry(mapKey.toString(), mapValue),
+    );
+  }
+  if (value is String) {
+    if (value.trim().isEmpty) {
+      return const {};
+    }
+    final decoded = jsonDecode(value);
+    if (decoded is Map) {
+      return decoded.map(
+        (mapKey, mapValue) => MapEntry(mapKey.toString(), mapValue),
+      );
+    }
+    throw FormatException('Expected map payload for "$key"');
+  }
+  throw FormatException('Invalid "$key": expected Map or JSON string');
+}
+
+double _readIntensity(Object? value, String muscleName) {
+  if (value is num) {
+    return value.toDouble();
+  }
+  throw FormatException('Invalid intensity for "$muscleName": expected number');
 }
 
 List<dynamic> _readDynamicList(Map<String, dynamic> map, List<String> keys) {

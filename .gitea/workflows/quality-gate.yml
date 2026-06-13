@@ -15,7 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  analyze-test-and-build:
+  analyze-test-and-build-android:
     runs-on: ubuntu-latest
     env:
       CI: 'true'
@@ -121,3 +121,10 @@ jobs:
 
       - name: Build Android debug APK
         run: flutter build apk --debug
+
+      - name: Upload Android debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error

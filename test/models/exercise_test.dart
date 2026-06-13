@@ -24,8 +24,10 @@ void main() {
       expect(exercise.instructions, ['Lie on bench', 'Press bar up']);
       expect(exercise.image, 'bench_press.jpg');
       expect(exercise.animation, 'bench_press.gif');
+      expect(exercise.exerciseIntensity, 1.0);
       expect(exercise.isBodyWeightExercise, false);
       expect(exercise.isCustom, true);
+      expect(exercise.muscleActivation, isEmpty);
     });
 
     test('constructor with default isBodyWeightExercise value', () {
@@ -59,6 +61,10 @@ void main() {
         throwsUnsupportedError,
       );
       expect(() => exercise.instructions.add('Step 2'), throwsUnsupportedError);
+      expect(
+        () => exercise.muscleActivation[MuscleGroup.chest] = 1,
+        throwsUnsupportedError,
+      );
     });
 
     test(
@@ -72,6 +78,8 @@ void main() {
           'instructions': '["Lie on bench","Press bar up"]',
           'image': 'bench_press.jpg',
           'animation': 'bench_press.gif',
+          'muscle_activation': '{"Chest":1.0,"Triceps":0.45}',
+          'exercise_intensity': 0.9,
           'is_bodyweight_exercise': false,
           'is_custom': true,
         };
@@ -85,6 +93,11 @@ void main() {
         expect(exercise.instructions, ['Lie on bench', 'Press bar up']);
         expect(exercise.image, 'bench_press.jpg');
         expect(exercise.animation, 'bench_press.gif');
+        expect(exercise.muscleActivation, {
+          MuscleGroup.chest: 1.0,
+          MuscleGroup.triceps: 0.45,
+        });
+        expect(exercise.exerciseIntensity, 0.9);
         expect(exercise.isBodyWeightExercise, false);
         expect(exercise.isCustom, true);
       },
@@ -101,6 +114,8 @@ void main() {
           'instructions': ['Lie on bench', 'Press bar up'],
           'image': 'bench_press.jpg',
           'animation': 'bench_press.gif',
+          'muscle_activation': {'Chest': 1.0, 'Triceps': 0.45},
+          'exercise_intensity': 0.9,
           'is_bodyweight_exercise': false,
         };
 
@@ -113,6 +128,11 @@ void main() {
         expect(exercise.instructions, ['Lie on bench', 'Press bar up']);
         expect(exercise.image, 'bench_press.jpg');
         expect(exercise.animation, 'bench_press.gif');
+        expect(exercise.muscleActivation, {
+          MuscleGroup.chest: 1.0,
+          MuscleGroup.triceps: 0.45,
+        });
+        expect(exercise.exerciseIntensity, 0.9);
         expect(exercise.isBodyWeightExercise, false);
       },
     );
@@ -257,6 +277,11 @@ void main() {
         instructions: ['Lie on bench', 'Press bar up'],
         image: 'bench_press.jpg',
         animation: 'bench_press.gif',
+        muscleActivation: const {
+          MuscleGroup.chest: 1.0,
+          MuscleGroup.triceps: 0.45,
+        },
+        exerciseIntensity: 0.9,
         isBodyWeightExercise: false,
       );
 
@@ -269,6 +294,8 @@ void main() {
       expect(map['instructions'], '["Lie on bench","Press bar up"]');
       expect(map['image'], 'bench_press.jpg');
       expect(map['animation'], 'bench_press.gif');
+      expect(map['muscle_activation'], '{"Chest":1.0,"Triceps":0.45}');
+      expect(map['exercise_intensity'], 0.9);
       expect(map['is_bodyweight_exercise'], 0);
       expect(map['is_custom'], 0);
     });
