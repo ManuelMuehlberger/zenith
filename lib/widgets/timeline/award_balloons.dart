@@ -66,6 +66,7 @@ class AwardBalloons extends StatelessWidget {
   }
 }
 
+// policy: allow-public-api shared award detail entrypoint used by timeline and insights surfaces.
 Future<void> showAwardDetailSheet(BuildContext context, List<Award> awards) {
   return showAppBottomSheet<void>(
     context: context,
@@ -153,6 +154,7 @@ class _AwardCountBadge extends StatelessWidget {
   }
 }
 
+// policy: allow-public-api shared award detail sheet surfaced from multiple award entrypoints.
 class AwardDetailSheet extends StatefulWidget {
   final List<Award> awards;
 

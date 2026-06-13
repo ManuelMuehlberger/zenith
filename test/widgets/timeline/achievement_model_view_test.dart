@@ -25,4 +25,38 @@ void main() {
       matchesSemantics(label: 'First Workout'),
     );
   });
+
+  testWidgets('updates semantics when the displayed award changes', (
+    tester,
+  ) async {
+    const firstAward = Award(
+      title: 'First Workout',
+      icon: Icons.check_circle,
+      modelAsset: 'assets/achievements/achievement_medal.glb',
+    );
+    const secondAward = Award(
+      title: 'Long Session',
+      icon: Icons.timer_outlined,
+      modelAsset: 'assets/achievements/achievement_medal.glb',
+    );
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(body: AchievementModelView(award: firstAward, size: 64)),
+      ),
+    );
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AchievementModelView(award: secondAward, size: 64),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getSemantics(find.byType(AchievementModelView)),
+      matchesSemantics(label: 'Long Session'),
+    );
+  });
 }

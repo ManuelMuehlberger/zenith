@@ -4,6 +4,7 @@ import '../constants/app_constants.dart';
 import '../models/user_data.dart';
 import '../theme/app_theme.dart';
 
+// policy: allow-public-api shared picker overlay sizing tokens used by onboarding and workout completion.
 class PickerSelectionStyle {
   const PickerSelectionStyle._();
 
@@ -11,6 +12,7 @@ class PickerSelectionStyle {
   static const double emphasizedRadius = AppConstants.SHEET_RADIUS;
 }
 
+// policy: allow-public-api shared Cupertino picker wrapper used by common weight-entry flows.
 class AppCupertinoPicker extends StatelessWidget {
   const AppCupertinoPicker({
     super.key,
@@ -32,9 +34,7 @@ class AppCupertinoPicker extends StatelessWidget {
     return CupertinoPicker(
       itemExtent: itemExtent,
       scrollController: scrollController,
-      selectionOverlay: PickerSelectionOverlay(
-        radius: selectionOverlayRadius,
-      ),
+      selectionOverlay: PickerSelectionOverlay(radius: selectionOverlayRadius),
       onSelectedItemChanged: onSelectedItemChanged,
       children: children,
     );
@@ -191,6 +191,7 @@ class WeightPickerWheel extends StatelessWidget {
   }
 }
 
+// policy: allow-public-api shared picker overlay used by the app's Cupertino wheel wrappers.
 class PickerSelectionOverlay extends StatelessWidget {
   const PickerSelectionOverlay({super.key, required this.radius});
 
@@ -201,10 +202,7 @@ class PickerSelectionOverlay extends StatelessWidget {
     return Container(
       margin: const EdgeInsetsDirectional.symmetric(horizontal: 9),
       decoration: ShapeDecoration(
-        color: CupertinoDynamicColor.resolve(
-          CupertinoColors.tertiarySystemFill,
-          context,
-        ),
+        color: context.appColors.field,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radius),
         ),
