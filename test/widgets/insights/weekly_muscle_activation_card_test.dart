@@ -21,7 +21,9 @@ void main() {
     InsightsService.instance.reset();
   });
 
-  testWidgets('renders recent 7-day workout activation', (tester) async {
+  testWidgets('renders 14-day activation with latest workout overlay', (
+    tester,
+  ) async {
     final now = DateTime(2026, 6, 11, 12);
     final activationService = _FakeWorkoutMuscleActivationService();
     final benchPress = Exercise(
@@ -36,8 +38,9 @@ void main() {
     );
     InsightsService.instance.setWorkoutsProvider(
       () async => [
-        _workout('recent', now.subtract(const Duration(days: 2))),
-        _workout('old', now.subtract(const Duration(days: 9))),
+        _workout('latest', now.subtract(const Duration(days: 2))),
+        _workout('recent', now.subtract(const Duration(days: 12))),
+        _workout('old', now.subtract(const Duration(days: 16))),
         _workout(
           'in-progress',
           now.subtract(const Duration(days: 1)),
@@ -61,18 +64,19 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Last 7 days'), findsOneWidget);
-    expect(find.text('Muscle activation from recent workouts'), findsOneWidget);
-    expect(activationService.workoutIds, ['recent']);
-    expect(activationService.exerciseDetails, everyElement(isNotNull));
-    expect(find.text('Planned'), findsNothing);
-    expect(find.text('Intensity'), findsOneWidget);
+    expect(
+      find.text('14-day activation with your latest workout overlay'),
+      findsOneWidget,
+    );
+    expect(activationService.loadedConfigCount, 1);
+    expect(find.text('Last 14 days'), findsNWidgets(2));
+    expect(find.text('Last workout'), findsOneWidget);
   });
 
   testWidgets('hides when no recent activation exists', (tester) async {
     final now = DateTime(2026, 6, 11, 12);
     InsightsService.instance.setWorkoutsProvider(
-      () async => [_workout('old', now.subtract(const Duration(days: 9)))],
+      () async => [_workout('old', now.subtract(const Duration(days: 16)))],
     );
 
     await tester.pumpWidget(
@@ -83,45 +87,30 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Last 7 days'), findsNothing);
+    expect(find.text('Last 14 days'), findsNothing);
   });
 }
 
 class _FakeWorkoutMuscleActivationService
     extends WorkoutMuscleActivationService {
-  List<String> workoutIds = const [];
-  List<Exercise?> exerciseDetails = const [];
+  int loadedConfigCount = 0;
 
   @override
-  Future<WorkoutMuscleActivationProfile> buildProfileForWorkouts(
-    Iterable<Workout> workouts,
-  ) async {
-    workoutIds = workouts.map((workout) => workout.id).toList();
-    exerciseDetails = workouts
-        .expand((workout) => workout.exercises)
-        .map((exercise) => exercise.exerciseDetail)
-        .toList();
-    return const WorkoutMuscleActivationProfile(
-      points: [
-        WorkoutMuscleActivationPoint(
-          axisId: 'chest',
-          label: 'Chest',
-          planned: 1,
-          actual: 0.8,
-        ),
-        WorkoutMuscleActivationPoint(
-          axisId: 'back',
-          label: 'Back',
-          planned: 0.6,
-          actual: 0.5,
-        ),
-        WorkoutMuscleActivationPoint(
-          axisId: 'legs',
-          label: 'Legs',
-          planned: 0.4,
-          actual: 0.2,
-        ),
+  Future<WorkoutMuscleActivationConfig> loadConfig() async {
+    loadedConfigCount += 1;
+    return const WorkoutMuscleActivationConfig(
+      primaryWeight: 1,
+      secondaryWeight: 0.35,
+      axes: [
+        WorkoutMuscleActivationAxis(id: 'chest', label: 'Chest'),
+        WorkoutMuscleActivationAxis(id: 'back', label: 'Back'),
+        WorkoutMuscleActivationAxis(id: 'legs', label: 'Legs'),
       ],
+      muscleContributions: {
+        MuscleGroup.chest: {'chest': 1},
+        MuscleGroup.back: {'back': 1},
+        MuscleGroup.quads: {'legs': 1},
+      },
     );
   }
 }

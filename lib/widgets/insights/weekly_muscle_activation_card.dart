@@ -75,10 +75,10 @@ class _WeeklyMuscleActivationCardState
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: WorkoutMuscleActivationRadarCard(
             profile: profile,
-            title: 'Last 7 days',
-            idleSubtitle: 'Muscle activation from recent workouts',
-            showPlanned: false,
-            actualLabel: 'Intensity',
+            title: 'Last 14 days',
+            idleSubtitle: '14-day activation with your latest workout overlay',
+            plannedLabel: 'Last 14 days',
+            actualLabel: 'Last workout',
           ),
         );
       },
@@ -98,17 +98,47 @@ class _WeeklyMuscleActivationCardState
       return null;
     }
 
-    final profile = await _activationService.buildProfileForWorkouts(
-      recentWorkouts,
-    );
+    recentWorkouts.sort(_compareByMostRecentCompletion);
+    final profile = await _buildComparisonProfile(recentWorkouts);
     return profile.hasActivation ? profile : null;
+  }
+
+  Future<WorkoutMuscleActivationProfile> _buildComparisonProfile(
+    List<Workout> recentWorkouts,
+  ) async {
+    final config = await _activationService.loadConfig();
+    final windowTotals =
+        WorkoutMuscleActivationService.buildWorkoutsAxisActivation(
+          recentWorkouts,
+          config,
+        );
+    final latestWorkoutTotals =
+        WorkoutMuscleActivationService.buildWorkoutAxisActivation(
+          recentWorkouts.first,
+          config,
+        );
+
+    final normalizer = _normalizerFor(windowTotals, latestWorkoutTotals);
+
+    return WorkoutMuscleActivationProfile(
+      points: config.axes
+          .map(
+            (axis) => WorkoutMuscleActivationPoint(
+              axisId: axis.id,
+              label: axis.label,
+              planned: (windowTotals.actualFor(axis.id)) / normalizer,
+              actual: (latestWorkoutTotals.actualFor(axis.id)) / normalizer,
+            ),
+          )
+          .toList(growable: false),
+    );
   }
 
   Iterable<Workout> _filterRecentCompletedWorkouts(
     Iterable<Workout> workouts,
     DateTime now,
   ) {
-    final windowStart = now.subtract(const Duration(days: 7));
+    final windowStart = now.subtract(const Duration(days: 14));
     return workouts.where((workout) {
       if (workout.status != WorkoutStatus.completed) {
         return false;
@@ -119,6 +149,12 @@ class _WeeklyMuscleActivationCardState
       }
       return !occurredAt.isBefore(windowStart) && !occurredAt.isAfter(now);
     });
+  }
+
+  int _compareByMostRecentCompletion(Workout left, Workout right) {
+    final leftDate = left.completedAt ?? left.startedAt ?? DateTime(0);
+    final rightDate = right.completedAt ?? right.startedAt ?? DateTime(0);
+    return rightDate.compareTo(leftDate);
   }
 
   List<Workout> _hydrateWorkouts(List<Workout> workouts) {
@@ -152,5 +188,23 @@ class _WeeklyMuscleActivationCardState
     return {
       for (final exercise in exerciseService.exercises) exercise.slug: exercise,
     };
+  }
+
+  double _normalizerFor(
+    WorkoutMuscleActivationTotals windowTotals,
+    WorkoutMuscleActivationTotals latestWorkoutTotals,
+  ) {
+    var maxValue = 0.0;
+    for (final value in windowTotals.actualByAxis.values) {
+      if (value > maxValue) {
+        maxValue = value;
+      }
+    }
+    for (final value in latestWorkoutTotals.actualByAxis.values) {
+      if (value > maxValue) {
+        maxValue = value;
+      }
+    }
+    return maxValue <= 0 ? 1 : maxValue;
   }
 }
