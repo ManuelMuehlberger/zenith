@@ -20,6 +20,7 @@ class AchievementModelView extends StatefulWidget {
   final double size;
   final bool interactive;
   final bool startRotating;
+  final double? renderScale;
 
   const AchievementModelView({
     super.key,
@@ -27,6 +28,7 @@ class AchievementModelView extends StatefulWidget {
     required this.size,
     this.interactive = false,
     this.startRotating = true,
+    this.renderScale,
   });
 
   @override
@@ -85,10 +87,37 @@ class _AchievementModelViewState extends State<AchievementModelView> {
       height: widget.size,
       child: _showFallback
           ? _FallbackAwardIcon(award: widget.award)
-          : _viewer(),
+          : _scaledViewer(),
     );
 
     return Semantics(label: widget.award.title, child: viewer);
+  }
+
+  Widget _scaledViewer() {
+    final scale = _effectiveRenderScale;
+    if (scale >= 0.99) {
+      return _viewer();
+    }
+
+    final renderSize = widget.size * scale;
+    return Center(
+      child: Transform.scale(
+        scale: 1 / scale,
+        child: SizedBox(
+          key: const Key('achievement_model_low_res_viewport'),
+          width: renderSize,
+          height: renderSize,
+          child: _viewer(),
+        ),
+      ),
+    );
+  }
+
+  double get _effectiveRenderScale {
+    final requestedScale =
+        widget.renderScale ??
+        (widget.interactive ? 1.0 : widget.award.previewRenderScale);
+    return requestedScale.clamp(0.5, 1.0).toDouble();
   }
 
   Widget _viewer() {

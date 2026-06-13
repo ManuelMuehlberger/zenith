@@ -187,6 +187,41 @@ void main() {
     expect(find.text('Bench Press'), findsNothing);
   });
 
+  testWidgets('multi-select header exposes custom-create and done actions', (
+    tester,
+  ) async {
+    final exercises = [
+      Exercise(
+        slug: 'push-up',
+        name: 'Push-Up',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: const [],
+        instructions: const ['Push'],
+        equipment: 'None',
+        image: '',
+        animation: '',
+        isBodyWeightExercise: true,
+      ),
+    ];
+    ExerciseService.instance.setDependenciesForTesting(
+      exerciseDao: _FakeExerciseDao(exercises),
+      muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.chest]),
+      seedExercises: exercises,
+      seedMuscleGroups: ['Chest'],
+    );
+
+    await tester.pumpWidget(
+      _wrap(const ExercisePickerScreen(multiSelect: true)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('create_custom_exercise_button')),
+      findsOneWidget,
+    );
+    expect(find.text('Done'), findsOneWidget);
+  });
+
   testWidgets(
     'ExercisePickerScreen in single-select mode returns single exercise',
     (tester) async {

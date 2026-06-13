@@ -27,6 +27,12 @@ class ExerciseDao extends BaseDao<Exercise> {
       'equipment': exercise.equipment,
       'image': exercise.image,
       'animation': exercise.animation,
+      'muscleActivation': jsonEncode(
+        exercise.muscleActivation.map(
+          (key, value) => MapEntry(key.name, value),
+        ),
+      ),
+      'exerciseIntensity': exercise.exerciseIntensity,
       'isBodyWeightExercise': exercise.isBodyWeightExercise ? 1 : 0,
       'isCustom': exercise.isCustom ? 1 : 0,
       'type': exercise.type.storageValue,

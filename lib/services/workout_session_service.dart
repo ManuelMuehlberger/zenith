@@ -9,6 +9,7 @@ import 'dao/workout_dao.dart';
 import 'dao/workout_exercise_dao.dart';
 import 'dao/workout_set_dao.dart';
 import 'exercise_service.dart';
+import 'insights/insight_feed_service.dart';
 import 'live_workout_notification_service.dart';
 import 'user_service.dart';
 import 'workout_achievement_service.dart';
@@ -565,6 +566,7 @@ class WorkoutSessionService extends ChangeNotifier {
     }
 
     await WorkoutService.instance.loadData();
+    await InsightFeedService.instance.invalidateCache();
 
     await _notificationService.stopService();
     await clearActiveSession();

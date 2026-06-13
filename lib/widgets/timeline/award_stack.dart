@@ -20,6 +20,7 @@ class Award {
   final double cameraPhi;
   final double cameraRadius;
   final int rotationSpeed;
+  final double previewRenderScale;
 
   const Award({
     required this.title,
@@ -34,6 +35,7 @@ class Award {
     this.cameraPhi = 70,
     this.cameraRadius = 2.7,
     this.rotationSpeed = 18,
+    this.previewRenderScale = 0.66,
   });
 }
 

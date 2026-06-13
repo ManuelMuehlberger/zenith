@@ -29,6 +29,8 @@ Future<Database> _openTestDatabase() {
             equipment TEXT,
             image TEXT,
             animation TEXT,
+            muscleActivation TEXT,
+            exerciseIntensity REAL DEFAULT 1.0,
             isBodyWeightExercise INTEGER DEFAULT 0,
             isCustom INTEGER DEFAULT 0,
             type TEXT NOT NULL DEFAULT 'strength'
@@ -50,6 +52,8 @@ Exercise _exercise({
   String animation = '',
   bool isBodyWeightExercise = false,
   bool isCustom = false,
+  Map<MuscleGroup, double> muscleActivation = const {},
+  double exerciseIntensity = 1.0,
 }) {
   return Exercise(
     slug: slug,
@@ -60,6 +64,8 @@ Exercise _exercise({
     equipment: equipment,
     image: image,
     animation: animation,
+    muscleActivation: muscleActivation,
+    exerciseIntensity: exerciseIntensity,
     isBodyWeightExercise: isBodyWeightExercise,
     isCustom: isCustom,
   );
@@ -99,6 +105,11 @@ void main() {
         equipment: 'Barbell',
         image: 'bench_press.jpg',
         animation: 'bench_press.gif',
+        muscleActivation: const {
+          MuscleGroup.chest: 1.0,
+          MuscleGroup.triceps: 0.45,
+        },
+        exerciseIntensity: 0.9,
         isBodyWeightExercise: false,
       );
 
@@ -113,6 +124,8 @@ void main() {
         'equipment': 'Barbell',
         'image': 'bench_press.jpg',
         'animation': 'bench_press.gif',
+        'muscleActivation': '{"Chest":1.0,"Triceps":0.45}',
+        'exerciseIntensity': 0.9,
         'isBodyWeightExercise': 0,
         'isCustom': 0,
         'type': 'strength',

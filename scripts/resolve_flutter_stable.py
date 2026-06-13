@@ -8,11 +8,15 @@ import sys
 import urllib.request
 
 
-RELEASES_URL = "https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json"
+RELEASES_URL_TEMPLATE = (
+    "https://storage.googleapis.com/flutter_infra_release/releases/"
+    "releases_{platform}.json"
+)
+VALID_PLATFORMS = ("linux", "macos")
 
 
-def fetch_release_index() -> dict:
-    with urllib.request.urlopen(RELEASES_URL) as response:
+def fetch_release_index(platform: str) -> dict:
+    with urllib.request.urlopen(RELEASES_URL_TEMPLATE.format(platform=platform)) as response:
         return json.load(response)
 
 
@@ -70,6 +74,12 @@ def main() -> None:
         description="Resolve Flutter stable release metadata for CI image builds."
     )
     parser.add_argument(
+        "--platform",
+        choices=VALID_PLATFORMS,
+        default="linux",
+        help="Flutter release platform to resolve. Defaults to linux.",
+    )
+    parser.add_argument(
         "--channel",
         default="stable",
         help="Flutter release channel to resolve. Defaults to stable.",
@@ -86,7 +96,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    index = fetch_release_index()
+    index = fetch_release_index(args.platform)
     release = resolve_release(index, args.channel, args.version)
     payload = build_payload(index, release)
 

@@ -1,10 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/constants/app_constants.dart';
+import 'package:zenith/models/exercise.dart';
+import 'package:zenith/models/muscle_group.dart';
 import 'package:zenith/models/user_data.dart';
 import 'package:zenith/models/workout.dart';
+import 'package:zenith/models/workout_exercise.dart';
+import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/screens/workout_completion_screen.dart';
 import 'package:zenith/services/user_service.dart';
+import 'package:zenith/services/workout_muscle_activation_service.dart';
+import 'package:zenith/widgets/weight_picker_wheel.dart';
+
+class _FakeWorkoutMuscleActivationService
+    extends WorkoutMuscleActivationService {
+  _FakeWorkoutMuscleActivationService(this.profile);
+
+  final WorkoutMuscleActivationProfile profile;
+
+  @override
+  Future<WorkoutMuscleActivationProfile> buildProfile(Workout workout) async {
+    return profile;
+  }
+}
 
 void main() {
   group('WorkoutCompletionScreen', () {
@@ -115,7 +133,35 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(home: WorkoutCompletionScreen(session: session)),
+        MaterialApp(
+          home: WorkoutCompletionScreen(
+            session: session,
+            muscleActivationService: _FakeWorkoutMuscleActivationService(
+              const WorkoutMuscleActivationProfile(
+                points: [
+                  WorkoutMuscleActivationPoint(
+                    axisId: 'chest',
+                    label: 'Chest',
+                    planned: 1,
+                    actual: 0.5,
+                  ),
+                  WorkoutMuscleActivationPoint(
+                    axisId: 'arms',
+                    label: 'Arms',
+                    planned: 0.3,
+                    actual: 0.2,
+                  ),
+                  WorkoutMuscleActivationPoint(
+                    axisId: 'core',
+                    label: 'Core',
+                    planned: 0.2,
+                    actual: 0.1,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -131,6 +177,14 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Done'), findsOneWidget);
+
+      final picker = tester.widget<WeightPickerWheel>(
+        find.byType(WeightPickerWheel),
+      );
+      expect(
+        picker.selectionOverlayRadius,
+        PickerSelectionStyle.emphasizedRadius,
+      );
     });
 
     testWidgets('shows both completion actions', (WidgetTester tester) async {
@@ -148,6 +202,82 @@ void main() {
 
       expect(find.byKey(const Key('back_to_workout_btn')), findsOneWidget);
       expect(find.text('Finish'), findsOneWidget);
+    });
+
+    testWidgets('shows muscle activation radar when exercise details exist', (
+      WidgetTester tester,
+    ) async {
+      final startedAt = DateTime.now().subtract(const Duration(minutes: 1));
+      final session = Workout(
+        name: 'Activation Check',
+        status: WorkoutStatus.inProgress,
+        startedAt: startedAt,
+        exercises: [
+          WorkoutExercise(
+            workoutId: 'workout-1',
+            exerciseSlug: 'bench-press',
+            exerciseDetail: Exercise(
+              slug: 'bench-press',
+              name: 'Bench Press',
+              primaryMuscleGroup: MuscleGroup.chest,
+              secondaryMuscleGroups: const [MuscleGroup.triceps],
+              instructions: const [],
+              image: '',
+              animation: '',
+            ),
+            sets: [
+              WorkoutSet(
+                workoutExerciseId: 'exercise-1',
+                setIndex: 0,
+                isCompleted: true,
+              ),
+              WorkoutSet(workoutExerciseId: 'exercise-1', setIndex: 1),
+            ],
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: WorkoutCompletionScreen(
+            session: session,
+            muscleActivationService: _FakeWorkoutMuscleActivationService(
+              const WorkoutMuscleActivationProfile(
+                points: [
+                  WorkoutMuscleActivationPoint(
+                    axisId: 'chest',
+                    label: 'Chest',
+                    planned: 1,
+                    actual: 0.5,
+                  ),
+                  WorkoutMuscleActivationPoint(
+                    axisId: 'arms',
+                    label: 'Arms',
+                    planned: 0.3,
+                    actual: 0.2,
+                  ),
+                  WorkoutMuscleActivationPoint(
+                    axisId: 'core',
+                    label: 'Core',
+                    planned: 0.2,
+                    actual: 0.1,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
+
+      expect(
+        find.byKey(const Key('workout_muscle_activation_card')),
+        findsOneWidget,
+      );
+      expect(find.text('Muscle activation'), findsOneWidget);
+      expect(find.text('Planned'), findsOneWidget);
+      expect(find.text('Actual'), findsOneWidget);
     });
   });
 }

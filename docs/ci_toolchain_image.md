@@ -18,7 +18,7 @@ This repo now includes a dedicated CI toolchain image pipeline that:
 
 - `.ci/toolchain-image/Dockerfile`: builds the reusable CI image.
 - `scripts/resolve_flutter_stable.py`: resolves Flutter stable metadata from the
-  official Linux release manifest.
+  official Flutter release manifests for Linux and macOS.
 - `scripts/ci_image_smoke_test.sh`: validates a candidate image against this repo.
 - `.gitea/workflows/refresh-ci-image.yml`: builds, validates, and promotes the
   CI image.
@@ -27,8 +27,9 @@ This repo now includes a dedicated CI toolchain image pipeline that:
 
 ## What Changes In Main CI
 
-The main quality gate still runs on `ubuntu-latest` in
-`.gitea/workflows/quality-gate.yml`.
+The main quality gate currently has:
+
+1. An Android/Linux job on `ubuntu-latest`
 
 Behavior:
 
@@ -36,6 +37,7 @@ Behavior:
    release, the workflow skips `actions/setup-java` and `subosito/flutter-action`.
 2. If the runner image does not provide them, the workflow falls back to those
    setup actions.
+3. The Android job uploads the generated debug APK as a workflow artifact.
 
 That keeps rollout safe. The repo can land the image automation before the
 runner label is changed, and the runner can switch later without breaking CI.
@@ -120,8 +122,8 @@ Two runner labels are involved.
 
 ### Main CI Runner
 
-The quality gate continues to run on `ubuntu-latest`, but the label should point
-at the promoted image instead of the generic act image.
+The Android quality gate continues to run on `ubuntu-latest`, but the label
+should point at the promoted image instead of the generic act image.
 
 Recommended label mapping:
 

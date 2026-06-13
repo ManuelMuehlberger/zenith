@@ -12,15 +12,22 @@ import '../main.dart';
 import '../models/user_data.dart';
 import '../models/workout.dart';
 import '../services/user_service.dart';
+import '../services/workout_muscle_activation_service.dart';
 import '../services/workout_session_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/navigation_helper.dart';
 import '../widgets/weight_picker_wheel.dart';
+import '../widgets/workout_muscle_activation_radar_card.dart';
 
 class WorkoutCompletionScreen extends StatefulWidget {
   final Workout session;
+  final WorkoutMuscleActivationService? muscleActivationService;
 
-  const WorkoutCompletionScreen({super.key, required this.session});
+  const WorkoutCompletionScreen({
+    super.key,
+    required this.session,
+    this.muscleActivationService,
+  });
 
   @override
   State<WorkoutCompletionScreen> createState() =>
@@ -36,12 +43,19 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
   late ConfettiController _confettiController;
   final GlobalKey _finishButtonKey = GlobalKey();
   Offset? _confettiPosition;
+  late final Future<WorkoutMuscleActivationProfile> _activationProfileFuture;
+  late final WorkoutMuscleActivationService _muscleActivationService;
 
   @override
   void initState() {
     super.initState();
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 1),
+    );
+    _muscleActivationService =
+        widget.muscleActivationService ?? WorkoutMuscleActivationService();
+    _activationProfileFuture = _muscleActivationService.buildProfile(
+      widget.session,
     );
   }
 
@@ -85,6 +99,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildWorkoutSummaryCard(context),
+            _buildMuscleActivationSection(context),
             const SizedBox(height: 32),
             _buildNotesSection(context),
             const SizedBox(height: 32),
@@ -96,6 +111,23 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMuscleActivationSection(BuildContext context) {
+    return FutureBuilder<WorkoutMuscleActivationProfile>(
+      future: _activationProfileFuture,
+      builder: (context, snapshot) {
+        final profile = snapshot.data;
+        if (profile == null || !profile.hasActivation) {
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: const EdgeInsets.only(top: 20),
+          child: WorkoutMuscleActivationRadarCard(profile: profile),
+        );
+      },
     );
   }
 
@@ -671,6 +703,7 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
                   pickerKey: const Key('post_workout_weight_picker'),
                   weight: initial,
                   units: units,
+                  selectionOverlayRadius: PickerSelectionStyle.emphasizedRadius,
                   onWeightChanged: (value) {
                     temp = value;
                   },

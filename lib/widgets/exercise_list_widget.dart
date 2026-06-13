@@ -40,8 +40,8 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
 
   final ScrollController _scrollController = ScrollController();
   bool _showSearchBar = true;
-  final double _searchBarHeight = 56.0;
-  final double _filterRowHeight = 52.0;
+  final double _searchBarHeight = 46.0;
+  final double _filterRowHeight = 40.0;
   double _lastScrollOffset = 0.0;
 
   @override
@@ -467,7 +467,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
 
     double internalHeaderHeight = 0;
     if (widget.title != null || widget.trailing != null) {
-      internalHeaderHeight += 48;
+      internalHeaderHeight += 36;
     }
     if (_showSearchBar) {
       internalHeaderHeight += _searchBarHeight;
@@ -510,7 +510,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                 padding: EdgeInsets.only(
                   left: AppConstants.PAGE_HORIZONTAL_PADDING,
                   right: AppConstants.PAGE_HORIZONTAL_PADDING,
-                  top: internalHeaderHeight + widget.additionalTopPadding + 20,
+                  top: internalHeaderHeight + widget.additionalTopPadding + 8,
                   bottom: AppConstants.PAGE_HORIZONTAL_PADDING,
                 ),
                 itemCount: _filteredExercises.length,
@@ -690,7 +690,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                   color: Theme.of(context).scaffoldBackgroundColor,
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppConstants.PAGE_HORIZONTAL_PADDING,
-                    vertical: 8.0,
+                    vertical: 2.0,
                   ),
                   child: Row(
                     children: [
@@ -714,7 +714,7 @@ class _ExerciseListWidgetState extends State<ExerciseListWidget> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppConstants.PAGE_HORIZONTAL_PADDING,
-                    vertical: 6.0,
+                    vertical: 2.0,
                   ),
                   child: CupertinoSearchTextField(
                     controller: _searchController,

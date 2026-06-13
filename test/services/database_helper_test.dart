@@ -17,6 +17,8 @@ name = "Bench Press"
 slug = "bench-press"
 primary_muscle_group = "Chest"
 secondary_muscle_groups = ["Triceps"]
+muscle_activation = { "Chest" = 1.0, "Triceps" = 0.45, "Core" = 0.1 }
+exercise_intensity = 0.9
 instructions = ["Lie on bench", "Press bar"]
 equipment = "Barbell"
 bodyweight = false
@@ -379,6 +381,11 @@ void main() {
         );
         expect(await columnNames(db, 'UserData'), contains('gender'));
         expect(await columnNames(db, 'Exercise'), contains('isCustom'));
+        expect(await columnNames(db, 'Exercise'), contains('muscleActivation'));
+        expect(
+          await columnNames(db, 'Exercise'),
+          contains('exerciseIntensity'),
+        );
         expect(
           await columnNames(db, 'WorkoutAchievement'),
           containsAll([
@@ -409,6 +416,15 @@ void main() {
           jsonDecode(plank['instructions'] as String),
           equals(['Brace core']),
         );
+        final benchPress = seededExercises.firstWhere(
+          (row) => row['slug'] == 'bench-press',
+        );
+        expect(jsonDecode(benchPress['muscleActivation'] as String), {
+          'Chest': 1.0,
+          'Triceps': 0.45,
+          'Core': 0.1,
+        });
+        expect(benchPress['exerciseIntensity'], 0.9);
 
         final muscleGroups = await db.query('MuscleGroup');
         expect(muscleGroups, hasLength(MuscleGroup.values.length));
@@ -463,6 +479,8 @@ void main() {
       );
       expect(await columnNames(db, 'UserData'), contains('gender'));
       expect(await columnNames(db, 'Exercise'), contains('isCustom'));
+      expect(await columnNames(db, 'Exercise'), contains('muscleActivation'));
+      expect(await columnNames(db, 'Exercise'), contains('exerciseIntensity'));
       expect(await tableNames(db), contains('WorkoutAchievement'));
 
       final workoutSet = await db.query(
@@ -483,6 +501,8 @@ void main() {
       expect(await columnNames(db, 'Workout'), contains('mood'));
       expect(await columnNames(db, 'UserData'), contains('gender'));
       expect(await columnNames(db, 'Exercise'), contains('isCustom'));
+      expect(await columnNames(db, 'Exercise'), contains('muscleActivation'));
+      expect(await columnNames(db, 'Exercise'), contains('exerciseIntensity'));
       expect(await tableNames(db), contains('WorkoutAchievement'));
       expect(
         await columnNames(db, 'WorkoutExercise'),

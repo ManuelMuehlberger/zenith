@@ -37,5 +37,21 @@ void main() {
       expect(metricSpec.defaultWeight(gender: Gender.ratherNotSay), 60.0);
       expect(metricSpec.defaultWeight(gender: Gender.male), 75.0);
     });
+
+    testWidgets('picker overlay resolves to the themed field color', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: const Scaffold(body: PickerSelectionOverlay(radius: 12)),
+        ),
+      );
+
+      final container = tester.widget<Container>(find.byType(Container));
+      final decoration = container.decoration! as ShapeDecoration;
+
+      expect(decoration.color, AppThemeColors.light.field);
+    });
   });
 }

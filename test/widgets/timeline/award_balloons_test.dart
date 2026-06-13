@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zenith/widgets/app_bottom_sheet.dart';
 import 'package:zenith/widgets/timeline/award_balloons.dart';
 import 'package:zenith/widgets/timeline/award_stack.dart';
 
@@ -50,5 +51,32 @@ void main() {
     final image = tester.widget<Image>(find.byType(Image));
     final provider = image.image as AssetImage;
     expect(provider.assetName, 'assets/achievements/compact.png');
+  });
+
+  testWidgets('opens reusable app bottom sheet for award details', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AwardBalloons(
+            awards: [
+              Award(
+                title: 'Long Session',
+                reason: 'You trained longer than usual.',
+                icon: Icons.timer_outlined,
+                modelAsset: 'missing.glb',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Long Session'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppBottomSheet), findsOneWidget);
+    expect(find.text('Long Session'), findsWidgets);
   });
 }

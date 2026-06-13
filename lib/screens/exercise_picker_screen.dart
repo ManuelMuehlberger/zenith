@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -82,7 +80,6 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
     final theme = Theme.of(context);
     final textTheme = context.appText;
     final colorScheme = context.appScheme;
-    final colors = context.appColors;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -101,64 +98,74 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
             left: 0,
             right: 0,
             height: screenHeaderHeight,
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(
-                  sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                  sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-                ),
-                child: Container(
-                  color: colors.overlayMedium,
-                  child: SafeArea(
-                    bottom: false,
-                    child: SizedBox(
-                      height: kToolbarHeight,
-                      child: Row(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child: IconButton(
+            child: Container(
+              color: theme.scaffoldBackgroundColor,
+              child: SafeArea(
+                bottom: false,
+                child: SizedBox(
+                  height: kToolbarHeight,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          tooltip: AppConstants.BACK_BUTTON_TOOLTIP,
+                          icon: Icon(
+                            Icons.arrow_back_ios_new,
+                            color: colorScheme.onSurface,
+                            size: 20,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            AppConstants.SELECT_EXERCISE_TITLE,
+                            textAlign: TextAlign.center,
+                            style: textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                        ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              key: const Key('create_custom_exercise_button'),
+                              onPressed: _openCustomExerciseCreator,
+                              tooltip: 'Create custom exercise',
                               icon: Icon(
-                                Icons.arrow_back_ios_new,
+                                CupertinoIcons.plus,
                                 color: colorScheme.onSurface,
+                                size: 22,
                               ),
-                              onPressed: () => Navigator.of(context).pop(),
-                              tooltip: AppConstants.BACK_BUTTON_TOOLTIP,
                             ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              AppConstants.SELECT_EXERCISE_TITLE,
-                              textAlign: TextAlign.center,
-                              style: textTheme.titleLarge,
-                            ),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                key: const Key('create_custom_exercise_button'),
-                                onPressed: _openCustomExerciseCreator,
-                                icon: Icon(
-                                  CupertinoIcons.plus,
-                                  color: colorScheme.primary,
-                                ),
-                                tooltip: 'Create custom exercise',
-                              ),
-                              if (widget.multiSelect)
-                                TextButton(
+                            if (widget.multiSelect)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: TextButton(
                                   onPressed: _done,
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 8,
+                                    ),
+                                    minimumSize: Size.zero,
+                                  ),
                                   child: Text(
                                     AppConstants.DONE_BUTTON_TEXT,
-                                    style: textTheme.labelLarge,
+                                    style: textTheme.labelLarge?.copyWith(
+                                      color: colorScheme.primary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
-                                )
-                              else
-                                const SizedBox(width: 8),
-                            ],
-                          ),
-                        ],
-                      ),
+                                ),
+                              )
+                            else
+                              const SizedBox(width: 8),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),

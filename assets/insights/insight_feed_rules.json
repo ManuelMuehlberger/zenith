@@ -1,0 +1,203 @@
+{
+  "stacks": [
+    {
+      "id": "last_workout",
+      "title": "Last Workout",
+      "enabled": true,
+      "priority": 100,
+      "minCompletedWorkouts": 1,
+      "maxCards": 3
+    },
+    {
+      "id": "recent_trends",
+      "title": "Recent Trends",
+      "enabled": true,
+      "priority": 80,
+      "minCompletedWorkouts": 3,
+      "maxCards": 3
+    },
+    {
+      "id": "long_term_trends",
+      "title": "Long-Term Trends",
+      "enabled": true,
+      "priority": 60,
+      "minCompletedWorkouts": 8,
+      "maxCards": 2
+    }
+  ],
+  "rules": [
+    {
+      "id": "training_velocity",
+      "stackId": "recent_trends",
+      "type": "trainingVelocity",
+      "enabled": true,
+      "priority": 90,
+      "params": {
+        "recentDays": 7,
+        "baselineDays": 90,
+        "minimumDeltaPercent": 20
+      },
+      "visual": {
+        "enabled": true,
+        "type": "baselineBars",
+        "size": "wide",
+        "params": {
+          "recentDays": 7,
+          "baselineDays": 90,
+          "showWhenDeltaBelowPercent": false
+        }
+      }
+    },
+    {
+      "id": "recent_achievement_shoutout",
+      "stackId": "last_workout",
+      "type": "recentAchievementShoutout",
+      "enabled": true,
+      "priority": 100,
+      "params": {
+        "maxAgeDays": 14
+      },
+      "visual": {
+        "enabled": true,
+        "type": "awardPreview",
+        "size": "wide",
+        "params": {
+          "maxAwards": 3
+        }
+      }
+    },
+    {
+      "id": "high_intensity_shoutout",
+      "stackId": "last_workout",
+      "type": "highIntensityShoutout",
+      "enabled": true,
+      "priority": 80,
+      "params": {
+        "lookbackDays": 90,
+        "minimumPercentile": 90
+      },
+      "visual": {
+        "enabled": true,
+        "type": "percentileDot",
+        "size": "wide",
+        "params": {
+          "lookbackDays": 90,
+          "minSamples": 5
+        }
+      }
+    },
+    {
+      "id": "consistency_pulse",
+      "stackId": "recent_trends",
+      "type": "consistencyPulse",
+      "enabled": true,
+      "priority": 70,
+      "params": {
+        "recentDays": 14,
+        "minimumWorkouts": 2
+      },
+      "visual": {
+        "enabled": true,
+        "type": "calendarStrip",
+        "size": "wide",
+        "params": {
+          "recentDays": 14,
+          "baselineDays": 14
+        }
+      }
+    },
+    {
+      "id": "comeback_card",
+      "stackId": "last_workout",
+      "type": "comebackCard",
+      "enabled": true,
+      "priority": 60,
+      "params": {
+        "minGapDays": 7
+      },
+      "visual": {
+        "enabled": false,
+        "type": "none",
+        "size": "wide",
+        "params": {}
+      }
+    },
+    {
+      "id": "personal_best_momentum",
+      "stackId": "last_workout",
+      "type": "personalBestMomentum",
+      "enabled": true,
+      "priority": 75,
+      "params": {},
+      "visual": {
+        "enabled": true,
+        "type": "sparklineBand",
+        "size": "wide",
+        "params": {
+          "lookbackDays": 120,
+          "bucketCount": 8,
+          "minSamples": 2
+        }
+      }
+    },
+    {
+      "id": "muscle_activation_radar",
+      "stackId": "last_workout",
+      "type": "muscleActivationRadar",
+      "enabled": true,
+      "priority": 85,
+      "params": {
+        "recentDays": 14,
+        "minWorkouts": 1
+      },
+      "visual": {
+        "enabled": true,
+        "type": "radar",
+        "size": "featured",
+        "params": {
+          "recentDays": 14
+        }
+      }
+    },
+    {
+      "id": "latest_workout_comparison",
+      "stackId": "last_workout",
+      "type": "latestWorkoutComparison",
+      "enabled": true,
+      "priority": 78,
+      "params": {
+        "baselineWorkouts": 8,
+        "minBaselineWorkouts": 2
+      },
+      "visual": {
+        "enabled": true,
+        "type": "baselineBars",
+        "size": "wide",
+        "params": {
+          "baselineWorkouts": 8
+        }
+      }
+    },
+    {
+      "id": "body_weight_trend",
+      "stackId": "long_term_trends",
+      "type": "bodyWeightTrend",
+      "enabled": true,
+      "priority": 45,
+      "params": {
+        "lookbackDays": 90,
+        "minSamples": 2
+      },
+      "visual": {
+        "enabled": true,
+        "type": "bodyWeightLine",
+        "size": "wide",
+        "params": {
+          "lookbackDays": 90,
+          "bucketCount": 8,
+          "minSamples": 2
+        }
+      }
+    }
+  ]
+}

@@ -12,6 +12,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_002_band-assisted-bench-press]
 name = "Band-Assisted Bench Press"
@@ -25,6 +26,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_003_bar-dip]
 name = "Bar Dip"
@@ -38,6 +40,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_004_bench-press]
 name = "Bench Press"
@@ -51,6 +54,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_005_board-press]
 name = "Board Press"
@@ -64,6 +68,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_006_cable-chest-press]
 name = "Cable Chest Press"
@@ -77,6 +82,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_007_close-grip-bench-press]
 name = "Close-Grip Bench Press"
@@ -90,6 +96,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_008_close-grip-feet-up-bench-press]
 name = "Close-Grip Feet-Up Bench Press"
@@ -103,6 +110,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_009_assisted-dip]
 name = "Assisted Dip"
@@ -116,6 +124,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_010_decline-bench-press]
 name = "Decline Bench Press"
@@ -129,6 +138,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_011_decline-push-up]
 name = "Decline Push-Up"
@@ -142,6 +152,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.4
 
 [exercise_012_dumbbell-chest-fly]
 name = "Dumbbell Chest Fly"
@@ -155,6 +166,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_013_dumbbell-chest-press]
 name = "Dumbbell Chest Press"
@@ -168,6 +180,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_014_dumbbell-decline-chest-press]
 name = "Dumbbell Decline Chest Press"
@@ -181,6 +194,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.6
 
 [exercise_015_dumbbell-pullover]
 name = "Dumbbell Pullover"
@@ -194,6 +208,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.4
 
 [exercise_016_dumbbell-floor-press]
 name = "Dumbbell Floor Press"
@@ -207,6 +222,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_017_feet-up-bench-press]
 name = "Feet-Up Bench Press"
@@ -220,6 +236,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_018_floor-press]
 name = "Floor Press"
@@ -233,6 +250,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.6
 
 [exercise_019_incline-bench-press]
 name = "Incline Bench Press"
@@ -246,6 +264,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_020_incline-push-up]
 name = "Incline Push-Up"
@@ -259,6 +278,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_021_kettlebell-floor-press]
 name = "Kettlebell Floor Press"
@@ -272,6 +292,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_022_kneeling-incline-push-up]
 name = "Kneeling Incline Push-Up"
@@ -285,6 +306,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_023_kneeling-push-up]
 name = "Kneeling Push-Up"
@@ -298,6 +320,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.28
 
 [exercise_024_machine-chest-fly]
 name = "Machine Chest Fly"
@@ -311,6 +334,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_025_pec-deck]
 name = "Pec Deck"
@@ -324,6 +348,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_026_machine-chest-press]
 name = "Machine Chest Press"
@@ -337,6 +362,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_027_pin-bench-press]
 name = "Pin Bench Press"
@@ -350,6 +376,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_028_push-up]
 name = "Push-Up"
@@ -363,6 +390,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.4
 
 [exercise_029_push-up-against-wall]
 name = "Push-Up Against Wall"
@@ -376,6 +404,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.1
 
 [exercise_030_push-ups-with-feet-in-rings]
 name = "Push-Ups With Feet in Rings"
@@ -389,6 +418,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_031_resistance-band-chest-fly]
 name = "Resistance Band Chest Fly"
@@ -402,6 +432,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_032_ring-dip]
 name = "Ring Dip"
@@ -415,6 +446,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_033_smith-machine-bench-press]
 name = "Smith Machine Bench Press"
@@ -428,6 +460,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_034_smith-machine-incline-bench-press]
 name = "Smith Machine Incline Bench Press"
@@ -441,6 +474,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_035_smith-machine-reverse-grip-bench-press]
 name = "Smith Machine Reverse Grip Bench Press"
@@ -454,6 +488,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_036_standing-cable-chest-fly]
 name = "Standing Cable Chest Fly"
@@ -467,6 +502,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_037_standing-resistance-band-chest-fly]
 name = "Standing Resistance Band Chest Fly"
@@ -480,6 +516,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_038_incline-dumbbell-press]
 name = "Incline Dumbbell Press"
@@ -493,6 +530,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.6
 
 [exercise_039_arnold-press]
 name = "Arnold Press"
@@ -506,6 +544,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_040_band-external-shoulder-rotation]
 name = "Band External Shoulder Rotation"
@@ -519,6 +558,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_041_band-pull-apart]
 name = "Band Pull-Apart"
@@ -532,6 +572,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_042_band-internal-shoulder-rotation]
 name = "Band Internal Shoulder Rotation"
@@ -545,6 +586,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.1
 
 [exercise_043_banded-face-pull]
 name = "Banded Face Pull"
@@ -558,6 +600,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_044_barbell-front-raise]
 name = "Barbell Front Raise"
@@ -571,6 +614,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.2
 
 [exercise_045_barbell-rear-delt-row]
 name = "Barbell Rear Delt Row"
@@ -584,6 +628,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.4
 
 [exercise_046_behind-the-neck-press]
 name = "Behind the Neck Press"
@@ -597,6 +642,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_047_barbell-upright-row]
 name = "Barbell Upright Row"
@@ -610,6 +656,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_048_cable-front-raise]
 name = "Cable Front Raise"
@@ -623,6 +670,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.2
 
 [exercise_049_cable-lateral-raise]
 name = "Cable Lateral Raise"
@@ -636,6 +684,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_050_cable-rear-delt-row]
 name = "Cable Rear Delt Row"
@@ -649,6 +698,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_051_cuban-press]
 name = "Cuban Press"
@@ -662,6 +712,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_052_devils-press]
 name = "Devils Press"
@@ -675,6 +726,7 @@ image = ""
 animation = ""
 cardio = true
 timed = false
+exercise_intensity = 0.95
 
 [exercise_053_dumbbell-front-raise]
 name = "Dumbbell Front Raise"
@@ -688,6 +740,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_054_dumbbell-horizontal-internal-shoulder-rotation]
 name = "Dumbbell Horizontal Internal Shoulder Rotation"
@@ -701,6 +754,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_055_dumbbell-horizontal-external-shoulder-rotation]
 name = "Dumbbell Horizontal External Shoulder Rotation"
@@ -714,6 +768,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_056_dumbbell-lateral-raise]
 name = "Dumbbell Lateral Raise"
@@ -727,6 +782,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_057_dumbbell-rear-delt-row]
 name = "Dumbbell Rear Delt Row"
@@ -740,6 +796,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_058_dumbbell-shoulder-press]
 name = "Dumbbell Shoulder Press"
@@ -753,6 +810,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_059_face-pull]
 name = "Face Pull"
@@ -766,6 +824,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_060_front-hold]
 name = "Front Hold"
@@ -779,6 +838,7 @@ image = ""
 animation = ""
 cardio = false
 timed = true
+exercise_intensity = 0.3
 
 [exercise_061_handstand-push-up]
 name = "Handstand Push-Up"
@@ -792,6 +852,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_062_jerk]
 name = "Jerk"
@@ -805,6 +866,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.95
 
 [exercise_063_kettlebell-halo]
 name = "Kettlebell Halo"
@@ -818,6 +880,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_064_landmine-press]
 name = "Landmine Press"
@@ -831,6 +894,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_065_lying-dumbbell-external-shoulder-rotation]
 name = "Lying Dumbbell External Shoulder Rotation"
@@ -844,6 +908,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_066_lying-dumbbell-internal-shoulder-rotation]
 name = "Lying Dumbbell Internal Shoulder Rotation"
@@ -857,6 +922,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_067_machine-lateral-raise]
 name = "Machine Lateral Raise"
@@ -870,6 +936,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_068_machine-shoulder-press]
 name = "Machine Shoulder Press"
@@ -883,6 +950,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_069_monkey-row]
 name = "Monkey Row"
@@ -896,6 +964,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_070_one-arm-landmine-press]
 name = "One-Arm Landmine Press"
@@ -909,6 +978,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_071_overhead-press]
 name = "Overhead Press"
@@ -922,6 +992,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_072_plate-front-raise]
 name = "Plate Front Raise"
@@ -935,6 +1006,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_073_power-jerk]
 name = "Power Jerk"
@@ -948,6 +1020,7 @@ image = ""
 animation = ""
 cardio = "false"
 timed = "false"
+exercise_intensity = 0.95
 
 [exercise_074_push-press]
 name = "Push Press"
@@ -961,6 +1034,7 @@ image = ""
 animation = ""
 cardio = "false"
 timed = "false"
+exercise_intensity = 0.85
 
 [exercise_075_reverse-dumbbell-flyes]
 name = "Reverse Dumbbell Flyes"
@@ -974,6 +1048,7 @@ image = ""
 animation = ""
 cardio = "false"
 timed = "false"
+exercise_intensity = 0.4
 
 [exercise_076_reverse-machine-fly]
 name = "Reverse Machine Fly"
@@ -987,6 +1062,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_077_seated-dumbbell-shoulder-press]
 name = "Seated Dumbbell Shoulder Press"
@@ -1000,6 +1076,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_078_cable-internal-shoulder-rotation]
 name = "Cable Internal Shoulder Rotation"
@@ -1013,6 +1090,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_079_seated-barbell-overhead-press]
 name = "Seated Barbell Overhead Press"
@@ -1026,6 +1104,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_080_seated-smith-machine-shoulder-press]
 name = "Seated Smith Machine Shoulder Press"
@@ -1039,6 +1118,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.6
 
 [exercise_081_snatch-grip-behind-the-neck-press]
 name = "Snatch Grip Behind the Neck Press"
@@ -1052,6 +1132,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_082_squat-jerk]
 name = "Squat Jerk"
@@ -1065,6 +1146,7 @@ cardio = false
 timed = false
 image = ""
 animation = ""
+exercise_intensity = 0.95
 
 [exercise_083_split-jerk]
 name = "Split Jerk"
@@ -1078,6 +1160,7 @@ cardio = false
 timed = false
 image = ""
 animation = ""
+exercise_intensity = 0.9
 
 [exercise_084_wall-walk]
 name = "Wall Walk"
@@ -1091,6 +1174,7 @@ cardio = false
 timed = false
 image = ""
 animation = ""
+exercise_intensity = 0.8
 
 [exercise_085_reverse-cable-flyes]
 name = "Reverse Cable Flyes"
@@ -1104,6 +1188,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_086_cable-crossover-bicep-curl]
 name = "Cable Crossover Bicep Curl"
@@ -1117,6 +1202,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.4
 
 [exercise_087_barbell-curl]
 name = "Barbell Curl"
@@ -1130,6 +1216,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_088_bodyweight-curl]
 name = "Bodyweight Curl"
@@ -1143,6 +1230,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_089_barbell-preacher-curl]
 name = "Barbell Preacher Curl"
@@ -1156,6 +1244,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_090_bayesian-curl]
 name = "Bayesian Curl"
@@ -1169,6 +1258,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.22
 
 [exercise_091_cable-curl-with-bar]
 name = "Cable Curl With Bar"
@@ -1182,6 +1272,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.24
 
 [exercise_092_concentration-curl]
 name = "Concentration Curl"
@@ -1195,6 +1286,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.22
 
 [exercise_093_cable-curl-with-rope]
 name = "Cable Curl With Rope"
@@ -1208,6 +1300,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.23
 
 [exercise_094_dumbbell-curl]
 name = "Dumbbell Curl"
@@ -1221,6 +1314,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.24
 
 [exercise_095_drag-curl]
 name = "Drag Curl"
@@ -1234,6 +1328,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.26
 
 [exercise_096_dumbbell-preacher-curl]
 name = "Dumbbell Preacher Curl"
@@ -1247,6 +1342,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.24
 
 [exercise_097_hammer-curl]
 name = "Hammer Curl"
@@ -1260,6 +1356,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_098_incline-dumbbell-curl]
 name = "Incline Dumbbell Curl"
@@ -1273,6 +1370,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_099_machine-bicep-curl]
 name = "Machine Bicep Curl"
@@ -1286,6 +1384,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.2
 
 [exercise_100_resistance-band-curl]
 name = "Resistance Band Curl"
@@ -1299,6 +1398,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.2
 
 [exercise_101_spider-curl]
 name = "Spider Curl"
@@ -1312,6 +1412,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_102_zottman-curl]
 name = "Zottman Curl"
@@ -1325,6 +1426,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.28
 
 [exercise_103_crossbody-cable-triceps-extension]
 name = "Crossbody Cable Triceps Extension"
@@ -1338,6 +1440,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_104_barbell-standing-triceps-extension]
 name = "Barbell Standing Triceps Extension"
@@ -1351,6 +1454,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_105_barbell-incline-triceps-extension]
 name = "Barbell Incline Triceps Extension"
@@ -1364,6 +1468,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_106_barbell-lying-triceps-extension]
 name = "Barbell Lying Triceps Extension"
@@ -1377,6 +1482,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_107_bench-dip]
 name = "Bench Dip"
@@ -1390,6 +1496,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_108_close-grip-push-up]
 name = "Close-Grip Push-Up"
@@ -1403,6 +1510,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_109_dumbbell-lying-triceps-extension]
 name = "Dumbbell Lying Triceps Extension"
@@ -1416,6 +1524,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_110_dumbbell-standing-triceps-extension]
 name = "Dumbbell Standing Triceps Extension"
@@ -1429,6 +1538,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_111_overhead-cable-triceps-extension]
 name = "Overhead Cable Triceps Extension"
@@ -1442,6 +1552,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_112_tate-press]
 name = "Tate Press"
@@ -1455,6 +1566,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_113_tricep-pushdown-with-bar]
 name = "Tricep Pushdown With Bar"
@@ -1468,6 +1580,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_114_tricep-pushdown-with-rope]
 name = "Tricep Pushdown With Rope"
@@ -1481,6 +1594,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_115_tricep-bodyweight-extension]
 name = "Tricep Bodyweight Extension"
@@ -1494,6 +1608,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_116_barbell-hack-squat]
 name = "Barbell Hack Squat"
@@ -1507,6 +1622,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.85
 
 [exercise_117_air-squat]
 name = "Air Squat"
@@ -1520,6 +1636,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.4
 
 [exercise_118_barbell-lunge]
 name = "Barbell Lunge"
@@ -1533,6 +1650,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_119_body-weight-lunge]
 name = "Body Weight Lunge"
@@ -1546,6 +1664,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_120_bodyweight-leg-curl]
 name = "Bodyweight Leg Curl"
@@ -1559,6 +1678,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_121_box-jump]
 name = "Box Jump"
@@ -1572,6 +1692,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.85
 
 [exercise_122_belt-squat]
 name = "Belt Squat"
@@ -1585,6 +1706,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_123_barbell-walking-lunge]
 name = "Barbell Walking Lunge"
@@ -1598,6 +1720,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.8
 
 [exercise_124_box-squat]
 name = "Box Squat"
@@ -1611,6 +1734,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.85
 
 [exercise_125_bulgarian-split-squat]
 name = "Bulgarian Split Squat"
@@ -1624,6 +1748,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_126_dumbbell-lunge]
 name = "Dumbbell Lunge"
@@ -1637,6 +1762,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_127_dumbbell-squat]
 name = "Dumbbell Squat"
@@ -1650,6 +1776,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_128_front-squat]
 name = "Front Squat"
@@ -1663,6 +1790,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.9
 
 [exercise_129_glute-ham-raise]
 name = "Glute Ham Raise"
@@ -1676,6 +1804,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_130_goblet-squat]
 name = "Goblet Squat"
@@ -1689,6 +1818,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_131_hack-squat-machine]
 name = "Hack Squat Machine"
@@ -1702,6 +1832,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_132_hip-adduction-machine]
 name = "Hip Adduction Machine"
@@ -1715,6 +1846,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_133_chair-squat]
 name = "Chair Squat"
@@ -1728,6 +1860,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_134_landmine-hack-squat]
 name = "Landmine Hack Squat"
@@ -1741,6 +1874,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_135_landmine-squat]
 name = "Landmine Squat"
@@ -1754,6 +1888,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_136_leg-curl-on-ball]
 name = "Leg Curl On Ball"
@@ -1767,6 +1902,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_137_leg-extension]
 name = "Leg Extension"
@@ -1780,6 +1916,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_138_leg-press]
 name = "Leg Press"
@@ -1793,6 +1930,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_139_lying-leg-curl]
 name = "Lying Leg Curl"
@@ -1806,6 +1944,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_140_jumping-lunge]
 name = "Jumping Lunge"
@@ -1819,6 +1958,7 @@ image = ""
 animation = ""
 cardio = true
 timed = false
+exercise_intensity = 0.85
 
 [exercise_141_nordic-hamstring-eccentric]
 name = "Nordic Hamstring Eccentric"
@@ -1832,6 +1972,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_142_one-legged-leg-extension]
 name = "One-Legged Leg Extension"
@@ -1845,6 +1986,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_143_one-legged-lying-leg-curl]
 name = "One-Legged Lying Leg Curl"
@@ -1858,6 +2000,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_144_one-legged-seated-leg-curl]
 name = "One-Legged Seated Leg Curl"
@@ -1871,6 +2014,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_145_pause-squat]
 name = "Pause Squat"
@@ -1884,6 +2028,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.95
 
 [exercise_146_pistol-squat]
 name = "Pistol Squat"
@@ -1897,6 +2042,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.8
 
 [exercise_147_reverse-barbell-lunge]
 name = "Reverse Barbell Lunge"
@@ -1910,6 +2056,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.85
 
 [exercise_148_reverse-dumbbell-lunge]
 name = "Reverse Dumbbell Lunge"
@@ -1923,6 +2070,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_149_romanian-deadlift]
 name = "Romanian Deadlift"
@@ -1936,6 +2084,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.9
 
 [exercise_150_safety-bar-squat]
 name = "Safety Bar Squat"
@@ -1949,6 +2098,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.9
 
 [exercise_151_seated-leg-curl]
 name = "Seated Leg Curl"
@@ -1962,6 +2112,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_152_reverse-body-weight-lunge]
 name = "Reverse Body Weight Lunge"
@@ -1975,6 +2126,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_153_side-lunges-bodyweight]
 name = "Side Lunges (Bodyweight)"
@@ -1988,6 +2140,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_154_smith-machine-bulgarian-split-squat]
 name = "Smith Machine Bulgarian Split Squat"
@@ -2001,6 +2154,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_155_smith-machine-front-squat]
 name = "Smith Machine Front Squat"
@@ -2014,6 +2168,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_156_smith-machine-squat]
 name = "Smith Machine Squat"
@@ -2027,6 +2182,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_157_squat]
 name = "Squat"
@@ -2040,6 +2196,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.95
 
 [exercise_158_step-up]
 name = "Step Up"
@@ -2053,6 +2210,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_159_zercher-squat]
 name = "Zercher Squat"
@@ -2066,6 +2224,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.85
 
 [exercise_160_half-air-squat]
 name = "Half Air Squat"
@@ -2079,6 +2238,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_161_zombie-squat]
 name = "Zombie Squat"
@@ -2092,6 +2252,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.85
 
 [exercise_162_shallow-body-weight-lunge]
 name = "Shallow Body Weight Lunge"
@@ -2105,6 +2266,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_163_assisted-pull-up]
 name = "Assisted Pull-Up"
@@ -2118,6 +2280,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_164_assisted-chin-up]
 name = "Assisted Chin-Up"
@@ -2131,6 +2294,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_165_banded-muscle-up]
 name = "Banded Muscle-Up"
@@ -2144,6 +2308,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.9
 
 [exercise_166_barbell-row]
 name = "Barbell Row"
@@ -2157,6 +2322,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_167_back-extension]
 name = "Back Extension"
@@ -2170,6 +2336,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_168_barbell-shrug]
 name = "Barbell Shrug"
@@ -2183,6 +2350,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_169_block-clean]
 name = "Block Clean"
@@ -2196,6 +2364,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.95
 
 [exercise_170_cable-close-grip-seated-row]
 name = "Cable Close Grip Seated Row"
@@ -2209,6 +2378,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.6
 
 [exercise_171_block-snatch]
 name = "Block Snatch"
@@ -2222,6 +2392,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.98
 
 [exercise_172_cable-wide-grip-seated-row]
 name = "Cable Wide Grip Seated Row"
@@ -2235,6 +2406,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.6
 
 [exercise_173_chest-to-bar]
 name = "Chest to Bar"
@@ -2248,6 +2420,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_174_chin-up]
 name = "Chin-Up"
@@ -2261,6 +2434,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_175_clean]
 name = "Clean"
@@ -2274,6 +2448,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.98
 
 [exercise_176_clean-and-jerk]
 name = "Clean and Jerk"
@@ -2287,6 +2462,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 1.0
 
 [exercise_177_close-grip-lat-pulldown]
 name = "Close-Grip Lat Pulldown"
@@ -2300,6 +2476,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_178_deadlift]
 name = "Deadlift"
@@ -2313,6 +2490,7 @@ image = ""
 animation = ""
 cardio = "false"
 timed = "false"
+exercise_intensity = 0.95
 
 [exercise_179_deficit-deadlift]
 name = "Deficit Deadlift"
@@ -2326,6 +2504,7 @@ image = ""
 animation = ""
 cardio = "false"
 timed = "false"
+exercise_intensity = 0.98
 
 [exercise_180_dumbbell-deadlift]
 name = "Dumbbell Deadlift"
@@ -2339,6 +2518,7 @@ image = ""
 animation = ""
 cardio = "false"
 timed = "false"
+exercise_intensity = 0.7
 
 [exercise_181_dumbbell-row]
 name = "Dumbbell Row"
@@ -2352,6 +2532,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_182_dumbbell-shrug]
 name = "Dumbbell Shrug"
@@ -2365,6 +2546,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_183_floor-back-extension]
 name = "Floor Back Extension"
@@ -2378,6 +2560,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_184_good-morning]
 name = "Good Morning"
@@ -2391,6 +2574,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_185_gorilla-row]
 name = "Gorilla Row"
@@ -2404,6 +2588,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_186_hang-clean]
 name = "Hang Clean"
@@ -2417,6 +2602,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.9
 
 [exercise_187_hang-power-clean]
 name = "Hang Power Clean"
@@ -2430,6 +2616,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.92
 
 [exercise_188_hang-power-snatch]
 name = "Hang Power Snatch"
@@ -2443,6 +2630,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.93
 
 [exercise_189_hang-snatch]
 name = "Hang Snatch"
@@ -2456,6 +2644,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.95
 
 [exercise_190_inverted-row]
 name = "Inverted Row"
@@ -2469,6 +2658,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_191_jefferson-curl]
 name = "Jefferson Curl"
@@ -2482,6 +2672,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.4
 
 [exercise_192_inverted-row-with-underhand-grip]
 name = "Inverted Row with Underhand Grip"
@@ -2495,6 +2686,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.52
 
 [exercise_193_jumping-muscle-up]
 name = "Jumping Muscle-Up"
@@ -2508,6 +2700,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.85
 
 [exercise_194_kettlebell-clean]
 name = "Kettlebell Clean"
@@ -2521,6 +2714,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_195_kettlebell-swing]
 name = "Kettlebell Swing"
@@ -2534,6 +2728,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_196_kroc-row]
 name = "Kroc Row"
@@ -2547,6 +2742,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_197_lat-pulldown-with-pronated-grip]
 name = "Lat Pulldown With Pronated Grip"
@@ -2560,6 +2756,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.6
 
 [exercise_198_lat-pulldown-with-supinated-grip]
 name = "Lat Pulldown With Supinated Grip"
@@ -2573,6 +2770,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.6
 
 [exercise_199_neutral-close-grip-lat-pulldown]
 name = "Neutral Close-Grip Lat Pulldown"
@@ -2586,6 +2784,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.6
 
 [exercise_200_one-handed-cable-row]
 name = "One-Handed Cable Row"
@@ -2599,6 +2798,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_201_kettlebell-clean-jerk]
 name = "Kettlebell Clean & Jerk"
@@ -2612,6 +2812,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.85
 
 [exercise_202_one-handed-kettlebell-swing]
 name = "One-Handed Kettlebell Swing"
@@ -2625,6 +2826,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_203_kettlebell-clean-press]
 name = "Kettlebell Clean & Press"
@@ -2638,6 +2840,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.8
 
 [exercise_204_one-handed-lat-pulldown]
 name = "One-Handed Lat Pulldown"
@@ -2651,6 +2854,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_205_pause-deadlift]
 name = "Pause Deadlift"
@@ -2664,6 +2868,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.9
 
 [exercise_206_pendlay-row]
 name = "Pendlay Row"
@@ -2677,6 +2882,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_207_power-clean]
 name = "Power Clean"
@@ -2690,6 +2896,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.95
 
 [exercise_208_power-snatch]
 name = "Power Snatch"
@@ -2703,6 +2910,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.95
 
 [exercise_209_pull-up]
 name = "Pull-Up"
@@ -2716,6 +2924,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_210_rack-pull]
 name = "Rack Pull"
@@ -2729,6 +2938,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.82
 
 [exercise_211_ring-pull-up]
 name = "Ring Pull-Up"
@@ -2742,6 +2952,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.8
 
 [exercise_212_ring-row]
 name = "Ring Row"
@@ -2755,6 +2966,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_213_scap-pull-up]
 name = "Scap Pull-Up"
@@ -2768,6 +2980,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_214_seal-row]
 name = "Seal Row"
@@ -2781,6 +2994,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_215_seated-machine-row]
 name = "Seated Machine Row"
@@ -2794,6 +3008,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_216_single-leg-deadlift-with-kettlebell]
 name = "Single Leg Deadlift with Kettlebell"
@@ -2807,6 +3022,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_217_smith-machine-one-handed-row]
 name = "Smith Machine One-Handed Row"
@@ -2820,6 +3036,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_218_snatch]
 name = "Snatch"
@@ -2833,6 +3050,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.95
 
 [exercise_219_snatch-grip-deadlift]
 name = "Snatch Grip Deadlift"
@@ -2846,6 +3064,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.85
 
 ["exercise_220_muscle-up-(rings)"]
 name = "Muscle-Up (Rings)"
@@ -2859,6 +3078,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.9
 
 [exercise_221_stiff-legged-deadlift]
 name = "Stiff-Legged Deadlift"
@@ -2872,6 +3092,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_222_straight-arm-lat-pulldown]
 name = "Straight Arm Lat Pulldown"
@@ -2885,6 +3106,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 ["exercise_223_muscle-up-(bar)"]
 name = "Muscle-Up (Bar)"
@@ -2898,6 +3120,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.85
 
 [exercise_224_sumo-deadlift]
 name = "Sumo Deadlift"
@@ -2911,6 +3134,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.85
 
 [exercise_225_t-bar-row]
 name = "T-Bar Row"
@@ -2924,6 +3148,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_226_towel-row]
 name = "Towel Row"
@@ -2937,6 +3162,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.4
 
 [exercise_227_trap-bar-deadlift-with-high-handles]
 name = "Trap Bar Deadlift With High Handles"
@@ -2950,6 +3176,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.9
 
 [exercise_228_trap-bar-deadlift-with-low-handles]
 name = "Trap Bar Deadlift With Low Handles"
@@ -2963,6 +3190,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.95
 
 [exercise_229_pull-up-with-a-neutral-grip]
 name = "Pull-Up With a Neutral Grip"
@@ -2976,6 +3204,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_230_cable-pull-through]
 name = "Cable Pull Through"
@@ -2989,6 +3218,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_231_cossack-squat]
 name = "Cossack Squat"
@@ -3002,6 +3232,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.6
 
 [exercise_232_cable-machine-hip-abduction]
 name = "Cable Machine Hip Abduction"
@@ -3015,6 +3246,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_233_clamshells]
 name = "Clamshells"
@@ -3028,6 +3260,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_234_death-march-with-dumbbells]
 name = "Death March with Dumbbells"
@@ -3041,6 +3274,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_235_dumbbell-romanian-deadlift]
 name = "Dumbbell Romanian Deadlift"
@@ -3054,6 +3288,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.6
 
 [exercise_236_dumbbell-frog-pumps]
 name = "Dumbbell Frog Pumps"
@@ -3067,6 +3302,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_237_donkey-kicks]
 name = "Donkey Kicks"
@@ -3080,6 +3316,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_238_fire-hydrants]
 name = "Fire Hydrants"
@@ -3093,6 +3330,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.2
 
 [exercise_239_frog-pumps]
 name = "Frog Pumps"
@@ -3106,6 +3344,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.2
 
 [exercise_240_glute-bridge]
 name = "Glute Bridge"
@@ -3119,6 +3358,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_241_hip-abduction-against-band]
 name = "Hip Abduction Against Band"
@@ -3132,6 +3372,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_242_hip-abduction-machine]
 name = "Hip Abduction Machine"
@@ -3145,6 +3386,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_243_hip-thrust]
 name = "Hip Thrust"
@@ -3158,6 +3400,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_244_hip-thrust-machine]
 name = "Hip Thrust Machine"
@@ -3171,6 +3414,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.6
 
 [exercise_245_hip-thrust-with-band-around-knees]
 name = "Hip Thrust With Band Around Knees"
@@ -3184,6 +3428,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.7
 
 [exercise_246_lateral-walk-with-band]
 name = "Lateral Walk With Band"
@@ -3197,6 +3442,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_247_machine-glute-kickbacks]
 name = "Machine Glute Kickbacks"
@@ -3210,6 +3456,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_248_one-legged-hip-thrust]
 name = "One-Legged Hip Thrust"
@@ -3223,6 +3470,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_249_one-legged-glute-bridge]
 name = "One-Legged Glute Bridge"
@@ -3236,6 +3484,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_250_reverse-hyperextension]
 name = "Reverse Hyperextension"
@@ -3249,6 +3498,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_251_romanian-deadlift]
 name = "Romanian Deadlift"
@@ -3262,6 +3512,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_252_smith-machine-hip-thrust]
 name = "Smith Machine Hip Thrust"
@@ -3275,6 +3526,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_253_single-leg-romanian-deadlift]
 name = "Single Leg Romanian Deadlift"
@@ -3288,6 +3540,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.6
 
 [exercise_254_standing-glute-kickback-in-machine]
 name = "Standing Glute Kickback in Machine"
@@ -3301,6 +3554,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.4
 
 [exercise_255_standing-glute-push-down]
 name = "Standing Glute Push Down"
@@ -3314,6 +3568,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.4
 
 [exercise_256_step-up]
 name = "Step Up"
@@ -3327,6 +3582,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_257_banded-side-kicks]
 name = "Banded Side Kicks"
@@ -3340,6 +3596,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_258_ball-slams]
 name = "Ball Slams"
@@ -3353,6 +3610,7 @@ image = ""
 animation = ""
 cardio = true
 timed = true
+exercise_intensity = 0.75
 
 [exercise_259_crunch]
 name = "Crunch"
@@ -3366,6 +3624,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_260_core-twist]
 name = "Core Twist"
@@ -3379,6 +3638,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.2
 
 [exercise_261_cable-crunch]
 name = "Cable Crunch"
@@ -3392,6 +3652,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_262_dragon-flag]
 name = "Dragon Flag"
@@ -3405,6 +3666,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.75
 
 [exercise_263_hanging-knee-raise]
 name = "Hanging Knee Raise"
@@ -3418,6 +3680,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_264_hanging-leg-raise]
 name = "Hanging Leg Raise"
@@ -3431,6 +3694,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_265_dead-bug]
 name = "Dead Bug"
@@ -3444,6 +3708,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_266_hanging-windshield-wiper]
 name = "Hanging Windshield Wiper"
@@ -3457,6 +3722,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_267_hanging-sit-up]
 name = "Hanging Sit-Up"
@@ -3470,6 +3736,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.55
 
 [exercise_268_high-to-low-wood-chop-with-band]
 name = "High to Low Wood Chop with Band"
@@ -3483,6 +3750,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_269_hollow-hold]
 name = "Hollow Hold"
@@ -3496,6 +3764,7 @@ image = ""
 animation = ""
 cardio = false
 timed = true
+exercise_intensity = 0.3
 
 [exercise_270_horizontal-wood-chop-with-band]
 name = "Horizontal Wood Chop with Band"
@@ -3509,6 +3778,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_271_horizontal-wood-chop-with-cable]
 name = "Horizontal Wood Chop with Cable"
@@ -3522,6 +3792,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_272_jackknife-sit-up]
 name = "Jackknife Sit-Up"
@@ -3535,6 +3806,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.5
 
 [exercise_273_kneeling-ab-wheel-roll-out]
 name = "Kneeling Ab Wheel Roll-Out"
@@ -3548,6 +3820,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.45
 
 [exercise_274_kettlebell-plank-pull-through]
 name = "Kettlebell Plank Pull Through"
@@ -3561,6 +3834,7 @@ image = ""
 animation = ""
 cardio = false
 timed = true
+exercise_intensity = 0.35
 
 [exercise_275_kneeling-plank]
 name = "Kneeling Plank"
@@ -3574,6 +3848,7 @@ image = ""
 animation = ""
 cardio = false
 timed = true
+exercise_intensity = 0.15
 
 [exercise_276_kneeling-side-plank]
 name = "Kneeling Side Plank"
@@ -3587,6 +3862,7 @@ image = ""
 animation = ""
 cardio = false
 timed = true
+exercise_intensity = 0.15
 
 [exercise_277_l-sit]
 name = "L-Sit"
@@ -3600,6 +3876,7 @@ image = ""
 animation = ""
 cardio = false
 timed = true
+exercise_intensity = 0.6
 
 [exercise_278_lying-leg-raise]
 name = "Lying Leg Raise"
@@ -3613,6 +3890,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_279_lying-windshield-wiper]
 name = "Lying Windshield Wiper"
@@ -3626,6 +3904,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.4
 
 [exercise_280_lying-windshield-wiper-with-bent-knees]
 name = "Lying Windshield Wiper with Bent Knees"
@@ -3639,6 +3918,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_281_machine-crunch]
 name = "Machine Crunch"
@@ -3652,6 +3932,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_282_mountain-climbers]
 name = "Mountain Climbers"
@@ -3665,6 +3946,7 @@ image = ""
 animation = ""
 cardio = true
 timed = false
+exercise_intensity = 0.6
 
 [exercise_283_oblique-crunch]
 name = "Oblique Crunch"
@@ -3678,6 +3960,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_284_plank]
 name = "Plank"
@@ -3691,6 +3974,7 @@ image = ""
 animation = ""
 cardio = false
 timed = true
+exercise_intensity = 0.3
 
 [exercise_285_oblique-sit-up]
 name = "Oblique Sit-Up"
@@ -3704,6 +3988,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_286_dead-bug-with-dumbbells]
 name = "Dead Bug With Dumbbells"
@@ -3717,6 +4002,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_287_plank-with-leg-lifts]
 name = "Plank with Leg Lifts"
@@ -3730,6 +4016,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.4
 
 [exercise_288_side-plank]
 name = "Side Plank"
@@ -3743,6 +4030,7 @@ image = ""
 animation = ""
 cardio = false
 timed = true
+exercise_intensity = 0.3
 
 [exercise_289_sit-up]
 name = "Sit-Up"
@@ -3756,6 +4044,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_290_high-to-low-wood-chop-with-cable]
 name = "High to Low Wood Chop with Cable"
@@ -3769,6 +4058,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.35
 
 [exercise_291_seated-calf-raise]
 name = "Seated Calf Raise"
@@ -3782,6 +4072,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.2
 
 [exercise_292_eccentric-heel-drop]
 name = "Eccentric Heel Drop"
@@ -3795,6 +4086,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_293_barbell-standing-calf-raise]
 name = "Barbell Standing Calf Raise"
@@ -3808,6 +4100,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.3
 
 [exercise_294_heel-raise]
 name = "Heel Raise"
@@ -3821,6 +4114,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_295_standing-calf-raise]
 name = "Standing Calf Raise"
@@ -3834,6 +4128,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_296_donkey-calf-raise]
 name = "Donkey Calf Raise"
@@ -3847,6 +4142,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.2
 
 [exercise_297_dumbbell-wrist-curl]
 name = "Dumbbell Wrist Curl"
@@ -3860,6 +4156,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_298_barbell-wrist-curl]
 name = "Barbell Wrist Curl"
@@ -3873,6 +4170,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_299_bar-hang]
 name = "Bar Hang"
@@ -3886,6 +4184,7 @@ image = ""
 animation = ""
 cardio = false
 timed = true
+exercise_intensity = 0.25
 
 [exercise_300_barbell-wrist-curl-behind-the-back]
 name = "Barbell Wrist Curl Behind the Back"
@@ -3899,6 +4198,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_301_farmers-walk]
 name = "Farmers Walk"
@@ -3912,6 +4212,7 @@ image = ""
 animation = ""
 cardio = false
 timed = true
+exercise_intensity = 0.65
 
 [exercise_302_one-handed-bar-hang]
 name = "One-Handed Bar Hang"
@@ -3925,6 +4226,7 @@ image = ""
 animation = ""
 cardio = false
 timed = true
+exercise_intensity = 0.35
 
 [exercise_303_fat-bar-deadlift]
 name = "Fat Bar Deadlift"
@@ -3938,6 +4240,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.9
 
 [exercise_304_gripper]
 name = "Gripper"
@@ -3951,6 +4254,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.1
 
 [exercise_305_plate-wrist-curl]
 name = "Plate Wrist Curl"
@@ -3964,6 +4268,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_306_plate-pinch]
 name = "Plate Pinch"
@@ -3977,6 +4282,7 @@ image = ""
 animation = ""
 cardio = false
 timed = true
+exercise_intensity = 0.2
 
 [exercise_307_towel-pull-up]
 name = "Towel Pull-Up"
@@ -3990,6 +4296,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.65
 
 [exercise_308_barbell-wrist-extension]
 name = "Barbell Wrist Extension"
@@ -4003,6 +4310,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_309_wrist-roller]
 name = "Wrist Roller"
@@ -4016,6 +4324,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.25
 
 [exercise_310_dumbbell-wrist-extension]
 name = "Dumbbell Wrist Extension"
@@ -4029,6 +4338,7 @@ image = ""
 animation = ""
 cardio = false
 timed = false
+exercise_intensity = 0.15
 
 [exercise_311_stationary-bike]
 name = "Stationary Bike"
@@ -4042,6 +4352,7 @@ image = ""
 animation = ""
 cardio = true
 timed = true
+exercise_intensity = 0.5
 
 [exercise_312_rowing-machine]
 name = "Rowing Machine"
@@ -4055,3 +4366,2023 @@ image = ""
 animation = ""
 cardio = true
 timed = true
+exercise_intensity = 0.7
+
+[exercise_001_bench-press-against-band.muscle_activation]
+Chest = 1.0
+Triceps = 0.85
+"Front Deltoids" = 0.6
+"Rotator Cuffs" = 0.3
+
+[exercise_002_band-assisted-bench-press.muscle_activation]
+Chest = 1.0
+Triceps = 0.8
+"Front Deltoids" = 0.5
+
+[exercise_003_bar-dip.muscle_activation]
+Chest = 0.9
+Triceps = 1.0
+"Front Deltoids" = 0.7
+Core = 0.3
+
+[exercise_004_bench-press.muscle_activation]
+Chest = 1.0
+Triceps = 0.75
+"Front Deltoids" = 0.55
+"Rotator Cuffs" = 0.25
+
+[exercise_005_board-press.muscle_activation]
+Chest = 0.9
+Triceps = 1.0
+"Front Deltoids" = 0.5
+
+[exercise_006_cable-chest-press.muscle_activation]
+Chest = 1.0
+"Front Deltoids" = 0.5
+Triceps = 0.4
+Core = 0.2
+
+[exercise_007_close-grip-bench-press.muscle_activation]
+Triceps = 1.0
+Chest = 0.6
+"Front Deltoids" = 0.45
+Shoulders = 0.3
+
+[exercise_008_close-grip-feet-up-bench-press.muscle_activation]
+Triceps = 1.0
+Chest = 0.5
+"Front Deltoids" = 0.4
+Core = 0.4
+
+[exercise_009_assisted-dip.muscle_activation]
+Chest = 1.0
+Triceps = 0.85
+"Front Deltoids" = 0.5
+Core = 0.2
+
+[exercise_010_decline-bench-press.muscle_activation]
+Chest = 1.0
+Triceps = 0.6
+"Front Deltoids" = 0.4
+Core = 0.25
+
+[exercise_011_decline-push-up.muscle_activation]
+Chest = 1.0
+Triceps = 0.7
+"Front Deltoids" = 0.5
+Abs = 0.3
+Core = 0.3
+
+[exercise_012_dumbbell-chest-fly.muscle_activation]
+Chest = 1.0
+"Front Deltoids" = 0.3
+Shoulders = 0.2
+
+[exercise_013_dumbbell-chest-press.muscle_activation]
+Chest = 1.0
+Triceps = 0.5
+"Front Deltoids" = 0.35
+Core = 0.2
+
+[exercise_014_dumbbell-decline-chest-press.muscle_activation]
+Chest = 1.0
+Triceps = 0.55
+"Front Deltoids" = 0.35
+Core = 0.2
+
+[exercise_015_dumbbell-pullover.muscle_activation]
+Chest = 0.8
+Lats = 0.8
+Back = 0.5
+Core = 0.3
+Triceps = 0.2
+
+[exercise_016_dumbbell-floor-press.muscle_activation]
+Chest = 1.0
+Triceps = 0.6
+"Front Deltoids" = 0.3
+Core = 0.2
+
+[exercise_017_feet-up-bench-press.muscle_activation]
+Chest = 1.0
+Triceps = 0.7
+"Front Deltoids" = 0.45
+Core = 0.4
+
+[exercise_018_floor-press.muscle_activation]
+Chest = 1.0
+Triceps = 0.85
+"Front Deltoids" = 0.4
+
+[exercise_019_incline-bench-press.muscle_activation]
+Chest = 1.0
+"Front Deltoids" = 0.65
+Triceps = 0.65
+
+[exercise_020_incline-push-up.muscle_activation]
+Chest = 1.0
+Triceps = 0.6
+Abs = 0.3
+Core = 0.2
+
+[exercise_021_kettlebell-floor-press.muscle_activation]
+Chest = 1.0
+Triceps = 0.75
+"Front Deltoids" = 0.35
+Core = 0.2
+
+[exercise_022_kneeling-incline-push-up.muscle_activation]
+Chest = 1.0
+Triceps = 0.55
+Abs = 0.25
+
+[exercise_023_kneeling-push-up.muscle_activation]
+Chest = 1.0
+Triceps = 0.6
+Abs = 0.25
+
+[exercise_024_machine-chest-fly.muscle_activation]
+Chest = 1.0
+Shoulders = 0.25
+
+[exercise_025_pec-deck.muscle_activation]
+Chest = 1.0
+"Front Deltoids" = 0.25
+
+[exercise_026_machine-chest-press.muscle_activation]
+Chest = 1.0
+Triceps = 0.6
+"Front Deltoids" = 0.3
+
+[exercise_027_pin-bench-press.muscle_activation]
+Chest = 1.0
+Triceps = 0.7
+"Front Deltoids" = 0.4
+Core = 0.2
+
+[exercise_028_push-up.muscle_activation]
+Chest = 1.0
+Triceps = 0.6
+"Front Deltoids" = 0.3
+Abs = 0.3
+Core = 0.2
+
+[exercise_029_push-up-against-wall.muscle_activation]
+Chest = 1.0
+Triceps = 0.4
+"Front Deltoids" = 0.2
+
+[exercise_030_push-ups-with-feet-in-rings.muscle_activation]
+Chest = 1.0
+Triceps = 0.6
+"Front Deltoids" = 0.4
+Abs = 0.6
+Core = 0.5
+
+[exercise_031_resistance-band-chest-fly.muscle_activation]
+Chest = 1.0
+"Front Deltoids" = 0.25
+Core = 0.2
+
+[exercise_032_ring-dip.muscle_activation]
+Triceps = 1.0
+Chest = 0.8
+"Front Deltoids" = 0.5
+Abs = 0.4
+Core = 0.3
+
+[exercise_033_smith-machine-bench-press.muscle_activation]
+Chest = 1.0
+Triceps = 0.7
+"Front Deltoids" = 0.4
+
+[exercise_034_smith-machine-incline-bench-press.muscle_activation]
+Chest = 1.0
+"Front Deltoids" = 0.6
+Triceps = 0.55
+
+[exercise_035_smith-machine-reverse-grip-bench-press.muscle_activation]
+Chest = 1.0
+Triceps = 0.75
+"Front Deltoids" = 0.3
+
+[exercise_036_standing-cable-chest-fly.muscle_activation]
+Chest = 1.0
+"Front Deltoids" = 0.35
+Core = 0.2
+
+[exercise_037_standing-resistance-band-chest-fly.muscle_activation]
+Chest = 1.0
+"Front Deltoids" = 0.3
+Core = 0.2
+
+[exercise_038_incline-dumbbell-press.muscle_activation]
+Chest = 1.0
+"Front Deltoids" = 0.55
+Triceps = 0.5
+"Rotator Cuffs" = 0.2
+
+[exercise_039_arnold-press.muscle_activation]
+"Front Deltoids" = 1.0
+"Lateral Deltoids" = 0.6
+Triceps = 0.45
+Trapezius = 0.3
+
+[exercise_040_band-external-shoulder-rotation.muscle_activation]
+"Rotator Cuffs" = 1.0
+"Rear Deltoids" = 0.4
+
+[exercise_041_band-pull-apart.muscle_activation]
+"Rear Deltoids" = 1.0
+Trapezius = 0.4
+"Rotator Cuffs" = 0.3
+
+[exercise_042_band-internal-shoulder-rotation.muscle_activation]
+"Rotator Cuffs" = 1.0
+Chest = 0.2
+
+[exercise_043_banded-face-pull.muscle_activation]
+"Rear Deltoids" = 1.0
+"Lateral Deltoids" = 0.4
+Trapezius = 0.6
+"Rotator Cuffs" = 0.5
+
+[exercise_044_barbell-front-raise.muscle_activation]
+"Front Deltoids" = 1.0
+Core = 0.15
+
+[exercise_045_barbell-rear-delt-row.muscle_activation]
+"Rear Deltoids" = 1.0
+Back = 0.5
+Biceps = 0.4
+Trapezius = 0.4
+Forearms = 0.2
+
+[exercise_046_behind-the-neck-press.muscle_activation]
+"Front Deltoids" = 0.8
+"Lateral Deltoids" = 0.7
+Triceps = 0.6
+"Rotator Cuffs" = 0.4
+Core = 0.3
+
+[exercise_047_barbell-upright-row.muscle_activation]
+"Lateral Deltoids" = 0.9
+"Front Deltoids" = 0.4
+Trapezius = 0.8
+Biceps = 0.3
+
+[exercise_048_cable-front-raise.muscle_activation]
+"Front Deltoids" = 1.0
+Core = 0.15
+
+[exercise_049_cable-lateral-raise.muscle_activation]
+"Lateral Deltoids" = 1.0
+"Front Deltoids" = 0.2
+Trapezius = 0.15
+
+[exercise_050_cable-rear-delt-row.muscle_activation]
+"Rear Deltoids" = 1.0
+Back = 0.6
+Lats = 0.4
+Trapezius = 0.5
+Biceps = 0.3
+
+[exercise_051_cuban-press.muscle_activation]
+"Rotator Cuffs" = 1.0
+"Lateral Deltoids" = 0.7
+"Front Deltoids" = 0.6
+"Rear Deltoids" = 0.6
+Trapezius = 0.4
+Triceps = 0.3
+
+[exercise_052_devils-press.muscle_activation]
+Cardio = 1.0
+Chest = 0.7
+"Front Deltoids" = 0.7
+Triceps = 0.7
+Core = 0.8
+Glutes = 0.8
+Hamstrings = 0.7
+Quads = 0.7
+Back = 0.6
+
+[exercise_053_dumbbell-front-raise.muscle_activation]
+"Front Deltoids" = 1.0
+"Lateral Deltoids" = 0.2
+
+[exercise_054_dumbbell-horizontal-internal-shoulder-rotation.muscle_activation]
+"Rotator Cuffs" = 1.0
+Chest = 0.2
+"Front Deltoids" = 0.2
+
+[exercise_055_dumbbell-horizontal-external-shoulder-rotation.muscle_activation]
+"Rotator Cuffs" = 1.0
+"Rear Deltoids" = 0.3
+"Lateral Deltoids" = 0.2
+
+[exercise_056_dumbbell-lateral-raise.muscle_activation]
+"Lateral Deltoids" = 1.0
+"Front Deltoids" = 0.2
+Trapezius = 0.15
+
+[exercise_057_dumbbell-rear-delt-row.muscle_activation]
+"Rear Deltoids" = 1.0
+Trapezius = 0.6
+Back = 0.5
+Biceps = 0.3
+Forearms = 0.2
+
+[exercise_058_dumbbell-shoulder-press.muscle_activation]
+"Front Deltoids" = 1.0
+Triceps = 0.55
+"Lateral Deltoids" = 0.4
+Core = 0.3
+Trapezius = 0.2
+
+[exercise_059_face-pull.muscle_activation]
+"Rear Deltoids" = 1.0
+"Rotator Cuffs" = 0.8
+Trapezius = 0.6
+"Lateral Deltoids" = 0.5
+Back = 0.4
+
+[exercise_060_front-hold.muscle_activation]
+"Front Deltoids" = 1.0
+"Lateral Deltoids" = 0.4
+Core = 0.3
+Trapezius = 0.2
+
+[exercise_061_handstand-push-up.muscle_activation]
+"Front Deltoids" = 1.0
+Triceps = 0.8
+"Lateral Deltoids" = 0.6
+Core = 0.5
+Chest = 0.3
+
+[exercise_062_jerk.muscle_activation]
+"Front Deltoids" = 1.0
+Triceps = 0.85
+Quads = 0.8
+Glutes = 0.7
+Core = 0.7
+"Lower Back" = 0.6
+Trapezius = 0.5
+
+[exercise_063_kettlebell-halo.muscle_activation]
+"Front Deltoids" = 0.9
+"Lateral Deltoids" = 0.7
+Core = 0.6
+Obliques = 0.5
+Triceps = 0.4
+"Rotator Cuffs" = 0.4
+
+[exercise_064_landmine-press.muscle_activation]
+"Front Deltoids" = 1.0
+Chest = 0.6
+Triceps = 0.6
+Core = 0.4
+
+[exercise_065_lying-dumbbell-external-shoulder-rotation.muscle_activation]
+"Rotator Cuffs" = 1.0
+"Rear Deltoids" = 0.4
+
+[exercise_066_lying-dumbbell-internal-shoulder-rotation.muscle_activation]
+"Rotator Cuffs" = 1.0
+Chest = 0.3
+"Front Deltoids" = 0.2
+
+[exercise_067_machine-lateral-raise.muscle_activation]
+"Lateral Deltoids" = 1.0
+Trapezius = 0.2
+
+[exercise_068_machine-shoulder-press.muscle_activation]
+"Front Deltoids" = 1.0
+Triceps = 0.6
+Chest = 0.3
+Core = 0.2
+
+[exercise_069_monkey-row.muscle_activation]
+"Rear Deltoids" = 1.0
+Lats = 0.7
+Back = 0.6
+Biceps = 0.5
+Trapezius = 0.4
+
+[exercise_070_one-arm-landmine-press.muscle_activation]
+"Front Deltoids" = 1.0
+Triceps = 0.6
+Chest = 0.5
+Core = 0.4
+
+[exercise_071_overhead-press.muscle_activation]
+"Front Deltoids" = 1.0
+Triceps = 0.7
+Core = 0.6
+Trapezius = 0.4
+Chest = 0.3
+
+[exercise_072_plate-front-raise.muscle_activation]
+"Front Deltoids" = 1.0
+"Lateral Deltoids" = 0.3
+Trapezius = 0.2
+
+[exercise_073_power-jerk.muscle_activation]
+Shoulders = 1.0
+"Front Deltoids" = 0.9
+Triceps = 0.85
+Quads = 0.75
+Glutes = 0.7
+Core = 0.65
+"Lower Back" = 0.5
+Adductors = 0.35
+Back = 0.2
+
+[exercise_074_push-press.muscle_activation]
+Shoulders = 1.0
+"Front Deltoids" = 0.9
+Triceps = 0.8
+Quads = 0.65
+Glutes = 0.6
+Core = 0.55
+Back = 0.25
+Adductors = 0.25
+
+[exercise_075_reverse-dumbbell-flyes.muscle_activation]
+"Rear Deltoids" = 1.0
+"Lateral Deltoids" = 0.5
+Back = 0.4
+Trapezius = 0.4
+"Rotator Cuffs" = 0.3
+
+[exercise_076_reverse-machine-fly.muscle_activation]
+"Rear Deltoids" = 1.0
+"Lateral Deltoids" = 0.4
+Back = 0.3
+Trapezius = 0.3
+
+[exercise_077_seated-dumbbell-shoulder-press.muscle_activation]
+Shoulders = 1.0
+"Front Deltoids" = 0.95
+Triceps = 0.5
+"Lateral Deltoids" = 0.4
+Core = 0.25
+
+[exercise_078_cable-internal-shoulder-rotation.muscle_activation]
+"Rotator Cuffs" = 1.0
+Shoulders = 0.3
+Chest = 0.2
+
+[exercise_079_seated-barbell-overhead-press.muscle_activation]
+Shoulders = 1.0
+"Front Deltoids" = 0.9
+Triceps = 0.55
+"Lateral Deltoids" = 0.3
+Core = 0.2
+
+[exercise_080_seated-smith-machine-shoulder-press.muscle_activation]
+Shoulders = 1.0
+"Front Deltoids" = 0.85
+Triceps = 0.5
+"Lateral Deltoids" = 0.3
+
+[exercise_081_snatch-grip-behind-the-neck-press.muscle_activation]
+Shoulders = 1.0
+"Front Deltoids" = 0.85
+"Lateral Deltoids" = 0.7
+Triceps = 0.6
+Trapezius = 0.5
+Core = 0.4
+"Rotator Cuffs" = 0.3
+
+[exercise_082_squat-jerk.muscle_activation]
+Glutes = 1.0
+Quads = 0.95
+Shoulders = 0.9
+Core = 0.85
+Triceps = 0.7
+Back = 0.6
+Calves = 0.5
+Hamstrings = 0.45
+
+[exercise_083_split-jerk.muscle_activation]
+Shoulders = 1.0
+Quads = 0.9
+Glutes = 0.85
+Core = 0.75
+Triceps = 0.7
+Back = 0.6
+Adductors = 0.5
+Calves = 0.4
+
+[exercise_084_wall-walk.muscle_activation]
+Shoulders = 1.0
+Triceps = 0.8
+Core = 0.75
+Chest = 0.7
+Abs = 0.6
+Forearms = 0.4
+
+[exercise_085_reverse-cable-flyes.muscle_activation]
+"Rear Deltoids" = 1.0
+"Lateral Deltoids" = 0.5
+Trapezius = 0.4
+"Rotator Cuffs" = 0.3
+
+[exercise_086_cable-crossover-bicep-curl.muscle_activation]
+Biceps = 1.0
+"Forearm Flexors" = 0.4
+Forearms = 0.3
+"Front Deltoids" = 0.2
+
+[exercise_087_barbell-curl.muscle_activation]
+Biceps = 1.0
+"Forearm Flexors" = 0.5
+Forearms = 0.3
+
+[exercise_088_bodyweight-curl.muscle_activation]
+Biceps = 1.0
+Back = 0.6
+Core = 0.5
+"Forearm Flexors" = 0.4
+
+[exercise_089_barbell-preacher-curl.muscle_activation]
+Biceps = 1.0
+Forearms = 0.35
+"Forearm Flexors" = 0.25
+
+[exercise_090_bayesian-curl.muscle_activation]
+Biceps = 1.0
+Forearms = 0.3
+"Front Deltoids" = 0.1
+
+[exercise_091_cable-curl-with-bar.muscle_activation]
+Biceps = 1.0
+Forearms = 0.3
+"Forearm Flexors" = 0.2
+
+[exercise_092_concentration-curl.muscle_activation]
+Biceps = 1.0
+Forearms = 0.25
+
+[exercise_093_cable-curl-with-rope.muscle_activation]
+Biceps = 1.0
+Forearms = 0.35
+"Forearm Flexors" = 0.25
+
+[exercise_094_dumbbell-curl.muscle_activation]
+Biceps = 1.0
+Forearms = 0.3
+"Front Deltoids" = 0.1
+
+[exercise_095_drag-curl.muscle_activation]
+Biceps = 1.0
+Forearms = 0.3
+"Rear Deltoids" = 0.2
+Trapezius = 0.15
+
+[exercise_096_dumbbell-preacher-curl.muscle_activation]
+Biceps = 1.0
+Forearms = 0.3
+
+[exercise_097_hammer-curl.muscle_activation]
+Biceps = 1.0
+Forearms = 0.45
+"Front Deltoids" = 0.1
+
+[exercise_098_incline-dumbbell-curl.muscle_activation]
+Biceps = 1.0
+Forearms = 0.2
+"Front Deltoids" = 0.15
+
+[exercise_099_machine-bicep-curl.muscle_activation]
+Biceps = 1.0
+Forearms = 0.2
+
+[exercise_100_resistance-band-curl.muscle_activation]
+Biceps = 1.0
+Forearms = 0.2
+Core = 0.15
+
+[exercise_101_spider-curl.muscle_activation]
+Biceps = 1.0
+Forearms = 0.25
+
+[exercise_102_zottman-curl.muscle_activation]
+Biceps = 1.0
+Forearms = 0.6
+
+[exercise_103_crossbody-cable-triceps-extension.muscle_activation]
+Triceps = 1.0
+Core = 0.2
+
+[exercise_104_barbell-standing-triceps-extension.muscle_activation]
+Triceps = 1.0
+Core = 0.3
+Shoulders = 0.2
+
+[exercise_105_barbell-incline-triceps-extension.muscle_activation]
+Triceps = 1.0
+"Front Deltoids" = 0.15
+Forearms = 0.1
+
+[exercise_106_barbell-lying-triceps-extension.muscle_activation]
+Triceps = 1.0
+Forearms = 0.1
+
+[exercise_107_bench-dip.muscle_activation]
+Triceps = 1.0
+Chest = 0.4
+"Front Deltoids" = 0.35
+
+[exercise_108_close-grip-push-up.muscle_activation]
+Triceps = 1.0
+Chest = 0.6
+"Front Deltoids" = 0.4
+Abs = 0.3
+
+[exercise_109_dumbbell-lying-triceps-extension.muscle_activation]
+Triceps = 1.0
+Forearms = 0.1
+
+[exercise_110_dumbbell-standing-triceps-extension.muscle_activation]
+Triceps = 1.0
+Core = 0.25
+
+[exercise_111_overhead-cable-triceps-extension.muscle_activation]
+Triceps = 1.0
+Core = 0.15
+
+[exercise_112_tate-press.muscle_activation]
+Triceps = 1.0
+Chest = 0.3
+Shoulders = 0.2
+
+[exercise_113_tricep-pushdown-with-bar.muscle_activation]
+Triceps = 1.0
+Core = 0.1
+Forearms = 0.15
+
+[exercise_114_tricep-pushdown-with-rope.muscle_activation]
+Triceps = 1.0
+Core = 0.1
+Forearms = 0.15
+"Lateral Deltoids" = 0.05
+
+[exercise_115_tricep-bodyweight-extension.muscle_activation]
+Triceps = 1.0
+Core = 0.3
+Chest = 0.2
+"Front Deltoids" = 0.15
+
+[exercise_116_barbell-hack-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.7
+Adductors = 0.5
+"Lower Back" = 0.4
+Back = 0.3
+Forearms = 0.25
+Core = 0.4
+Calves = 0.2
+
+[exercise_117_air-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.6
+Core = 0.3
+Calves = 0.2
+
+[exercise_118_barbell-lunge.muscle_activation]
+Quads = 1.0
+Glutes = 0.8
+Core = 0.4
+Hamstrings = 0.3
+Adductors = 0.3
+Calves = 0.25
+
+[exercise_119_body-weight-lunge.muscle_activation]
+Quads = 1.0
+Glutes = 0.7
+Core = 0.2
+Hamstrings = 0.25
+Calves = 0.2
+
+[exercise_120_bodyweight-leg-curl.muscle_activation]
+Hamstrings = 1.0
+Glutes = 0.4
+"Lower Back" = 0.2
+
+[exercise_121_box-jump.muscle_activation]
+Quads = 1.0
+Glutes = 0.9
+Hamstrings = 0.6
+Calves = 0.5
+Core = 0.4
+
+[exercise_122_belt-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.8
+Hamstrings = 0.4
+Calves = 0.25
+Core = 0.3
+
+[exercise_123_barbell-walking-lunge.muscle_activation]
+Quads = 1.0
+Glutes = 0.85
+Hamstrings = 0.5
+Core = 0.5
+"Forearm Flexors" = 0.3
+
+[exercise_124_box-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.85
+Hamstrings = 0.6
+"Lower Back" = 0.5
+Core = 0.5
+Calves = 0.2
+
+[exercise_125_bulgarian-split-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.8
+Hamstrings = 0.4
+Core = 0.3
+
+[exercise_126_dumbbell-lunge.muscle_activation]
+Quads = 1.0
+Glutes = 0.75
+Hamstrings = 0.4
+"Forearm Flexors" = 0.4
+Core = 0.3
+
+[exercise_127_dumbbell-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.7
+Core = 0.4
+Calves = 0.2
+"Forearm Flexors" = 0.3
+
+[exercise_128_front-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.7
+Core = 0.7
+Hamstrings = 0.4
+Calves = 0.2
+
+[exercise_129_glute-ham-raise.muscle_activation]
+Hamstrings = 1.0
+Glutes = 0.8
+"Lower Back" = 0.4
+Core = 0.3
+
+[exercise_130_goblet-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.6
+Core = 0.5
+Back = 0.3
+Calves = 0.2
+
+[exercise_131_hack-squat-machine.muscle_activation]
+Quads = 1.0
+Glutes = 0.5
+Core = 0.2
+
+[exercise_132_hip-adduction-machine.muscle_activation]
+Adductors = 1.0
+
+[exercise_133_chair-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.4
+Calves = 0.1
+
+[exercise_134_landmine-hack-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.4
+Core = 0.3
+
+[exercise_135_landmine-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.6
+Core = 0.4
+Back = 0.3
+Calves = 0.2
+
+[exercise_136_leg-curl-on-ball.muscle_activation]
+Hamstrings = 1.0
+Glutes = 0.6
+Core = 0.4
+"Lower Back" = 0.3
+
+[exercise_137_leg-extension.muscle_activation]
+Quads = 1.0
+
+[exercise_138_leg-press.muscle_activation]
+Quads = 1.0
+Glutes = 0.75
+Hamstrings = 0.45
+Adductors = 0.3
+Core = 0.2
+
+[exercise_139_lying-leg-curl.muscle_activation]
+Hamstrings = 1.0
+Calves = 0.25
+
+[exercise_140_jumping-lunge.muscle_activation]
+Quads = 1.0
+Glutes = 0.9
+Hamstrings = 0.6
+Calves = 0.5
+Core = 0.4
+Cardio = 0.8
+
+[exercise_141_nordic-hamstring-eccentric.muscle_activation]
+Hamstrings = 1.0
+Glutes = 0.3
+Core = 0.2
+
+[exercise_142_one-legged-leg-extension.muscle_activation]
+Quads = 1.0
+Core = 0.1
+
+[exercise_143_one-legged-lying-leg-curl.muscle_activation]
+Hamstrings = 1.0
+Calves = 0.2
+
+[exercise_144_one-legged-seated-leg-curl.muscle_activation]
+Hamstrings = 1.0
+Calves = 0.2
+
+[exercise_145_pause-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.85
+Hamstrings = 0.5
+Core = 0.6
+"Lower Back" = 0.4
+Calves = 0.2
+
+[exercise_146_pistol-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.7
+Hamstrings = 0.4
+Core = 0.5
+Abductors = 0.3
+
+[exercise_147_reverse-barbell-lunge.muscle_activation]
+Glutes = 1.0
+Quads = 0.85
+Hamstrings = 0.5
+Core = 0.4
+Adductors = 0.3
+
+[exercise_148_reverse-dumbbell-lunge.muscle_activation]
+Quads = 1.0
+Glutes = 0.75
+Hamstrings = 0.4
+Core = 0.3
+Forearms = 0.4
+
+[exercise_149_romanian-deadlift.muscle_activation]
+Hamstrings = 1.0
+Glutes = 0.9
+"Lower Back" = 0.7
+Back = 0.4
+Forearms = 0.5
+Adductors = 0.3
+
+[exercise_150_safety-bar-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.8
+Core = 0.7
+Back = 0.4
+Hamstrings = 0.4
+Calves = 0.2
+
+[exercise_151_seated-leg-curl.muscle_activation]
+Hamstrings = 1.0
+Calves = 0.2
+
+[exercise_152_reverse-body-weight-lunge.muscle_activation]
+Quads = 1.0
+Glutes = 0.6
+Hamstrings = 0.3
+
+[exercise_153_side-lunges-bodyweight.muscle_activation]
+Quads = 1.0
+Glutes = 0.85
+Adductors = 0.7
+Hamstrings = 0.4
+Core = 0.3
+Abductors = 0.3
+
+[exercise_154_smith-machine-bulgarian-split-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.75
+Hamstrings = 0.4
+Core = 0.3
+Calves = 0.2
+
+[exercise_155_smith-machine-front-squat.muscle_activation]
+Quads = 1.0
+Core = 0.6
+Glutes = 0.5
+Calves = 0.2
+
+[exercise_156_smith-machine-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.6
+Hamstrings = 0.3
+"Lower Back" = 0.3
+Core = 0.3
+Calves = 0.2
+
+[exercise_157_squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.85
+Hamstrings = 0.55
+Core = 0.55
+"Lower Back" = 0.4
+Calves = 0.2
+
+[exercise_158_step-up.muscle_activation]
+Quads = 1.0
+Glutes = 0.8
+Hamstrings = 0.4
+Core = 0.25
+Calves = 0.2
+
+[exercise_159_zercher-squat.muscle_activation]
+Quads = 1.0
+Core = 0.7
+Glutes = 0.6
+Back = 0.4
+Biceps = 0.3
+Hamstrings = 0.3
+Calves = 0.2
+
+[exercise_160_half-air-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.5
+Abs = 0.3
+Hamstrings = 0.2
+Calves = 0.1
+
+[exercise_161_zombie-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.85
+Core = 0.75
+Hamstrings = 0.5
+"Lower Back" = 0.45
+Calves = 0.3
+
+[exercise_162_shallow-body-weight-lunge.muscle_activation]
+Quads = 1.0
+Glutes = 0.7
+Hamstrings = 0.4
+Abs = 0.3
+
+[exercise_163_assisted-pull-up.muscle_activation]
+Lats = 1.0
+Biceps = 0.7
+Shoulders = 0.4
+Forearms = 0.35
+Core = 0.3
+
+[exercise_164_assisted-chin-up.muscle_activation]
+Lats = 0.9
+Biceps = 1.0
+Shoulders = 0.3
+Forearms = 0.35
+Core = 0.3
+
+[exercise_165_banded-muscle-up.muscle_activation]
+Lats = 1.0
+Chest = 0.85
+Triceps = 0.8
+Shoulders = 0.8
+Biceps = 0.6
+Core = 0.75
+Forearms = 0.5
+
+[exercise_166_barbell-row.muscle_activation]
+Lats = 1.0
+Back = 0.9
+Biceps = 0.75
+"Lower Back" = 0.6
+Forearms = 0.5
+Shoulders = 0.4
+
+[exercise_167_back-extension.muscle_activation]
+"Lower Back" = 1.0
+Glutes = 0.9
+Hamstrings = 0.7
+
+[exercise_168_barbell-shrug.muscle_activation]
+Trapezius = 1.0
+Forearms = 0.6
+Shoulders = 0.3
+
+[exercise_169_block-clean.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.75
+Quads = 0.7
+Back = 0.65
+Trapezius = 0.6
+Core = 0.55
+Forearms = 0.4
+Calves = 0.35
+"Front Deltoids" = 0.3
+
+[exercise_170_cable-close-grip-seated-row.muscle_activation]
+Back = 1.0
+Lats = 0.9
+Biceps = 0.6
+Forearms = 0.4
+Shoulders = 0.3
+Core = 0.25
+
+[exercise_171_block-snatch.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.7
+Quads = 0.65
+Back = 0.6
+Shoulders = 0.55
+Core = 0.5
+Trapezius = 0.5
+Forearms = 0.35
+Calves = 0.3
+
+[exercise_172_cable-wide-grip-seated-row.muscle_activation]
+Back = 1.0
+"Rear Deltoids" = 0.7
+Lats = 0.6
+Biceps = 0.5
+Forearms = 0.35
+Shoulders = 0.3
+
+[exercise_173_chest-to-bar.muscle_activation]
+Back = 1.0
+Lats = 0.95
+Biceps = 0.7
+Shoulders = 0.5
+Core = 0.4
+Forearms = 0.35
+
+[exercise_174_chin-up.muscle_activation]
+Back = 1.0
+Biceps = 0.85
+Lats = 0.8
+Shoulders = 0.3
+Forearms = 0.35
+Core = 0.2
+
+[exercise_175_clean.muscle_activation]
+Quads = 1.0
+Glutes = 0.95
+Hamstrings = 0.8
+Back = 0.75
+Core = 0.7
+Trapezius = 0.6
+Shoulders = 0.5
+Forearms = 0.4
+Calves = 0.35
+
+[exercise_176_clean-and-jerk.muscle_activation]
+Quads = 1.0
+Glutes = 0.95
+Hamstrings = 0.85
+Back = 0.8
+Shoulders = 0.8
+Core = 0.8
+Triceps = 0.75
+Trapezius = 0.7
+Forearms = 0.4
+Calves = 0.4
+
+[exercise_177_close-grip-lat-pulldown.muscle_activation]
+Lats = 1.0
+Biceps = 0.75
+Forearms = 0.35
+Back = 0.6
+"Rear Deltoids" = 0.3
+
+[exercise_178_deadlift.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.85
+Quads = 0.7
+"Lower Back" = 0.9
+Back = 0.8
+Adductors = 0.4
+Core = 0.6
+Forearms = 0.5
+Trapezius = 0.4
+
+[exercise_179_deficit-deadlift.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.95
+Quads = 0.85
+"Lower Back" = 0.95
+Back = 0.85
+Adductors = 0.45
+Core = 0.65
+Forearms = 0.5
+Trapezius = 0.4
+
+[exercise_180_dumbbell-deadlift.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.75
+Quads = 0.6
+"Lower Back" = 0.7
+Back = 0.5
+Adductors = 0.3
+Forearms = 0.4
+
+[exercise_181_dumbbell-row.muscle_activation]
+Lats = 1.0
+Back = 0.85
+Biceps = 0.65
+"Rear Deltoids" = 0.4
+Forearms = 0.3
+Core = 0.2
+
+[exercise_182_dumbbell-shrug.muscle_activation]
+Trapezius = 1.0
+Forearms = 0.4
+Back = 0.2
+
+[exercise_183_floor-back-extension.muscle_activation]
+"Lower Back" = 1.0
+Glutes = 0.5
+Back = 0.4
+
+[exercise_184_good-morning.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.95
+"Lower Back" = 0.85
+Adductors = 0.4
+Core = 0.6
+Back = 0.4
+
+[exercise_185_gorilla-row.muscle_activation]
+Lats = 1.0
+Back = 0.8
+Biceps = 0.7
+Forearms = 0.5
+Shoulders = 0.4
+Core = 0.5
+"Lower Back" = 0.4
+
+[exercise_186_hang-clean.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.85
+Quads = 0.8
+Back = 0.9
+Trapezius = 0.7
+Forearms = 0.5
+Calves = 0.4
+Core = 0.7
+Shoulders = 0.6
+
+[exercise_187_hang-power-clean.muscle_activation]
+Glutes = 1.0
+Quads = 0.9
+Hamstrings = 0.85
+Back = 0.9
+Trapezius = 0.8
+Shoulders = 0.7
+Triceps = 0.5
+Forearms = 0.5
+Core = 0.7
+Adductors = 0.4
+
+[exercise_188_hang-power-snatch.muscle_activation]
+Glutes = 1.0
+Quads = 0.85
+Back = 0.9
+Shoulders = 1.0
+Trapezius = 0.9
+Hamstrings = 0.8
+Triceps = 0.5
+Forearms = 0.5
+Core = 0.75
+Adductors = 0.4
+
+[exercise_189_hang-snatch.muscle_activation]
+Glutes = 1.0
+Quads = 0.95
+Back = 0.9
+Shoulders = 1.0
+Trapezius = 0.9
+Hamstrings = 0.85
+Triceps = 0.5
+Forearms = 0.5
+Core = 0.8
+Calves = 0.4
+
+[exercise_190_inverted-row.muscle_activation]
+Back = 1.0
+Lats = 0.9
+Biceps = 0.6
+Forearms = 0.4
+Shoulders = 0.4
+Core = 0.3
+
+[exercise_191_jefferson-curl.muscle_activation]
+"Lower Back" = 1.0
+Hamstrings = 0.9
+Back = 0.8
+Glutes = 0.5
+Adductors = 0.3
+
+[exercise_192_inverted-row-with-underhand-grip.muscle_activation]
+Back = 1.0
+Lats = 0.8
+Biceps = 0.8
+Forearms = 0.4
+Shoulders = 0.4
+Core = 0.3
+
+[exercise_193_jumping-muscle-up.muscle_activation]
+Chest = 1.0
+Triceps = 0.9
+Lats = 0.85
+"Front Deltoids" = 0.7
+Biceps = 0.6
+Core = 0.5
+Forearms = 0.4
+
+[exercise_194_kettlebell-clean.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.7
+Back = 0.65
+Core = 0.6
+"Front Deltoids" = 0.5
+Adductors = 0.4
+Forearms = 0.4
+Obliques = 0.35
+Trapezius = 0.3
+
+[exercise_195_kettlebell-swing.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.8
+"Lower Back" = 0.65
+Core = 0.55
+Adductors = 0.45
+Back = 0.4
+Forearms = 0.3
+Shoulders = 0.25
+
+[exercise_196_kroc-row.muscle_activation]
+Back = 1.0
+Lats = 0.9
+Biceps = 0.75
+Forearms = 0.6
+"Rear Deltoids" = 0.5
+Core = 0.4
+Shoulders = 0.3
+
+[exercise_197_lat-pulldown-with-pronated-grip.muscle_activation]
+Lats = 1.0
+Back = 0.85
+Biceps = 0.5
+Shoulders = 0.3
+Forearms = 0.3
+
+[exercise_198_lat-pulldown-with-supinated-grip.muscle_activation]
+Lats = 0.9
+Back = 0.8
+Biceps = 0.7
+Shoulders = 0.25
+Forearms = 0.3
+
+[exercise_199_neutral-close-grip-lat-pulldown.muscle_activation]
+Lats = 0.95
+Back = 0.8
+Biceps = 0.6
+Shoulders = 0.3
+Forearms = 0.3
+
+[exercise_200_one-handed-cable-row.muscle_activation]
+Lats = 0.95
+Back = 0.8
+Biceps = 0.6
+Obliques = 0.4
+Forearms = 0.3
+Shoulders = 0.25
+
+[exercise_201_kettlebell-clean-jerk.muscle_activation]
+Glutes = 0.8
+Hamstrings = 0.5
+Adductors = 0.3
+Back = 0.6
+Forearms = 0.4
+Triceps = 0.7
+Shoulders = 0.8
+Core = 0.5
+Quads = 0.5
+
+[exercise_202_one-handed-kettlebell-swing.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.7
+Adductors = 0.3
+Back = 0.5
+Forearms = 0.4
+Obliques = 0.4
+Core = 0.5
+
+[exercise_203_kettlebell-clean-press.muscle_activation]
+Glutes = 0.7
+Hamstrings = 0.4
+Back = 0.6
+Forearms = 0.4
+Triceps = 0.6
+Shoulders = 1.0
+Adductors = 0.2
+Obliques = 0.3
+Core = 0.5
+
+[exercise_204_one-handed-lat-pulldown.muscle_activation]
+Lats = 1.0
+Biceps = 0.5
+Shoulders = 0.3
+Forearms = 0.3
+Core = 0.2
+
+[exercise_205_pause-deadlift.muscle_activation]
+Glutes = 1.0
+Quads = 0.6
+Hamstrings = 0.8
+Adductors = 0.3
+Back = 0.8
+Forearms = 0.5
+Core = 0.6
+"Lower Back" = 0.7
+
+[exercise_206_pendlay-row.muscle_activation]
+Back = 1.0
+Biceps = 0.6
+Forearms = 0.4
+Shoulders = 0.4
+Core = 0.3
+"Lower Back" = 0.3
+
+[exercise_207_power-clean.muscle_activation]
+Glutes = 0.9
+Quads = 0.8
+Adductors = 0.4
+Hamstrings = 0.6
+Back = 0.9
+Forearms = 0.5
+Shoulders = 0.7
+Core = 0.6
+
+[exercise_208_power-snatch.muscle_activation]
+Glutes = 0.9
+Quads = 0.8
+Adductors = 0.4
+Hamstrings = 0.6
+Back = 0.8
+Forearms = 0.5
+Shoulders = 1.0
+Core = 0.6
+Trapezius = 0.5
+
+[exercise_209_pull-up.muscle_activation]
+Lats = 1.0
+Back = 0.8
+Biceps = 0.7
+Forearms = 0.4
+Shoulders = 0.3
+Core = 0.3
+
+[exercise_210_rack-pull.muscle_activation]
+Glutes = 1.0
+"Lower Back" = 0.9
+Hamstrings = 0.7
+Back = 0.6
+Adductors = 0.4
+Forearms = 0.4
+Core = 0.5
+
+[exercise_211_ring-pull-up.muscle_activation]
+Lats = 1.0
+Back = 0.8
+Biceps = 0.7
+Forearms = 0.4
+Shoulders = 0.4
+Core = 0.4
+
+[exercise_212_ring-row.muscle_activation]
+Back = 1.0
+Lats = 0.7
+Biceps = 0.6
+Forearms = 0.3
+Shoulders = 0.3
+Core = 0.3
+
+[exercise_213_scap-pull-up.muscle_activation]
+Back = 1.0
+Trapezius = 0.7
+Shoulders = 0.3
+
+[exercise_214_seal-row.muscle_activation]
+Back = 1.0
+Lats = 0.8
+Biceps = 0.5
+Shoulders = 0.4
+Forearms = 0.3
+
+[exercise_215_seated-machine-row.muscle_activation]
+Back = 1.0
+Lats = 0.7
+Biceps = 0.5
+Shoulders = 0.3
+Forearms = 0.2
+
+[exercise_216_single-leg-deadlift-with-kettlebell.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.8
+Abductors = 0.6
+Adductors = 0.5
+Core = 0.5
+Back = 0.3
+Forearms = 0.3
+
+[exercise_217_smith-machine-one-handed-row.muscle_activation]
+Lats = 1.0
+Back = 0.5
+Biceps = 0.6
+Forearms = 0.3
+Shoulders = 0.3
+Core = 0.2
+
+[exercise_218_snatch.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.7
+Quads = 0.7
+Back = 0.8
+Shoulders = 0.85
+Trapezius = 0.7
+Forearms = 0.5
+Calves = 0.4
+Core = 0.8
+"Lower Back" = 0.7
+
+[exercise_219_snatch-grip-deadlift.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.8
+Quads = 0.6
+Back = 0.9
+Adductors = 0.4
+Forearms = 0.6
+"Lower Back" = 0.8
+Core = 0.6
+
+["exercise_220_muscle-up-(rings)".muscle_activation]
+Lats = 1.0
+Chest = 0.7
+Triceps = 0.7
+Shoulders = 0.7
+Biceps = 0.6
+Core = 0.7
+Back = 0.9
+
+[exercise_221_stiff-legged-deadlift.muscle_activation]
+Hamstrings = 1.0
+Glutes = 0.8
+"Lower Back" = 0.8
+Back = 0.6
+Adductors = 0.4
+Forearms = 0.4
+
+[exercise_222_straight-arm-lat-pulldown.muscle_activation]
+Lats = 1.0
+Shoulders = 0.4
+Back = 0.5
+Core = 0.2
+
+["exercise_223_muscle-up-(bar)".muscle_activation]
+Lats = 1.0
+Chest = 0.6
+Triceps = 0.7
+Shoulders = 0.6
+Biceps = 0.5
+Core = 0.6
+Back = 0.9
+
+[exercise_224_sumo-deadlift.muscle_activation]
+Glutes = 1.0
+Quads = 0.7
+Adductors = 0.7
+Hamstrings = 0.6
+Back = 0.8
+"Lower Back" = 0.7
+Forearms = 0.5
+Core = 0.6
+
+[exercise_225_t-bar-row.muscle_activation]
+Lats = 1.0
+Back = 0.8
+Trapezius = 0.75
+Biceps = 0.65
+Forearms = 0.45
+"Lower Back" = 0.4
+"Rear Deltoids" = 0.4
+
+[exercise_226_towel-row.muscle_activation]
+Lats = 1.0
+Back = 0.7
+Biceps = 0.6
+Forearms = 0.5
+Core = 0.3
+
+[exercise_227_trap-bar-deadlift-with-high-handles.muscle_activation]
+Glutes = 1.0
+Quads = 0.7
+Back = 0.65
+"Lower Back" = 0.6
+Adductors = 0.5
+Hamstrings = 0.45
+Forearms = 0.4
+Core = 0.4
+
+[exercise_228_trap-bar-deadlift-with-low-handles.muscle_activation]
+Glutes = 1.0
+Quads = 0.85
+Back = 0.7
+"Lower Back" = 0.7
+Adductors = 0.6
+Hamstrings = 0.55
+Forearms = 0.4
+Core = 0.45
+
+[exercise_229_pull-up-with-a-neutral-grip.muscle_activation]
+Lats = 1.0
+Back = 0.8
+Biceps = 0.7
+Shoulders = 0.3
+Forearms = 0.3
+Core = 0.2
+
+[exercise_230_cable-pull-through.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.7
+"Lower Back" = 0.4
+Adductors = 0.3
+Core = 0.3
+
+[exercise_231_cossack-squat.muscle_activation]
+Quads = 1.0
+Glutes = 0.8
+Adductors = 0.7
+Hamstrings = 0.5
+Core = 0.3
+
+[exercise_232_cable-machine-hip-abduction.muscle_activation]
+Abductors = 1.0
+Glutes = 0.6
+Core = 0.3
+
+[exercise_233_clamshells.muscle_activation]
+Abductors = 1.0
+Glutes = 0.65
+Core = 0.1
+
+[exercise_234_death-march-with-dumbbells.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.8
+"Lower Back" = 0.6
+Core = 0.5
+Forearms = 0.4
+Adductors = 0.3
+
+[exercise_235_dumbbell-romanian-deadlift.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.9
+"Lower Back" = 0.5
+Core = 0.4
+Forearms = 0.3
+Adductors = 0.2
+
+[exercise_236_dumbbell-frog-pumps.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.4
+Adductors = 0.3
+Core = 0.2
+
+[exercise_237_donkey-kicks.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.3
+Core = 0.2
+Adductors = 0.1
+
+[exercise_238_fire-hydrants.muscle_activation]
+Glutes = 1.0
+Abductors = 0.8
+Core = 0.2
+
+[exercise_239_frog-pumps.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.3
+Adductors = 0.2
+Core = 0.15
+
+[exercise_240_glute-bridge.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.4
+Quads = 0.2
+Core = 0.2
+
+[exercise_241_hip-abduction-against-band.muscle_activation]
+Abductors = 1.0
+Glutes = 0.4
+
+[exercise_242_hip-abduction-machine.muscle_activation]
+Abductors = 1.0
+Glutes = 0.35
+
+[exercise_243_hip-thrust.muscle_activation]
+Glutes = 1.0
+Quads = 0.4
+Adductors = 0.3
+Core = 0.25
+Hamstrings = 0.2
+
+[exercise_244_hip-thrust-machine.muscle_activation]
+Glutes = 1.0
+Quads = 0.35
+Adductors = 0.25
+
+[exercise_245_hip-thrust-with-band-around-knees.muscle_activation]
+Glutes = 1.0
+Abductors = 0.5
+Quads = 0.4
+Adductors = 0.3
+Core = 0.25
+
+[exercise_246_lateral-walk-with-band.muscle_activation]
+Abductors = 1.0
+Glutes = 0.5
+Quads = 0.2
+
+[exercise_247_machine-glute-kickbacks.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.4
+Adductors = 0.2
+Core = 0.2
+
+[exercise_248_one-legged-hip-thrust.muscle_activation]
+Glutes = 1.0
+Quads = 0.4
+Abductors = 0.3
+Adductors = 0.3
+Core = 0.3
+
+[exercise_249_one-legged-glute-bridge.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.4
+Core = 0.3
+Adductors = 0.2
+Abductors = 0.2
+Quads = 0.2
+
+[exercise_250_reverse-hyperextension.muscle_activation]
+Glutes = 1.0
+"Lower Back" = 0.7
+Hamstrings = 0.6
+Core = 0.3
+
+[exercise_251_romanian-deadlift.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.9
+"Lower Back" = 0.7
+Back = 0.5
+Forearms = 0.4
+Adductors = 0.3
+
+[exercise_252_smith-machine-hip-thrust.muscle_activation]
+Glutes = 1.0
+Quads = 0.4
+Hamstrings = 0.3
+Adductors = 0.2
+Core = 0.2
+
+[exercise_253_single-leg-romanian-deadlift.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.8
+Core = 0.5
+"Lower Back" = 0.4
+Back = 0.3
+Forearms = 0.3
+Adductors = 0.2
+
+[exercise_254_standing-glute-kickback-in-machine.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.4
+Adductors = 0.2
+Core = 0.2
+
+[exercise_255_standing-glute-push-down.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.5
+Adductors = 0.2
+Core = 0.2
+
+[exercise_256_step-up.muscle_activation]
+Glutes = 1.0
+Quads = 0.8
+Hamstrings = 0.4
+Abs = 0.3
+Core = 0.3
+
+[exercise_257_banded-side-kicks.muscle_activation]
+Glutes = 1.0
+Abductors = 0.85
+
+[exercise_258_ball-slams.muscle_activation]
+Cardio = 0.8
+Abs = 0.9
+Shoulders = 0.75
+Glutes = 0.6
+Quads = 0.5
+Lats = 0.4
+
+[exercise_259_crunch.muscle_activation]
+Abs = 1.0
+Obliques = 0.4
+
+[exercise_260_core-twist.muscle_activation]
+Obliques = 1.0
+Abs = 0.6
+
+[exercise_261_cable-crunch.muscle_activation]
+Abs = 1.0
+Obliques = 0.5
+
+[exercise_262_dragon-flag.muscle_activation]
+Abs = 1.0
+Obliques = 0.6
+Back = 0.5
+Lats = 0.4
+Forearms = 0.3
+
+[exercise_263_hanging-knee-raise.muscle_activation]
+Abs = 1.0
+Obliques = 0.4
+Forearms = 0.3
+
+[exercise_264_hanging-leg-raise.muscle_activation]
+Abs = 1.0
+Obliques = 0.5
+Forearms = 0.4
+Quads = 0.3
+
+[exercise_265_dead-bug.muscle_activation]
+Abs = 1.0
+Obliques = 0.6
+"Lower Back" = 0.3
+
+[exercise_266_hanging-windshield-wiper.muscle_activation]
+Obliques = 1.0
+Abs = 0.8
+Forearms = 0.5
+Lats = 0.4
+
+[exercise_267_hanging-sit-up.muscle_activation]
+Abs = 1.0
+Obliques = 0.5
+Forearms = 0.4
+"Front Deltoids" = 0.2
+
+[exercise_268_high-to-low-wood-chop-with-band.muscle_activation]
+Obliques = 1.0
+Abs = 0.6
+Shoulders = 0.3
+
+[exercise_269_hollow-hold.muscle_activation]
+Abs = 1.0
+Obliques = 0.6
+Quads = 0.2
+
+[exercise_270_horizontal-wood-chop-with-band.muscle_activation]
+Obliques = 1.0
+Abs = 0.4
+Shoulders = 0.2
+
+[exercise_271_horizontal-wood-chop-with-cable.muscle_activation]
+Obliques = 1.0
+Abs = 0.4
+Shoulders = 0.25
+
+[exercise_272_jackknife-sit-up.muscle_activation]
+Abs = 1.0
+Obliques = 0.4
+Quads = 0.3
+"Front Deltoids" = 0.2
+
+[exercise_273_kneeling-ab-wheel-roll-out.muscle_activation]
+Abs = 1.0
+Obliques = 0.6
+"Lower Back" = 0.3
+Lats = 0.25
+"Front Deltoids" = 0.2
+
+[exercise_274_kettlebell-plank-pull-through.muscle_activation]
+Abs = 1.0
+Obliques = 0.8
+Core = 0.7
+Chest = 0.2
+Shoulders = 0.2
+
+[exercise_275_kneeling-plank.muscle_activation]
+Abs = 1.0
+Obliques = 0.5
+Core = 0.5
+
+[exercise_276_kneeling-side-plank.muscle_activation]
+Obliques = 1.0
+Abs = 0.4
+Core = 0.4
+
+[exercise_277_l-sit.muscle_activation]
+Abs = 1.0
+Quads = 0.7
+Shoulders = 0.6
+Triceps = 0.5
+Chest = 0.4
+Obliques = 0.3
+
+[exercise_278_lying-leg-raise.muscle_activation]
+Abs = 1.0
+Obliques = 0.4
+
+[exercise_279_lying-windshield-wiper.muscle_activation]
+Obliques = 1.0
+Abs = 0.6
+"Lower Back" = 0.2
+
+[exercise_280_lying-windshield-wiper-with-bent-knees.muscle_activation]
+Obliques = 1.0
+Abs = 0.5
+"Lower Back" = 0.2
+
+[exercise_281_machine-crunch.muscle_activation]
+Abs = 1.0
+Obliques = 0.4
+
+[exercise_282_mountain-climbers.muscle_activation]
+Abs = 0.9
+Obliques = 0.6
+"Front Deltoids" = 0.4
+Chest = 0.3
+Quads = 0.4
+Cardio = 0.7
+
+[exercise_283_oblique-crunch.muscle_activation]
+Obliques = 1.0
+Abs = 0.5
+
+[exercise_284_plank.muscle_activation]
+Abs = 1.0
+Obliques = 0.6
+Core = 0.8
+"Front Deltoids" = 0.3
+
+[exercise_285_oblique-sit-up.muscle_activation]
+Obliques = 1.0
+Abs = 0.6
+Core = 0.4
+
+[exercise_286_dead-bug-with-dumbbells.muscle_activation]
+Abs = 1.0
+Core = 0.7
+"Front Deltoids" = 0.3
+
+[exercise_287_plank-with-leg-lifts.muscle_activation]
+Abs = 1.0
+Obliques = 0.7
+Glutes = 0.5
+"Lower Back" = 0.4
+"Front Deltoids" = 0.3
+
+[exercise_288_side-plank.muscle_activation]
+Obliques = 1.0
+Abs = 0.5
+Core = 0.8
+
+[exercise_289_sit-up.muscle_activation]
+Abs = 1.0
+Obliques = 0.4
+Core = 0.3
+
+[exercise_290_high-to-low-wood-chop-with-cable.muscle_activation]
+Abs = 0.8
+Obliques = 1.0
+Back = 0.4
+Shoulders = 0.3
+Core = 0.5
+
+[exercise_291_seated-calf-raise.muscle_activation]
+Calves = 1.0
+
+[exercise_292_eccentric-heel-drop.muscle_activation]
+Calves = 1.0
+
+[exercise_293_barbell-standing-calf-raise.muscle_activation]
+Calves = 1.0
+Core = 0.2
+"Lower Back" = 0.1
+
+[exercise_294_heel-raise.muscle_activation]
+Calves = 1.0
+
+[exercise_295_standing-calf-raise.muscle_activation]
+Calves = 1.0
+Core = 0.2
+
+[exercise_296_donkey-calf-raise.muscle_activation]
+Calves = 1.0
+Core = 0.1
+
+[exercise_297_dumbbell-wrist-curl.muscle_activation]
+Forearms = 1.0
+"Forearm Flexors" = 1.0
+
+[exercise_298_barbell-wrist-curl.muscle_activation]
+Forearms = 1.0
+"Forearm Flexors" = 1.0
+
+[exercise_299_bar-hang.muscle_activation]
+Forearms = 1.0
+Lats = 0.3
+Core = 0.2
+
+[exercise_300_barbell-wrist-curl-behind-the-back.muscle_activation]
+Forearms = 1.0
+"Forearm Flexors" = 1.0
+
+[exercise_301_farmers-walk.muscle_activation]
+Forearms = 1.0
+Quads = 0.4
+Abs = 0.6
+Back = 0.5
+Calves = 0.3
+Trapezius = 0.6
+Shoulders = 0.3
+
+[exercise_302_one-handed-bar-hang.muscle_activation]
+Forearms = 1.0
+Lats = 0.4
+Core = 0.3
+"Rotator Cuffs" = 0.3
+
+[exercise_303_fat-bar-deadlift.muscle_activation]
+Glutes = 1.0
+Hamstrings = 0.8
+Quads = 0.6
+Adductors = 0.4
+Back = 0.7
+"Lower Back" = 0.8
+Forearms = 0.9
+Core = 0.7
+
+[exercise_304_gripper.muscle_activation]
+Forearms = 1.0
+
+[exercise_305_plate-wrist-curl.muscle_activation]
+Forearms = 1.0
+"Forearm Flexors" = 0.9
+
+[exercise_306_plate-pinch.muscle_activation]
+Forearms = 1.0
+"Forearm Flexors" = 0.6
+
+[exercise_307_towel-pull-up.muscle_activation]
+Back = 1.0
+Lats = 0.9
+Biceps = 0.75
+Forearms = 0.6
+Shoulders = 0.4
+Core = 0.3
+
+[exercise_308_barbell-wrist-extension.muscle_activation]
+Forearms = 1.0
+
+[exercise_309_wrist-roller.muscle_activation]
+Forearms = 1.0
+"Front Deltoids" = 0.4
+
+[exercise_310_dumbbell-wrist-extension.muscle_activation]
+Forearms = 1.0
+
+[exercise_311_stationary-bike.muscle_activation]
+Cardio = 1.0
+Quads = 0.8
+Calves = 0.4
+Glutes = 0.3
+
+[exercise_312_rowing-machine.muscle_activation]
+Cardio = 1.0
+Lats = 0.8
+Back = 0.7
+Quads = 0.6
+Glutes = 0.6
+Hamstrings = 0.5
+Biceps = 0.5
+Core = 0.4

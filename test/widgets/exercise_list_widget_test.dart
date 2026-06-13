@@ -336,6 +336,38 @@ void main() {
     },
   );
 
+  testWidgets('ExerciseListWidget - bodyweight and custom meta pills render', (
+    tester,
+  ) async {
+    final exercises = [
+      Exercise(
+        slug: 'custom-push-up',
+        name: 'Custom Push-Up',
+        primaryMuscleGroup: MuscleGroup.chest,
+        secondaryMuscleGroups: const [],
+        instructions: const ['Push'],
+        equipment: 'None',
+        image: '',
+        animation: '',
+        isBodyWeightExercise: true,
+        isCustom: true,
+      ),
+    ];
+    ExerciseService.instance.setDependenciesForTesting(
+      exerciseDao: _FakeExerciseDao(exercises),
+      muscleGroupDao: _FakeMuscleGroupDao([MuscleGroup.chest]),
+      seedExercises: exercises,
+    );
+
+    await tester.pumpWidget(
+      _wrap(ExerciseListWidget(onExerciseSelected: (_) {})),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bodyweight'), findsAtLeastNWidgets(1));
+    expect(find.text('Custom'), findsOneWidget);
+  });
+
   testWidgets(
     'ExerciseListWidget - muscle filter sheet dismisses when tapping above it',
     (tester) async {

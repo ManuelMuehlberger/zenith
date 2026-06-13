@@ -17,116 +17,216 @@ Award _awardForAchievement(
   BuildContext context,
   WorkoutAchievement achievement,
 ) {
-  switch (achievement.type) {
-    case WorkoutAchievementType.firstWorkout:
-      return _milestoneAward(context, achievement);
-    case WorkoutAchievementType.workoutMilestone:
-      return _milestoneAward(context, achievement);
-    case WorkoutAchievementType.workoutStreak:
-      return _streakAward(context, achievement);
-    case WorkoutAchievementType.highVolume:
-      return Award(
-        title: achievement.title,
-        reason: achievement.reason,
-        metrics: achievement.metrics,
-        icon: Icons.local_fire_department,
-        modelAsset: 'assets/achievements/achievement_cup.glb',
-        thumbnailAsset: 'assets/achievements/achievement_cup.png',
-        compactThumbnailAsset:
-            'assets/achievements/achievement_cup_compact.png',
-        cameraTheta: 30,
-        cameraPhi: 20,
-        cameraRadius: 118,
-        rotationSpeed: 22,
-        color: context.appColors.warning,
-      );
-    case WorkoutAchievementType.longSession:
-      return Award(
-        title: achievement.title,
-        reason: achievement.reason,
-        metrics: achievement.metrics,
-        icon: Icons.timer_outlined,
-        modelAsset: 'assets/achievements/achievement_hourglass.glb',
-        thumbnailAsset: 'assets/achievements/achievement_hourglass.png',
-        compactThumbnailAsset:
-            'assets/achievements/achievement_hourglass_compact.png',
-        cameraTheta: 25,
-        cameraPhi: 20,
-        cameraRadius: 118,
-        rotationSpeed: 16,
-        color: context.appScheme.primary,
-      );
-    case WorkoutAchievementType.heavy:
-      return Award(
-        title: achievement.title,
-        reason: achievement.reason,
-        metrics: achievement.metrics,
-        icon: Icons.fitness_center,
-        modelAsset: 'assets/achievements/achievement_dumbbell.glb',
-        thumbnailAsset: 'assets/achievements/achievement_dumbbell.png',
-        compactThumbnailAsset:
-            'assets/achievements/achievement_dumbbell_compact.png',
-        cameraTheta: 35,
-        cameraPhi: 20,
-        cameraRadius: 118,
-        rotationSpeed: 18,
-        color: context.appColors.success,
-      );
-  }
-}
-
-Award _milestoneAward(BuildContext context, WorkoutAchievement achievement) {
-  final assetName = switch (achievement.ruleId) {
-    'tenth_workout' => 'achievement_workout_10',
-    'fiftieth_workout' => 'achievement_workout_50',
-    'hundredth_workout' => 'achievement_workout_100',
-    'two_hundredth_workout' => 'achievement_workout_200',
-    _ => 'achievement_workout_1',
-  };
-  final color = switch (achievement.ruleId) {
-    'tenth_workout' => context.appColors.achievementWorkout10,
-    'fiftieth_workout' => context.appColors.achievementWorkout50,
-    'hundredth_workout' => context.appColors.achievementWorkout100,
-    'two_hundredth_workout' => context.appColors.achievementWorkout200,
-    _ => context.appScheme.primary,
-  };
-
+  final visual = _visualForAchievement(context, achievement);
   return Award(
     title: achievement.title,
     reason: achievement.reason,
     metrics: achievement.metrics,
+    icon: visual.icon,
+    modelAsset: visual.modelAsset,
+    thumbnailAsset: visual.thumbnailAsset,
+    compactThumbnailAsset: visual.compactThumbnailAsset,
+    cameraTheta: visual.cameraTheta,
+    cameraPhi: visual.cameraPhi,
+    cameraRadius: visual.cameraRadius,
+    rotationSpeed: visual.rotationSpeed,
+    previewRenderScale: visual.previewRenderScale,
+    color: visual.color,
+  );
+}
+
+_AwardVisualSpec _visualForAchievement(
+  BuildContext context,
+  WorkoutAchievement achievement,
+) {
+  final ruleSpec = _ruleVisuals(context)[achievement.ruleId];
+  if (ruleSpec != null) return ruleSpec;
+
+  return switch (achievement.type) {
+    WorkoutAchievementType.firstWorkout ||
+    WorkoutAchievementType.workoutMilestone => _workoutMilestoneVisual(
+      context,
+      assetName: 'achievement_workout_1',
+      color: context.appScheme.primary,
+    ),
+    WorkoutAchievementType.workoutStreak => _streakVisual(
+      context,
+      assetName: 'achievement_streak_3',
+      icon: Icons.calendar_today,
+      color: context.appColors.achievementStreak3,
+      rotationSpeed: 16,
+    ),
+    WorkoutAchievementType.highVolume => _typedVisual(
+      context,
+      assetName: 'achievement_cup',
+      icon: Icons.local_fire_department,
+      color: context.appColors.warning,
+      cameraTheta: 30,
+      rotationSpeed: 22,
+    ),
+    WorkoutAchievementType.longSession => _typedVisual(
+      context,
+      assetName: 'achievement_hourglass',
+      icon: Icons.timer_outlined,
+      color: context.appScheme.primary,
+      cameraTheta: 25,
+      rotationSpeed: 16,
+    ),
+    WorkoutAchievementType.heavy => _typedVisual(
+      context,
+      assetName: 'achievement_dumbbell',
+      icon: Icons.fitness_center,
+      color: context.appColors.success,
+      cameraTheta: 35,
+      rotationSpeed: 18,
+    ),
+  };
+}
+
+Map<String, _AwardVisualSpec> _ruleVisuals(BuildContext context) {
+  return {
+    'first_workout': _workoutMilestoneVisual(
+      context,
+      assetName: 'achievement_workout_1',
+      color: context.appScheme.primary,
+    ),
+    'tenth_workout': _workoutMilestoneVisual(
+      context,
+      assetName: 'achievement_workout_10',
+      color: context.appColors.achievementWorkout10,
+    ),
+    'fiftieth_workout': _workoutMilestoneVisual(
+      context,
+      assetName: 'achievement_workout_50',
+      color: context.appColors.achievementWorkout50,
+    ),
+    'hundredth_workout': _workoutMilestoneVisual(
+      context,
+      assetName: 'achievement_workout_100',
+      color: context.appColors.achievementWorkout100,
+    ),
+    'two_hundredth_workout': _workoutMilestoneVisual(
+      context,
+      assetName: 'achievement_workout_200',
+      color: context.appColors.achievementWorkout200,
+    ),
+    'three_day_streak': _streakVisual(
+      context,
+      assetName: 'achievement_streak_3',
+      icon: Icons.calendar_today,
+      color: context.appColors.achievementStreak3,
+      rotationSpeed: 16,
+    ),
+    'seven_day_streak': _streakVisual(
+      context,
+      assetName: 'achievement_streak_7',
+      icon: Icons.calendar_month,
+      color: context.appColors.achievementStreak7,
+      rotationSpeed: 12,
+    ),
+    'high_volume': _typedVisual(
+      context,
+      assetName: 'achievement_cup',
+      icon: Icons.local_fire_department,
+      color: context.appColors.warning,
+      cameraTheta: 30,
+      rotationSpeed: 22,
+    ),
+    'long_session': _typedVisual(
+      context,
+      assetName: 'achievement_hourglass',
+      icon: Icons.timer_outlined,
+      color: context.appScheme.primary,
+      cameraTheta: 25,
+      rotationSpeed: 16,
+    ),
+    'heavy': _typedVisual(
+      context,
+      assetName: 'achievement_dumbbell',
+      icon: Icons.fitness_center,
+      color: context.appColors.success,
+      cameraTheta: 35,
+      rotationSpeed: 18,
+    ),
+  };
+}
+
+_AwardVisualSpec _workoutMilestoneVisual(
+  BuildContext context, {
+  required String assetName,
+  required Color color,
+}) {
+  return _typedVisual(
+    context,
+    assetName: assetName,
     icon: Icons.hexagon_outlined,
+    color: color,
+    cameraTheta: 18,
+    rotationSpeed: 14,
+  );
+}
+
+_AwardVisualSpec _streakVisual(
+  BuildContext context, {
+  required String assetName,
+  required IconData icon,
+  required Color color,
+  required int rotationSpeed,
+}) {
+  return _typedVisual(
+    context,
+    assetName: assetName,
+    icon: icon,
+    color: color,
+    cameraTheta: 24,
+    rotationSpeed: rotationSpeed,
+  );
+}
+
+_AwardVisualSpec _typedVisual(
+  BuildContext context, {
+  required String assetName,
+  required IconData icon,
+  required Color color,
+  required double cameraTheta,
+  required int rotationSpeed,
+}) {
+  return _AwardVisualSpec(
+    icon: icon,
     modelAsset: 'assets/achievements/$assetName.glb',
     thumbnailAsset: 'assets/achievements/$assetName.png',
     compactThumbnailAsset: 'assets/achievements/${assetName}_compact.png',
-    cameraTheta: 18,
+    cameraTheta: cameraTheta,
     cameraPhi: 20,
     cameraRadius: 118,
-    rotationSpeed: 14,
+    rotationSpeed: rotationSpeed,
+    previewRenderScale: 0.66,
     color: color,
   );
 }
 
-Award _streakAward(BuildContext context, WorkoutAchievement achievement) {
-  final isSevenDay = achievement.ruleId == 'seven_day_streak';
-  final assetName = isSevenDay
-      ? 'achievement_streak_7'
-      : 'achievement_streak_3';
+class _AwardVisualSpec {
+  final IconData icon;
+  final String modelAsset;
+  final String thumbnailAsset;
+  final String compactThumbnailAsset;
+  final double cameraTheta;
+  final double cameraPhi;
+  final double cameraRadius;
+  final int rotationSpeed;
+  final double previewRenderScale;
+  final Color color;
 
-  return Award(
-    title: achievement.title,
-    reason: achievement.reason,
-    metrics: achievement.metrics,
-    icon: isSevenDay ? Icons.calendar_month : Icons.calendar_today,
-    modelAsset: 'assets/achievements/$assetName.glb',
-    thumbnailAsset: 'assets/achievements/$assetName.png',
-    compactThumbnailAsset: 'assets/achievements/${assetName}_compact.png',
-    cameraTheta: 24,
-    cameraPhi: 20,
-    cameraRadius: 118,
-    rotationSpeed: isSevenDay ? 12 : 16,
-    color: isSevenDay
-        ? context.appColors.achievementStreak7
-        : context.appColors.achievementStreak3,
-  );
+  const _AwardVisualSpec({
+    required this.icon,
+    required this.modelAsset,
+    required this.thumbnailAsset,
+    required this.compactThumbnailAsset,
+    required this.cameraTheta,
+    required this.cameraPhi,
+    required this.cameraRadius,
+    required this.rotationSpeed,
+    required this.previewRenderScale,
+    required this.color,
+  });
 }

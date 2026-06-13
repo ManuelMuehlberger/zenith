@@ -100,9 +100,10 @@ class AgePage extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: theme.dividerColor),
         ),
-        child: CupertinoPicker(
+        child: AppCupertinoPicker(
           itemExtent: 50,
           scrollController: FixedExtentScrollController(initialItem: age - 13),
+          selectionOverlayRadius: PickerSelectionStyle.emphasizedRadius,
           onSelectedItemChanged: (index) {
             onAgeChanged(index + 13);
           },
@@ -219,6 +220,8 @@ class UnitsPage extends StatelessWidget {
 }
 
 class WeightPage extends StatelessWidget {
+  static const Key wrapperKey = Key('onboardingWeightPickerWrapper');
+
   final double weight;
   final Units units;
   final ValueChanged<double> onWeightChanged;
@@ -247,16 +250,18 @@ class WeightPage extends StatelessWidget {
           'Store a starting point on this device so you can look back on progress later.',
       footer: OnboardingNavigationButtons(canContinue: true, onNext: onNext),
       child: Container(
+        key: wrapperKey,
         height: 200,
         decoration: BoxDecoration(
           color: context.appScheme.surface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppConstants.SHEET_RADIUS),
           border: Border.all(color: theme.dividerColor),
         ),
         child: WeightPickerWheel(
           weight: weight,
           units: units,
           onWeightChanged: onWeightChanged,
+          selectionOverlayRadius: PickerSelectionStyle.emphasizedRadius,
         ),
       ),
     );

@@ -4,6 +4,43 @@ import '../constants/app_constants.dart';
 import '../models/user_data.dart';
 import '../theme/app_theme.dart';
 
+// policy: allow-public-api shared picker overlay sizing tokens used by onboarding and workout completion.
+class PickerSelectionStyle {
+  const PickerSelectionStyle._();
+
+  static const double defaultRadius = 8;
+  static const double emphasizedRadius = AppConstants.SHEET_RADIUS;
+}
+
+// policy: allow-public-api shared Cupertino picker wrapper used by common weight-entry flows.
+class AppCupertinoPicker extends StatelessWidget {
+  const AppCupertinoPicker({
+    super.key,
+    required this.itemExtent,
+    required this.scrollController,
+    required this.onSelectedItemChanged,
+    required this.children,
+    this.selectionOverlayRadius = PickerSelectionStyle.defaultRadius,
+  });
+
+  final double itemExtent;
+  final FixedExtentScrollController scrollController;
+  final ValueChanged<int> onSelectedItemChanged;
+  final List<Widget> children;
+  final double selectionOverlayRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoPicker(
+      itemExtent: itemExtent,
+      scrollController: scrollController,
+      selectionOverlay: PickerSelectionOverlay(radius: selectionOverlayRadius),
+      onSelectedItemChanged: onSelectedItemChanged,
+      children: children,
+    );
+  }
+}
+
 // policy: allow-public-api shared weight-wheel contract used by onboarding and workout completion flows.
 class WeightPickerWheelSpec {
   const WeightPickerWheelSpec({
@@ -81,6 +118,7 @@ class WeightPickerWheel extends StatelessWidget {
   final Units units;
   final ValueChanged<double> onWeightChanged;
   final Key? pickerKey;
+  final double selectionOverlayRadius;
 
   const WeightPickerWheel({
     super.key,
@@ -88,6 +126,7 @@ class WeightPickerWheel extends StatelessWidget {
     required this.units,
     required this.onWeightChanged,
     this.pickerKey,
+    this.selectionOverlayRadius = PickerSelectionStyle.defaultRadius,
   });
 
   @override
@@ -103,11 +142,12 @@ class WeightPickerWheel extends StatelessWidget {
       children: [
         Expanded(
           flex: 4,
-          child: CupertinoPicker(
+          child: AppCupertinoPicker(
             itemExtent: 50,
             scrollController: FixedExtentScrollController(
               initialItem: spec.wholeIndexForWeight(initialWeight),
             ),
+            selectionOverlayRadius: selectionOverlayRadius,
             onSelectedItemChanged: (index) {
               selectedWhole = spec.wholeForIndex(index);
               onWeightChanged(
@@ -127,11 +167,12 @@ class WeightPickerWheel extends StatelessWidget {
         ),
         Expanded(
           flex: 2,
-          child: CupertinoPicker(
+          child: AppCupertinoPicker(
             itemExtent: 50,
             scrollController: FixedExtentScrollController(
               initialItem: selectedDecimal,
             ),
+            selectionOverlayRadius: selectionOverlayRadius,
             onSelectedItemChanged: (index) {
               selectedDecimal = index;
               onWeightChanged(
@@ -146,6 +187,26 @@ class WeightPickerWheel extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// policy: allow-public-api shared picker overlay used by the app's Cupertino wheel wrappers.
+class PickerSelectionOverlay extends StatelessWidget {
+  const PickerSelectionOverlay({super.key, required this.radius});
+
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsetsDirectional.symmetric(horizontal: 9),
+      decoration: ShapeDecoration(
+        color: context.appColors.field,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius),
+        ),
+      ),
     );
   }
 }

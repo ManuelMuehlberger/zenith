@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
+import '../app_bottom_sheet.dart';
 import 'achievement_model_view.dart';
 import 'award_stack.dart';
 
@@ -30,7 +31,7 @@ class AwardBalloons extends StatelessWidget {
             : 'View ${awards.length} awards',
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
-          onTap: () => _showAwardSheet(context, awards),
+          onTap: () => showAwardDetailSheet(context, awards),
           child: Padding(
             padding: const EdgeInsets.all(6),
             child: SizedBox(
@@ -65,12 +66,11 @@ class AwardBalloons extends StatelessWidget {
   }
 }
 
-void _showAwardSheet(BuildContext context, List<Award> awards) {
-  showModalBottomSheet<void>(
+// policy: allow-public-api shared award detail entrypoint used by timeline and insights surfaces.
+Future<void> showAwardDetailSheet(BuildContext context, List<Award> awards) {
+  return showAppBottomSheet<void>(
     context: context,
-    isScrollControlled: true,
-    backgroundColor: context.appColors.transparent,
-    builder: (context) => _AwardDetailSheet(awards: awards),
+    builder: (context) => AwardDetailSheet(awards: awards),
   );
 }
 
@@ -154,16 +154,17 @@ class _AwardCountBadge extends StatelessWidget {
   }
 }
 
-class _AwardDetailSheet extends StatefulWidget {
+// policy: allow-public-api shared award detail sheet surfaced from multiple award entrypoints.
+class AwardDetailSheet extends StatefulWidget {
   final List<Award> awards;
 
-  const _AwardDetailSheet({required this.awards});
+  const AwardDetailSheet({super.key, required this.awards});
 
   @override
-  State<_AwardDetailSheet> createState() => _AwardDetailSheetState();
+  State<AwardDetailSheet> createState() => _AwardDetailSheetState();
 }
 
-class _AwardDetailSheetState extends State<_AwardDetailSheet> {
+class _AwardDetailSheetState extends State<AwardDetailSheet> {
   late final PageController _pageController;
   int _currentIndex = 0;
 
@@ -182,27 +183,17 @@ class _AwardDetailSheetState extends State<_AwardDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
-    final scheme = context.appScheme;
     final textTheme = context.appText;
     final selected = widget.awards[_currentIndex];
-    final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
-    return Material(
-      color: scheme.surface,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(20, 10, 20, 24 + bottomPadding),
+    return AppBottomSheet(
+      maxHeight: MediaQuery.sizeOf(context).height * 0.86,
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+      child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: colors.textTertiary.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+            const AppBottomSheetHandle(),
             const SizedBox(height: 22),
             SizedBox(
               height: 250,
