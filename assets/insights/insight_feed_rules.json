@@ -9,6 +9,16 @@
         "recentDays": 7,
         "baselineDays": 90,
         "minimumDeltaPercent": 20
+      },
+      "visual": {
+        "enabled": true,
+        "type": "baselineBars",
+        "size": "wide",
+        "params": {
+          "recentDays": 7,
+          "baselineDays": 90,
+          "showWhenDeltaBelowPercent": false
+        }
       }
     },
     {
@@ -18,6 +28,14 @@
       "priority": 100,
       "params": {
         "maxAgeDays": 14
+      },
+      "visual": {
+        "enabled": true,
+        "type": "awardPreview",
+        "size": "wide",
+        "params": {
+          "maxAwards": 3
+        }
       }
     },
     {
@@ -28,6 +46,15 @@
       "params": {
         "lookbackDays": 90,
         "minimumPercentile": 90
+      },
+      "visual": {
+        "enabled": true,
+        "type": "percentileDot",
+        "size": "wide",
+        "params": {
+          "lookbackDays": 90,
+          "minSamples": 5
+        }
       }
     },
     {
@@ -36,8 +63,17 @@
       "enabled": true,
       "priority": 70,
       "params": {
-        "recentDays": 7,
+        "recentDays": 14,
         "minimumWorkouts": 2
+      },
+      "visual": {
+        "enabled": true,
+        "type": "calendarStrip",
+        "size": "wide",
+        "params": {
+          "recentDays": 14,
+          "baselineDays": 14
+        }
       }
     },
     {
@@ -47,6 +83,12 @@
       "priority": 60,
       "params": {
         "minGapDays": 7
+      },
+      "visual": {
+        "enabled": false,
+        "type": "none",
+        "size": "wide",
+        "params": {}
       }
     },
     {
@@ -54,7 +96,73 @@
       "type": "personalBestMomentum",
       "enabled": true,
       "priority": 75,
-      "params": {}
+      "params": {},
+      "visual": {
+        "enabled": true,
+        "type": "sparklineBand",
+        "size": "wide",
+        "params": {
+          "lookbackDays": 120,
+          "bucketCount": 8,
+          "minSamples": 2
+        }
+      }
+    },
+    {
+      "id": "muscle_activation_radar",
+      "type": "muscleActivationRadar",
+      "enabled": true,
+      "priority": 85,
+      "params": {
+        "recentDays": 14,
+        "minWorkouts": 1
+      },
+      "visual": {
+        "enabled": true,
+        "type": "radar",
+        "size": "featured",
+        "params": {
+          "recentDays": 14
+        }
+      }
+    },
+    {
+      "id": "latest_workout_comparison",
+      "type": "latestWorkoutComparison",
+      "enabled": true,
+      "priority": 78,
+      "params": {
+        "baselineWorkouts": 8,
+        "minBaselineWorkouts": 2
+      },
+      "visual": {
+        "enabled": true,
+        "type": "baselineBars",
+        "size": "wide",
+        "params": {
+          "baselineWorkouts": 8
+        }
+      }
+    },
+    {
+      "id": "body_weight_trend",
+      "type": "bodyWeightTrend",
+      "enabled": true,
+      "priority": 45,
+      "params": {
+        "lookbackDays": 90,
+        "minSamples": 2
+      },
+      "visual": {
+        "enabled": true,
+        "type": "bodyWeightLine",
+        "size": "wide",
+        "params": {
+          "lookbackDays": 90,
+          "bucketCount": 8,
+          "minSamples": 2
+        }
+      }
     }
   ]
 }

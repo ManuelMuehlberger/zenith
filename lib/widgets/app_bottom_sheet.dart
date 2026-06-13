@@ -3,6 +3,19 @@ import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
 import '../theme/app_theme.dart';
 
+Future<T?> showAppBottomSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool isScrollControlled = true,
+}) {
+  return showModalBottomSheet<T>(
+    context: context,
+    isScrollControlled: isScrollControlled,
+    backgroundColor: context.appColors.transparent,
+    builder: builder,
+  );
+}
+
 // policy: allow-public-api shared bottom-sheet shell reused by exercise flows.
 class AppBottomSheet extends StatelessWidget {
   const AppBottomSheet({

@@ -2,13 +2,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zenith/models/exercise.dart';
 import 'package:zenith/models/insight_feed.dart';
+import 'package:zenith/models/muscle_group.dart';
+import 'package:zenith/models/user_data.dart';
 import 'package:zenith/models/workout.dart';
 import 'package:zenith/models/workout_achievement.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/services/insights/cache/insights_cache_store.dart';
 import 'package:zenith/services/insights/insight_feed_service.dart';
+import 'package:zenith/services/workout_muscle_activation_service.dart';
 
 class _StringAssetBundle extends CachingAssetBundle {
   _StringAssetBundle(this.assets);
@@ -46,7 +50,7 @@ void main() {
           rulesAsset: '''
 {
   "rules": [
-    {"id": "achievement", "type": "recentAchievementShoutout", "enabled": true, "priority": 100, "params": {"maxAgeDays": 14}},
+    {"id": "achievement", "type": "recentAchievementShoutout", "enabled": true, "priority": 100, "params": {"maxAgeDays": 14}, "visual": {"enabled": true, "type": "awardPreview", "size": "wide", "params": {}}},
     {"id": "consistency", "type": "consistencyPulse", "enabled": true, "priority": 50, "params": {"recentDays": 7, "minimumWorkouts": 2}}
   ]
 }
@@ -56,6 +60,16 @@ void main() {
           _workout(
             id: 'w1',
             completedAt: now.subtract(const Duration(days: 2)),
+            achievements: [
+              WorkoutAchievement(
+                workoutId: 'w1',
+                ruleId: 'first_workout',
+                type: WorkoutAchievementType.firstWorkout,
+                title: 'First Workout',
+                reason: 'Completed your first workout.',
+                earnedAt: now.subtract(const Duration(days: 2)),
+              ),
+            ],
           ),
           _workout(
             id: 'w2',
@@ -83,6 +97,8 @@ void main() {
         InsightFeedCardType.consistencyPulse,
       ]);
       expect(cards.first.title, 'High Volume');
+      expect(cards.first.metric, isEmpty);
+      expect(cards.first.visualData['achievements'], hasLength(1));
     },
   );
 
@@ -205,6 +221,135 @@ void main() {
     expect(types, contains(InsightFeedCardType.personalBestMomentum));
   });
 
+  test('configured graph-capable rules include visual payloads', () async {
+    final now = DateTime(2026, 6, 20, 12);
+    final service = InsightFeedService(
+      assetBundle: _StringAssetBundle({
+        rulesAsset: '''
+{
+  "rules": [
+    {"id": "velocity", "type": "trainingVelocity", "enabled": true, "priority": 90, "params": {"recentDays": 7, "baselineDays": 90, "minimumDeltaPercent": 10}, "visual": {"enabled": true, "type": "baselineBars", "size": "wide", "params": {}}},
+    {"id": "consistency", "type": "consistencyPulse", "enabled": true, "priority": 80, "params": {"recentDays": 14, "minimumWorkouts": 2}, "visual": {"enabled": true, "type": "calendarStrip", "size": "wide", "params": {}}}
+  ]
+}
+''',
+      }),
+      workoutsProvider: () async => [
+        for (var day = 90; day >= 20; day -= 10)
+          _workout(
+            id: 'baseline-$day',
+            completedAt: now.subtract(Duration(days: day)),
+          ),
+        _workout(
+          id: 'recent-1',
+          completedAt: now.subtract(const Duration(days: 5)),
+        ),
+        _workout(
+          id: 'recent-2',
+          completedAt: now.subtract(const Duration(days: 3)),
+        ),
+        _workout(
+          id: 'latest',
+          completedAt: now.subtract(const Duration(days: 1)),
+        ),
+      ],
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(cacheKey: 'feed-test-visuals'),
+    );
+
+    final cards = await service.getCards(maxCards: 10);
+    final velocity = cards.firstWhere(
+      (card) => card.type == InsightFeedCardType.trainingVelocity,
+    );
+    final consistency = cards.firstWhere(
+      (card) => card.type == InsightFeedCardType.consistencyPulse,
+    );
+
+    expect(velocity.visualType, InsightFeedVisualType.baselineBars);
+    expect(velocity.visualData['items'], isA<List>());
+    expect(consistency.visualType, InsightFeedVisualType.calendarStrip);
+    expect(consistency.visualData['recentDays'], isA<List>());
+  });
+
+  test('new visual rule types generate only with meaningful data', () async {
+    final now = DateTime(2026, 6, 20, 12);
+    final benchPress = Exercise(
+      slug: 'bench_press',
+      name: 'Bench Press',
+      primaryMuscleGroup: MuscleGroup.chest,
+      secondaryMuscleGroups: const [],
+      instructions: const [],
+      image: '',
+      animation: '',
+      muscleActivation: const {MuscleGroup.chest: 1},
+    );
+    final service = InsightFeedService(
+      assetBundle: _StringAssetBundle({
+        rulesAsset: '''
+{
+  "rules": [
+    {"id": "radar", "type": "muscleActivationRadar", "enabled": true, "priority": 90, "params": {"recentDays": 14, "minWorkouts": 1}, "visual": {"enabled": true, "type": "radar", "size": "featured", "params": {}}},
+    {"id": "latest", "type": "latestWorkoutComparison", "enabled": true, "priority": 80, "params": {"baselineWorkouts": 8, "minBaselineWorkouts": 2}, "visual": {"enabled": true, "type": "baselineBars", "size": "wide", "params": {}}},
+    {"id": "weight", "type": "bodyWeightTrend", "enabled": true, "priority": 70, "params": {"lookbackDays": 90, "minSamples": 2}, "visual": {"enabled": true, "type": "bodyWeightLine", "size": "wide", "params": {}}}
+  ]
+}
+''',
+      }),
+      workoutsProvider: () async => [
+        _workout(
+          id: 'baseline-1',
+          completedAt: now.subtract(const Duration(days: 10)),
+        ),
+        _workout(
+          id: 'baseline-2',
+          completedAt: now.subtract(const Duration(days: 6)),
+        ),
+        _workout(
+          id: 'latest',
+          completedAt: now.subtract(const Duration(days: 1)),
+          setCount: 5,
+        ),
+      ],
+      weightHistoryProvider: () => [
+        WeightEntry(
+          timestamp: now.subtract(const Duration(days: 30)),
+          value: 80,
+        ),
+        WeightEntry(
+          timestamp: now.subtract(const Duration(days: 1)),
+          value: 79.2,
+        ),
+      ],
+      exerciseCatalogProvider: () => {'bench_press': benchPress},
+      activationService: _FakeWorkoutMuscleActivationService(),
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(cacheKey: 'feed-test-new-rules'),
+    );
+
+    final cards = await service.getCards(maxCards: 10);
+    final types = cards.map((card) => card.type).toSet();
+
+    expect(types, contains(InsightFeedCardType.muscleActivationRadar));
+    expect(types, contains(InsightFeedCardType.latestWorkoutComparison));
+    expect(types, contains(InsightFeedCardType.bodyWeightTrend));
+    expect(
+      cards
+          .firstWhere(
+            (card) => card.type == InsightFeedCardType.muscleActivationRadar,
+          )
+          .visualType,
+      InsightFeedVisualType.radar,
+    );
+    expect(
+      cards
+          .firstWhere(
+            (card) => card.type == InsightFeedCardType.bodyWeightTrend,
+          )
+          .visualData['points'],
+      isA<List>(),
+    );
+  });
+
   test('generates a comeback card after a long gap', () async {
     final now = DateTime(2026, 6, 20, 12);
     final service = InsightFeedService(
@@ -299,4 +444,25 @@ Workout _workout({
     exercises: [exercise],
     achievements: achievements,
   );
+}
+
+class _FakeWorkoutMuscleActivationService
+    extends WorkoutMuscleActivationService {
+  @override
+  Future<WorkoutMuscleActivationConfig> loadConfig() async {
+    return const WorkoutMuscleActivationConfig(
+      primaryWeight: 1,
+      secondaryWeight: 0.35,
+      axes: [
+        WorkoutMuscleActivationAxis(id: 'chest', label: 'Chest'),
+        WorkoutMuscleActivationAxis(id: 'back', label: 'Back'),
+        WorkoutMuscleActivationAxis(id: 'legs', label: 'Legs'),
+      ],
+      muscleContributions: {
+        MuscleGroup.chest: {'chest': 1},
+        MuscleGroup.back: {'back': 1},
+        MuscleGroup.quads: {'legs': 1},
+      },
+    );
+  }
 }

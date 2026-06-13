@@ -20,6 +20,8 @@ class WeeklyTrendCard extends StatefulWidget {
   final String Function(List<InsightDataPoint>, String timeframe)?
   timeframeSubLabelBuilder;
   final double Function(InsightDataPoint point)? dailyBarValueBuilder;
+  final double Function(InsightDataPoint point, InsightsGrouping grouping)?
+  chartValueBuilder;
 
   const WeeklyTrendCard({
     super.key,
@@ -34,6 +36,7 @@ class WeeklyTrendCard extends StatefulWidget {
     this.subLabelBuilder,
     this.timeframeSubLabelBuilder,
     this.dailyBarValueBuilder,
+    this.chartValueBuilder,
   });
 
   @override
@@ -275,6 +278,16 @@ class _WeeklyTrendCardState extends State<WeeklyTrendCard> {
     return List.generate(data.length, (index) {
       final dataPoint = data[index];
       final label = _generateLabel(index, data.length, dataPoint.date);
+
+      if (widget.chartValueBuilder != null) {
+        final chartValue = widget.chartValueBuilder!(dataPoint, grouping);
+        return WeeklyBarData(
+          label: label,
+          minValue: 0,
+          maxValue: chartValue,
+          weekStart: dataPoint.date,
+        );
+      }
 
       if (grouping == InsightsGrouping.day) {
         final dailyTotal =

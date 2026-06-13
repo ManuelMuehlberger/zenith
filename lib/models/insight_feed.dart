@@ -8,6 +8,54 @@ enum InsightFeedCardType {
   consistencyPulse,
   comebackCard,
   personalBestMomentum,
+  muscleActivationRadar,
+  latestWorkoutComparison,
+  bodyWeightTrend,
+}
+
+// policy: allow-public-api visual variants supported by insights feed cards.
+enum InsightFeedVisualType {
+  none,
+  baselineBars,
+  calendarStrip,
+  sparklineBand,
+  percentileDot,
+  radar,
+  bodyWeightLine,
+  awardPreview,
+}
+
+// policy: allow-public-api visual size contract for insights feed cards.
+enum InsightFeedCardSize { compact, wide, featured }
+
+@immutable
+// policy: allow-public-api visual configuration parsed from feed rules.
+class InsightFeedVisualConfig {
+  final bool enabled;
+  final InsightFeedVisualType type;
+  final InsightFeedCardSize size;
+  final Map<String, Object?> params;
+
+  const InsightFeedVisualConfig({
+    this.enabled = false,
+    this.type = InsightFeedVisualType.none,
+    this.size = InsightFeedCardSize.wide,
+    this.params = const {},
+  });
+
+  factory InsightFeedVisualConfig.fromMap(Map<String, dynamic>? map) {
+    if (map == null) {
+      return const InsightFeedVisualConfig();
+    }
+    return InsightFeedVisualConfig(
+      enabled: map['enabled'] == true,
+      type: _readVisualType(map['type']),
+      size: _readCardSize(map['size']),
+      params: Map<String, Object?>.unmodifiable(
+        (map['params'] as Map?)?.cast<String, Object?>() ?? const {},
+      ),
+    );
+  }
 }
 
 @immutable
@@ -23,6 +71,11 @@ class InsightFeedCard {
   final String icon;
   final DateTime generatedAt;
   final String? sourceWorkoutId;
+  final InsightFeedVisualType visualType;
+  final InsightFeedCardSize size;
+  final Map<String, Object?> visualData;
+  final String? detailMetricLabel;
+  final String? comparisonLabel;
 
   const InsightFeedCard({
     required this.id,
@@ -35,6 +88,11 @@ class InsightFeedCard {
     required this.icon,
     required this.generatedAt,
     this.sourceWorkoutId,
+    this.visualType = InsightFeedVisualType.none,
+    this.size = InsightFeedCardSize.wide,
+    this.visualData = const {},
+    this.detailMetricLabel,
+    this.comparisonLabel,
   });
 
   factory InsightFeedCard.fromMap(Map<String, dynamic> map) {
@@ -49,6 +107,13 @@ class InsightFeedCard {
       icon: _readString(map, 'icon'),
       generatedAt: DateTime.parse(_readString(map, 'generatedAt')),
       sourceWorkoutId: map['sourceWorkoutId'] as String?,
+      visualType: _readVisualType(map['visualType']),
+      size: _readCardSize(map['size']),
+      visualData: Map<String, Object?>.unmodifiable(
+        (map['visualData'] as Map?)?.cast<String, Object?>() ?? const {},
+      ),
+      detailMetricLabel: map['detailMetricLabel'] as String?,
+      comparisonLabel: map['comparisonLabel'] as String?,
     );
   }
 
@@ -64,6 +129,11 @@ class InsightFeedCard {
       'icon': icon,
       'generatedAt': generatedAt.toIso8601String(),
       'sourceWorkoutId': sourceWorkoutId,
+      'visualType': visualType.name,
+      'size': size.name,
+      'visualData': visualData,
+      'detailMetricLabel': detailMetricLabel,
+      'comparisonLabel': comparisonLabel,
     };
   }
 }
@@ -76,6 +146,7 @@ class InsightFeedRule {
   final bool enabled;
   final int priority;
   final Map<String, Object?> params;
+  final InsightFeedVisualConfig visual;
 
   const InsightFeedRule({
     required this.id,
@@ -83,6 +154,7 @@ class InsightFeedRule {
     required this.enabled,
     required this.priority,
     this.params = const {},
+    this.visual = const InsightFeedVisualConfig(),
   });
 
   factory InsightFeedRule.fromMap(Map<String, dynamic> map) {
@@ -93,6 +165,9 @@ class InsightFeedRule {
       priority: _readInt(map, 'priority'),
       params: Map<String, Object?>.unmodifiable(
         (map['params'] as Map?)?.cast<String, Object?>() ?? const {},
+      ),
+      visual: InsightFeedVisualConfig.fromMap(
+        (map['visual'] as Map?)?.cast<String, dynamic>(),
       ),
     );
   }
@@ -123,4 +198,26 @@ InsightFeedCardType _readType(Object? value) {
     }
   }
   throw const FormatException('Invalid insight feed card type');
+}
+
+InsightFeedVisualType _readVisualType(Object? value) {
+  if (value is String) {
+    for (final type in InsightFeedVisualType.values) {
+      if (type.name == value) {
+        return type;
+      }
+    }
+  }
+  return InsightFeedVisualType.none;
+}
+
+InsightFeedCardSize _readCardSize(Object? value) {
+  if (value is String) {
+    for (final size in InsightFeedCardSize.values) {
+      if (size.name == value) {
+        return size;
+      }
+    }
+  }
+  return InsightFeedCardSize.wide;
 }

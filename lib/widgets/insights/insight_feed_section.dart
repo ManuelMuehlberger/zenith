@@ -1,15 +1,23 @@
+import 'dart:math' as math;
+
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../models/insight_feed.dart';
+import '../../models/workout_achievement.dart';
 import '../../services/insights/insight_feed_service.dart';
 import '../../theme/app_theme.dart';
+import '../timeline/achievement_model_view.dart';
+import '../timeline/award_balloons.dart';
+import '../timeline/workout_achievement_awards.dart';
 
 // policy: allow-public-api top-of-screen section that renders the daily insights feed.
 class InsightsFeedSection extends StatefulWidget {
-  const InsightsFeedSection({super.key, this.service});
+  const InsightsFeedSection({super.key, this.service, this.refreshToken = 0});
 
   final InsightFeedService? service;
+  final int refreshToken;
 
   @override
   State<InsightsFeedSection> createState() => _InsightsFeedSectionState();
@@ -30,16 +38,16 @@ class _InsightsFeedSectionState extends State<InsightsFeedSection> {
   @override
   void didUpdateWidget(covariant InsightsFeedSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.service != oldWidget.service) {
-      _cardsFuture = _service.getCards();
+    if (widget.service != oldWidget.service ||
+        widget.refreshToken != oldWidget.refreshToken) {
+      _cardsFuture = _service.getCards(
+        forceRefresh: widget.refreshToken != oldWidget.refreshToken,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = context.appText;
-    final colors = context.appColors;
-
     return FutureBuilder<List<InsightFeedCard>>(
       future: _cardsFuture,
       builder: (context, snapshot) {
@@ -56,14 +64,6 @@ class _InsightsFeedSectionState extends State<InsightsFeedSection> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Today',
-                style: textTheme.labelMedium?.copyWith(
-                  color: colors.textTertiary,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 12),
               if (cards.isEmpty)
                 const _InsightFeedFallbackCard()
               else
@@ -87,19 +87,33 @@ class InsightFeedCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
     final accent = _accentColor(context, card.accent);
+    final hasVisual =
+        card.visualType != InsightFeedVisualType.none &&
+        card.visualData.isNotEmpty;
+
+    if (card.visualType == InsightFeedVisualType.awardPreview && hasVisual) {
+      return _AwardInsightFeedCard(
+        card: card,
+        accent: accent,
+        icon: _iconFor(card.icon),
+      );
+    }
+
+    if (hasVisual) {
+      return _VisualInsightFeedCard(
+        card: card,
+        accent: accent,
+        icon: _iconFor(card.icon),
+      );
+    }
 
     return Container(
       constraints: const BoxConstraints(minHeight: 132),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.12)),
-      ),
+      decoration: _insightCardDecoration(context),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -129,14 +143,16 @@ class InsightFeedCardWidget extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Text(
-                      card.metric,
-                      style: textTheme.titleMedium?.copyWith(
-                        color: accent,
-                        fontWeight: FontWeight.w800,
+                    if (card.metric.isNotEmpty) ...[
+                      const SizedBox(width: 10),
+                      Text(
+                        card.metric,
+                        style: textTheme.titleMedium?.copyWith(
+                          color: accent,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -174,10 +190,843 @@ class InsightFeedCardWidget extends StatelessWidget {
       'calendar' => CupertinoIcons.calendar,
       'chart' => CupertinoIcons.chart_bar_square_fill,
       'flame' => CupertinoIcons.flame_fill,
+      'radar' => Icons.radar_outlined,
       'return' => CupertinoIcons.arrow_turn_up_left,
+      'weight' => Icons.monitor_weight_outlined,
       _ => CupertinoIcons.sparkles,
     };
   }
+}
+
+class _AwardInsightFeedCard extends StatelessWidget {
+  const _AwardInsightFeedCard({
+    required this.card,
+    required this.accent,
+    required this.icon,
+  });
+
+  final InsightFeedCard card;
+  final Color accent;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final achievements = _achievementsFromVisualData(card.visualData);
+    final awards = buildWorkoutAchievementAwards(context, achievements);
+    if (awards.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final award = awards.first;
+
+    return KeyedSubtree(
+      key: const Key('insight_feed_visual_awardPreview'),
+      child: Material(
+        color: colors.transparent,
+        child: InkWell(
+          borderRadius: AppTheme.workoutCardBorderRadius,
+          onTap: () => showAwardDetailSheet(context, [award]),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 142),
+            padding: const EdgeInsets.fromLTRB(16, 10, 10, 10),
+            decoration: _insightCardDecoration(context),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: accent.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(icon, color: accent, size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  card.title,
+                                  style: textTheme.titleSmall?.copyWith(
+                                    color: colors.textPrimary,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  card.body,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: colors.textSecondary,
+                                    height: 1.25,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Tooltip(
+                  message: award.title,
+                  child: Semantics(
+                    button: true,
+                    label: 'View ${award.title} award',
+                    child: SizedBox(
+                      width: 92,
+                      height: 92,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          AchievementModelView(
+                            award: award,
+                            size: 84,
+                            interactive: false,
+                            startRotating: true,
+                          ),
+                          Positioned.fill(
+                            child: Material(
+                              color: colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(24),
+                                onTap: () =>
+                                    showAwardDetailSheet(context, [award]),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VisualInsightFeedCard extends StatelessWidget {
+  const _VisualInsightFeedCard({
+    required this.card,
+    required this.accent,
+    required this.icon,
+  });
+
+  final InsightFeedCard card;
+  final Color accent;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+
+    return Container(
+      constraints: BoxConstraints(minHeight: _minHeight()),
+      padding: const EdgeInsets.all(16),
+      decoration: _insightCardDecoration(context),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: accent, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            card.title,
+                            style: textTheme.titleSmall?.copyWith(
+                              color: colors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        if (card.metric.isNotEmpty) ...[
+                          const SizedBox(width: 10),
+                          Text(
+                            card.metric,
+                            style: textTheme.titleMedium?.copyWith(
+                              color: accent,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      card.body,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colors.textSecondary,
+                        height: 1.25,
+                      ),
+                    ),
+                    if (card.comparisonLabel != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        card.comparisonLabel!,
+                        style: textTheme.labelSmall?.copyWith(
+                          color: colors.textTertiary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: _visualHeight(),
+            child: _InsightFeedVisualContent(card: card, accent: accent),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double _minHeight() {
+    if (card.visualType == InsightFeedVisualType.awardPreview) {
+      return 225;
+    }
+    return switch (card.size) {
+      InsightFeedCardSize.compact => 190,
+      InsightFeedCardSize.wide => 230,
+      InsightFeedCardSize.featured => 360,
+    };
+  }
+
+  double _visualHeight() {
+    if (card.visualType == InsightFeedVisualType.awardPreview) {
+      return 100;
+    }
+    return switch (card.size) {
+      InsightFeedCardSize.compact => 76,
+      InsightFeedCardSize.wide => 112,
+      InsightFeedCardSize.featured => 230,
+    };
+  }
+}
+
+class _InsightFeedVisualContent extends StatelessWidget {
+  const _InsightFeedVisualContent({required this.card, required this.accent});
+
+  final InsightFeedCard card;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyedSubtree(
+      key: Key('insight_feed_visual_${card.visualType.name}'),
+      child: switch (card.visualType) {
+        InsightFeedVisualType.baselineBars => _BaselineBarsVisual(
+          data: card.visualData,
+          accent: accent,
+        ),
+        InsightFeedVisualType.calendarStrip => _CalendarStripVisual(
+          data: card.visualData,
+          accent: accent,
+        ),
+        InsightFeedVisualType.sparklineBand => _SparklineBandVisual(
+          data: card.visualData,
+          accent: accent,
+        ),
+        InsightFeedVisualType.percentileDot => _PercentileDotVisual(
+          data: card.visualData,
+          accent: accent,
+        ),
+        InsightFeedVisualType.radar => _RadarVisual(
+          data: card.visualData,
+          accent: accent,
+        ),
+        InsightFeedVisualType.bodyWeightLine => _SparklineBandVisual(
+          data: card.visualData,
+          accent: accent,
+          smooth: true,
+        ),
+        InsightFeedVisualType.awardPreview => const SizedBox.shrink(),
+        InsightFeedVisualType.none => const SizedBox.shrink(),
+      },
+    );
+  }
+}
+
+class _BaselineBarsVisual extends StatelessWidget {
+  const _BaselineBarsVisual({required this.data, required this.accent});
+
+  final Map<String, Object?> data;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = _listOfMaps(data['items']);
+    if (items.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    if (items.first.containsKey('baseline')) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (final item in items) ...[
+            Expanded(
+              child: _ComparisonMetricBars(item: item, accent: accent),
+            ),
+            if (item != items.last) const SizedBox(width: 14),
+          ],
+        ],
+      );
+    }
+
+    final maxValue = items
+        .map((item) => _num(item['value']))
+        .fold<double>(0, math.max)
+        .clamp(1, double.infinity)
+        .toDouble();
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (final item in items) ...[
+          Expanded(
+            child: _SingleMetricBar(
+              label: _string(item['label']),
+              value: _num(item['value']),
+              maxValue: maxValue,
+              accent: item == items.last
+                  ? accent
+                  : context.appColors.textTertiary,
+            ),
+          ),
+          if (item != items.last) const SizedBox(width: 18),
+        ],
+      ],
+    );
+  }
+}
+
+class _SingleMetricBar extends StatelessWidget {
+  const _SingleMetricBar({
+    required this.label,
+    required this.value,
+    required this.maxValue,
+    required this.accent,
+  });
+
+  final String label;
+  final double value;
+  final double maxValue;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final factor = (value / maxValue).clamp(0.08, 1.0).toDouble();
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: Align(
+            alignment: Alignment.bottomCenter,
+            child: FractionallySizedBox(
+              heightFactor: factor,
+              widthFactor: 1,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.75),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value.toStringAsFixed(value >= 10 ? 0 : 1),
+          textAlign: TextAlign.center,
+          style: textTheme.labelMedium?.copyWith(
+            color: colors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+          style: textTheme.labelSmall?.copyWith(color: colors.textTertiary),
+        ),
+      ],
+    );
+  }
+}
+
+class _ComparisonMetricBars extends StatelessWidget {
+  const _ComparisonMetricBars({required this.item, required this.accent});
+
+  final Map<String, Object?> item;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final baseline = _num(item['baseline']);
+    final actual = _num(item['actual']);
+    final maxValue = math.max(math.max(baseline, actual), 1);
+    final baselineHeight = (baseline / maxValue).clamp(0.08, 1.0).toDouble();
+    final actualHeight = (actual / maxValue).clamp(0.08, 1.0).toDouble();
+
+    return Column(
+      children: [
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: FractionallySizedBox(
+                  heightFactor: baselineHeight,
+                  alignment: Alignment.bottomCenter,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: colors.textTertiary.withValues(alpha: 0.34),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: FractionallySizedBox(
+                  heightFactor: actualHeight,
+                  alignment: Alignment.bottomCenter,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.78),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _string(item['label']),
+          overflow: TextOverflow.ellipsis,
+          style: textTheme.labelSmall?.copyWith(
+            color: colors.textTertiary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CalendarStripVisual extends StatelessWidget {
+  const _CalendarStripVisual({required this.data, required this.accent});
+
+  final Map<String, Object?> data;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final recent = _boolList(data['recentDays']);
+    final baseline = _boolList(data['baselineDays']);
+    if (recent.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      children: [
+        Expanded(
+          child: _DayStrip(
+            days: baseline,
+            color: context.appColors.textTertiary,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Expanded(
+          child: _DayStrip(days: recent, color: accent),
+        ),
+      ],
+    );
+  }
+}
+
+class _DayStrip extends StatelessWidget {
+  const _DayStrip({required this.days, required this.color});
+
+  final List<bool> days;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        for (var index = 0; index < days.length; index++) ...[
+          Expanded(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              decoration: BoxDecoration(
+                color: days[index]
+                    ? color.withValues(alpha: 0.78)
+                    : context.appColors.field.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(5),
+              ),
+            ),
+          ),
+          if (index != days.length - 1) const SizedBox(width: 4),
+        ],
+      ],
+    );
+  }
+}
+
+class _SparklineBandVisual extends StatelessWidget {
+  const _SparklineBandVisual({
+    required this.data,
+    required this.accent,
+    this.smooth = false,
+  });
+
+  final Map<String, Object?> data;
+  final Color accent;
+  final bool smooth;
+
+  @override
+  Widget build(BuildContext context) {
+    final points = _listOfMaps(data['points']);
+    final values = points.map((point) => _num(point['value'])).toList();
+    if (values.length < 2) {
+      return const SizedBox.shrink();
+    }
+    return CustomPaint(
+      painter: _SparklinePainter(
+        values: values,
+        baseline: _nullableNum(data['baseline']),
+        color: accent,
+        gridColor: Theme.of(context).dividerColor,
+        fillColor: accent.withValues(alpha: smooth ? 0.10 : 0.16),
+        smooth: smooth,
+      ),
+      child: const SizedBox.expand(),
+    );
+  }
+}
+
+class _PercentileDotVisual extends StatelessWidget {
+  const _PercentileDotVisual({required this.data, required this.accent});
+
+  final Map<String, Object?> data;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final percentile = _num(data['percentile']).clamp(0, 100).toDouble();
+    final colors = context.appColors;
+    final textTheme = context.appText;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final usableWidth = math.max(1.0, constraints.maxWidth - 24);
+        return Stack(
+          alignment: Alignment.centerLeft,
+          children: [
+            Positioned(
+              left: 0,
+              right: 0,
+              top: constraints.maxHeight / 2 - 4,
+              child: Container(
+                height: 8,
+                decoration: BoxDecoration(
+                  color: colors.field,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            Positioned(
+              left: usableWidth * (percentile / 100),
+              top: constraints.maxHeight / 2 - 12,
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: accent,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: accent.withValues(alpha: 0.28),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 0,
+              bottom: 0,
+              child: Text('Low', style: textTheme.labelSmall),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Text('Top', style: textTheme.labelSmall),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _RadarVisual extends StatelessWidget {
+  const _RadarVisual({required this.data, required this.accent});
+
+  final Map<String, Object?> data;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final points = _listOfMaps(data['points']);
+    if (points.length < 3) {
+      return const SizedBox.shrink();
+    }
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    return RadarChart(
+      RadarChartData(
+        radarShape: RadarShape.polygon,
+        tickCount: 4,
+        ticksTextStyle: textTheme.labelSmall?.copyWith(
+          color: colors.transparent,
+          fontSize: 1,
+        ),
+        radarBackgroundColor: colors.field.withValues(alpha: 0.18),
+        radarBorderData: BorderSide(color: Theme.of(context).dividerColor),
+        gridBorderData: BorderSide(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.75),
+          width: 0.8,
+        ),
+        tickBorderData: BorderSide(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.45),
+          width: 0.8,
+        ),
+        titlePositionPercentageOffset: 0.17,
+        titleTextStyle: textTheme.labelSmall?.copyWith(
+          color: colors.textSecondary,
+          fontWeight: FontWeight.w600,
+        ),
+        getTitle: (index, angle) {
+          final readableAngle = angle > 90 && angle < 270 ? angle + 180 : angle;
+          return RadarChartTitle(
+            text: _shortRadarLabel(_string(points[index]['label'])),
+            angle: readableAngle,
+          );
+        },
+        dataSets: [
+          RadarDataSet(
+            dataEntries: points
+                .map((point) => RadarEntry(value: _num(point['planned'])))
+                .toList(growable: false),
+            borderColor: colors.textTertiary,
+            fillColor: colors.textTertiary.withValues(alpha: 0.15),
+            borderWidth: 1.6,
+            entryRadius: 2,
+          ),
+          RadarDataSet(
+            dataEntries: points
+                .map((point) => RadarEntry(value: _num(point['actual'])))
+                .toList(growable: false),
+            borderColor: accent,
+            fillColor: accent.withValues(alpha: 0.17),
+            borderWidth: 2.2,
+            entryRadius: 3,
+          ),
+        ],
+      ),
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeOutCubic,
+    );
+  }
+}
+
+class _SparklinePainter extends CustomPainter {
+  _SparklinePainter({
+    required this.values,
+    required this.baseline,
+    required this.color,
+    required this.gridColor,
+    required this.fillColor,
+    required this.smooth,
+  });
+
+  final List<double> values;
+  final double? baseline;
+  final Color color;
+  final Color gridColor;
+  final Color fillColor;
+  final bool smooth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final allValues = [...values, ?baseline];
+    final minValue = allValues.reduce(math.min);
+    final maxValue = allValues.reduce(math.max);
+    final span = math.max(maxValue - minValue, 1);
+    final points = <Offset>[];
+    for (var index = 0; index < values.length; index++) {
+      final x = values.length == 1
+          ? 0.0
+          : size.width * index / (values.length - 1);
+      final y = size.height - ((values[index] - minValue) / span * size.height);
+      points.add(Offset(x, y));
+    }
+
+    if (baseline != null) {
+      final y = size.height - ((baseline! - minValue) / span * size.height);
+      final paint = Paint()
+        ..color = gridColor.withValues(alpha: 0.7)
+        ..strokeWidth = 1.2;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+
+    final path = Path()..moveTo(points.first.dx, points.first.dy);
+    for (var index = 1; index < points.length; index++) {
+      if (smooth) {
+        final previous = points[index - 1];
+        final current = points[index];
+        final controlX = (previous.dx + current.dx) / 2;
+        path.cubicTo(
+          controlX,
+          previous.dy,
+          controlX,
+          current.dy,
+          current.dx,
+          current.dy,
+        );
+      } else {
+        path.lineTo(points[index].dx, points[index].dy);
+      }
+    }
+
+    final fillPath = Path.from(path)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(fillPath, Paint()..color = fillColor);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = 2.4,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _SparklinePainter oldDelegate) {
+    return oldDelegate.values != values ||
+        oldDelegate.baseline != baseline ||
+        oldDelegate.color != color ||
+        oldDelegate.smooth != smooth;
+  }
+}
+
+List<Map<String, Object?>> _listOfMaps(Object? value) {
+  if (value is! List) {
+    return const [];
+  }
+  return value
+      .whereType<Map>()
+      .map((entry) => entry.cast<String, Object?>())
+      .toList(growable: false);
+}
+
+List<WorkoutAchievement> _achievementsFromVisualData(
+  Map<String, Object?> data,
+) {
+  return _listOfMaps(data['achievements'])
+      .map((map) => WorkoutAchievement.fromMap(Map<String, dynamic>.from(map)))
+      .toList(growable: false);
+}
+
+List<bool> _boolList(Object? value) {
+  if (value is! List) {
+    return const [];
+  }
+  return value.map((entry) => entry == true).toList(growable: false);
+}
+
+double _num(Object? value) {
+  return value is num ? value.toDouble() : 0;
+}
+
+double? _nullableNum(Object? value) {
+  return value is num ? value.toDouble() : null;
+}
+
+String _string(Object? value) {
+  return value is String ? value : '';
+}
+
+String _shortRadarLabel(String label) {
+  return label == 'Shoulders' ? 'Delts' : label;
+}
+
+BoxDecoration _insightCardDecoration(BuildContext context) {
+  final scheme = context.appScheme;
+  final colors = context.appColors;
+
+  return BoxDecoration(
+    color: scheme.surface,
+    borderRadius: AppTheme.workoutCardBorderRadius,
+    boxShadow: [
+      BoxShadow(
+        color: colors.shadow.withValues(alpha: 0.18),
+        blurRadius: 10,
+        offset: const Offset(0, 3),
+      ),
+    ],
+  );
 }
 
 class _InsightFeedFallbackCard extends StatelessWidget {
@@ -185,18 +1034,13 @@ class _InsightFeedFallbackCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
 
     return Container(
       constraints: const BoxConstraints(minHeight: 118),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.12)),
-      ),
+      decoration: _insightCardDecoration(context),
       child: Row(
         children: [
           Icon(CupertinoIcons.chart_bar_alt_fill, color: colors.textTertiary),
@@ -231,16 +1075,13 @@ class AdvancedInsightsLauncher extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
       child: Material(
         color: scheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppTheme.workoutCardBorderRadius,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppTheme.workoutCardBorderRadius,
           onTap: onPressed,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: scheme.outline.withValues(alpha: 0.12)),
-            ),
+            decoration: _insightCardDecoration(context),
             child: Row(
               children: [
                 Container(

@@ -35,9 +35,34 @@ void main() {
     await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.text('Insights'), findsOneWidget);
-    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('Today'), findsNothing);
     expect(find.text('Advanced Insights'), findsOneWidget);
     expect(find.byKey(const Key('workout_filter_tag_button')), findsNothing);
+    expect(find.byType(RefreshIndicator), findsOneWidget);
+  });
+
+  testWidgets('pull-to-refresh keeps insights content available', (
+    tester,
+  ) async {
+    InsightsService.instance.setWorkoutsProvider(
+      () async => [
+        _workout('one', DateTime(2026, 6, 10)),
+        _workout('two', DateTime(2026, 6, 11)),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.light, home: const InsightsScreen()),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 300));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(find.byType(RefreshIndicator), findsOneWidget);
+    expect(find.text('Advanced Insights'), findsOneWidget);
   });
 
   testWidgets(

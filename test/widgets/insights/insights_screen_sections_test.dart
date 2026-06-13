@@ -6,6 +6,7 @@ import 'package:zenith/screens/insights/insights_view_data.dart';
 import 'package:zenith/services/insights_service.dart';
 import 'package:zenith/services/user_service.dart';
 import 'package:zenith/theme/app_theme.dart';
+import 'package:zenith/widgets/app_bottom_sheet.dart';
 import 'package:zenith/widgets/insights/insights_screen_sections.dart';
 
 void main() {
@@ -75,6 +76,47 @@ void main() {
       expect(find.text('No Activity Data'), findsOneWidget);
       expect(
         find.text('Complete workouts to see your insights'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('filter tags open bottom-sheet selectors', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                SliverPersistentHeader(
+                  delegate: InsightsFilterHeaderDelegate(
+                    timeframeOptions: insightsTimeframeOptions,
+                    selectedTimeframe: '6M',
+                    selectedWorkoutName: 'Push Day',
+                    selectedMuscleGroup: null,
+                    selectedEquipment: null,
+                    selectedBodyWeight: null,
+                    availableWorkoutNames: const ['Push Day', 'Pull Day'],
+                    onWorkoutChanged: (_) {},
+                    onMuscleChanged: (_) {},
+                    onEquipmentChanged: (_) {},
+                    onBodyWeightChanged: () {},
+                    onClearAll: () {},
+                    onTimeframeChanged: (_, unusedMonths) {},
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('workout_filter_tag_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AppBottomSheet), findsOneWidget);
+      expect(
+        find.byKey(const Key('workout_filter_option_push_day')),
         findsOneWidget,
       );
     });

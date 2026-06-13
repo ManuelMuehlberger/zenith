@@ -64,6 +64,14 @@ class _AdvancedInsightsScreenState extends State<AdvancedInsightsScreen> {
     );
   }
 
+  Future<void> _refreshInsights() async {
+    await InsightsService.instance.clearCache();
+    await _loadAvailableWorkouts();
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filters = InsightsFilterSnapshot(
@@ -78,72 +86,76 @@ class _AdvancedInsightsScreenState extends State<AdvancedInsightsScreen> {
       animation: UserService.instance,
       builder: (context, _) {
         return Scaffold(
-          body: CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                pinned: true,
-                centerTitle: true,
-                title: const Text('Advanced Insights'),
-                leading: IconButton(
-                  icon: Icon(
-                    CupertinoIcons.chevron_back,
-                    color: context.appScheme.onSurface,
+          body: RefreshIndicator(
+            onRefresh: _refreshInsights,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  centerTitle: true,
+                  title: const Text('Advanced Insights'),
+                  leading: IconButton(
+                    icon: Icon(
+                      CupertinoIcons.chevron_back,
+                      color: context.appScheme.onSurface,
+                    ),
+                    onPressed: () => Navigator.pop(context),
                   ),
-                  onPressed: () => Navigator.pop(context),
                 ),
-              ),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: InsightsFilterHeaderDelegate(
-                  timeframeOptions: insightsTimeframeOptions,
-                  selectedTimeframe: _selectedTimeframe,
-                  selectedWorkoutName: _selectedWorkoutName,
-                  selectedMuscleGroup: _selectedMuscleGroup,
-                  selectedEquipment: _selectedEquipment,
-                  selectedBodyWeight: _selectedBodyWeight,
-                  availableWorkoutNames: _availableWorkoutNames,
-                  onWorkoutChanged: (value) {
-                    setState(() {
-                      _selectedWorkoutName = value;
-                    });
-                  },
-                  onMuscleChanged: (value) {
-                    setState(() {
-                      _selectedMuscleGroup = value;
-                    });
-                  },
-                  onEquipmentChanged: (value) {
-                    setState(() {
-                      _selectedEquipment = value;
-                    });
-                  },
-                  onBodyWeightChanged: () {
-                    setState(() {
-                      _selectedBodyWeight = _selectedBodyWeight == true
-                          ? null
-                          : true;
-                    });
-                  },
-                  onClearAll: _clearAllFilters,
-                  onTimeframeChanged: _onTimeframeChanged,
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: InsightsFilterHeaderDelegate(
+                    timeframeOptions: insightsTimeframeOptions,
+                    selectedTimeframe: _selectedTimeframe,
+                    selectedWorkoutName: _selectedWorkoutName,
+                    selectedMuscleGroup: _selectedMuscleGroup,
+                    selectedEquipment: _selectedEquipment,
+                    selectedBodyWeight: _selectedBodyWeight,
+                    availableWorkoutNames: _availableWorkoutNames,
+                    onWorkoutChanged: (value) {
+                      setState(() {
+                        _selectedWorkoutName = value;
+                      });
+                    },
+                    onMuscleChanged: (value) {
+                      setState(() {
+                        _selectedMuscleGroup = value;
+                      });
+                    },
+                    onEquipmentChanged: (value) {
+                      setState(() {
+                        _selectedEquipment = value;
+                      });
+                    },
+                    onBodyWeightChanged: () {
+                      setState(() {
+                        _selectedBodyWeight = _selectedBodyWeight == true
+                            ? null
+                            : true;
+                      });
+                    },
+                    onClearAll: _clearAllFilters,
+                    onTimeframeChanged: _onTimeframeChanged,
+                  ),
                 ),
-              ),
-              SliverToBoxAdapter(
-                child: InsightsGraphCardsGrid(filters: filters),
-              ),
-              SliverToBoxAdapter(
-                child: InsightsQuickActionsCard(
-                  onBrowseExercises: _showExercisePicker,
+                SliverToBoxAdapter(
+                  child: InsightsGraphCardsGrid(filters: filters),
                 ),
-              ),
-              SliverToBoxAdapter(
-                child: InsightsTrendsSection(
-                  filters: filters,
-                  weightUnitLabel: _getWeightUnitLabel(),
+                SliverToBoxAdapter(
+                  child: InsightsQuickActionsCard(
+                    onBrowseExercises: _showExercisePicker,
+                  ),
                 ),
-              ),
-              const SliverToBoxAdapter(child: MainDockSpacer(extraSpace: 20)),
-            ],
+                SliverToBoxAdapter(
+                  child: InsightsTrendsSection(
+                    filters: filters,
+                    weightUnitLabel: _getWeightUnitLabel(),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: MainDockSpacer(extraSpace: 20)),
+              ],
+            ),
           ),
         );
       },

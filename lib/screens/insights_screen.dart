@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import '../screens/advanced_insights_screen.dart';
 import '../screens/insights/insights_history_mapper.dart';
 import '../screens/insights/insights_view_data.dart';
+import '../services/insights/insight_feed_service.dart';
 import '../services/insights_service.dart';
 import '../services/user_service.dart';
 import '../services/workout_service.dart';
 import '../widgets/insights/insight_feed_section.dart';
 import '../widgets/insights/insights_screen_sections.dart';
-import '../widgets/insights/weekly_muscle_activation_card.dart';
 import '../widgets/main_dock_spacer.dart';
 
 class InsightsScreen extends StatefulWidget {
@@ -22,6 +22,7 @@ class _InsightsScreenState extends State<InsightsScreen>
   bool _showCalendar = false;
   bool _hasWorkouts = true;
   bool _isCheckingWorkouts = true;
+  int _feedRefreshToken = 0;
 
   DateTime _selectedDate = DateTime.now();
   DateTime _focusedDate = DateTime.now();
@@ -100,6 +101,25 @@ class _InsightsScreenState extends State<InsightsScreen>
     );
   }
 
+  Future<void> _refreshPage() async {
+    await Future.wait([
+      InsightsService.instance.clearCache(),
+      InsightFeedService.instance.invalidateCache(),
+    ]);
+
+    await _checkWorkouts();
+
+    if (_showCalendar) {
+      await _loadCalendarData();
+    }
+
+    if (mounted) {
+      setState(() {
+        _feedRefreshToken++;
+      });
+    }
+  }
+
   Future<void> _loadWorkoutsForSelectedDate() async {
     setState(() {
       _isLoadingCalendar = true;
@@ -149,24 +169,28 @@ class _InsightsScreenState extends State<InsightsScreen>
       animation: UserService.instance,
       builder: (context, _) {
         return Scaffold(
-          body: CustomScrollView(
-            slivers: [
-              InsightsAppBar(
-                showCalendar: _showCalendar,
-                onShowCalendar: () {
-                  setState(() {
-                    _showCalendar = true;
-                  });
-                  _loadCalendarData();
-                },
-                onHideCalendar: () {
-                  setState(() {
-                    _showCalendar = false;
-                  });
-                },
-              ),
-              ..._buildMainContent(),
-            ],
+          body: RefreshIndicator(
+            onRefresh: _refreshPage,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                InsightsAppBar(
+                  showCalendar: _showCalendar,
+                  onShowCalendar: () {
+                    setState(() {
+                      _showCalendar = true;
+                    });
+                    _loadCalendarData();
+                  },
+                  onHideCalendar: () {
+                    setState(() {
+                      _showCalendar = false;
+                    });
+                  },
+                ),
+                ..._buildMainContent(),
+              ],
+            ),
           ),
         );
       },
@@ -197,8 +221,9 @@ class _InsightsScreenState extends State<InsightsScreen>
     }
 
     return [
-      const SliverToBoxAdapter(child: InsightsFeedSection()),
-      const SliverToBoxAdapter(child: WeeklyMuscleActivationCard()),
+      SliverToBoxAdapter(
+        child: InsightsFeedSection(refreshToken: _feedRefreshToken),
+      ),
       SliverToBoxAdapter(
         child: AdvancedInsightsLauncher(onPressed: _showAdvancedInsights),
       ),

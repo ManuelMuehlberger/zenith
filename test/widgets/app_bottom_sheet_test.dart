@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zenith/constants/app_constants.dart';
+import 'package:zenith/theme/app_theme.dart';
 import 'package:zenith/widgets/app_bottom_sheet.dart';
 
 Widget _wrap(Widget child) {
-  return MaterialApp(home: Scaffold(body: child));
+  return MaterialApp(
+    theme: AppTheme.light,
+    home: Scaffold(body: child),
+  );
 }
 
 void main() {
@@ -57,5 +61,31 @@ void main() {
       ),
       isTrue,
     );
+  });
+
+  testWidgets('showAppBottomSheet presents the provided sheet content', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showAppBottomSheet<void>(
+              context: context,
+              builder: (_) => const AppBottomSheet(
+                child: SizedBox(height: 40, child: Text('modal content')),
+              ),
+            ),
+            child: const Text('open'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AppBottomSheet), findsOneWidget);
+    expect(find.text('modal content'), findsOneWidget);
   });
 }

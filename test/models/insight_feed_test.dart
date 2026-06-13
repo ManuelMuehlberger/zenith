@@ -15,6 +15,16 @@ void main() {
         icon: 'bolt',
         generatedAt: DateTime.utc(2026, 6, 11, 10),
         sourceWorkoutId: 'workout-1',
+        visualType: InsightFeedVisualType.baselineBars,
+        size: InsightFeedCardSize.featured,
+        visualData: const {
+          'items': [
+            {'label': 'Baseline', 'value': 2.1},
+            {'label': 'Recent', 'value': 3.0},
+          ],
+        },
+        detailMetricLabel: 'Recent vs baseline',
+        comparisonLabel: 'Baseline 2.1 / wk',
       );
 
       final restored = InsightFeedCard.fromMap(card.toMap());
@@ -23,6 +33,11 @@ void main() {
       expect(restored.type, InsightFeedCardType.trainingVelocity);
       expect(restored.metric, '+28%');
       expect(restored.sourceWorkoutId, 'workout-1');
+      expect(restored.visualType, InsightFeedVisualType.baselineBars);
+      expect(restored.size, InsightFeedCardSize.featured);
+      expect(restored.visualData['items'], isA<List>());
+      expect(restored.detailMetricLabel, 'Recent vs baseline');
+      expect(restored.comparisonLabel, 'Baseline 2.1 / wk');
     });
   });
 
@@ -34,11 +49,21 @@ void main() {
         'enabled': true,
         'priority': 50,
         'params': {'recentDays': 7},
+        'visual': {
+          'enabled': true,
+          'type': 'calendarStrip',
+          'size': 'wide',
+          'params': {'baselineDays': 14},
+        },
       });
 
       expect(rule.type, InsightFeedCardType.consistencyPulse);
       expect(rule.enabled, isTrue);
       expect(rule.params['recentDays'], 7);
+      expect(rule.visual.enabled, isTrue);
+      expect(rule.visual.type, InsightFeedVisualType.calendarStrip);
+      expect(rule.visual.size, InsightFeedCardSize.wide);
+      expect(rule.visual.params['baselineDays'], 14);
     });
   });
 }
