@@ -53,6 +53,31 @@ void main() {
     expect(provider.assetName, 'assets/achievements/compact.png');
   });
 
+  testWidgets('prefers full thumbnail assets when compact mode is off', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: AwardThumbnailImage(
+            award: Award(
+              title: 'Full',
+              icon: Icons.star,
+              modelAsset: 'missing.glb',
+              thumbnailAsset: 'assets/achievements/full.png',
+              compactThumbnailAsset: 'assets/achievements/compact.png',
+            ),
+            size: 32,
+          ),
+        ),
+      ),
+    );
+
+    final image = tester.widget<Image>(find.byType(Image));
+    final provider = image.image as AssetImage;
+    expect(provider.assetName, 'assets/achievements/full.png');
+  });
+
   testWidgets('opens reusable app bottom sheet for award details', (
     tester,
   ) async {

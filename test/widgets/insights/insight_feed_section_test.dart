@@ -63,7 +63,7 @@ void main() {
 
     expect(find.text('Consistency pulse'), findsOneWidget);
     expect(find.text('3/7'), findsOneWidget);
-    expect(find.text('Last Workout'), findsOneWidget);
+    expect(find.text('LAST WORKOUT'), findsOneWidget);
   });
 
   testWidgets('renders feed stack headings in order', (tester) async {
@@ -109,8 +109,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Last Workout'), findsOneWidget);
-    expect(find.text('Recent Trends'), findsOneWidget);
+    expect(find.text('LAST WORKOUT'), findsOneWidget);
+    expect(find.text('RECENT TRENDS'), findsOneWidget);
     expect(find.text('Latest workout'), findsOneWidget);
     expect(find.byKey(const Key('insight_feed_stack_rail')), findsNWidgets(2));
     expect(find.byKey(const Key('insight_feed_page_dots')), findsOneWidget);
@@ -260,9 +260,12 @@ void main() {
     await tester.pump();
 
     final draggedHeight = tester.getSize(railFinder).height;
+    final tallCardHeight = tester
+        .getSize(find.byKey(const Key('insight_feed_page_card_tall')))
+        .height;
 
     expect(draggedHeight, greaterThan(initialHeight));
-    expect(draggedHeight, lessThan(396 + 16));
+    expect(draggedHeight, lessThan(tallCardHeight + 16));
 
     await gesture.up();
   });
@@ -305,6 +308,138 @@ void main() {
       find.byKey(const Key('insight_feed_visual_calendarStrip')),
       findsOneWidget,
     );
+    expect(find.text('previous 7'), findsOneWidget);
+    expect(find.text('last 7 days'), findsOneWidget);
+  });
+
+  testWidgets('renders baseline bar legend below the graph with delta labels', (
+    tester,
+  ) async {
+    final service = _FakeInsightFeedService(
+      cards: [
+        InsightFeedCard(
+          id: 'card-latest',
+          type: InsightFeedCardType.latestWorkoutComparison,
+          priority: 50,
+          title: 'Workout progress',
+          body: 'Workout latest compared with your recent baseline.',
+          metric: '+39%',
+          accent: 'success',
+          icon: 'chart',
+          generatedAt: DateTime(2026, 6, 11),
+          visualType: InsightFeedVisualType.baselineBars,
+          size: InsightFeedCardSize.wide,
+          visualData: const {
+            'items': [
+              {
+                'label': 'Duration',
+                'baseline': 36.0,
+                'actual': 50.0,
+                'deltaLabel': '70%',
+                'unit': 'min',
+              },
+              {
+                'label': 'Sets',
+                'baseline': 3.0,
+                'actual': 4.0,
+                'deltaLabel': '39%',
+                'unit': 'sets',
+              },
+              {
+                'label': 'Volume',
+                'baseline': 1500.0,
+                'actual': 2000.0,
+                'deltaLabel': '97%',
+                'unit': '',
+              },
+            ],
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Workout progress'), findsOneWidget);
+    expect(find.text('recent baseline'), findsNothing);
+    expect(find.text('+70%'), findsOneWidget);
+    expect(find.text('+39%'), findsNothing);
+    expect(find.text('+97%'), findsNothing);
+    expect(find.text('39%'), findsOneWidget);
+    expect(find.text('97%'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    expect(find.text('+39%'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    expect(find.text('+97%'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    expect(find.text('+70%'), findsOneWidget);
+
+    final cardHeight = tester
+        .getSize(find.byKey(const Key('insight_feed_page_card_card-latest')))
+        .height;
+    expect(cardHeight, 248);
+
+    final durationLabel = tester.getTopLeft(find.text('Duration'));
+    final baselineLegend = tester.getTopLeft(find.text('baseline'));
+    expect(baselineLegend.dy, greaterThan(durationLabel.dy));
+  });
+
+  testWidgets('labels body weight trend line and baseline', (tester) async {
+    final service = _FakeInsightFeedService(
+      cards: [
+        InsightFeedCard(
+          id: 'card-weight',
+          type: InsightFeedCardType.bodyWeightTrend,
+          priority: 50,
+          title: 'Body weight trend',
+          body: 'Your latest body weight compared with recent entries.',
+          metric: '+1.2',
+          accent: 'info',
+          icon: 'weight',
+          generatedAt: DateTime(2026, 6, 11),
+          visualType: InsightFeedVisualType.bodyWeightLine,
+          size: InsightFeedCardSize.wide,
+          visualData: const {
+            'points': [
+              {'label': '5/1', 'value': 81.2},
+              {'label': '5/15', 'value': 81.8},
+              {'label': '6/1', 'value': 82.4},
+            ],
+            'baseline': 81.2,
+            'unit': '',
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('insight_feed_visual_bodyWeightLine')),
+      findsOneWidget,
+    );
+    expect(find.text('logged weight'), findsOneWidget);
+    expect(find.text('start'), findsOneWidget);
+    expect(find.text('5/1'), findsOneWidget);
+    expect(find.text('6/1'), findsOneWidget);
   });
 
   testWidgets('renders radar legend labels', (tester) async {
@@ -315,7 +450,7 @@ void main() {
           type: InsightFeedCardType.muscleActivationRadar,
           priority: 90,
           title: 'Muscle focus',
-          body: 'Latest workout compared with your 14-day workout average.',
+          body: 'Latest workout compared with your recent average.',
           metric: '2',
           accent: 'primary',
           icon: 'radar',
@@ -323,8 +458,8 @@ void main() {
           visualType: InsightFeedVisualType.radar,
           size: InsightFeedCardSize.featured,
           visualData: const {
-            'plannedLabel': '14-day workout average',
-            'actualLabel': 'Last workout',
+            'plannedLabel': 'recent average',
+            'actualLabel': 'Push Day A',
             'points': [
               {
                 'axisId': 'chest',
@@ -360,8 +495,17 @@ void main() {
 
     expect(find.text('Muscle focus'), findsOneWidget);
     expect(find.byKey(const Key('insight_feed_visual_radar')), findsOneWidget);
-    expect(find.text('14-day workout average'), findsOneWidget);
-    expect(find.text('Last workout'), findsOneWidget);
+    expect(find.text('recent average'), findsOneWidget);
+    expect(find.text('Push Day A'), findsOneWidget);
+    expect(find.text('2'), findsNothing);
+
+    final latestLegend = tester.getTopLeft(
+      find.byKey(const Key('insight_feed_radar_legend_latest')),
+    );
+    final averageLegend = tester.getTopLeft(
+      find.byKey(const Key('insight_feed_radar_legend_average')),
+    );
+    expect(latestLegend.dx, lessThan(averageLegend.dx));
   });
 
   testWidgets('renders clickable award previews for achievement cards', (
@@ -416,6 +560,58 @@ void main() {
 
     expect(find.byType(AppBottomSheet), findsOneWidget);
     expect(find.byKey(const Key('award_reason_text')), findsOneWidget);
+  });
+
+  testWidgets('insets the achievement card icon evenly from top and left', (
+    tester,
+  ) async {
+    final achievement = WorkoutAchievement(
+      workoutId: 'workout-1',
+      ruleId: 'long_session',
+      type: WorkoutAchievementType.longSession,
+      title: 'Long Session',
+      reason: 'You trained longer than usual.',
+      earnedAt: DateTime(2026, 6, 11),
+      metrics: const {'durationMinutes': 90},
+    );
+    final service = _FakeInsightFeedService(
+      cards: [
+        InsightFeedCard(
+          id: 'card-1',
+          type: InsightFeedCardType.recentAchievementShoutout,
+          priority: 100,
+          title: 'Long Session',
+          body: 'You trained longer than usual.',
+          metric: '',
+          accent: 'primary',
+          icon: 'award',
+          generatedAt: DateTime(2026, 6, 11),
+          visualType: InsightFeedVisualType.awardPreview,
+          size: InsightFeedCardSize.wide,
+          visualData: {
+            'achievements': [achievement.toMap()],
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final cardTop = tester.getTopLeft(
+      find.byKey(const Key('insight_feed_visual_awardPreview')),
+    );
+    final iconTopLeft = tester.getTopLeft(
+      find.byKey(const Key('insight_feed_award_icon_container')),
+    );
+
+    expect(iconTopLeft.dx - cardTop.dx, closeTo(16, 0.01));
+    expect(iconTopLeft.dy - cardTop.dy, closeTo(16, 0.01));
   });
 }
 
