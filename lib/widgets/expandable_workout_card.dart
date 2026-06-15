@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:pull_down_button/pull_down_button.dart';
 
 import '../constants/app_constants.dart';
 import '../models/workout.dart';
@@ -13,7 +12,7 @@ import '../services/workout_template_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/navigation_helper.dart';
 import '../utils/workout_metrics.dart';
-import 'workouts_page_menu_theme.dart';
+import 'app_bottom_sheet.dart';
 
 class ExpandableWorkoutCard extends StatefulWidget {
   // Unified: support either a concrete Workout (legacy usage) or a WorkoutTemplate (preferred)
@@ -223,6 +222,16 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard> {
     }
   }
 
+  Future<void> _showActionsSheet() {
+    return showAppBottomSheet<void>(
+      context: context,
+      builder: (context) => _WorkoutTemplateActionsSheet(
+        onEditPressed: widget.onEditPressed,
+        onDeletePressed: widget.onDeletePressed,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.appScheme;
@@ -291,30 +300,19 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                buildWorkoutsPageMenuWrapper(
-                  context,
-                  child: PullDownButton(
-                    itemBuilder: (context) => [
-                      PullDownMenuItem(
-                        onTap: widget.onEditPressed,
-                        title: 'Edit Workout',
-                        icon: Icons.edit_outlined,
-                      ),
-                      PullDownMenuItem(
-                        onTap: widget.onDeletePressed,
-                        title: 'Delete Workout',
-                        isDestructive: true,
-                        icon: Icons.delete_outline_rounded,
-                      ),
-                    ],
-                    buttonBuilder: (context, showMenu) => _buildIconShell(
-                      child: Icon(
-                        Icons.more_horiz_rounded,
-                        color: colors.textSecondary,
-                        size: 18,
-                      ),
-                      onTap: showMenu,
-                    ),
+                IconButton(
+                  key: const Key('workout_card_more_button'),
+                  onPressed: _showActionsSheet,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 40,
+                    height: 40,
+                  ),
+                  splashRadius: 22,
+                  icon: Icon(
+                    Icons.more_horiz_rounded,
+                    color: colors.textSecondary,
+                    size: 28,
                   ),
                 ),
               ],
@@ -449,36 +447,101 @@ class _ExpandableWorkoutCardState extends State<ExpandableWorkoutCard> {
       margin: const EdgeInsets.symmetric(horizontal: 4),
     );
   }
+}
 
-  Widget _buildIconShell({required Widget child, required VoidCallback onTap}) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = context.appScheme;
+class _WorkoutTemplateActionsSheet extends StatelessWidget {
+  const _WorkoutTemplateActionsSheet({
+    required this.onEditPressed,
+    required this.onDeletePressed,
+  });
+
+  final VoidCallback onEditPressed;
+  final VoidCallback onDeletePressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = context.appScheme;
+    final textTheme = context.appText;
     final colors = context.appColors;
-    final transparentColor = colorScheme.surface.withValues(alpha: 0);
-    final shellColor = isDark
-        ? colors.surfaceAlt
-        : Color.alphaBlend(
-            colorScheme.primary.withValues(alpha: 0.04),
-            colors.surfaceAlt,
-          );
-    final shellBorderColor = isDark
-        ? transparentColor
-        : colors.textTertiary.withValues(alpha: 0.14);
 
-    return Material(
-      color: transparentColor,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: shellColor,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: shellBorderColor),
+    Widget actionTile({
+      required Key key,
+      required String label,
+      required IconData icon,
+      required VoidCallback onTap,
+      Color? color,
+    }) {
+      return Material(
+        color: colors.field.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          key: key,
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            Navigator.of(context).pop();
+            onTap();
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            child: Row(
+              children: [
+                Icon(icon, color: color ?? colors.textPrimary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: textTheme.titleSmall?.copyWith(
+                      color: color ?? colors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Center(child: child),
+        ),
+      );
+    }
+
+    return AppBottomSheet(
+      maxHeight: MediaQuery.of(context).size.height * 0.36,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const AppBottomSheetHandle(),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'WORKOUT ACTIONS',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: colors.textSecondary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            actionTile(
+              key: const Key('workout_action_edit'),
+              label: 'Edit Workout',
+              icon: Icons.edit_outlined,
+              onTap: onEditPressed,
+            ),
+            const SizedBox(height: 8),
+            actionTile(
+              key: const Key('workout_action_delete'),
+              label: 'Delete Workout',
+              icon: Icons.delete_outline_rounded,
+              color: scheme.error,
+              onTap: onDeletePressed,
+            ),
+          ],
         ),
       ),
     );

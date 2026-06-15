@@ -76,5 +76,47 @@ void main() {
         expect(find.text('root'), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'popToFolderInStack returns true when the target folder route exists',
+      (tester) async {
+        final navigatorKey = GlobalKey<NavigatorState>();
+
+        await tester.pumpWidget(
+          MaterialApp(
+            navigatorKey: navigatorKey,
+            home: const Scaffold(body: Text('root')),
+          ),
+        );
+
+        unawaited(
+          navigatorKey.currentState!.push(
+            MaterialPageRoute<void>(
+              settings: WorkoutBuilderScreen.routeSettingsForFolder('folder-7'),
+              builder: (_) => const Scaffold(body: Text('folder')),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        unawaited(
+          navigatorKey.currentState!.push(
+            MaterialPageRoute<void>(
+              builder: (_) => const Scaffold(body: Text('detail')),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final found = WorkoutBuilderScreen.popToFolderInStack(
+          navigatorKey.currentState!,
+          'folder-7',
+        );
+
+        expect(found, isTrue);
+        await tester.pumpAndSettle();
+        expect(find.text('folder'), findsOneWidget);
+      },
+    );
   });
 }

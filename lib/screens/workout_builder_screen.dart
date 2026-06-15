@@ -430,10 +430,10 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
     return Row(
       children: [
         Text(
-          title,
-          style: context.appText.titleMedium?.copyWith(
-            color: colors.textPrimary,
-            fontWeight: FontWeight.w700,
+          title.toUpperCase(),
+          style: context.appText.labelMedium?.copyWith(
+            color: colors.textSecondary,
+            fontWeight: FontWeight.w800,
           ),
         ),
         const SizedBox(width: 10),
