@@ -91,11 +91,11 @@ class _ReorderableWorkoutTemplateListState
                       Flexible(
                         child: Text(
                           widget.folderId != null
-                              ? 'Workouts in folder'
-                              : 'Workouts',
-                          style: textTheme.titleMedium?.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
+                              ? 'WORKOUTS IN FOLDER'
+                              : 'WORKOUTS',
+                          style: textTheme.labelMedium?.copyWith(
+                            color: colors.textSecondary,
+                            fontWeight: FontWeight.w800,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),

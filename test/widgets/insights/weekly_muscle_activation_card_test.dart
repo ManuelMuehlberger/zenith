@@ -21,7 +21,7 @@ void main() {
     InsightsService.instance.reset();
   });
 
-  testWidgets('renders 14-day activation with latest workout overlay', (
+  testWidgets('renders last-month activation with latest workout overlay', (
     tester,
   ) async {
     final now = DateTime(2026, 6, 11, 12);
@@ -65,11 +65,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('14-day activation with your latest workout overlay'),
+      find.text('Last month activation with your latest workout overlay'),
       findsOneWidget,
     );
     expect(activationService.loadedConfigCount, 1);
-    expect(find.text('Last 14 days'), findsNWidgets(2));
+    expect(find.text('Last month'), findsNWidgets(2));
     expect(find.text('Last workout'), findsOneWidget);
   });
 
@@ -87,7 +87,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Last 14 days'), findsNothing);
+    expect(find.text('Last month'), findsNothing);
   });
 }
 

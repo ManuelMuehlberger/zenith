@@ -147,7 +147,7 @@
       "enabled": true,
       "priority": 85,
       "params": {
-        "recentDays": 14,
+        "recentDays": 30,
         "minWorkouts": 1
       },
       "visual": {
@@ -155,7 +155,7 @@
         "type": "radar",
         "size": "featured",
         "params": {
-          "recentDays": 14
+          "recentDays": 30
         }
       }
     },
@@ -166,7 +166,7 @@
       "enabled": true,
       "priority": 78,
       "params": {
-        "baselineWorkouts": 8,
+        "baselineDays": 30,
         "minBaselineWorkouts": 2
       },
       "visual": {
@@ -174,7 +174,7 @@
         "type": "baselineBars",
         "size": "wide",
         "params": {
-          "baselineWorkouts": 8
+          "baselineDays": 30
         }
       }
     },

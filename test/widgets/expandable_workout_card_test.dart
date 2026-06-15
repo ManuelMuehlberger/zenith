@@ -4,6 +4,7 @@ import 'package:zenith/models/workout.dart';
 import 'package:zenith/models/workout_exercise.dart';
 import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/models/workout_template.dart';
+import 'package:zenith/widgets/app_bottom_sheet.dart';
 import 'package:zenith/widgets/expandable_workout_card.dart';
 
 void main() {
@@ -396,6 +397,51 @@ void main() {
 
       expect(find.text('Empty Template'), findsOneWidget);
       expect(find.text('0'), findsWidgets);
+    },
+  );
+
+  testWidgets(
+    'ExpandableWorkoutCard opens bottom sheet actions from the menu button',
+    (WidgetTester tester) async {
+      final template = WorkoutTemplate(
+        id: 'template-actions',
+        name: 'Template Workout',
+        iconCodePoint: 0xe1a3,
+        colorValue: 0xFF2196F3,
+      );
+      var editTapped = 0;
+      var deleteTapped = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ExpandableWorkoutCard(
+              template: template,
+              loadTemplateExercises: (_) async => const [],
+              index: 0,
+              onEditPressed: () => editTapped++,
+              onDeletePressed: () => deleteTapped++,
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('workout_card_more_button')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(AppBottomSheet), findsOneWidget);
+      expect(find.text('WORKOUT ACTIONS'), findsOneWidget);
+      expect(find.text('Edit Workout'), findsOneWidget);
+      expect(find.text('Delete Workout'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('workout_action_edit')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(editTapped, 1);
+      expect(deleteTapped, 0);
+      expect(find.byType(AppBottomSheet), findsNothing);
     },
   );
 }

@@ -75,9 +75,10 @@ class _WeeklyMuscleActivationCardState
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: WorkoutMuscleActivationRadarCard(
             profile: profile,
-            title: 'Last 14 days',
-            idleSubtitle: '14-day activation with your latest workout overlay',
-            plannedLabel: 'Last 14 days',
+            title: 'Last month',
+            idleSubtitle:
+                'Last month activation with your latest workout overlay',
+            plannedLabel: 'Last month',
             actualLabel: 'Last workout',
           ),
         );
@@ -138,7 +139,7 @@ class _WeeklyMuscleActivationCardState
     Iterable<Workout> workouts,
     DateTime now,
   ) {
-    final windowStart = now.subtract(const Duration(days: 14));
+    final windowStart = now.subtract(const Duration(days: 30));
     return workouts.where((workout) {
       if (workout.status != WorkoutStatus.completed) {
         return false;
