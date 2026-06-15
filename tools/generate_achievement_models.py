@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "assets" / "achievements"
 NUMBER_FONT_PATH = Path("/System/Library/Fonts/SFNSRounded.ttf")
 THUMBNAIL_SIZES = ((512, ""), (128, "_compact"))
+ALPHA_CENTERING_THRESHOLD = 0.02
 
 
 def clear_scene():
@@ -544,6 +545,50 @@ def export(name):
     )
 
 
+def center_thumbnail(path):
+    image = bpy.data.images.load(str(path))
+    width, height = image.size
+    pixels = list(image.pixels)
+    min_y = height
+    max_y = -1
+
+    for y in range(height):
+        row_start = y * width * 4
+        for x in range(width):
+            alpha = pixels[row_start + x * 4 + 3]
+            if alpha > ALPHA_CENTERING_THRESHOLD:
+                min_y = min(min_y, y)
+                max_y = max(max_y, y)
+
+    if max_y < min_y:
+        bpy.data.images.remove(image)
+        return
+
+    content_center = (min_y + max_y) / 2
+    target_center = (height - 1) / 2
+    shift_y = round(target_center - content_center)
+    if shift_y == 0:
+        bpy.data.images.remove(image)
+        return
+
+    shifted = [0.0] * len(pixels)
+    for y in range(height):
+        target_y = y + shift_y
+        if target_y < 0 or target_y >= height:
+            continue
+        source_start = y * width * 4
+        target_start = target_y * width * 4
+        shifted[target_start : target_start + width * 4] = pixels[
+            source_start : source_start + width * 4
+        ]
+
+    image.pixels = shifted
+    image.filepath_raw = str(path)
+    image.file_format = "PNG"
+    image.save()
+    bpy.data.images.remove(image)
+
+
 def render_thumbnail(name):
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     bpy.context.scene.render.engine = "BLENDER_EEVEE_NEXT"
@@ -564,6 +609,7 @@ def render_thumbnail(name):
             OUT_DIR / name.replace(".glb", f"{suffix}.png")
         )
         bpy.ops.render.render(write_still=True)
+        center_thumbnail(Path(bpy.context.scene.render.filepath))
 
 
 def build_award(name, palette, emblem, base_builder=make_base):
