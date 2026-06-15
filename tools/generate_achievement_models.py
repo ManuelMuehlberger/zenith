@@ -8,6 +8,7 @@ from mathutils import Vector
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "assets" / "achievements"
 NUMBER_FONT_PATH = Path("/System/Library/Fonts/SFNSRounded.ttf")
+THUMBNAIL_SIZES = ((512, ""), (128, "_compact"))
 
 
 def clear_scene():
@@ -546,17 +547,17 @@ def export(name):
 def render_thumbnail(name):
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     bpy.context.scene.render.engine = "BLENDER_EEVEE_NEXT"
-    bpy.context.scene.eevee.taa_render_samples = 64
+    bpy.context.scene.eevee.taa_render_samples = 128
     bpy.context.scene.render.film_transparent = True
     bpy.context.scene.view_settings.view_transform = "Filmic"
     bpy.context.scene.view_settings.look = "Medium High Contrast"
     camera = bpy.context.scene.camera
-    camera.location = (0, 0, 4.0)
-    direction = Vector((0, 0, 0.08)) - camera.location
+    camera.location = (0.0, -0.7, 4.35)
+    direction = Vector((0, 0, 0.1)) - camera.location
     camera.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
-    camera.data.type = "ORTHO"
-    camera.data.ortho_scale = 2.2
-    for size, suffix in ((128, ""), (48, "_compact")):
+    camera.data.type = "PERSP"
+    camera.data.lens = 78
+    for size, suffix in THUMBNAIL_SIZES:
         bpy.context.scene.render.resolution_x = size
         bpy.context.scene.render.resolution_y = size
         bpy.context.scene.render.filepath = str(
