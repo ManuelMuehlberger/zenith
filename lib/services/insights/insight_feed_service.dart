@@ -39,8 +39,8 @@ class InsightFeedService {
   static const String defaultRulesAsset =
       'assets/insights/insight_feed_rules.json';
   static const String _feedCacheKey = 'insight_feed_cache';
-  static const int _feedCacheVersion = 2;
-  static const int _feedStackCacheVersion = 1;
+  static const int _feedCacheVersion = 4;
+  static const int _feedStackCacheVersion = 3;
 
   final AssetBundle _assetBundle;
   final Future<List<Workout>> Function()? _workoutsProvider;
@@ -675,7 +675,7 @@ class InsightFeedService {
     if (!rule.visual.enabled) {
       return null;
     }
-    final recentDays = _intParam(rule, 'recentDays', 14);
+    final recentDays = _intParam(rule, 'recentDays', 30);
     final minWorkouts = _intParam(rule, 'minWorkouts', 1);
     final windowStart = now.subtract(Duration(days: recentDays));
     final recentWorkouts = _hydrateWorkouts(
@@ -726,23 +726,25 @@ class InsightFeedService {
       return null;
     }
 
+    const referenceLabel = 'recent average';
+    final latestWorkoutLabel = _latestWorkoutLabel(recentWorkouts.first);
+
     return _card(
       rule: rule,
       id: rule.id,
       title: 'Muscle focus',
-      body:
-          'Latest workout compared with your $recentDays-day workout average.',
+      body: 'Latest workout compared with your $referenceLabel.',
       metric: '${recentWorkouts.length}',
       accent: 'primary',
       icon: 'radar',
       generatedAt: now,
       sourceWorkoutId: recentWorkouts.first.id,
       detailMetricLabel: 'Recent workouts',
-      comparisonLabel: '$recentDays-day workout average',
+      comparisonLabel: referenceLabel,
       visualData: {
         'points': points,
-        'plannedLabel': '$recentDays-day workout average',
-        'actualLabel': 'Last workout',
+        'plannedLabel': referenceLabel,
+        'actualLabel': latestWorkoutLabel,
       },
     );
   }
@@ -756,13 +758,16 @@ class InsightFeedService {
       return null;
     }
     final latest = workouts.last;
-    final baselineWorkouts = _intParam(rule, 'baselineWorkouts', 8);
+    final baselineDays = _intParam(rule, 'baselineDays', 30);
     final minBaselineWorkouts = _intParam(rule, 'minBaselineWorkouts', 2);
+    final latestDate = _workoutDate(latest);
+    final baselineStart = latestDate.subtract(Duration(days: baselineDays));
     final baseline = workouts
         .take(workouts.length - 1)
-        .toList(growable: false)
-        .reversed
-        .take(baselineWorkouts)
+        .where((workout) {
+          final date = _workoutDate(workout);
+          return !date.isBefore(baselineStart) && date.isBefore(latestDate);
+        })
         .toList(growable: false);
     if (baseline.length < minBaselineWorkouts) {
       return null;
@@ -785,9 +790,10 @@ class InsightFeedService {
             .fold<double>(0, (sum, v) => sum + v) /
         baseline.length;
 
-    final deltaPercent = baselineVolume <= 0
-        ? 0.0
-        : ((latestVolume - baselineVolume) / baselineVolume) * 100;
+    final deltaPercent = _deltaPercent(
+      baseline: baselineVolume,
+      actual: latestVolume,
+    );
     final metric = baselineVolume > 0
         ? '${deltaPercent >= 0 ? '+' : ''}${deltaPercent.round()}%'
         : '${latestSets.round()} sets';
@@ -795,33 +801,44 @@ class InsightFeedService {
     return _card(
       rule: rule,
       id: '${rule.id}_${latest.id}',
-      title: 'Latest workout',
-      body: '${latest.name} compared with your recent workout baseline.',
+      title: 'Workout progress',
+      body: '${latest.name} compared with your recent baseline.',
       metric: metric,
       accent: deltaPercent >= 0 ? 'success' : 'info',
       icon: 'chart',
       generatedAt: now,
       sourceWorkoutId: latest.id,
       detailMetricLabel: 'Latest vs baseline',
-      comparisonLabel: '${baseline.length} workout baseline',
       visualData: {
         'items': [
           {
             'label': 'Duration',
             'baseline': baselineDuration,
             'actual': latestDuration,
+            'deltaLabel': _deltaLabel(
+              baseline: baselineDuration,
+              actual: latestDuration,
+            ),
             'unit': 'min',
           },
           {
             'label': 'Sets',
             'baseline': baselineSets,
             'actual': latestSets,
+            'deltaLabel': _deltaLabel(
+              baseline: baselineSets,
+              actual: latestSets,
+            ),
             'unit': 'sets',
           },
           {
             'label': 'Volume',
             'baseline': baselineVolume,
             'actual': latestVolume,
+            'deltaLabel': _deltaLabel(
+              baseline: baselineVolume,
+              actual: latestVolume,
+            ),
             'unit': '',
           },
         ],
@@ -1018,6 +1035,11 @@ class InsightFeedService {
     };
   }
 
+  String _latestWorkoutLabel(Workout workout) {
+    final trimmedName = workout.name.trim();
+    return trimmedName.isEmpty ? 'Last workout' : trimmedName;
+  }
+
   List<WeightEntry> _weightHistory() {
     return _weightHistoryProvider?.call() ??
         UserService.instance.currentProfile?.weightHistory ??
@@ -1079,6 +1101,21 @@ class InsightFeedService {
   int _intParam(InsightFeedRule rule, String key, int fallback) {
     final value = rule.params[key];
     return value is num ? value.round() : fallback;
+  }
+
+  double _deltaPercent({required double baseline, required double actual}) {
+    if (baseline <= 0) {
+      return 0;
+    }
+    return ((actual - baseline) / baseline) * 100;
+  }
+
+  String _deltaLabel({required double baseline, required double actual}) {
+    if (baseline <= 0) {
+      return '';
+    }
+    final delta = _deltaPercent(baseline: baseline, actual: actual).round();
+    return '$delta%';
   }
 
   double _numParam(InsightFeedRule rule, String key, num fallback) {

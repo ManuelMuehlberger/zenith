@@ -345,6 +345,84 @@ void main() {
     expect(cards.single.type, InsightFeedCardType.latestWorkoutComparison);
   });
 
+  test('latest workout comparison uses a recent one-month baseline', () async {
+    final now = DateTime(2026, 6, 20, 12);
+    final service = InsightFeedService(
+      assetBundle: _StringAssetBundle({
+        rulesAsset: '''
+{
+  "rules": [
+    {"id": "latest", "type": "latestWorkoutComparison", "enabled": true, "priority": 90, "params": {"baselineDays": 30, "minBaselineWorkouts": 2}, "visual": {"enabled": true, "type": "baselineBars", "size": "wide", "params": {}}}
+  ]
+}
+''',
+      }),
+      workoutsProvider: () async => [
+        _workout(
+          id: 'older',
+          completedAt: now.subtract(const Duration(days: 45)),
+          setCount: 4,
+          weight: 80,
+        ),
+        _workout(
+          id: 'baseline-1',
+          completedAt: now.subtract(const Duration(days: 20)),
+          setCount: 3,
+          weight: 50,
+        ),
+        _workout(
+          id: 'baseline-2',
+          completedAt: now.subtract(const Duration(days: 10)),
+          setCount: 3,
+          weight: 50,
+        ),
+        _workout(
+          id: 'latest',
+          completedAt: now.subtract(const Duration(days: 1)),
+          setCount: 4,
+          weight: 50,
+        ),
+      ],
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(
+        cacheKey: 'feed-test-latest-baseline',
+      ),
+    );
+
+    final cards = await service.getCards(maxCards: 10);
+    final latest = cards.singleWhere(
+      (card) => card.type == InsightFeedCardType.latestWorkoutComparison,
+    );
+
+    expect(latest.title, 'Workout progress');
+    expect(latest.body, 'Workout latest compared with your recent baseline.');
+    expect(latest.comparisonLabel, isNull);
+    expect(latest.metric, '+33%');
+    expect(latest.visualData['items'], [
+      {
+        'label': 'Duration',
+        'baseline': 45.0,
+        'actual': 45.0,
+        'deltaLabel': '0%',
+        'unit': 'min',
+      },
+      {
+        'label': 'Sets',
+        'baseline': 3.0,
+        'actual': 4.0,
+        'deltaLabel': '33%',
+        'unit': 'sets',
+      },
+      {
+        'label': 'Volume',
+        'baseline': 1500.0,
+        'actual': 2000.0,
+        'deltaLabel': '33%',
+        'unit': '',
+      },
+    ]);
+  });
+
   test('generates momentum, intensity, and velocity cards', () async {
     final now = DateTime(2026, 6, 20, 12);
     final service = InsightFeedService(
@@ -477,7 +555,7 @@ void main() {
         rulesAsset: '''
 {
   "rules": [
-    {"id": "radar", "type": "muscleActivationRadar", "enabled": true, "priority": 90, "params": {"recentDays": 14, "minWorkouts": 1}, "visual": {"enabled": true, "type": "radar", "size": "featured", "params": {}}},
+    {"id": "radar", "type": "muscleActivationRadar", "enabled": true, "priority": 90, "params": {"recentDays": 30, "minWorkouts": 1}, "visual": {"enabled": true, "type": "radar", "size": "featured", "params": {}}},
     {"id": "latest", "type": "latestWorkoutComparison", "enabled": true, "priority": 80, "params": {"baselineWorkouts": 8, "minBaselineWorkouts": 2}, "visual": {"enabled": true, "type": "baselineBars", "size": "wide", "params": {}}},
     {"id": "weight", "type": "bodyWeightTrend", "enabled": true, "priority": 70, "params": {"lookbackDays": 90, "minSamples": 2}, "visual": {"enabled": true, "type": "bodyWeightLine", "size": "wide", "params": {}}}
   ]
@@ -521,18 +599,26 @@ void main() {
     expect(types, contains(InsightFeedCardType.muscleActivationRadar));
     expect(types, contains(InsightFeedCardType.latestWorkoutComparison));
     expect(types, contains(InsightFeedCardType.bodyWeightTrend));
+    final latest = cards.firstWhere(
+      (card) => card.type == InsightFeedCardType.latestWorkoutComparison,
+    );
+    expect(latest.title, 'Workout progress');
+    expect(latest.comparisonLabel, isNull);
+    expect(
+      (latest.visualData['items'] as List<dynamic>)
+          .cast<Map<String, Object?>>()
+          .map((item) => item['deltaLabel']),
+      ['0%', '67%', '67%'],
+    );
     final radar = cards.firstWhere(
       (card) => card.type == InsightFeedCardType.muscleActivationRadar,
     );
     expect(radar.visualType, InsightFeedVisualType.radar);
     expect(radar.title, 'Muscle focus');
-    expect(
-      radar.body,
-      'Latest workout compared with your 14-day workout average.',
-    );
-    expect(radar.comparisonLabel, '14-day workout average');
-    expect(radar.visualData['plannedLabel'], '14-day workout average');
-    expect(radar.visualData['actualLabel'], 'Last workout');
+    expect(radar.body, 'Latest workout compared with your recent average.');
+    expect(radar.comparisonLabel, 'recent average');
+    expect(radar.visualData['plannedLabel'], 'recent average');
+    expect(radar.visualData['actualLabel'], 'Workout latest');
 
     final radarPoints = (radar.visualData['points'] as List<dynamic>)
         .cast<Map<String, Object?>>();

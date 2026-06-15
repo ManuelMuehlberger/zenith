@@ -82,24 +82,51 @@ class _AwardThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final thumbnailAsset = award.compactThumbnailAsset ?? award.thumbnailAsset;
-
     return SizedBox(
       width: size,
       height: size,
       child: Center(
-        child: thumbnailAsset == null
-            ? _AwardFallbackIcon(award: award, size: size)
-            : Image.asset(
-                thumbnailAsset,
-                width: size,
-                height: size,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return _AwardFallbackIcon(award: award, size: size);
-                },
-              ),
+        child: AwardThumbnailImage(
+          award: award,
+          size: size,
+          preferCompact: true,
+        ),
       ),
+    );
+  }
+}
+
+// policy: allow-public-api shared static award thumbnail used by timeline and insights previews.
+class AwardThumbnailImage extends StatelessWidget {
+  const AwardThumbnailImage({
+    super.key,
+    required this.award,
+    required this.size,
+    this.preferCompact = false,
+  });
+
+  final Award award;
+  final double size;
+  final bool preferCompact;
+
+  @override
+  Widget build(BuildContext context) {
+    final thumbnailAsset = preferCompact
+        ? award.compactThumbnailAsset ?? award.thumbnailAsset
+        : award.thumbnailAsset ?? award.compactThumbnailAsset;
+
+    if (thumbnailAsset == null) {
+      return _AwardFallbackIcon(award: award, size: size);
+    }
+
+    return Image.asset(
+      thumbnailAsset,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) {
+        return _AwardFallbackIcon(award: award, size: size);
+      },
     );
   }
 }
