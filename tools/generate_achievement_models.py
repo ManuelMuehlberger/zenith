@@ -549,7 +549,9 @@ def center_thumbnail(path):
     image = bpy.data.images.load(str(path))
     width, height = image.size
     pixels = list(image.pixels)
+    min_x = width
     min_y = height
+    max_x = -1
     max_y = -1
 
     for y in range(height):
@@ -557,17 +559,22 @@ def center_thumbnail(path):
         for x in range(width):
             alpha = pixels[row_start + x * 4 + 3]
             if alpha > ALPHA_CENTERING_THRESHOLD:
+                min_x = min(min_x, x)
                 min_y = min(min_y, y)
+                max_x = max(max_x, x)
                 max_y = max(max_y, y)
 
     if max_y < min_y:
         bpy.data.images.remove(image)
         return
 
+    content_center_x = (min_x + max_x) / 2
     content_center = (min_y + max_y) / 2
-    target_center = (height - 1) / 2
-    shift_y = round(target_center - content_center)
-    if shift_y == 0:
+    target_center_x = (width - 1) / 2
+    target_center_y = (height - 1) / 2
+    shift_x = round(target_center_x - content_center_x)
+    shift_y = round(target_center_y - content_center)
+    if shift_x == 0 and shift_y == 0:
         bpy.data.images.remove(image)
         return
 
@@ -576,11 +583,15 @@ def center_thumbnail(path):
         target_y = y + shift_y
         if target_y < 0 or target_y >= height:
             continue
-        source_start = y * width * 4
-        target_start = target_y * width * 4
-        shifted[target_start : target_start + width * 4] = pixels[
-            source_start : source_start + width * 4
-        ]
+        for x in range(width):
+            target_x = x + shift_x
+            if target_x < 0 or target_x >= width:
+                continue
+            source_index = (y * width + x) * 4
+            target_index = (target_y * width + target_x) * 4
+            shifted[target_index : target_index + 4] = pixels[
+                source_index : source_index + 4
+            ]
 
     image.pixels = shifted
     image.filepath_raw = str(path)
@@ -601,7 +612,7 @@ def render_thumbnail(name):
     direction = Vector((0, 0, 0.1)) - camera.location
     camera.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
     camera.data.type = "PERSP"
-    camera.data.lens = 78
+    camera.data.lens = 72
     for size, suffix in THUMBNAIL_SIZES:
         bpy.context.scene.render.resolution_x = size
         bpy.context.scene.render.resolution_y = size
