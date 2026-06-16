@@ -381,6 +381,9 @@ class InsightFeedService {
     final recentDays = _intParam(rule, 'recentDays', 7);
     final baselineDays = _intParam(rule, 'baselineDays', 90);
     final minimumDeltaPercent = _numParam(rule, 'minimumDeltaPercent', 20);
+    if (recentDays <= 0 || baselineDays <= 0) {
+      return null;
+    }
     final recentStart = now.subtract(Duration(days: recentDays));
     final baselineStart = recentStart.subtract(Duration(days: baselineDays));
     final recent = workouts
@@ -418,22 +421,22 @@ class InsightFeedService {
       rule: rule,
       id: rule.id,
       title: 'Training velocity',
-      body: up
-          ? 'Your last $recentDays days are moving faster than your recent baseline.'
-          : 'Your last $recentDays days are lighter than your recent baseline.',
+      body:
+          '${recentWeeklyPace.toStringAsFixed(1)} workouts/week in the last $recentDays days.',
       metric: percentText,
       accent: up ? 'success' : 'warning',
       icon: 'bolt',
       generatedAt: now,
-      detailMetricLabel: 'Recent vs baseline',
-      comparisonLabel: 'Baseline ${baselineWeeklyPace.toStringAsFixed(1)} / wk',
-      visualData: _baselineVisualData(
-        recentLabel: 'Recent',
+      detailMetricLabel: 'Workout rate',
+      comparisonLabel:
+          'Previous $baselineDays days average: ${baselineWeeklyPace.toStringAsFixed(1)} workouts/week',
+      visualData: _trainingVelocityVisualData(
+        workouts: workouts,
+        now: now,
+        recentDays: recentDays,
+        baselineDays: baselineDays,
         recentValue: recentWeeklyPace,
-        baselineLabel: 'Baseline',
         baselineValue: baselineWeeklyPace,
-        unit: 'workouts / wk',
-        deltaPercent: deltaPercent,
       ),
     );
   }
@@ -444,6 +447,9 @@ class InsightFeedService {
     DateTime now,
   ) {
     final maxAgeDays = _intParam(rule, 'maxAgeDays', 14);
+    if (maxAgeDays <= 0) {
+      return null;
+    }
     final cutoff = now.subtract(Duration(days: maxAgeDays));
     final achievements =
         workouts
@@ -485,6 +491,9 @@ class InsightFeedService {
   ) {
     final lookbackDays = _intParam(rule, 'lookbackDays', 90);
     final minimumPercentile = _numParam(rule, 'minimumPercentile', 90);
+    if (lookbackDays <= 0 || minimumPercentile <= 0) {
+      return null;
+    }
     final latest = workouts.last;
     final latestDate = _workoutDate(latest);
     final historyStart = latestDate.subtract(Duration(days: lookbackDays));
@@ -538,6 +547,9 @@ class InsightFeedService {
   ) {
     final recentDays = _intParam(rule, 'recentDays', 7);
     final minimumWorkouts = _intParam(rule, 'minimumWorkouts', 2);
+    if (recentDays <= 0 || minimumWorkouts <= 0) {
+      return null;
+    }
     final cutoff = now.subtract(Duration(days: recentDays));
     final recentCount = workouts.where((workout) {
       final date = _workoutDate(workout);
@@ -602,6 +614,9 @@ class InsightFeedService {
     DateTime now,
   ) {
     final minGapDays = _intParam(rule, 'minGapDays', 7);
+    if (minGapDays <= 0) {
+      return null;
+    }
     if (workouts.length < 2) {
       return null;
     }
@@ -677,6 +692,9 @@ class InsightFeedService {
     }
     final recentDays = _intParam(rule, 'recentDays', 30);
     final minWorkouts = _intParam(rule, 'minWorkouts', 1);
+    if (recentDays <= 0 || minWorkouts <= 0) {
+      return null;
+    }
     final windowStart = now.subtract(Duration(days: recentDays));
     final recentWorkouts = _hydrateWorkouts(
       workouts
@@ -760,6 +778,9 @@ class InsightFeedService {
     final latest = workouts.last;
     final baselineDays = _intParam(rule, 'baselineDays', 30);
     final minBaselineWorkouts = _intParam(rule, 'minBaselineWorkouts', 2);
+    if (baselineDays <= 0 || minBaselineWorkouts <= 0) {
+      return null;
+    }
     final latestDate = _workoutDate(latest);
     final baselineStart = latestDate.subtract(Duration(days: baselineDays));
     final baseline = workouts
@@ -852,6 +873,9 @@ class InsightFeedService {
     }
     final lookbackDays = _intParam(rule, 'lookbackDays', 90);
     final minSamples = _intParam(rule, 'minSamples', 2);
+    if (lookbackDays <= 0 || minSamples < 2) {
+      return null;
+    }
     final cutoff = now.subtract(Duration(days: lookbackDays));
     final entries = [..._weightHistory()]
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
@@ -932,21 +956,66 @@ class InsightFeedService {
     );
   }
 
-  Map<String, Object?> _baselineVisualData({
-    required String recentLabel,
+  Map<String, Object?> _trainingVelocityVisualData({
+    required List<Workout> workouts,
+    required DateTime now,
+    required int recentDays,
+    required int baselineDays,
     required double recentValue,
-    required String baselineLabel,
     required double baselineValue,
-    required String unit,
-    required double deltaPercent,
   }) {
+    final totalDays = recentDays + baselineDays;
+    final windowDays = math.max(1, recentDays);
+    final sampleStepDays = math.min(7, windowDays);
+    final earliestAnchor = now
+        .subtract(Duration(days: totalDays))
+        .add(Duration(days: windowDays));
+    final points = <Map<String, Object?>>[];
+    var anchor = earliestAnchor;
+
+    while (anchor.isBefore(now)) {
+      points.add(_trainingVelocityPoint(workouts, anchor, windowDays));
+      anchor = anchor.add(Duration(days: sampleStepDays));
+    }
+    points.add(_trainingVelocityPoint(workouts, now, windowDays));
+
     return {
-      'items': [
-        {'label': baselineLabel, 'value': baselineValue},
-        {'label': recentLabel, 'value': recentValue},
+      'points': points,
+      'average': baselineValue,
+      'averageLabel': 'base',
+      'seriesLabel': 'weekly',
+      'unit': 'workouts/week',
+      'summaryItems': [
+        {
+          'color': 'accent',
+          'label': 'Recent',
+          'value': recentValue,
+          'displayValue': '${recentValue.toStringAsFixed(1)}/wk',
+        },
+        {
+          'color': 'baseline',
+          'label': 'Baseline',
+          'value': baselineValue,
+          'displayValue': '${baselineValue.toStringAsFixed(1)}/wk',
+        },
       ],
-      'unit': unit,
-      'deltaPercent': deltaPercent,
+    };
+  }
+
+  Map<String, Object?> _trainingVelocityPoint(
+    List<Workout> workouts,
+    DateTime anchor,
+    int windowDays,
+  ) {
+    final windowStart = anchor.subtract(Duration(days: windowDays));
+    final count = workouts.where((workout) {
+      final date = _workoutDate(workout);
+      return !date.isBefore(windowStart) && !date.isAfter(anchor);
+    }).length;
+
+    return {
+      'label': '${anchor.month}/${anchor.day}',
+      'value': count / windowDays * 7,
     };
   }
 
@@ -956,6 +1025,9 @@ class InsightFeedService {
     DateTime now,
     double previousBest,
   ) {
+    if (lookbackDays <= 0) {
+      return const {};
+    }
     final cutoff = now.subtract(Duration(days: lookbackDays));
     final visible = workouts
         .where((workout) {
@@ -963,6 +1035,9 @@ class InsightFeedService {
           return !date.isBefore(cutoff) && !date.isAfter(now);
         })
         .toList(growable: false);
+    if (visible.length < 2) {
+      return const {};
+    }
 
     return {
       'points': visible
