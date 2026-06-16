@@ -43,7 +43,7 @@ void main() {
           id: 'card-1',
           type: InsightFeedCardType.consistencyPulse,
           priority: 50,
-          title: 'Consistency pulse',
+          title: 'Training rhythm',
           body: 'You trained 3 times in the last 7 days.',
           metric: '3/7',
           accent: 'info',
@@ -61,7 +61,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Consistency pulse'), findsOneWidget);
+    expect(find.text('Training rhythm'), findsOneWidget);
     expect(find.text('3/7'), findsOneWidget);
     expect(find.text('LAST WORKOUT'), findsOneWidget);
   });
@@ -93,7 +93,7 @@ void main() {
           cards: [
             _feedCard(
               id: 'consistency',
-              title: 'Consistency pulse',
+              title: 'Training rhythm',
               type: InsightFeedCardType.consistencyPulse,
             ),
           ],
@@ -277,7 +277,7 @@ void main() {
           id: 'card-1',
           type: InsightFeedCardType.consistencyPulse,
           priority: 50,
-          title: 'Consistency pulse',
+          title: 'Training rhythm',
           body:
               'You trained 3 times in the last 14 days compared with your previous pattern.',
           metric: '3/14',
@@ -286,10 +286,27 @@ void main() {
           generatedAt: DateTime(2026, 6, 11),
           visualType: InsightFeedVisualType.calendarStrip,
           size: InsightFeedCardSize.wide,
-          comparisonLabel: 'Previous 14 days: 2 workouts',
           visualData: const {
             'recentDays': [true, false, true, false, false, true, false],
+            'recentLabels': [
+              '4 Jun',
+              '5 Jun',
+              '6 Jun',
+              '7 Jun',
+              '8 Jun',
+              '9 Jun',
+              '10 Jun',
+            ],
             'baselineDays': [false, true, false, false, false, false, true],
+            'baselineLabels': [
+              '28 May',
+              '29 May',
+              '30 May',
+              '31 May',
+              '1 Jun',
+              '2 Jun',
+              '3 Jun',
+            ],
           },
         ),
       ],
@@ -303,13 +320,21 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Consistency pulse'), findsOneWidget);
+    expect(find.text('Training rhythm'), findsOneWidget);
     expect(
       find.byKey(const Key('insight_feed_visual_calendarStrip')),
       findsOneWidget,
     );
-    expect(find.text('previous 7'), findsOneWidget);
+    expect(find.text('previous 7 days'), findsOneWidget);
     expect(find.text('last 7 days'), findsOneWidget);
+    expect(find.text('4 Jun'), findsOneWidget);
+    expect(find.text('5 Jun'), findsOneWidget);
+    expect(find.text('6 Jun'), findsOneWidget);
+    expect(find.text('7 Jun'), findsOneWidget);
+    expect(find.text('8 Jun'), findsNothing);
+    expect(find.text('9 Jun'), findsOneWidget);
+    expect(find.text('10 Jun'), findsOneWidget);
+    expect(find.textContaining('Previous 14 days:'), findsNothing);
   });
 
   testWidgets('renders baseline bar legend below the graph with delta labels', (
@@ -409,13 +434,26 @@ void main() {
           accent: 'info',
           icon: 'weight',
           generatedAt: DateTime(2026, 6, 11),
+          comparisonLabel: '90 day trend',
           visualType: InsightFeedVisualType.bodyWeightLine,
           size: InsightFeedCardSize.wide,
           visualData: const {
             'points': [
-              {'label': '5/1', 'value': 81.2},
-              {'label': '5/15', 'value': 81.8},
-              {'label': '6/1', 'value': 82.4},
+              {
+                'label': '5/1',
+                'date': '2026-05-01T12:00:00.000',
+                'value': 81.2,
+              },
+              {
+                'label': '5/15',
+                'date': '2026-05-15T12:00:00.000',
+                'value': 81.8,
+              },
+              {
+                'label': '6/1',
+                'date': '2026-06-01T12:00:00.000',
+                'value': 82.4,
+              },
             ],
             'baseline': 81.2,
             'unit': '',
@@ -437,9 +475,15 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('logged weight'), findsOneWidget);
-    expect(find.text('start'), findsOneWidget);
+    expect(find.text('avg / 14d'), findsOneWidget);
+    expect(find.text('average'), findsNothing);
+    expect(find.text('start'), findsNothing);
     expect(find.text('5/1'), findsOneWidget);
     expect(find.text('6/1'), findsOneWidget);
+    final endLabel = tester.getTopLeft(find.text('6/1'));
+    final legendLabel = tester.getTopLeft(find.text('logged weight'));
+    expect(legendLabel.dy, greaterThan(endLabel.dy));
+    expect(find.text('90 day trend'), findsNothing);
   });
 
   testWidgets('renders radar legend labels', (tester) async {
@@ -551,6 +595,8 @@ void main() {
 
     expect(find.text('Recent 2.0/wk'), findsOneWidget);
     expect(find.text('Baseline 1.4/wk'), findsOneWidget);
+    expect(find.text('5/1'), findsOneWidget);
+    expect(find.text('5/15'), findsOneWidget);
   });
 
   testWidgets('renders clickable award previews for achievement cards', (
