@@ -15,16 +15,17 @@ void main() {
         icon: 'bolt',
         generatedAt: DateTime.utc(2026, 6, 11, 10),
         sourceWorkoutId: 'workout-1',
-        visualType: InsightFeedVisualType.baselineBars,
+        visualType: InsightFeedVisualType.trainingVelocityLine,
         size: InsightFeedCardSize.featured,
         visualData: const {
-          'items': [
-            {'label': 'Baseline', 'value': 2.1},
-            {'label': 'Recent', 'value': 3.0},
+          'points': [
+            {'label': '4/1', 'value': 2.1},
+            {'label': '4/8', 'value': 3.0},
           ],
+          'average': 3.0,
         },
-        detailMetricLabel: 'Recent vs baseline',
-        comparisonLabel: 'Baseline 2.1 / wk',
+        detailMetricLabel: 'Workout rate',
+        comparisonLabel: 'Previous 90 days average: 2.1 workouts/week',
       );
 
       final restored = InsightFeedCard.fromMap(card.toMap());
@@ -33,11 +34,14 @@ void main() {
       expect(restored.type, InsightFeedCardType.trainingVelocity);
       expect(restored.metric, '+28%');
       expect(restored.sourceWorkoutId, 'workout-1');
-      expect(restored.visualType, InsightFeedVisualType.baselineBars);
+      expect(restored.visualType, InsightFeedVisualType.trainingVelocityLine);
       expect(restored.size, InsightFeedCardSize.featured);
-      expect(restored.visualData['items'], isA<List>());
-      expect(restored.detailMetricLabel, 'Recent vs baseline');
-      expect(restored.comparisonLabel, 'Baseline 2.1 / wk');
+      expect(restored.visualData['points'], isA<List>());
+      expect(restored.detailMetricLabel, 'Workout rate');
+      expect(
+        restored.comparisonLabel,
+        'Previous 90 days average: 2.1 workouts/week',
+      );
     });
   });
 

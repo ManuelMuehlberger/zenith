@@ -293,6 +293,13 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
         InsightFeedCardSize.featured => 414,
       };
     }
+    if (card.visualType == InsightFeedVisualType.trainingVelocityLine) {
+      return switch (card.size) {
+        InsightFeedCardSize.compact => 280,
+        InsightFeedCardSize.wide => 312,
+        InsightFeedCardSize.featured => 454,
+      };
+    }
     return switch (card.size) {
       InsightFeedCardSize.compact => 220,
       InsightFeedCardSize.wide => 264,
@@ -605,7 +612,8 @@ class _VisualInsightFeedCard extends StatelessWidget {
     final showComparisonLabel =
         card.comparisonLabel != null &&
         card.visualType != InsightFeedVisualType.radar &&
-        card.visualType != InsightFeedVisualType.baselineBars;
+        card.visualType != InsightFeedVisualType.baselineBars &&
+        card.visualType != InsightFeedVisualType.trainingVelocityLine;
 
     return Container(
       constraints: BoxConstraints(minHeight: _minHeight()),
@@ -701,6 +709,13 @@ class _VisualInsightFeedCard extends StatelessWidget {
         InsightFeedCardSize.featured => 414,
       };
     }
+    if (card.visualType == InsightFeedVisualType.trainingVelocityLine) {
+      return switch (card.size) {
+        InsightFeedCardSize.compact => 280,
+        InsightFeedCardSize.wide => 312,
+        InsightFeedCardSize.featured => 454,
+      };
+    }
     if (_isRadarCard) {
       return switch (card.size) {
         InsightFeedCardSize.compact => 216,
@@ -724,6 +739,13 @@ class _VisualInsightFeedCard extends StatelessWidget {
         InsightFeedCardSize.compact => 88,
         InsightFeedCardSize.wide => 126,
         InsightFeedCardSize.featured => 244,
+      };
+    }
+    if (card.visualType == InsightFeedVisualType.trainingVelocityLine) {
+      return switch (card.size) {
+        InsightFeedCardSize.compact => 154,
+        InsightFeedCardSize.wide => 206,
+        InsightFeedCardSize.featured => 306,
       };
     }
     if (_isRadarCard) {
@@ -859,6 +881,8 @@ class _InsightFeedVisualContent extends StatelessWidget {
           data: card.visualData,
           accent: accent,
         ),
+        InsightFeedVisualType.trainingVelocityLine =>
+          _TrainingVelocityLineVisual(data: card.visualData, accent: accent),
         InsightFeedVisualType.calendarStrip => _CalendarStripVisual(
           data: card.visualData,
           accent: accent,
@@ -1198,6 +1222,131 @@ class _DayStrip extends StatelessWidget {
           ),
           if (index != days.length - 1) const SizedBox(width: 4),
         ],
+      ],
+    );
+  }
+}
+
+class _TrainingVelocityLineVisual extends StatelessWidget {
+  const _TrainingVelocityLineVisual({required this.data, required this.accent});
+
+  final Map<String, Object?> data;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final points = _listOfMaps(data['points']);
+    final values = points.map((point) => _num(point['value'])).toList();
+    if (values.length < 2) {
+      return const SizedBox.shrink();
+    }
+
+    final average = _nullableNum(data['average']);
+    final summaryItems = _listOfMaps(data['summaryItems']);
+    final weeklyLegend = summaryItems.isNotEmpty
+        ? _summaryLegendLabel(summaryItems.first)
+        : _string(data['seriesLabel']);
+    final averageLegend = summaryItems.length > 1
+        ? _summaryLegendLabel(summaryItems[1])
+        : _string(data['averageLabel']);
+
+    return Column(
+      children: [
+        Expanded(
+          child: CustomPaint(
+            painter: _VelocityLinePainter(
+              values: values,
+              average: average,
+              color: accent,
+              averageColor: context.appColors.textSecondary,
+              gridColor: Theme.of(context).dividerColor,
+              labelStyle: context.appText.labelSmall!.copyWith(
+                color: context.appColors.textTertiary,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+              pointFillColor: context.appScheme.surface,
+            ),
+            child: const SizedBox.expand(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _VelocityLegendRow(
+          accent: accent,
+          averageColor: context.appColors.textSecondary,
+          weeklyLabel: weeklyLegend.isEmpty ? '7d' : weeklyLegend,
+          averageLabel: averageLegend.isEmpty ? 'base' : averageLegend,
+        ),
+      ],
+    );
+  }
+
+  String _summaryLegendLabel(Map<String, Object?> item) {
+    final value = _string(item['displayValue']).isEmpty
+        ? _num(item['value']).toStringAsFixed(1)
+        : _string(item['displayValue']);
+    return '${_string(item['label'])} $value';
+  }
+}
+
+class _VelocityLegendRow extends StatelessWidget {
+  const _VelocityLegendRow({
+    required this.accent,
+    required this.averageColor,
+    required this.weeklyLabel,
+    required this.averageLabel,
+  });
+
+  final Color accent;
+  final Color averageColor;
+  final String weeklyLabel;
+  final String averageLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = context.appText.labelSmall?.copyWith(
+      color: context.appColors.textSecondary,
+      fontWeight: FontWeight.w700,
+    );
+    return Wrap(
+      spacing: 12,
+      runSpacing: 6,
+      alignment: WrapAlignment.center,
+      children: [
+        _VelocityLegendItem(color: accent, label: weeklyLabel, style: style),
+        _VelocityLegendItem(
+          color: averageColor,
+          label: averageLabel,
+          style: style,
+        ),
+      ],
+    );
+  }
+}
+
+class _VelocityLegendItem extends StatelessWidget {
+  const _VelocityLegendItem({
+    required this.color,
+    required this.label,
+    required this.style,
+  });
+
+  final Color color;
+  final String label;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 5),
+        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: style),
       ],
     );
   }
@@ -1640,6 +1789,256 @@ class _SparklinePainter extends CustomPainter {
         oldDelegate.baseline != baseline ||
         oldDelegate.color != color ||
         oldDelegate.smooth != smooth;
+  }
+}
+
+class _VelocityLinePainter extends CustomPainter {
+  _VelocityLinePainter({
+    required this.values,
+    required this.average,
+    required this.color,
+    required this.averageColor,
+    required this.gridColor,
+    required this.labelStyle,
+    required this.pointFillColor,
+  });
+
+  final List<double> values;
+  final double? average;
+  final Color color;
+  final Color averageColor;
+  final Color gridColor;
+  final TextStyle labelStyle;
+  final Color pointFillColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final allValues = [...values, ?average];
+    const leftPadding = 34.0;
+    const rightPadding = 4.0;
+    const topPadding = 6.0;
+    const bottomPadding = 8.0;
+    final plot = Rect.fromLTWH(
+      leftPadding,
+      topPadding,
+      math.max(1, size.width - leftPadding - rightPadding),
+      math.max(1, size.height - topPadding - bottomPadding),
+    );
+    const minValue = 0.0;
+    final maxValue = math.max(allValues.reduce(math.max), 1.0);
+    final span = math.max(maxValue - minValue, 1.0);
+    final gridPaint = Paint()
+      ..color = gridColor.withValues(alpha: 0.55)
+      ..strokeWidth = 1;
+    for (final tickValue in [maxValue, maxValue / 2, minValue]) {
+      final y = _yForValue(tickValue, plot, minValue, span);
+      canvas.drawLine(Offset(plot.left, y), Offset(plot.right, y), gridPaint);
+      _paintAxisLabel(
+        canvas,
+        label: _shortWeeklyLabel(tickValue),
+        offset: Offset(0, y - 7),
+        style: labelStyle,
+      );
+    }
+
+    final focusStart = math.max(0, values.length - 5);
+    final focusLeft = plot.left + plot.width * 0.54;
+    final focusDividerPaint = Paint()
+      ..color = gridColor.withValues(alpha: 0.42)
+      ..strokeWidth = 1;
+    canvas.drawLine(
+      Offset(focusLeft, plot.top),
+      Offset(focusLeft, plot.bottom),
+      focusDividerPaint,
+    );
+
+    final points = <Offset>[];
+    for (var index = 0; index < values.length; index++) {
+      final x = _xForIndex(
+        index: index,
+        count: values.length,
+        focusStart: focusStart,
+        plot: plot,
+        focusLeft: focusLeft,
+      );
+      final y = _yForValue(values[index], plot, minValue, span);
+      points.add(Offset(x, y));
+    }
+
+    if (average != null && points.length > 1) {
+      final baselineY = _yForValue(average!, plot, minValue, span);
+      final fillStart = _baselineIntersectionFromRight(
+        points: points,
+        baselineY: baselineY,
+      );
+      final bandPath = Path()
+        ..moveTo(fillStart.dx, baselineY)
+        ..lineTo(fillStart.dx, fillStart.dy);
+
+      for (final point in points.where((point) => point.dx > fillStart.dx)) {
+        bandPath.lineTo(point.dx, point.dy);
+      }
+      bandPath
+        ..lineTo(points.last.dx, baselineY)
+        ..close();
+      canvas.drawPath(bandPath, Paint()..color = color.withValues(alpha: 0.24));
+    }
+
+    if (average != null) {
+      final averageY = _yForValue(average!, plot, minValue, span);
+      final averagePaint = Paint()
+        ..color = averageColor.withValues(alpha: 0.95)
+        ..strokeWidth = 2.4;
+      _drawDashedLine(
+        canvas,
+        Offset(plot.left, averageY),
+        Offset(plot.right, averageY),
+        averagePaint,
+      );
+      _paintAxisLabel(
+        canvas,
+        label: 'base',
+        offset: Offset(plot.right - 36, averageY - 18),
+        style: labelStyle.copyWith(
+          color: averageColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+        ),
+      );
+    }
+
+    final path = Path()..moveTo(points.first.dx, points.first.dy);
+    for (var index = 1; index < points.length; index++) {
+      final previous = points[index - 1];
+      final current = points[index];
+      final controlX = (previous.dx + current.dx) / 2;
+      path.cubicTo(
+        controlX,
+        previous.dy,
+        controlX,
+        current.dy,
+        current.dx,
+        current.dy,
+      );
+    }
+
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = 3.2,
+    );
+
+    final pointPaint = Paint()..color = color;
+    final pointFillPaint = Paint()..color = pointFillColor;
+    for (var index = 0; index < points.length; index++) {
+      final point = points[index];
+      final isLatest = index == points.length - 1;
+      final outerRadius = isLatest ? 6.2 : 3.8;
+      final innerRadius = isLatest ? 2.6 : 1.8;
+      if (isLatest) {
+        canvas.drawCircle(
+          point,
+          10,
+          Paint()..color = color.withValues(alpha: 0.14),
+        );
+      }
+      canvas.drawCircle(point, outerRadius, pointPaint);
+      canvas.drawCircle(point, innerRadius, pointFillPaint);
+    }
+  }
+
+  void _drawDashedLine(Canvas canvas, Offset start, Offset end, Paint paint) {
+    const dashWidth = 5.0;
+    const dashGap = 4.0;
+    final totalLength = end.dx - start.dx;
+    var currentX = start.dx;
+    while (currentX < start.dx + totalLength) {
+      final nextX = math.min(currentX + dashWidth, start.dx + totalLength);
+      canvas.drawLine(Offset(currentX, start.dy), Offset(nextX, end.dy), paint);
+      currentX += dashWidth + dashGap;
+    }
+  }
+
+  double _yForValue(double value, Rect plot, double minValue, double span) {
+    return plot.bottom - ((value - minValue) / span * plot.height);
+  }
+
+  Offset _baselineIntersectionFromRight({
+    required List<Offset> points,
+    required double baselineY,
+  }) {
+    for (var index = points.length - 1; index > 0; index--) {
+      final current = points[index];
+      final previous = points[index - 1];
+      final currentDelta = current.dy - baselineY;
+      final previousDelta = previous.dy - baselineY;
+
+      if (currentDelta == 0) {
+        return current;
+      }
+      if (currentDelta.sign != previousDelta.sign) {
+        final denominator = previousDelta - currentDelta;
+        final progress = denominator == 0 ? 0.0 : previousDelta / denominator;
+        final x = previous.dx + (current.dx - previous.dx) * progress;
+        return Offset(x, baselineY);
+      }
+    }
+    return points.first;
+  }
+
+  double _xForIndex({
+    required int index,
+    required int count,
+    required int focusStart,
+    required Rect plot,
+    required double focusLeft,
+  }) {
+    if (count <= 1) {
+      return plot.left;
+    }
+    if (index < focusStart) {
+      final historySlots = math.max(1, focusStart);
+      return plot.left + (focusLeft - plot.left) * index / historySlots;
+    }
+    final focusSlots = math.max(1, count - 1 - focusStart);
+    return focusLeft +
+        (plot.right - focusLeft) * (index - focusStart) / focusSlots;
+  }
+
+  void _paintAxisLabel(
+    Canvas canvas, {
+    required String label,
+    required Offset offset,
+    required TextStyle style,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(text: label, style: style),
+      textDirection: TextDirection.ltr,
+      maxLines: 1,
+    )..layout(maxWidth: 32);
+    painter.paint(canvas, offset);
+  }
+
+  String _shortWeeklyLabel(double value) {
+    final rounded = value.roundToDouble();
+    final number = (value - rounded).abs() < 0.05
+        ? rounded.toInt().toString()
+        : value.toStringAsFixed(1);
+    return '$number/wk';
+  }
+
+  @override
+  bool shouldRepaint(covariant _VelocityLinePainter oldDelegate) {
+    return oldDelegate.values != values ||
+        oldDelegate.average != average ||
+        oldDelegate.color != color ||
+        oldDelegate.averageColor != averageColor ||
+        oldDelegate.labelStyle != labelStyle ||
+        oldDelegate.pointFillColor != pointFillColor;
   }
 }
 

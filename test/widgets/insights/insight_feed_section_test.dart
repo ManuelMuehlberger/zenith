@@ -508,6 +508,51 @@ void main() {
     expect(latestLegend.dx, lessThan(averageLegend.dx));
   });
 
+  testWidgets('renders compact training velocity legend labels', (
+    tester,
+  ) async {
+    final service = _FakeInsightFeedService(
+      cards: [
+        InsightFeedCard(
+          id: 'velocity',
+          type: InsightFeedCardType.trainingVelocity,
+          priority: 90,
+          title: 'Training velocity',
+          body: '2.0 workouts/week in the last 7 days.',
+          metric: '+25%',
+          accent: 'success',
+          icon: 'bolt',
+          generatedAt: DateTime(2026, 6, 20),
+          visualType: InsightFeedVisualType.trainingVelocityLine,
+          size: InsightFeedCardSize.wide,
+          visualData: const {
+            'points': [
+              {'label': '5/1', 'value': 1.2},
+              {'label': '5/8', 'value': 1.8},
+              {'label': '5/15', 'value': 2.0},
+            ],
+            'average': 1.4,
+            'summaryItems': [
+              {'label': 'Recent', 'displayValue': '2.0/wk'},
+              {'label': 'Baseline', 'displayValue': '1.4/wk'},
+            ],
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Recent 2.0/wk'), findsOneWidget);
+    expect(find.text('Baseline 1.4/wk'), findsOneWidget);
+  });
+
   testWidgets('renders clickable award previews for achievement cards', (
     tester,
   ) async {

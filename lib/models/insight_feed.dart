@@ -17,6 +17,7 @@ enum InsightFeedCardType {
 enum InsightFeedVisualType {
   none,
   baselineBars,
+  trainingVelocityLine,
   calendarStrip,
   sparklineBand,
   percentileDot,

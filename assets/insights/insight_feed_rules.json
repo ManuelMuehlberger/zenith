@@ -39,7 +39,7 @@
       },
       "visual": {
         "enabled": true,
-        "type": "baselineBars",
+        "type": "trainingVelocityLine",
         "size": "wide",
         "params": {
           "recentDays": 7,

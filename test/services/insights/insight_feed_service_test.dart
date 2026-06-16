@@ -156,6 +156,60 @@ void main() {
     expect(await service.getCards(), isEmpty);
   });
 
+  test('suppresses non-velocity cards with unsafe rule parameters', () async {
+    final now = DateTime(2026, 6, 20, 12);
+    final service = InsightFeedService(
+      assetBundle: _StringAssetBundle({
+        rulesAsset: '''
+{
+  "rules": [
+    {"id": "achievement", "type": "recentAchievementShoutout", "enabled": true, "priority": 100, "params": {"maxAgeDays": 0}, "visual": {"enabled": true, "type": "awardPreview", "size": "wide", "params": {}}},
+    {"id": "intensity", "type": "highIntensityShoutout", "enabled": true, "priority": 90, "params": {"lookbackDays": 0, "minimumPercentile": 90}, "visual": {"enabled": true, "type": "percentileDot", "size": "wide", "params": {}}},
+    {"id": "consistency", "type": "consistencyPulse", "enabled": true, "priority": 80, "params": {"recentDays": 0, "minimumWorkouts": 1}, "visual": {"enabled": true, "type": "calendarStrip", "size": "wide", "params": {}}},
+    {"id": "comeback", "type": "comebackCard", "enabled": true, "priority": 70, "params": {"minGapDays": 0}},
+    {"id": "radar", "type": "muscleActivationRadar", "enabled": true, "priority": 60, "params": {"recentDays": 30, "minWorkouts": 0}, "visual": {"enabled": true, "type": "radar", "size": "wide", "params": {}}},
+    {"id": "latest", "type": "latestWorkoutComparison", "enabled": true, "priority": 50, "params": {"baselineDays": 0, "minBaselineWorkouts": 1}, "visual": {"enabled": true, "type": "baselineBars", "size": "wide", "params": {}}},
+    {"id": "weight", "type": "bodyWeightTrend", "enabled": true, "priority": 40, "params": {"lookbackDays": 90, "minSamples": 1}, "visual": {"enabled": true, "type": "bodyWeightLine", "size": "wide", "params": {}}}
+  ]
+}
+''',
+      }),
+      workoutsProvider: () async => [
+        for (var day = 40; day >= 1; day -= 5)
+          _workout(
+            id: 'w$day',
+            completedAt: now.subtract(Duration(days: day)),
+            achievements: day == 1
+                ? [
+                    WorkoutAchievement(
+                      workoutId: 'w$day',
+                      ruleId: 'test',
+                      type: WorkoutAchievementType.highVolume,
+                      title: 'Milestone',
+                      reason: 'Test achievement.',
+                      earnedAt: now.subtract(Duration(days: day)),
+                    ),
+                  ]
+                : const [],
+          ),
+      ],
+      weightHistoryProvider: () => [
+        WeightEntry(
+          timestamp: now.subtract(const Duration(days: 10)),
+          value: 80,
+        ),
+        WeightEntry(timestamp: now, value: 81),
+      ],
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(
+        cacheKey: 'feed-test-unsafe-non-velocity',
+      ),
+      activationService: _FakeWorkoutMuscleActivationService(),
+    );
+
+    expect(await service.getCards(maxCards: 10), isEmpty);
+  });
+
   test('generates configured card stacks in priority order', () async {
     final now = DateTime(2026, 6, 20, 12);
     final service = InsightFeedService(
@@ -495,7 +549,7 @@ void main() {
         rulesAsset: '''
 {
   "rules": [
-    {"id": "velocity", "type": "trainingVelocity", "enabled": true, "priority": 90, "params": {"recentDays": 7, "baselineDays": 90, "minimumDeltaPercent": 10}, "visual": {"enabled": true, "type": "baselineBars", "size": "wide", "params": {}}},
+    {"id": "velocity", "type": "trainingVelocity", "enabled": true, "priority": 90, "params": {"recentDays": 7, "baselineDays": 90, "minimumDeltaPercent": 10}, "visual": {"enabled": true, "type": "trainingVelocityLine", "size": "wide", "params": {}}},
     {"id": "consistency", "type": "consistencyPulse", "enabled": true, "priority": 80, "params": {"recentDays": 14, "minimumWorkouts": 2}, "visual": {"enabled": true, "type": "calendarStrip", "size": "wide", "params": {}}}
   ]
 }
@@ -532,10 +586,144 @@ void main() {
       (card) => card.type == InsightFeedCardType.consistencyPulse,
     );
 
-    expect(velocity.visualType, InsightFeedVisualType.baselineBars);
-    expect(velocity.visualData['items'], isA<List>());
+    expect(velocity.visualType, InsightFeedVisualType.trainingVelocityLine);
+    expect(velocity.visualData['points'], isA<List>());
+    final velocityPoints = velocity.visualData['points'] as List;
+    final latestVelocityPoint = velocityPoints.last as Map<String, Object?>;
+    expect(latestVelocityPoint['value'], 3.0);
+    expect(velocity.visualData['average'], closeTo(8 / 90 * 7, 0.0001));
     expect(consistency.visualType, InsightFeedVisualType.calendarStrip);
     expect(consistency.visualData['recentDays'], isA<List>());
+  });
+
+  test(
+    'training velocity suppresses cards when data or config is unsafe',
+    () async {
+      final now = DateTime(2026, 6, 20, 12);
+
+      Future<List<InsightFeedCard>> cardsFor({
+        required String params,
+        required List<Workout> workouts,
+        required String cacheKey,
+      }) {
+        final service = InsightFeedService(
+          assetBundle: _StringAssetBundle({
+            rulesAsset:
+                '''
+{
+  "rules": [
+    {"id": "velocity", "type": "trainingVelocity", "enabled": true, "priority": 90, "params": $params, "visual": {"enabled": true, "type": "trainingVelocityLine", "size": "wide", "params": {}}}
+  ]
+}
+''',
+          }),
+          workoutsProvider: () async => workouts,
+          nowProvider: () => now,
+          cacheStore: InsightsCacheStore(cacheKey: cacheKey),
+        );
+        return service.getCards(maxCards: 10);
+      }
+
+      expect(
+        await cardsFor(
+          params:
+              '{"recentDays": 7, "baselineDays": 90, "minimumDeltaPercent": 10}',
+          workouts: [
+            _workout(
+              id: 'recent',
+              completedAt: now.subtract(const Duration(days: 1)),
+            ),
+            _workout(
+              id: 'baseline-1',
+              completedAt: now.subtract(const Duration(days: 20)),
+            ),
+            _workout(
+              id: 'baseline-2',
+              completedAt: now.subtract(const Duration(days: 30)),
+            ),
+          ],
+          cacheKey: 'feed-test-velocity-insufficient-baseline',
+        ),
+        isEmpty,
+      );
+
+      expect(
+        await cardsFor(
+          params:
+              '{"recentDays": 0, "baselineDays": 90, "minimumDeltaPercent": 10}',
+          workouts: [
+            _workout(
+              id: 'recent',
+              completedAt: now.subtract(const Duration(days: 1)),
+            ),
+            for (var day = 20; day <= 50; day += 10)
+              _workout(
+                id: 'baseline-$day',
+                completedAt: now.subtract(Duration(days: day)),
+              ),
+          ],
+          cacheKey: 'feed-test-velocity-invalid-recent-days',
+        ),
+        isEmpty,
+      );
+
+      expect(
+        await cardsFor(
+          params:
+              '{"recentDays": 7, "baselineDays": 90, "minimumDeltaPercent": 500}',
+          workouts: [
+            for (var day = 90; day >= 20; day -= 10)
+              _workout(
+                id: 'baseline-$day',
+                completedAt: now.subtract(Duration(days: day)),
+              ),
+            _workout(
+              id: 'recent-1',
+              completedAt: now.subtract(const Duration(days: 2)),
+            ),
+          ],
+          cacheKey: 'feed-test-velocity-below-threshold',
+        ),
+        isEmpty,
+      );
+    },
+  );
+
+  test('personal best card drops sparse sparkline visuals', () async {
+    final now = DateTime(2026, 6, 20, 12);
+    final service = InsightFeedService(
+      assetBundle: _StringAssetBundle({
+        rulesAsset: '''
+{
+  "rules": [
+    {"id": "momentum", "type": "personalBestMomentum", "enabled": true, "priority": 90, "params": {}, "visual": {"enabled": true, "type": "sparklineBand", "size": "wide", "params": {"lookbackDays": 1}}}
+  ]
+}
+''',
+      }),
+      workoutsProvider: () async => [
+        _workout(
+          id: 'previous',
+          completedAt: now.subtract(const Duration(days: 30)),
+          weight: 10,
+        ),
+        _workout(
+          id: 'latest',
+          completedAt: now.subtract(const Duration(hours: 1)),
+          weight: 30,
+        ),
+      ],
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(
+        cacheKey: 'feed-test-momentum-sparse-sparkline',
+      ),
+    );
+
+    final cards = await service.getCards(maxCards: 10);
+
+    expect(cards.single.type, InsightFeedCardType.personalBestMomentum);
+    expect(cards.single.visualType, InsightFeedVisualType.none);
+    expect(cards.single.visualData, isEmpty);
   });
 
   test('new visual rule types generate only with meaningful data', () async {
