@@ -574,34 +574,46 @@ class InsightFeedService {
       }),
     );
 
+    final recentDates = List.generate(recentDays, (index) {
+      return DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).subtract(Duration(days: recentDays - index - 1));
+    });
+    final baselineDates = List.generate(recentDays, (index) {
+      return DateTime(
+        cutoff.year,
+        cutoff.month,
+        cutoff.day,
+      ).subtract(Duration(days: recentDays - index));
+    });
+
     return _card(
       rule: rule,
       id: rule.id,
-      title: 'Consistency pulse',
+      title: 'Training rhythm',
       body: 'You trained $recentCount times in the last $recentDays days.',
       metric: '$recentCount/$recentDays',
       accent: 'info',
       icon: 'calendar',
       generatedAt: now,
       detailMetricLabel: 'Active days',
-      comparisonLabel: 'Previous $recentDays days: ${baselineDaysSet.length}',
       visualData: {
-        'recentDays': List.generate(recentDays, (index) {
-          final date = DateTime(
-            now.year,
-            now.month,
-            now.day,
-          ).subtract(Duration(days: recentDays - index - 1));
-          return recentDaysSet.contains(_dayKey(date));
-        }),
-        'baselineDays': List.generate(recentDays, (index) {
-          final date = DateTime(
-            cutoff.year,
-            cutoff.month,
-            cutoff.day,
-          ).subtract(Duration(days: recentDays - index));
-          return baselineDaysSet.contains(_dayKey(date));
-        }),
+        'recentDays': recentDates
+            .map((date) {
+              return recentDaysSet.contains(_dayKey(date));
+            })
+            .toList(growable: false),
+        'recentLabels': recentDates.map(_dayTickLabel).toList(growable: false),
+        'baselineDays': baselineDates
+            .map((date) {
+              return baselineDaysSet.contains(_dayKey(date));
+            })
+            .toList(growable: false),
+        'baselineLabels': baselineDates
+            .map(_dayTickLabel)
+            .toList(growable: false),
         'recentCount': recentCount,
         'baselineCount': baselineDaysSet.length,
       },
@@ -905,12 +917,12 @@ class InsightFeedService {
       icon: 'weight',
       generatedAt: now,
       detailMetricLabel: 'Latest entry',
-      comparisonLabel: '$lookbackDays day trend',
       visualData: {
         'points': visible
             .map(
               (entry) => {
                 'label': '${entry.timestamp.month}/${entry.timestamp.day}',
+                'date': entry.timestamp.toIso8601String(),
                 'value': entry.value,
               },
             )
@@ -1063,6 +1075,29 @@ class InsightFeedService {
     final month = local.month.toString().padLeft(2, '0');
     final day = local.day.toString().padLeft(2, '0');
     return '${local.year}-$month-$day';
+  }
+
+  String _dayTickLabel(DateTime date) {
+    final local = date.toLocal();
+    return '${local.day} ${_monthShortLabel(local.month)}';
+  }
+
+  String _monthShortLabel(int month) {
+    return switch (month) {
+      DateTime.january => 'Jan',
+      DateTime.february => 'Feb',
+      DateTime.march => 'Mar',
+      DateTime.april => 'Apr',
+      DateTime.may => 'May',
+      DateTime.june => 'Jun',
+      DateTime.july => 'Jul',
+      DateTime.august => 'Aug',
+      DateTime.september => 'Sep',
+      DateTime.october => 'Oct',
+      DateTime.november => 'Nov',
+      DateTime.december => 'Dec',
+      _ => '',
+    };
   }
 
   double _durationMinutes(Workout workout) {

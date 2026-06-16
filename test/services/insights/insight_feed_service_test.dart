@@ -816,13 +816,15 @@ void main() {
     expect(chestPoint['planned'], closeTo(11 / 15, 0.001));
     expect(chestPoint['actual'], 1);
 
+    final bodyWeightCard = cards.firstWhere(
+      (card) => card.type == InsightFeedCardType.bodyWeightTrend,
+    );
+    expect(bodyWeightCard.comparisonLabel, isNull);
+    expect(bodyWeightCard.visualData['points'], isA<List>());
     expect(
-      cards
-          .firstWhere(
-            (card) => card.type == InsightFeedCardType.bodyWeightTrend,
-          )
-          .visualData['points'],
-      isA<List>(),
+      ((bodyWeightCard.visualData['points'] as List<dynamic>).first
+          as Map<String, Object?>)['date'],
+      isA<String>(),
     );
   });
 
