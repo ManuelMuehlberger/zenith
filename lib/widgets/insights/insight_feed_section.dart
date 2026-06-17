@@ -12,11 +12,19 @@ import '../../theme/app_theme.dart';
 import '../timeline/award_balloons.dart';
 import '../timeline/workout_achievement_awards.dart';
 import 'dynamic_chart_labels.dart';
+import 'tappable_chart_legend.dart';
 
 const double _insightLinePlotLeftPadding = 34.0;
 const double _insightLinePlotRightPadding = 4.0;
 const double _dynamicXLabelMinGap = 52.0;
 const double _dynamicXLabelWidth = 56.0;
+const String _baselineSeriesId = 'baseline';
+const String _latestSeriesId = 'latest';
+const String _previousSeriesId = 'previous';
+const String _recentSeriesId = 'recent';
+const String _primarySeriesId = 'primary';
+const String _referenceSeriesId = 'reference';
+const String _averageSeriesId = 'average';
 
 // policy: allow-public-api top-of-screen section that renders the daily insights feed.
 class InsightsFeedSection extends StatefulWidget {
@@ -308,9 +316,9 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
     }
     if (card.visualType == InsightFeedVisualType.bodyWeightLine) {
       return switch (card.size) {
-        InsightFeedCardSize.compact => 236,
-        InsightFeedCardSize.wide => 284,
-        InsightFeedCardSize.featured => 400,
+        InsightFeedCardSize.compact => 244,
+        InsightFeedCardSize.wide => 300,
+        InsightFeedCardSize.featured => 420,
       };
     }
     if (card.visualType == InsightFeedVisualType.calendarStrip) {
@@ -747,9 +755,9 @@ class _VisualInsightFeedCard extends StatelessWidget {
     }
     if (card.visualType == InsightFeedVisualType.bodyWeightLine) {
       return switch (card.size) {
-        InsightFeedCardSize.compact => 236,
-        InsightFeedCardSize.wide => 284,
-        InsightFeedCardSize.featured => 400,
+        InsightFeedCardSize.compact => 244,
+        InsightFeedCardSize.wide => 300,
+        InsightFeedCardSize.featured => 420,
       };
     }
     if (card.visualType == InsightFeedVisualType.calendarStrip) {
@@ -793,9 +801,9 @@ class _VisualInsightFeedCard extends StatelessWidget {
     }
     if (card.visualType == InsightFeedVisualType.bodyWeightLine) {
       return switch (card.size) {
-        InsightFeedCardSize.compact => 96,
-        InsightFeedCardSize.wide => 136,
-        InsightFeedCardSize.featured => 250,
+        InsightFeedCardSize.compact => 112,
+        InsightFeedCardSize.wide => 168,
+        InsightFeedCardSize.featured => 282,
       };
     }
     if (card.visualType == InsightFeedVisualType.calendarStrip) {
@@ -968,45 +976,76 @@ class _InsightFeedVisualContent extends StatelessWidget {
   }
 }
 
-class _BaselineBarsVisual extends StatelessWidget {
+class _BaselineBarsVisual extends StatefulWidget {
   const _BaselineBarsVisual({required this.data, required this.accent});
 
   final Map<String, Object?> data;
   final Color accent;
 
   @override
+  State<_BaselineBarsVisual> createState() => _BaselineBarsVisualState();
+}
+
+class _BaselineBarsVisualState extends State<_BaselineBarsVisual> {
+  late final ChartSeriesVisibilityController _visibilityController =
+      ChartSeriesVisibilityController(series: _legendSeries);
+
+  List<ChartLegendSeries> get _legendSeries => [
+    ChartLegendSeries(
+      id: _baselineSeriesId,
+      label: 'baseline',
+      color: context.appColors.textTertiary,
+    ),
+    ChartLegendSeries(
+      id: _latestSeriesId,
+      label: 'latest',
+      color: widget.accent,
+    ),
+  ];
+
+  @override
   Widget build(BuildContext context) {
-    final items = _listOfMaps(data['items']);
+    final items = _listOfMaps(widget.data['items']);
     if (items.isEmpty) {
       return const SizedBox.shrink();
     }
     if (items.first.containsKey('baseline')) {
-      return Column(
-        children: [
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                for (final item in items) ...[
-                  Expanded(
-                    child: _ComparisonMetricBars(item: item, accent: accent),
-                  ),
-                  if (item != items.last) const SizedBox(width: 14),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          _ChartLegendRow(
-            items: [
-              _ChartLegendItem(
-                color: context.appColors.textTertiary,
-                label: 'baseline',
+      return AnimatedBuilder(
+        animation: _visibilityController,
+        builder: (context, child) {
+          final showBaseline = _visibilityController.isVisible(
+            _baselineSeriesId,
+          );
+          final showLatest = _visibilityController.isVisible(_latestSeriesId);
+          return Column(
+            children: [
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    for (final item in items) ...[
+                      Expanded(
+                        child: _ComparisonMetricBars(
+                          item: item,
+                          accent: widget.accent,
+                          showBaseline: showBaseline,
+                          showActual: showLatest,
+                        ),
+                      ),
+                      if (item != items.last) const SizedBox(width: 14),
+                    ],
+                  ],
+                ),
               ),
-              _ChartLegendItem(color: accent, label: 'latest'),
+              const SizedBox(height: 10),
+              TappableChartLegend(
+                series: _legendSeries,
+                controller: _visibilityController,
+                keyPrefix: 'insight_feed_baseline_bars_legend',
+              ),
             ],
-          ),
-        ],
+          );
+        },
       );
     }
 
@@ -1026,7 +1065,7 @@ class _BaselineBarsVisual extends StatelessWidget {
               value: _num(item['value']),
               maxValue: maxValue,
               accent: item == items.last
-                  ? accent
+                  ? widget.accent
                   : context.appColors.textTertiary,
             ),
           ),
@@ -1096,10 +1135,17 @@ class _SingleMetricBar extends StatelessWidget {
 }
 
 class _ComparisonMetricBars extends StatelessWidget {
-  const _ComparisonMetricBars({required this.item, required this.accent});
+  const _ComparisonMetricBars({
+    required this.item,
+    required this.accent,
+    required this.showBaseline,
+    required this.showActual,
+  });
 
   final Map<String, Object?> item;
   final Color accent;
+  final bool showBaseline;
+  final bool showActual;
 
   @override
   Widget build(BuildContext context) {
@@ -1118,52 +1164,56 @@ class _ComparisonMetricBars extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Expanded(
-                child: FractionallySizedBox(
-                  heightFactor: baselineHeight,
-                  alignment: Alignment.bottomCenter,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: colors.textTertiary.withValues(alpha: 0.34),
-                      borderRadius: BorderRadius.circular(6),
+              if (showBaseline)
+                Expanded(
+                  child: FractionallySizedBox(
+                    heightFactor: baselineHeight,
+                    alignment: Alignment.bottomCenter,
+                    child: DecoratedBox(
+                      key: const Key('insight_feed_baseline_bar'),
+                      decoration: BoxDecoration(
+                        color: colors.textTertiary.withValues(alpha: 0.34),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: FractionallySizedBox(
-                  heightFactor: actualHeight,
-                  alignment: Alignment.bottomCenter,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.78),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: deltaLabel.isEmpty
-                        ? null
-                        : Align(
-                            alignment: Alignment.center,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 2,
-                              ),
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  deltaLabel,
-                                  maxLines: 1,
-                                  style: textTheme.labelSmall?.copyWith(
-                                    color: context.appScheme.onPrimary,
-                                    fontWeight: FontWeight.w800,
+              if (showBaseline && showActual) const SizedBox(width: 4),
+              if (showActual)
+                Expanded(
+                  child: FractionallySizedBox(
+                    heightFactor: actualHeight,
+                    alignment: Alignment.bottomCenter,
+                    child: DecoratedBox(
+                      key: const Key('insight_feed_latest_bar'),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.78),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: deltaLabel.isEmpty
+                          ? null
+                          : Align(
+                              alignment: Alignment.center,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 2,
+                                ),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    deltaLabel,
+                                    maxLines: 1,
+                                    style: textTheme.labelSmall?.copyWith(
+                                      color: context.appScheme.onPrimary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -1181,53 +1231,100 @@ class _ComparisonMetricBars extends StatelessWidget {
   }
 }
 
-class _CalendarStripVisual extends StatelessWidget {
+class _CalendarStripVisual extends StatefulWidget {
   const _CalendarStripVisual({required this.data, required this.accent});
 
   final Map<String, Object?> data;
   final Color accent;
 
   @override
+  State<_CalendarStripVisual> createState() => _CalendarStripVisualState();
+}
+
+class _CalendarStripVisualState extends State<_CalendarStripVisual> {
+  late final ChartSeriesVisibilityController _visibilityController =
+      ChartSeriesVisibilityController(series: _legendSeries);
+
+  @override
   Widget build(BuildContext context) {
-    final recent = _boolList(data['recentDays']);
-    final baseline = _boolList(data['baselineDays']);
+    final recent = _boolList(widget.data['recentDays']);
+    final baseline = _boolList(widget.data['baselineDays']);
     final recentLabels = _dayLabels(
-      data['recentLabels'],
+      widget.data['recentLabels'],
       fallbackCount: recent.length,
     );
     if (recent.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    return Column(
-      children: [
-        Expanded(
-          child: _DayStripPlot(
-            days: baseline,
-            color: context.appColors.textTertiary,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Expanded(
-          child: _DayStripPlot(days: recent, color: accent),
-        ),
-        const SizedBox(height: 6),
-        _DynamicRhythmLabelRow(days: recent, labels: recentLabels),
-        const SizedBox(height: 8),
-        _ChartLegendRow(
-          items: [
-            _ChartLegendItem(
-              color: context.appColors.textTertiary,
-              label: 'previous ${baseline.length} days',
-            ),
-            _ChartLegendItem(
-              color: accent,
-              label: 'last ${recent.length} days',
+    final legendSeries = _legendSeriesFor(
+      baselineLength: baseline.length,
+      recentLength: recent.length,
+    );
+
+    return AnimatedBuilder(
+      animation: _visibilityController,
+      builder: (context, child) {
+        final showPrevious = _visibilityController.isVisible(_previousSeriesId);
+        final showRecent = _visibilityController.isVisible(_recentSeriesId);
+
+        return Column(
+          children: [
+            if (showPrevious)
+              Expanded(
+                child: _DayStripPlot(
+                  days: baseline,
+                  color: context.appColors.textTertiary,
+                ),
+              ),
+            if (showPrevious && showRecent) const SizedBox(height: 10),
+            if (showRecent)
+              Expanded(
+                child: _DayStripPlot(days: recent, color: widget.accent),
+              ),
+            const SizedBox(height: 6),
+            _DynamicRhythmLabelRow(days: recent, labels: recentLabels),
+            const SizedBox(height: 8),
+            TappableChartLegend(
+              series: legendSeries,
+              controller: _visibilityController,
+              keyPrefix: 'insight_feed_calendar_legend',
             ),
           ],
-        ),
-      ],
+        );
+      },
     );
+  }
+
+  List<ChartLegendSeries> get _legendSeries => [
+    ChartLegendSeries(
+      id: _previousSeriesId,
+      label: 'previous days',
+      color: context.appColors.textTertiary,
+    ),
+    ChartLegendSeries(
+      id: _recentSeriesId,
+      label: 'last days',
+      color: widget.accent,
+    ),
+  ];
+
+  List<ChartLegendSeries> _legendSeriesFor({
+    required int baselineLength,
+    required int recentLength,
+  }) {
+    return [
+      ChartLegendSeries(
+        id: _previousSeriesId,
+        label: 'previous $baselineLength days',
+        color: context.appColors.textTertiary,
+      ),
+      ChartLegendSeries(
+        id: _recentSeriesId,
+        label: 'last $recentLength days',
+        color: widget.accent,
+      ),
+    ];
   }
 }
 
@@ -1346,61 +1443,113 @@ class _DynamicXAxisLabelRow extends StatelessWidget {
   }
 }
 
-class _TrainingVelocityLineVisual extends StatelessWidget {
+class _TrainingVelocityLineVisual extends StatefulWidget {
   const _TrainingVelocityLineVisual({required this.data, required this.accent});
 
   final Map<String, Object?> data;
   final Color accent;
 
   @override
+  State<_TrainingVelocityLineVisual> createState() =>
+      _TrainingVelocityLineVisualState();
+}
+
+class _TrainingVelocityLineVisualState
+    extends State<_TrainingVelocityLineVisual> {
+  late final ChartSeriesVisibilityController _visibilityController =
+      ChartSeriesVisibilityController(series: _legendSeries);
+
+  @override
   Widget build(BuildContext context) {
-    final points = _listOfMaps(data['points']);
+    final points = _listOfMaps(widget.data['points']);
     final values = points.map((point) => _num(point['value'])).toList();
     if (values.length < 2) {
       return const SizedBox.shrink();
     }
     final labels = points.map((point) => _string(point['label'])).toList();
 
-    final average = _nullableNum(data['average']);
-    final summaryItems = _listOfMaps(data['summaryItems']);
+    final average = _nullableNum(widget.data['average']);
+    final summaryItems = _listOfMaps(widget.data['summaryItems']);
     final weeklyLegend = summaryItems.isNotEmpty
         ? _summaryLegendLabel(summaryItems.first)
-        : _string(data['seriesLabel']);
+        : _string(widget.data['seriesLabel']);
     final averageLegend = summaryItems.length > 1
         ? _summaryLegendLabel(summaryItems[1])
-        : _string(data['averageLabel']);
-
-    return Column(
-      children: [
-        Expanded(
-          child: CustomPaint(
-            painter: _VelocityLinePainter(
-              values: values,
-              average: average,
-              color: accent,
-              averageColor: context.appColors.textSecondary,
-              gridColor: Theme.of(context).dividerColor,
-              labelStyle: context.appText.labelSmall!.copyWith(
-                color: context.appColors.textTertiary,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-              ),
-              pointFillColor: context.appScheme.surface,
-            ),
-            child: const SizedBox.expand(),
-          ),
-        ),
-        const SizedBox(height: 4),
-        _DynamicVelocityLabelRow(values: values, labels: labels),
-        const SizedBox(height: 8),
-        _VelocityLegendRow(
-          accent: accent,
-          averageColor: context.appColors.textSecondary,
-          weeklyLabel: weeklyLegend.isEmpty ? '7d' : weeklyLegend,
-          averageLabel: averageLegend.isEmpty ? 'base' : averageLegend,
-        ),
-      ],
+        : _string(widget.data['averageLabel']);
+    final legendSeries = _legendSeriesFor(
+      weeklyLabel: weeklyLegend.isEmpty ? '7d' : weeklyLegend,
+      averageLabel: averageLegend.isEmpty ? 'base' : averageLegend,
     );
+
+    return AnimatedBuilder(
+      animation: _visibilityController,
+      builder: (context, child) {
+        return Column(
+          children: [
+            Expanded(
+              child: CustomPaint(
+                key: const Key('insight_feed_velocity_plot'),
+                painter: _VelocityLinePainter(
+                  values: values,
+                  average: average,
+                  showValues: _visibilityController.isVisible(_primarySeriesId),
+                  showAverage: _visibilityController.isVisible(
+                    _averageSeriesId,
+                  ),
+                  color: widget.accent,
+                  averageColor: context.appColors.textSecondary,
+                  gridColor: Theme.of(context).dividerColor,
+                  labelStyle: context.appText.labelSmall!.copyWith(
+                    color: context.appColors.textTertiary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  pointFillColor: context.appScheme.surface,
+                ),
+                child: const SizedBox.expand(),
+              ),
+            ),
+            const SizedBox(height: 4),
+            _DynamicVelocityLabelRow(values: values, labels: labels),
+            const SizedBox(height: 8),
+            TappableChartLegend(
+              series: legendSeries,
+              controller: _visibilityController,
+              dotSize: 7,
+              runSpacing: 6,
+              keyPrefix: 'insight_feed_velocity_legend',
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  List<ChartLegendSeries> get _legendSeries => [
+    ChartLegendSeries(id: _primarySeriesId, label: '7d', color: widget.accent),
+    ChartLegendSeries(
+      id: _averageSeriesId,
+      label: 'base',
+      color: context.appColors.textSecondary,
+    ),
+  ];
+
+  List<ChartLegendSeries> _legendSeriesFor({
+    required String weeklyLabel,
+    required String averageLabel,
+  }) {
+    return [
+      ChartLegendSeries(
+        id: _primarySeriesId,
+        label: weeklyLabel,
+        color: widget.accent,
+      ),
+      ChartLegendSeries(
+        id: _averageSeriesId,
+        label: averageLabel,
+        color: context.appColors.textSecondary,
+      ),
+    ];
   }
 
   String _summaryLegendLabel(Map<String, Object?> item) {
@@ -1459,70 +1608,7 @@ class _DynamicVelocityLabelRow extends StatelessWidget {
   }
 }
 
-class _VelocityLegendRow extends StatelessWidget {
-  const _VelocityLegendRow({
-    required this.accent,
-    required this.averageColor,
-    required this.weeklyLabel,
-    required this.averageLabel,
-  });
-
-  final Color accent;
-  final Color averageColor;
-  final String weeklyLabel;
-  final String averageLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = context.appText.labelSmall?.copyWith(
-      color: context.appColors.textSecondary,
-      fontWeight: FontWeight.w700,
-    );
-    return Wrap(
-      spacing: 12,
-      runSpacing: 6,
-      alignment: WrapAlignment.center,
-      children: [
-        _VelocityLegendItem(color: accent, label: weeklyLabel, style: style),
-        _VelocityLegendItem(
-          color: averageColor,
-          label: averageLabel,
-          style: style,
-        ),
-      ],
-    );
-  }
-}
-
-class _VelocityLegendItem extends StatelessWidget {
-  const _VelocityLegendItem({
-    required this.color,
-    required this.label,
-    required this.style,
-  });
-
-  final Color color;
-  final String label;
-  final TextStyle? style;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 7,
-          height: 7,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 5),
-        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: style),
-      ],
-    );
-  }
-}
-
-class _SparklineBandVisual extends StatelessWidget {
+class _SparklineBandVisual extends StatefulWidget {
   const _SparklineBandVisual({
     required this.data,
     required this.accent,
@@ -1534,86 +1620,143 @@ class _SparklineBandVisual extends StatelessWidget {
   final bool smooth;
 
   @override
+  State<_SparklineBandVisual> createState() => _SparklineBandVisualState();
+}
+
+class _SparklineBandVisualState extends State<_SparklineBandVisual> {
+  late final ChartSeriesVisibilityController _visibilityController =
+      ChartSeriesVisibilityController(series: _legendSeries);
+
+  @override
   Widget build(BuildContext context) {
-    final points = _listOfMaps(data['points']);
+    final points = _listOfMaps(widget.data['points']);
     final values = points.map((point) => _num(point['value'])).toList();
     if (values.length < 2) {
       return const SizedBox.shrink();
     }
-    final unit = _string(data['unit']);
+    final unit = _string(widget.data['unit']);
     final firstLabel = _string(points.first['label']);
     final lastLabel = _string(points.last['label']);
     final pointLabels = points.map((point) => _string(point['label'])).toList();
-    final referenceValues = smooth
-        ? _rollingAverageValues(points, values, windowDays: 14)
+    final referenceValues = widget.smooth
+        ? _rollingAverageValues(points, values, windowDays: 30)
         : null;
-    final baseline = smooth ? null : _nullableNum(data['baseline']);
+    final baseline = widget.smooth
+        ? null
+        : _nullableNum(widget.data['baseline']);
     final showReference = referenceValues != null || baseline != null;
-
-    return Column(
-      children: [
-        Expanded(
-          child: CustomPaint(
-            painter: _SparklinePainter(
-              values: values,
-              baseline: baseline,
-              referenceValues: referenceValues,
-              color: accent,
-              gridColor: smooth
-                  ? context.appColors.textSecondary
-                  : Theme.of(context).dividerColor,
-              fillColor: accent.withValues(alpha: smooth ? 0.12 : 0.16),
-              labelStyle: context.appText.labelSmall!.copyWith(
-                color: context.appColors.textTertiary,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-              ),
-              smooth: smooth,
-            ),
-            child: const SizedBox.expand(),
-          ),
-        ),
-        if (firstLabel.isNotEmpty || lastLabel.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          if (smooth)
-            _DynamicLinearLabelRow(values: values, labels: pointLabels)
-          else
-            Row(
-              children: [
-                Text(
-                  firstLabel,
-                  style: context.appText.labelSmall?.copyWith(
-                    color: context.appColors.textTertiary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  lastLabel,
-                  style: context.appText.labelSmall?.copyWith(
-                    color: context.appColors.textTertiary,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-        ],
-        const SizedBox(height: 8),
-        _ChartLegendRow(
-          items: [
-            _ChartLegendItem(
-              color: accent,
-              label: smooth ? 'logged weight' : _sparklineUnitLabel(unit),
-            ),
-            if (showReference)
-              _ChartLegendItem(
-                color: context.appColors.textTertiary,
-                label: smooth ? 'avg / 14d' : 'previous best',
-              ),
-          ],
-        ),
-      ],
+    final legendSeries = _legendSeriesFor(
+      primaryLabel: widget.smooth ? 'logged weight' : _sparklineUnitLabel(unit),
+      includeReference: showReference,
+      referenceLabel: widget.smooth ? 'avg / 1m' : 'previous best',
     );
+
+    return AnimatedBuilder(
+      animation: _visibilityController,
+      builder: (context, child) {
+        final isPrimaryVisible = _visibilityController.isVisible(
+          _primarySeriesId,
+        );
+        final isReferenceVisible =
+            showReference &&
+            _visibilityController.isVisible(_referenceSeriesId);
+
+        return Column(
+          children: [
+            Expanded(
+              child: CustomPaint(
+                key: const Key('insight_feed_sparkline_plot'),
+                painter: _SparklinePainter(
+                  values: values,
+                  baseline: baseline,
+                  referenceValues: referenceValues,
+                  showPrimary: isPrimaryVisible,
+                  showReference: isReferenceVisible,
+                  color: widget.accent,
+                  gridColor: widget.smooth
+                      ? context.appColors.textSecondary
+                      : Theme.of(context).dividerColor,
+                  fillColor: widget.accent.withValues(
+                    alpha: widget.smooth ? 0.12 : 0.16,
+                  ),
+                  labelStyle: context.appText.labelSmall!.copyWith(
+                    color: context.appColors.textTertiary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  smooth: widget.smooth,
+                ),
+                child: const SizedBox.expand(),
+              ),
+            ),
+            if (firstLabel.isNotEmpty || lastLabel.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              if (widget.smooth)
+                _DynamicLinearLabelRow(values: values, labels: pointLabels)
+              else
+                Row(
+                  children: [
+                    Text(
+                      firstLabel,
+                      style: context.appText.labelSmall?.copyWith(
+                        color: context.appColors.textTertiary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      lastLabel,
+                      style: context.appText.labelSmall?.copyWith(
+                        color: context.appColors.textTertiary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+            const SizedBox(height: 8),
+            TappableChartLegend(
+              series: legendSeries,
+              controller: _visibilityController,
+              keyPrefix: 'insight_feed_sparkline_legend',
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  List<ChartLegendSeries> get _legendSeries => [
+    ChartLegendSeries(
+      id: _primarySeriesId,
+      label: widget.smooth ? 'logged weight' : 'trend',
+      color: widget.accent,
+    ),
+    ChartLegendSeries(
+      id: _referenceSeriesId,
+      label: widget.smooth ? 'avg / 1m' : 'previous best',
+      color: context.appColors.textTertiary,
+    ),
+  ];
+
+  List<ChartLegendSeries> _legendSeriesFor({
+    required String primaryLabel,
+    required bool includeReference,
+    required String referenceLabel,
+  }) {
+    return [
+      ChartLegendSeries(
+        id: _primarySeriesId,
+        label: primaryLabel,
+        color: widget.accent,
+      ),
+      if (includeReference)
+        ChartLegendSeries(
+          id: _referenceSeriesId,
+          label: referenceLabel,
+          color: context.appColors.textTertiary,
+        ),
+    ];
   }
 
   String _sparklineUnitLabel(String unit) {
@@ -1702,53 +1845,6 @@ class _DynamicLinearLabelRow extends StatelessWidget {
   }
 }
 
-class _ChartLegendRow extends StatelessWidget {
-  const _ChartLegendRow({required this.items});
-
-  final List<_ChartLegendItem> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 12,
-      runSpacing: 4,
-      alignment: WrapAlignment.center,
-      children: items,
-    );
-  }
-}
-
-class _ChartLegendItem extends StatelessWidget {
-  const _ChartLegendItem({required this.color, required this.label});
-
-  final Color color;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: context.appText.labelSmall?.copyWith(
-            color: context.appColors.textSecondary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _PercentileDotVisual extends StatelessWidget {
   const _PercentileDotVisual({required this.data, required this.accent});
 
@@ -1832,142 +1928,172 @@ class _PercentileDotVisual extends StatelessWidget {
   }
 }
 
-class _RadarVisual extends StatelessWidget {
+class _RadarVisual extends StatefulWidget {
   const _RadarVisual({required this.data, required this.accent});
 
   final Map<String, Object?> data;
   final Color accent;
 
   @override
+  State<_RadarVisual> createState() => _RadarVisualState();
+}
+
+class _RadarVisualState extends State<_RadarVisual> {
+  late final ChartSeriesVisibilityController _visibilityController =
+      ChartSeriesVisibilityController(series: _legendSeries);
+
+  @override
   Widget build(BuildContext context) {
-    final points = _listOfMaps(data['points']);
+    final points = _listOfMaps(widget.data['points']);
     if (points.length < 3) {
       return const SizedBox.shrink();
     }
     final textTheme = context.appText;
     final colors = context.appColors;
-    final averageLabel = _string(data['plannedLabel']).isEmpty
+    final averageLabel = _string(widget.data['plannedLabel']).isEmpty
         ? 'recent average'
-        : _string(data['plannedLabel']);
-    final latestLabel = _string(data['actualLabel']).isEmpty
+        : _string(widget.data['plannedLabel']);
+    final latestLabel = _string(widget.data['actualLabel']).isEmpty
         ? 'Last workout'
-        : _string(data['actualLabel']);
+        : _string(widget.data['actualLabel']);
     final averageColor = colors.textSecondary.withValues(alpha: 0.92);
-    return Column(
-      children: [
-        Expanded(
-          child: RadarChart(
-            RadarChartData(
-              radarShape: RadarShape.polygon,
-              tickCount: 4,
-              ticksTextStyle: textTheme.labelSmall?.copyWith(
-                color: colors.transparent,
-                fontSize: 1,
-              ),
-              radarBackgroundColor: colors.field.withValues(alpha: 0.18),
-              radarBorderData: BorderSide(
-                color: Theme.of(context).dividerColor,
-              ),
-              gridBorderData: BorderSide(
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.75),
-                width: 0.8,
-              ),
-              tickBorderData: BorderSide(
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.45),
-                width: 0.8,
-              ),
-              titlePositionPercentageOffset: 0.17,
-              titleTextStyle: textTheme.labelSmall?.copyWith(
-                color: colors.textSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-              getTitle: (index, angle) {
-                final readableAngle = angle > 90 && angle < 270
-                    ? angle + 180
-                    : angle;
-                return RadarChartTitle(
-                  text: _shortRadarLabel(_string(points[index]['label'])),
-                  angle: readableAngle,
-                );
-              },
-              dataSets: [
-                RadarDataSet(
-                  dataEntries: points
-                      .map((point) => RadarEntry(value: _num(point['planned'])))
-                      .toList(growable: false),
-                  borderColor: averageColor,
-                  fillColor: averageColor.withValues(alpha: 0.04),
-                  borderWidth: 2.2,
-                  entryRadius: 2.8,
-                ),
-                RadarDataSet(
-                  dataEntries: points
-                      .map((point) => RadarEntry(value: _num(point['actual'])))
-                      .toList(growable: false),
-                  borderColor: accent,
-                  fillColor: accent.withValues(alpha: 0.17),
-                  borderWidth: 2.2,
-                  entryRadius: 3,
-                ),
-              ],
-            ),
-            duration: const Duration(milliseconds: 450),
-            curve: Curves.easeOutCubic,
-          ),
-        ),
-        const SizedBox(height: 14),
-        Wrap(
-          spacing: 16,
-          runSpacing: 6,
-          alignment: WrapAlignment.center,
+    final legendSeries = [
+      ChartLegendSeries(
+        id: _latestSeriesId,
+        label: latestLabel,
+        color: widget.accent,
+      ),
+      ChartLegendSeries(
+        id: _averageSeriesId,
+        label: averageLabel,
+        color: averageColor,
+      ),
+    ];
+
+    return AnimatedBuilder(
+      animation: _visibilityController,
+      builder: (context, child) {
+        return Column(
           children: [
-            _RadarLegendItem(
-              key: const Key('insight_feed_radar_legend_latest'),
-              color: accent,
-              label: latestLabel,
+            Expanded(
+              child: _buildRadarChart(
+                context: context,
+                points: points,
+                averageColor: averageColor,
+                textTheme: textTheme,
+                colors: colors,
+              ),
             ),
-            _RadarLegendItem(
-              key: const Key('insight_feed_radar_legend_average'),
-              color: averageColor,
-              label: averageLabel,
+            const SizedBox(height: 14),
+            TappableChartLegend(
+              series: legendSeries,
+              controller: _visibilityController,
+              spacing: 16,
+              runSpacing: 6,
+              dotSize: 9,
+              keyPrefix: 'insight_feed_radar_legend',
             ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
-}
 
-class _RadarLegendItem extends StatelessWidget {
-  const _RadarLegendItem({super.key, required this.color, required this.label});
+  List<ChartLegendSeries> get _legendSeries => [
+    ChartLegendSeries(
+      id: _latestSeriesId,
+      label: 'Last workout',
+      color: widget.accent,
+    ),
+    ChartLegendSeries(
+      id: _averageSeriesId,
+      label: 'recent average',
+      color: context.appColors.textSecondary.withValues(alpha: 0.92),
+    ),
+  ];
 
-  final Color color;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 9,
-          height: 9,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  Widget _buildRadarChart({
+    required BuildContext context,
+    required List<Map<String, Object?>> points,
+    required Color averageColor,
+    required TextTheme textTheme,
+    required dynamic colors,
+  }) {
+    return RadarChart(
+      RadarChartData(
+        radarShape: RadarShape.polygon,
+        tickCount: 4,
+        ticksTextStyle: textTheme.labelSmall?.copyWith(
+          color: colors.transparent,
+          fontSize: 1,
         ),
-        const SizedBox(width: 7),
-        Flexible(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.appText.labelSmall?.copyWith(
-              color: context.appColors.textSecondary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+        radarBackgroundColor: colors.field.withValues(alpha: 0.18),
+        radarBorderData: BorderSide(color: Theme.of(context).dividerColor),
+        gridBorderData: BorderSide(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.75),
+          width: 0.8,
         ),
-      ],
+        tickBorderData: BorderSide(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.45),
+          width: 0.8,
+        ),
+        titlePositionPercentageOffset: 0.17,
+        titleTextStyle: textTheme.labelSmall?.copyWith(
+          color: colors.textSecondary,
+          fontWeight: FontWeight.w600,
+        ),
+        getTitle: (index, angle) {
+          final readableAngle = angle > 90 && angle < 270 ? angle + 180 : angle;
+          return RadarChartTitle(
+            text: _shortRadarLabel(_string(points[index]['label'])),
+            angle: readableAngle,
+          );
+        },
+        dataSets: _buildRadarDataSets(
+          points: points,
+          averageColor: averageColor,
+        ),
+      ),
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeOutCubic,
     );
+  }
+
+  List<RadarDataSet> _buildRadarDataSets({
+    required List<Map<String, Object?>> points,
+    required Color averageColor,
+  }) {
+    final averageVisible = _visibilityController.isVisible(_averageSeriesId);
+    final latestVisible = _visibilityController.isVisible(_latestSeriesId);
+
+    return [
+      RadarDataSet(
+        dataEntries: points
+            .map((point) => RadarEntry(value: _num(point['planned'])))
+            .toList(growable: false),
+        borderColor: averageVisible
+            ? averageColor
+            : averageColor.withValues(alpha: 0),
+        fillColor: averageVisible
+            ? averageColor.withValues(alpha: 0.04)
+            : averageColor.withValues(alpha: 0),
+        borderWidth: 2.2,
+        entryRadius: averageVisible ? 2.8 : 0,
+      ),
+      RadarDataSet(
+        dataEntries: points
+            .map((point) => RadarEntry(value: _num(point['actual'])))
+            .toList(growable: false),
+        borderColor: latestVisible
+            ? widget.accent
+            : widget.accent.withValues(alpha: 0),
+        fillColor: latestVisible
+            ? widget.accent.withValues(alpha: 0.17)
+            : widget.accent.withValues(alpha: 0),
+        borderWidth: 2.2,
+        entryRadius: latestVisible ? 3 : 0,
+      ),
+    ];
   }
 }
 
@@ -1976,6 +2102,8 @@ class _SparklinePainter extends CustomPainter {
     required this.values,
     required this.baseline,
     required this.referenceValues,
+    required this.showPrimary,
+    required this.showReference,
     required this.color,
     required this.gridColor,
     required this.fillColor,
@@ -1986,6 +2114,8 @@ class _SparklinePainter extends CustomPainter {
   final List<double> values;
   final double? baseline;
   final List<double>? referenceValues;
+  final bool showPrimary;
+  final bool showReference;
   final Color color;
   final Color gridColor;
   final Color fillColor;
@@ -1995,6 +2125,9 @@ class _SparklinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final allValues = [...values, ...?referenceValues, ?baseline];
+    if (allValues.isEmpty) {
+      return;
+    }
     final minValue = allValues.reduce(math.min).toDouble();
     final maxValue = allValues.reduce(math.max).toDouble();
     final span = math.max(maxValue - minValue, 1).toDouble();
@@ -2014,8 +2147,8 @@ class _SparklinePainter extends CustomPainter {
 
     if (smooth) {
       final gridPaint = Paint()
-        ..color = gridColor.withValues(alpha: 0.16)
-        ..strokeWidth = 1;
+        ..color = gridColor.withValues(alpha: 0.55)
+        ..strokeWidth = 1.2;
       final midValue = minValue + (span / 2);
       for (final tickValue in [maxValue, midValue, minValue]) {
         final y = _yForValue(tickValue, plot, minValue, span);
@@ -2038,7 +2171,8 @@ class _SparklinePainter extends CustomPainter {
       points.add(Offset(x, y));
     }
 
-    if (smooth &&
+    if (showReference &&
+        smooth &&
         referenceValues != null &&
         referenceValues!.length == values.length) {
       final referencePoints = <Offset>[];
@@ -2054,7 +2188,7 @@ class _SparklinePainter extends CustomPainter {
         ..strokeWidth = 2.4
         ..strokeCap = StrokeCap.round;
       _drawDashedPolyline(canvas, referencePoints, paint);
-    } else if (baseline != null) {
+    } else if (showReference && baseline != null) {
       final y = _yForValue(baseline!, plot, minValue, span);
       final paint = Paint()
         ..color = gridColor.withValues(alpha: smooth ? 0.95 : 0.7)
@@ -2071,39 +2205,41 @@ class _SparklinePainter extends CustomPainter {
       }
     }
 
-    final path = Path()..moveTo(points.first.dx, points.first.dy);
-    for (var index = 1; index < points.length; index++) {
-      if (smooth) {
-        final previous = points[index - 1];
-        final current = points[index];
-        final controlX = (previous.dx + current.dx) / 2;
-        path.cubicTo(
-          controlX,
-          previous.dy,
-          controlX,
-          current.dy,
-          current.dx,
-          current.dy,
-        );
-      } else {
-        path.lineTo(points[index].dx, points[index].dy);
+    if (showPrimary) {
+      final path = Path()..moveTo(points.first.dx, points.first.dy);
+      for (var index = 1; index < points.length; index++) {
+        if (smooth) {
+          final previous = points[index - 1];
+          final current = points[index];
+          final controlX = (previous.dx + current.dx) / 2;
+          path.cubicTo(
+            controlX,
+            previous.dy,
+            controlX,
+            current.dy,
+            current.dx,
+            current.dy,
+          );
+        } else {
+          path.lineTo(points[index].dx, points[index].dy);
+        }
       }
-    }
 
-    final fillPath = Path.from(path)
-      ..lineTo(plot.right, plot.bottom)
-      ..lineTo(plot.left, plot.bottom)
-      ..close();
-    canvas.drawPath(fillPath, Paint()..color = fillColor);
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..strokeWidth = smooth ? 3.2 : 2.4,
-    );
+      final fillPath = Path.from(path)
+        ..lineTo(plot.right, plot.bottom)
+        ..lineTo(plot.left, plot.bottom)
+        ..close();
+      canvas.drawPath(fillPath, Paint()..color = fillColor);
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..strokeWidth = smooth ? 3.2 : 2.4,
+      );
+    }
   }
 
   double _yForValue(double value, Rect plot, double minValue, double span) {
@@ -2163,6 +2299,8 @@ class _SparklinePainter extends CustomPainter {
     return oldDelegate.values != values ||
         oldDelegate.baseline != baseline ||
         oldDelegate.referenceValues != referenceValues ||
+        oldDelegate.showPrimary != showPrimary ||
+        oldDelegate.showReference != showReference ||
         oldDelegate.color != color ||
         oldDelegate.gridColor != gridColor ||
         oldDelegate.fillColor != fillColor ||
@@ -2175,6 +2313,8 @@ class _VelocityLinePainter extends CustomPainter {
   _VelocityLinePainter({
     required this.values,
     required this.average,
+    required this.showValues,
+    required this.showAverage,
     required this.color,
     required this.averageColor,
     required this.gridColor,
@@ -2184,6 +2324,8 @@ class _VelocityLinePainter extends CustomPainter {
 
   final List<double> values;
   final double? average;
+  final bool showValues;
+  final bool showAverage;
   final Color color;
   final Color averageColor;
   final Color gridColor;
@@ -2193,6 +2335,9 @@ class _VelocityLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final allValues = [...values, ?average];
+    if (allValues.isEmpty) {
+      return;
+    }
     const topPadding = 6.0;
     const bottomPadding = 8.0;
     final plot = Rect.fromLTWH(
@@ -2245,7 +2390,7 @@ class _VelocityLinePainter extends CustomPainter {
       points.add(Offset(x, y));
     }
 
-    if (average != null && points.length > 1) {
+    if (showValues && showAverage && average != null && points.length > 1) {
       final baselineY = _yForValue(average!, plot, minValue, span);
       final fillStart = _baselineIntersectionFromRight(
         points: points,
@@ -2264,7 +2409,7 @@ class _VelocityLinePainter extends CustomPainter {
       canvas.drawPath(bandPath, Paint()..color = color.withValues(alpha: 0.24));
     }
 
-    if (average != null) {
+    if (showAverage && average != null) {
       final averageY = _yForValue(average!, plot, minValue, span);
       final averagePaint = Paint()
         ..color = averageColor.withValues(alpha: 0.95)
@@ -2287,47 +2432,49 @@ class _VelocityLinePainter extends CustomPainter {
       );
     }
 
-    final path = Path()..moveTo(points.first.dx, points.first.dy);
-    for (var index = 1; index < points.length; index++) {
-      final previous = points[index - 1];
-      final current = points[index];
-      final controlX = (previous.dx + current.dx) / 2;
-      path.cubicTo(
-        controlX,
-        previous.dy,
-        controlX,
-        current.dy,
-        current.dx,
-        current.dy,
-      );
-    }
-
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..strokeWidth = 3.2,
-    );
-
-    final pointPaint = Paint()..color = color;
-    final pointFillPaint = Paint()..color = pointFillColor;
-    for (var index = 0; index < points.length; index++) {
-      final point = points[index];
-      final isLatest = index == points.length - 1;
-      final outerRadius = isLatest ? 6.2 : 3.8;
-      final innerRadius = isLatest ? 2.6 : 1.8;
-      if (isLatest) {
-        canvas.drawCircle(
-          point,
-          10,
-          Paint()..color = color.withValues(alpha: 0.14),
+    if (showValues) {
+      final path = Path()..moveTo(points.first.dx, points.first.dy);
+      for (var index = 1; index < points.length; index++) {
+        final previous = points[index - 1];
+        final current = points[index];
+        final controlX = (previous.dx + current.dx) / 2;
+        path.cubicTo(
+          controlX,
+          previous.dy,
+          controlX,
+          current.dy,
+          current.dx,
+          current.dy,
         );
       }
-      canvas.drawCircle(point, outerRadius, pointPaint);
-      canvas.drawCircle(point, innerRadius, pointFillPaint);
+
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round
+          ..strokeWidth = 3.2,
+      );
+
+      final pointPaint = Paint()..color = color;
+      final pointFillPaint = Paint()..color = pointFillColor;
+      for (var index = 0; index < points.length; index++) {
+        final point = points[index];
+        final isLatest = index == points.length - 1;
+        final outerRadius = isLatest ? 6.2 : 3.8;
+        final innerRadius = isLatest ? 2.6 : 1.8;
+        if (isLatest) {
+          canvas.drawCircle(
+            point,
+            10,
+            Paint()..color = color.withValues(alpha: 0.14),
+          );
+        }
+        canvas.drawCircle(point, outerRadius, pointPaint);
+        canvas.drawCircle(point, innerRadius, pointFillPaint);
+      }
     }
   }
 
@@ -2413,6 +2560,8 @@ class _VelocityLinePainter extends CustomPainter {
   bool shouldRepaint(covariant _VelocityLinePainter oldDelegate) {
     return oldDelegate.values != values ||
         oldDelegate.average != average ||
+        oldDelegate.showValues != showValues ||
+        oldDelegate.showAverage != showAverage ||
         oldDelegate.color != color ||
         oldDelegate.averageColor != averageColor ||
         oldDelegate.labelStyle != labelStyle ||

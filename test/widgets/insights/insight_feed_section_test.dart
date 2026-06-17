@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -421,6 +422,65 @@ void main() {
     expect(baselineLegend.dy, greaterThan(durationLabel.dy));
   });
 
+  testWidgets('baseline bar legend toggles series while keeping one visible', (
+    tester,
+  ) async {
+    final service = _FakeInsightFeedService(
+      cards: [
+        InsightFeedCard(
+          id: 'card-latest',
+          type: InsightFeedCardType.latestWorkoutComparison,
+          priority: 50,
+          title: 'Workout progress',
+          body: 'Workout latest compared with your recent baseline.',
+          metric: '+39%',
+          accent: 'success',
+          icon: 'chart',
+          generatedAt: DateTime(2026, 6, 11),
+          visualType: InsightFeedVisualType.baselineBars,
+          size: InsightFeedCardSize.wide,
+          visualData: const {
+            'items': [
+              {
+                'label': 'Duration',
+                'baseline': 36.0,
+                'actual': 50.0,
+                'deltaLabel': '70%',
+              },
+            ],
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('insight_feed_baseline_bar')), findsOneWidget);
+    expect(find.byKey(const Key('insight_feed_latest_bar')), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const Key('insight_feed_baseline_bars_legend_baseline')),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const Key('insight_feed_baseline_bar')), findsNothing);
+    expect(find.byKey(const Key('insight_feed_latest_bar')), findsOneWidget);
+
+    await tester.tap(
+      find.byKey(const Key('insight_feed_baseline_bars_legend_latest')),
+    );
+    await tester.pump();
+
+    expect(find.byKey(const Key('insight_feed_baseline_bar')), findsNothing);
+    expect(find.byKey(const Key('insight_feed_latest_bar')), findsOneWidget);
+  });
+
   testWidgets('labels body weight trend line and baseline', (tester) async {
     final service = _FakeInsightFeedService(
       cards: [
@@ -475,7 +535,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('logged weight'), findsOneWidget);
-    expect(find.text('avg / 14d'), findsOneWidget);
+    expect(find.text('avg / 1m'), findsOneWidget);
     expect(find.text('average'), findsNothing);
     expect(find.text('start'), findsNothing);
     expect(find.text('5/1'), findsOneWidget);
@@ -484,6 +544,75 @@ void main() {
     final legendLabel = tester.getTopLeft(find.text('logged weight'));
     expect(legendLabel.dy, greaterThan(endLabel.dy));
     expect(find.text('90 day trend'), findsNothing);
+  });
+
+  testWidgets('sparkline reference legend updates painter inputs', (
+    tester,
+  ) async {
+    final service = _FakeInsightFeedService(
+      cards: [
+        InsightFeedCard(
+          id: 'card-weight',
+          type: InsightFeedCardType.bodyWeightTrend,
+          priority: 50,
+          title: 'Body weight trend',
+          body: 'Your latest body weight compared with recent entries.',
+          metric: '+1.2',
+          accent: 'info',
+          icon: 'weight',
+          generatedAt: DateTime(2026, 6, 11),
+          visualType: InsightFeedVisualType.bodyWeightLine,
+          size: InsightFeedCardSize.wide,
+          visualData: const {
+            'points': [
+              {
+                'label': '5/1',
+                'date': '2026-05-01T12:00:00.000',
+                'value': 81.2,
+              },
+              {
+                'label': '5/15',
+                'date': '2026-05-15T12:00:00.000',
+                'value': 81.8,
+              },
+              {
+                'label': '6/1',
+                'date': '2026-06-01T12:00:00.000',
+                'value': 82.4,
+              },
+            ],
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    dynamic painter = tester
+        .widget<CustomPaint>(
+          find.byKey(const Key('insight_feed_sparkline_plot')),
+        )
+        .painter;
+    expect(painter.showReference, isTrue);
+
+    await tester.tap(
+      find.byKey(const Key('insight_feed_sparkline_legend_reference')),
+    );
+    await tester.pump();
+
+    painter = tester
+        .widget<CustomPaint>(
+          find.byKey(const Key('insight_feed_sparkline_plot')),
+        )
+        .painter;
+    expect(painter.showReference, isFalse);
+    expect(painter.showPrimary, isTrue);
   });
 
   testWidgets('renders radar legend labels', (tester) async {
@@ -552,6 +681,62 @@ void main() {
     expect(latestLegend.dx, lessThan(averageLegend.dx));
   });
 
+  testWidgets('radar legend tap hides and restores the matching dataset', (
+    tester,
+  ) async {
+    final service = _FakeInsightFeedService(
+      cards: [
+        InsightFeedCard(
+          id: 'card-radar',
+          type: InsightFeedCardType.muscleActivationRadar,
+          priority: 90,
+          title: 'Muscle focus',
+          body: 'Latest workout compared with your recent average.',
+          metric: '2',
+          accent: 'primary',
+          icon: 'radar',
+          generatedAt: DateTime(2026, 6, 11),
+          visualType: InsightFeedVisualType.radar,
+          size: InsightFeedCardSize.featured,
+          visualData: const {
+            'plannedLabel': 'recent average',
+            'actualLabel': 'Push Day A',
+            'points': [
+              {'label': 'Chest', 'planned': 0.5, 'actual': 1},
+              {'label': 'Back', 'planned': 0.2, 'actual': 0.1},
+              {'label': 'Legs', 'planned': 0.4, 'actual': 0.3},
+            ],
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    RadarChart radar = tester.widget(find.byType(RadarChart));
+    expect(radar.data.dataSets, hasLength(2));
+
+    await tester.tap(find.byKey(const Key('insight_feed_radar_legend_latest')));
+    await tester.pump();
+
+    radar = tester.widget(find.byType(RadarChart));
+    expect(radar.data.dataSets, hasLength(2));
+    expect(radar.data.dataSets.last.entryRadius, 0);
+
+    await tester.tap(find.byKey(const Key('insight_feed_radar_legend_latest')));
+    await tester.pump();
+
+    radar = tester.widget(find.byType(RadarChart));
+    expect(radar.data.dataSets, hasLength(2));
+    expect(radar.data.dataSets.last.entryRadius, 3);
+  });
+
   testWidgets('renders compact training velocity legend labels', (
     tester,
   ) async {
@@ -597,6 +782,66 @@ void main() {
     expect(find.text('Baseline 1.4/wk'), findsOneWidget);
     expect(find.text('5/1'), findsOneWidget);
     expect(find.text('5/15'), findsOneWidget);
+  });
+
+  testWidgets('velocity average legend updates painter inputs', (tester) async {
+    final service = _FakeInsightFeedService(
+      cards: [
+        InsightFeedCard(
+          id: 'velocity',
+          type: InsightFeedCardType.trainingVelocity,
+          priority: 90,
+          title: 'Training velocity',
+          body: '2.0 workouts/week in the last 7 days.',
+          metric: '+25%',
+          accent: 'success',
+          icon: 'bolt',
+          generatedAt: DateTime(2026, 6, 20),
+          visualType: InsightFeedVisualType.trainingVelocityLine,
+          size: InsightFeedCardSize.wide,
+          visualData: const {
+            'points': [
+              {'label': '5/1', 'value': 1.2},
+              {'label': '5/8', 'value': 1.8},
+              {'label': '5/15', 'value': 2.0},
+            ],
+            'average': 1.4,
+            'summaryItems': [
+              {'label': 'Recent', 'displayValue': '2.0/wk'},
+              {'label': 'Baseline', 'displayValue': '1.4/wk'},
+            ],
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    dynamic painter = tester
+        .widget<CustomPaint>(
+          find.byKey(const Key('insight_feed_velocity_plot')),
+        )
+        .painter;
+    expect(painter.showAverage, isTrue);
+
+    await tester.tap(
+      find.byKey(const Key('insight_feed_velocity_legend_average')),
+    );
+    await tester.pump();
+
+    painter = tester
+        .widget<CustomPaint>(
+          find.byKey(const Key('insight_feed_velocity_plot')),
+        )
+        .painter;
+    expect(painter.showAverage, isFalse);
+    expect(painter.showValues, isTrue);
   });
 
   testWidgets('renders clickable award previews for achievement cards', (
