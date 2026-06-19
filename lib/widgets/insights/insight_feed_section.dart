@@ -1041,6 +1041,7 @@ class _BaselineBarsVisualState extends State<_BaselineBarsVisual> {
               TappableChartLegend(
                 series: _legendSeries,
                 controller: _visibilityController,
+                isInteractive: false,
                 keyPrefix: 'insight_feed_baseline_bars_legend',
               ),
             ],
@@ -1288,6 +1289,7 @@ class _CalendarStripVisualState extends State<_CalendarStripVisual> {
             TappableChartLegend(
               series: legendSeries,
               controller: _visibilityController,
+              isInteractive: false,
               keyPrefix: 'insight_feed_calendar_legend',
             ),
           ],

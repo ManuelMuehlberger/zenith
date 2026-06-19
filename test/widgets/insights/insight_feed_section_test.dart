@@ -336,6 +336,20 @@ void main() {
     expect(find.text('9 Jun'), findsOneWidget);
     expect(find.text('10 Jun'), findsOneWidget);
     expect(find.textContaining('Previous 14 days:'), findsNothing);
+
+    final dayStripsBefore = find.byType(AnimatedContainer);
+    expect(dayStripsBefore, findsNWidgets(14));
+
+    await tester.tap(
+      find.byKey(const Key('insight_feed_calendar_legend_previous')),
+    );
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const Key('insight_feed_calendar_legend_recent')),
+    );
+    await tester.pump();
+
+    expect(find.byType(AnimatedContainer), findsNWidgets(14));
   });
 
   testWidgets('renders baseline bar legend below the graph with delta labels', (
@@ -422,9 +436,7 @@ void main() {
     expect(baselineLegend.dy, greaterThan(durationLabel.dy));
   });
 
-  testWidgets('baseline bar legend toggles series while keeping one visible', (
-    tester,
-  ) async {
+  testWidgets('baseline bar legend stays visible when tapped', (tester) async {
     final service = _FakeInsightFeedService(
       cards: [
         InsightFeedCard(
@@ -469,7 +481,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byKey(const Key('insight_feed_baseline_bar')), findsNothing);
+    expect(find.byKey(const Key('insight_feed_baseline_bar')), findsOneWidget);
     expect(find.byKey(const Key('insight_feed_latest_bar')), findsOneWidget);
 
     await tester.tap(
@@ -477,7 +489,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byKey(const Key('insight_feed_baseline_bar')), findsNothing);
+    expect(find.byKey(const Key('insight_feed_baseline_bar')), findsOneWidget);
     expect(find.byKey(const Key('insight_feed_latest_bar')), findsOneWidget);
   });
 

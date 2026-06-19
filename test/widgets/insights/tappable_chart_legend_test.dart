@@ -54,6 +54,33 @@ void main() {
       ),
     );
   });
+
+  testWidgets('non-interactive legend does not toggle controller state', (
+    tester,
+  ) async {
+    final controller = ChartSeriesVisibilityController(series: _series);
+
+    await tester.pumpWidget(_legendHarness(controller, isInteractive: false));
+
+    await tester.tap(find.byKey(const Key('test_legend_baseline')));
+    await tester.pump();
+
+    expect(controller.isVisible('baseline'), isTrue);
+    expect(controller.isVisible('latest'), isTrue);
+  });
+
+  testWidgets('non-interactive legend exposes passive semantics', (
+    tester,
+  ) async {
+    final controller = ChartSeriesVisibilityController(series: _series);
+
+    await tester.pumpWidget(_legendHarness(controller, isInteractive: false));
+
+    expect(
+      tester.getSemantics(find.byKey(const Key('test_legend_baseline'))),
+      matchesSemantics(label: 'baseline'),
+    );
+  });
 }
 
 List<ChartLegendSeries> get _series => const [
@@ -61,7 +88,10 @@ List<ChartLegendSeries> get _series => const [
   ChartLegendSeries(id: 'latest', label: 'latest', color: Colors.blue),
 ];
 
-Widget _legendHarness(ChartSeriesVisibilityController controller) {
+Widget _legendHarness(
+  ChartSeriesVisibilityController controller, {
+  bool isInteractive = true,
+}) {
   return MaterialApp(
     theme: AppTheme.light,
     home: Scaffold(
@@ -69,6 +99,7 @@ Widget _legendHarness(ChartSeriesVisibilityController controller) {
         child: TappableChartLegend(
           series: _series,
           controller: controller,
+          isInteractive: isInteractive,
           keyPrefix: 'test_legend',
         ),
       ),
