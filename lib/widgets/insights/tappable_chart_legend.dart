@@ -56,6 +56,7 @@ class TappableChartLegend extends StatelessWidget {
     super.key,
     required this.series,
     required this.controller,
+    this.isInteractive = true,
     this.spacing = 12,
     this.runSpacing = 4,
     this.dotSize = 8,
@@ -64,6 +65,7 @@ class TappableChartLegend extends StatelessWidget {
 
   final List<ChartLegendSeries> series;
   final ChartSeriesVisibilityController controller;
+  final bool isInteractive;
   final double spacing;
   final double runSpacing;
   final double dotSize;
@@ -85,9 +87,10 @@ class TappableChartLegend extends StatelessWidget {
               _TappableChartLegendItem(
                 key: Key('${keyPrefix}_${item.id}'),
                 item: item,
-                isVisible: controller.isVisible(item.id),
+                isInteractive: isInteractive,
+                isVisible: isInteractive ? controller.isVisible(item.id) : true,
                 dotSize: dotSize,
-                onTap: () => controller.toggle(item.id),
+                onTap: isInteractive ? () => controller.toggle(item.id) : null,
               ),
           ],
         );
@@ -100,30 +103,36 @@ class _TappableChartLegendItem extends StatelessWidget {
   const _TappableChartLegendItem({
     super.key,
     required this.item,
+    required this.isInteractive,
     required this.isVisible,
     required this.dotSize,
     required this.onTap,
   });
 
   final ChartLegendSeries item;
+  final bool isInteractive;
   final bool isVisible;
   final double dotSize;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final opacity = isVisible ? 1.0 : 0.38;
+    final opacity = !isInteractive || isVisible ? 1.0 : 0.38;
     final textStyle = context.appText.labelSmall?.copyWith(
       color: context.appColors.textSecondary.withValues(alpha: opacity),
       fontWeight: FontWeight.w700,
-      decoration: isVisible ? TextDecoration.none : TextDecoration.lineThrough,
+      decoration: !isInteractive || isVisible
+          ? TextDecoration.none
+          : TextDecoration.lineThrough,
       decorationColor: context.appColors.textSecondary.withValues(alpha: 0.65),
     );
 
     return Semantics(
-      button: true,
-      selected: isVisible,
-      label: '${isVisible ? 'Hide' : 'Show'} ${item.label}',
+      button: isInteractive,
+      selected: isInteractive ? isVisible : null,
+      label: isInteractive
+          ? '${isVisible ? 'Hide' : 'Show'} ${item.label}'
+          : item.label,
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
