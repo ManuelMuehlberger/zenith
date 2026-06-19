@@ -493,6 +493,40 @@ void main() {
     expect(find.byKey(const Key('insight_feed_latest_bar')), findsOneWidget);
   });
 
+  testWidgets('advanced insights launcher exposes home-style pull state', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: AdvancedInsightsLauncher(
+            onPressed: () {},
+            glowProgress: 1,
+            pullProgress: 1,
+            detentArmed: true,
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    expect(find.byKey(const Key('advanced_insights_launcher')), findsOneWidget);
+    expect(find.text('Advanced Insights'), findsOneWidget);
+
+    final container = tester.widget<AnimatedContainer>(
+      find.descendant(
+        of: find.byKey(const Key('advanced_insights_launcher')),
+        matching: find.byType(AnimatedContainer),
+      ),
+    );
+    final padding = container.padding as EdgeInsets;
+
+    expect(padding.left, 20);
+    expect(padding.top, 12);
+  });
+
   testWidgets('labels body weight trend line and baseline', (tester) async {
     final service = _FakeInsightFeedService(
       cards: [
