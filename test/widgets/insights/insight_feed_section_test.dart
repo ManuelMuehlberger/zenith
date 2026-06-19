@@ -469,7 +469,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byKey(const Key('insight_feed_baseline_bar')), findsNothing);
+    expect(find.byKey(const Key('insight_feed_baseline_bar')), findsOneWidget);
     expect(find.byKey(const Key('insight_feed_latest_bar')), findsOneWidget);
 
     await tester.tap(

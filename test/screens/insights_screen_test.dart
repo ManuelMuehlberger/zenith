@@ -94,6 +94,36 @@ void main() {
     },
   );
 
+  testWidgets(
+    'bottom overscroll does not open advanced insights before ready',
+    (tester) async {
+      InsightsService.instance.setWorkoutsProvider(
+        () async => [
+          _workout('one', DateTime(2026, 6, 10)),
+          _workout('two', DateTime(2026, 6, 11)),
+        ],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(theme: AppTheme.light, home: const InsightsScreen()),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+
+      final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+      expect(scrollable.position.maxScrollExtent, lessThanOrEqualTo(320));
+
+      scrollable.position.jumpTo(scrollable.position.maxScrollExtent);
+      await tester.pump();
+
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.byType(AdvancedInsightsScreen), findsNothing);
+    },
+  );
+
   testWidgets('empty workout history keeps the existing empty state', (
     tester,
   ) async {

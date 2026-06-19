@@ -2698,58 +2698,99 @@ class _InsightFeedFallbackCard extends StatelessWidget {
 
 // policy: allow-public-api launcher tile that opens the advanced insights route.
 class AdvancedInsightsLauncher extends StatelessWidget {
-  const AdvancedInsightsLauncher({super.key, required this.onPressed});
+  const AdvancedInsightsLauncher({
+    super.key,
+    required this.onPressed,
+    this.glowProgress = 0,
+    this.pullProgress = 0,
+    this.detentArmed = false,
+  });
 
   final VoidCallback onPressed;
+  final double glowProgress;
+  final double pullProgress;
+  final bool detentArmed;
 
   @override
   Widget build(BuildContext context) {
     final scheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
+    final glowHighlightProgress = ((glowProgress - 0.35) / 0.65).clamp(
+      0.0,
+      1.0,
+    );
+    final clampedPullProgress = pullProgress.clamp(0.0, 1.0);
+    final totalProgress = (glowHighlightProgress + clampedPullProgress * 0.75)
+        .clamp(0.0, 1.0);
+    final buttonFill = Color.lerp(
+      colors.field,
+      scheme.primary.withValues(alpha: detentArmed ? 0.24 : 0.18),
+      totalProgress,
+    )!;
+    final scale = 1.0 + clampedPullProgress * 0.025;
+    final verticalOffset = -6.0 * clampedPullProgress;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-      child: Material(
-        color: scheme.surface,
-        borderRadius: AppTheme.workoutCardBorderRadius,
-        child: InkWell(
-          borderRadius: AppTheme.workoutCardBorderRadius,
-          onTap: onPressed,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            decoration: _insightCardDecoration(context),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: scheme.primary.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    CupertinoIcons.slider_horizontal_3,
-                    color: scheme.primary,
-                    size: 20,
-                  ),
+      child: AnimatedSlide(
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOutCubic,
+        offset: Offset(0, verticalOffset / 48),
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOutCubic,
+          scale: scale,
+          child: Material(
+            color: colors.transparent,
+            borderRadius: AppTheme.workoutCardBorderRadius,
+            child: InkWell(
+              key: const Key('advanced_insights_launcher'),
+              borderRadius: AppTheme.workoutCardBorderRadius,
+              onTap: onPressed,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                curve: Curves.easeOutCubic,
+                padding: EdgeInsets.symmetric(
+                  horizontal: 16 + clampedPullProgress * 4,
+                  vertical: 10 + clampedPullProgress * 2,
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    'Advanced Insights',
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: colors.textPrimary,
-                      fontWeight: FontWeight.w700,
+                decoration: BoxDecoration(
+                  color: buttonFill,
+                  borderRadius: AppTheme.workoutCardBorderRadius,
+                  border: Border.all(
+                    color: scheme.primary.withValues(
+                      alpha: detentArmed ? 0.35 : 0,
                     ),
                   ),
                 ),
-                Icon(
-                  CupertinoIcons.chevron_right,
-                  color: colors.textTertiary,
-                  size: 20,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 120),
+                        style: textTheme.titleSmall!.copyWith(
+                          color: Color.lerp(
+                            colors.textPrimary,
+                            scheme.primary,
+                            totalProgress,
+                          ),
+                        ),
+                        child: const Text('Advanced Insights'),
+                      ),
+                    ),
+                    Icon(
+                      CupertinoIcons.chevron_right,
+                      color: Color.lerp(
+                        colors.textSecondary,
+                        scheme.primary,
+                        totalProgress,
+                      ),
+                      size: 18,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
