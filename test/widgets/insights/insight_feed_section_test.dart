@@ -592,6 +592,162 @@ void main() {
     expect(find.text('90 day trend'), findsNothing);
   });
 
+  testWidgets('renders balance fingerprint visual without radar', (
+    tester,
+  ) async {
+    final service = _FakeInsightFeedService(
+      cards: [
+        InsightFeedCard(
+          id: 'card-balance',
+          type: InsightFeedCardType.trainingBalance,
+          priority: 90,
+          title: 'Training balance',
+          body: 'Your long-term work leans Chest. Prioritize Back next.',
+          metric: '68%',
+          accent: 'info',
+          icon: 'chart',
+          generatedAt: DateTime(2026, 6, 11),
+          visualType: InsightFeedVisualType.balanceFingerprint,
+          size: InsightFeedCardSize.wide,
+          visualData: const {
+            'segments': [
+              {
+                'axisId': 'chest',
+                'label': 'Chest',
+                'value': 20.0,
+                'percent': 0.55,
+              },
+              {
+                'axisId': 'legs',
+                'label': 'Legs',
+                'value': 10.0,
+                'percent': 0.30,
+              },
+              {
+                'axisId': 'back',
+                'label': 'Back',
+                'value': 5.0,
+                'percent': 0.15,
+              },
+            ],
+            'dominantLabel': 'Chest',
+            'focusLabel': 'Back',
+            'balanceScore': 68.0,
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('insight_feed_visual_balanceFingerprint')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('insight_feed_balance_fingerprint_bar')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('insight_feed_balance_segment_chest')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('insight_feed_balance_score_line')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('insight_feed_balance_score_marker')),
+      findsOneWidget,
+    );
+    expect(find.text('68%'), findsWidgets);
+    expect(find.text('68'), findsOneWidget);
+    expect(find.text('Balance'), findsNothing);
+    expect(find.text('Dominant'), findsNothing);
+    expect(find.text('Focus'), findsNothing);
+    expect(find.text('Chest'), findsWidgets);
+    expect(
+      find.text('Tap a segment to inspect its long-term share'),
+      findsOneWidget,
+    );
+    expect(find.byType(RadarChart), findsNothing);
+
+    await tester.tap(
+      find.byKey(const Key('insight_feed_balance_segment_chest')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Chest accounts for 55% of long-term work'),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const Key('insight_feed_balance_segment_back')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Back accounts for 15% of long-term work'),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const Key('insight_feed_balance_segment_back')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Tap a segment to inspect its long-term share'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('balance fingerprint ignores malformed segments', (tester) async {
+    final service = _FakeInsightFeedService(
+      cards: [
+        InsightFeedCard(
+          id: 'card-balance-empty',
+          type: InsightFeedCardType.trainingBalance,
+          priority: 90,
+          title: 'Training balance',
+          body: 'Balance body.',
+          metric: '0',
+          accent: 'info',
+          icon: 'chart',
+          generatedAt: DateTime(2026, 6, 11),
+          visualType: InsightFeedVisualType.balanceFingerprint,
+          size: InsightFeedCardSize.wide,
+          visualData: const {
+            'segments': [
+              {'axisId': 'chest', 'label': 'Chest', 'percent': 1.0},
+            ],
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Training balance'), findsOneWidget);
+    expect(
+      find.byKey(const Key('insight_feed_balance_fingerprint_bar')),
+      findsNothing,
+    );
+  });
+
   testWidgets('sparkline reference legend updates painter inputs', (
     tester,
   ) async {

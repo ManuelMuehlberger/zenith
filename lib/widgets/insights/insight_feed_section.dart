@@ -321,6 +321,13 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
         InsightFeedCardSize.featured => 420,
       };
     }
+    if (card.visualType == InsightFeedVisualType.balanceFingerprint) {
+      return switch (card.size) {
+        InsightFeedCardSize.compact => 244,
+        InsightFeedCardSize.wide => 300,
+        InsightFeedCardSize.featured => 420,
+      };
+    }
     if (card.visualType == InsightFeedVisualType.calendarStrip) {
       return switch (card.size) {
         InsightFeedCardSize.compact => 236,
@@ -642,7 +649,8 @@ class _VisualInsightFeedCard extends StatelessWidget {
         card.visualType != InsightFeedVisualType.radar &&
         card.visualType != InsightFeedVisualType.baselineBars &&
         card.visualType != InsightFeedVisualType.trainingVelocityLine &&
-        card.visualType != InsightFeedVisualType.bodyWeightLine;
+        card.visualType != InsightFeedVisualType.bodyWeightLine &&
+        card.visualType != InsightFeedVisualType.balanceFingerprint;
 
     return Container(
       constraints: BoxConstraints(minHeight: _minHeight()),
@@ -760,6 +768,13 @@ class _VisualInsightFeedCard extends StatelessWidget {
         InsightFeedCardSize.featured => 420,
       };
     }
+    if (card.visualType == InsightFeedVisualType.balanceFingerprint) {
+      return switch (card.size) {
+        InsightFeedCardSize.compact => 244,
+        InsightFeedCardSize.wide => 300,
+        InsightFeedCardSize.featured => 420,
+      };
+    }
     if (card.visualType == InsightFeedVisualType.calendarStrip) {
       return switch (card.size) {
         InsightFeedCardSize.compact => 236,
@@ -800,6 +815,13 @@ class _VisualInsightFeedCard extends StatelessWidget {
       };
     }
     if (card.visualType == InsightFeedVisualType.bodyWeightLine) {
+      return switch (card.size) {
+        InsightFeedCardSize.compact => 112,
+        InsightFeedCardSize.wide => 168,
+        InsightFeedCardSize.featured => 282,
+      };
+    }
+    if (card.visualType == InsightFeedVisualType.balanceFingerprint) {
       return switch (card.size) {
         InsightFeedCardSize.compact => 112,
         InsightFeedCardSize.wide => 168,
@@ -968,6 +990,10 @@ class _InsightFeedVisualContent extends StatelessWidget {
           data: card.visualData,
           accent: accent,
           smooth: true,
+        ),
+        InsightFeedVisualType.balanceFingerprint => _BalanceFingerprintVisual(
+          data: card.visualData,
+          accent: accent,
         ),
         InsightFeedVisualType.awardPreview => const SizedBox.shrink(),
         InsightFeedVisualType.none => const SizedBox.shrink(),
@@ -2097,6 +2123,602 @@ class _RadarVisualState extends State<_RadarVisual> {
       ),
     ];
   }
+}
+
+class _BalanceFingerprintVisual extends StatefulWidget {
+  const _BalanceFingerprintVisual({required this.data, required this.accent});
+
+  final Map<String, Object?> data;
+  final Color accent;
+
+  @override
+  State<_BalanceFingerprintVisual> createState() =>
+      _BalanceFingerprintVisualState();
+}
+
+class _BalanceFingerprintVisualState extends State<_BalanceFingerprintVisual> {
+  int? _selectedIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final segments = _listOfMaps(
+      widget.data['segments'],
+    ).where((segment) => _num(segment['percent']) > 0).toList(growable: false);
+    if (segments.length < 3) {
+      return const SizedBox.shrink();
+    }
+    if (_selectedIndex != null && _selectedIndex! >= segments.length) {
+      _selectedIndex = 0;
+    }
+
+    final textTheme = context.appText;
+    final colors = context.appColors;
+    final score = _num(widget.data['balanceScore']).round().clamp(0, 100);
+    final selected = _selectedIndex == null ? null : segments[_selectedIndex!];
+    final selectedColor = selected == null
+        ? colors.textTertiary
+        : _balanceSegmentColor(context, _string(selected['axisId']));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _BalanceScoreLine(score: score),
+        const SizedBox(height: 12),
+        Expanded(
+          child: _BalanceFingerprintBar(
+            segments: segments,
+            selectedIndex: _selectedIndex,
+            onSegmentSelected: (index) {
+              setState(() {
+                _selectedIndex = _selectedIndex == index ? null : index;
+              });
+            },
+          ),
+        ),
+        const SizedBox(height: 10),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 160),
+          child: Row(
+            key: ValueKey(
+              selected == null ? 'none' : _string(selected['axisId']),
+            ),
+            children: [
+              Container(
+                width: 9,
+                height: 9,
+                decoration: BoxDecoration(
+                  color: selectedColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  _selectedSegmentText(selected),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.labelSmall?.copyWith(
+                    color: colors.textTertiary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _selectedSegmentText(Map<String, Object?>? segment) {
+    if (segment == null) {
+      return 'Tap a segment to inspect its long-term share';
+    }
+    final label = _string(segment['label']);
+    final percent = (_num(segment['percent']) * 100).round();
+    return '$label accounts for $percent% of long-term work';
+  }
+}
+
+class _BalanceScoreLine extends StatelessWidget {
+  const _BalanceScoreLine({required this.score});
+
+  final int score;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final value = score.clamp(0, 100);
+    final activeZone = _balanceZoneFor(value);
+
+    return SizedBox(
+      key: const Key('insight_feed_balance_score_line'),
+      height: 52,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const markerWidth = 44.0;
+          const markerHeight = 22.0;
+          const markerGap = 6.0;
+          const markerLineWidth = 3.0;
+          const markerLineHeight = 26.0;
+          const plotLeft = 0.0;
+          const zoneHeight = 8.0;
+          const zoneTop = 26.0;
+          final plotRight = math.max(plotLeft + 1, constraints.maxWidth);
+          final plotWidth = plotRight - plotLeft;
+          final markerX = plotLeft + plotWidth * (value / 100);
+          final preferLabelLeft = markerX > (plotLeft + plotWidth / 2);
+          final markerLabelLeft = preferLabelLeft
+              ? (markerX - markerWidth - markerGap).clamp(
+                  0.0,
+                  math.max(0.0, constraints.maxWidth - markerWidth),
+                )
+              : (markerX + markerGap).clamp(
+                  0.0,
+                  math.max(0.0, constraints.maxWidth - markerWidth),
+                );
+          final markerColor = colors.textPrimary;
+
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              _BalanceScoreZones(
+                plotLeft: plotLeft,
+                plotWidth: plotWidth,
+                zoneTop: zoneTop,
+                zoneHeight: zoneHeight,
+                activeZone: activeZone,
+              ),
+              _BalanceScoreMarker(
+                value: value,
+                markerColor: markerColor,
+                markerHeight: markerHeight,
+                markerWidth: markerWidth,
+                markerLabelLeft: markerLabelLeft.toDouble(),
+                markerLineHeight: markerLineHeight,
+                markerLineWidth: markerLineWidth,
+                markerX: markerX,
+                preferLabelLeft: preferLabelLeft,
+                zoneHeight: zoneHeight,
+                zoneTop: zoneTop,
+                maxWidth: constraints.maxWidth,
+              ),
+              const _BalanceScoreEndpoints(),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _BalanceMarkerPointerPainter extends CustomPainter {
+  _BalanceMarkerPointerPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()
+      ..moveTo(size.width / 2, size.height)
+      ..lineTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..close();
+    canvas.drawPath(path, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(covariant _BalanceMarkerPointerPainter oldDelegate) {
+    return oldDelegate.color != color;
+  }
+}
+
+class _BalanceScoreZones extends StatelessWidget {
+  const _BalanceScoreZones({
+    required this.plotLeft,
+    required this.plotWidth,
+    required this.zoneTop,
+    required this.zoneHeight,
+    required this.activeZone,
+  });
+
+  final double plotLeft;
+  final double plotWidth;
+  final double zoneTop;
+  final double zoneHeight;
+  final _BalanceZone activeZone;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    return Stack(
+      children: [
+        for (final zone in _BalanceZone.values)
+          Positioned(
+            left: plotLeft + plotWidth * (zone.start / 100),
+            top: zoneTop,
+            width: plotWidth * ((zone.end - zone.start) / 100),
+            child: Container(
+              key: Key('insight_feed_balance_zone_${zone.name}'),
+              height: zoneHeight,
+              margin: EdgeInsets.only(
+                left: zone == _BalanceZone.low ? 0 : 1.5,
+                right: zone == _BalanceZone.high ? 0 : 1.5,
+              ),
+              decoration: BoxDecoration(
+                color: zone == activeZone
+                    ? _balanceZoneColor(context, zone).withValues(alpha: 0.92)
+                    : colors.field.withValues(alpha: 0.82),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _BalanceScoreMarker extends StatelessWidget {
+  const _BalanceScoreMarker({
+    required this.value,
+    required this.markerColor,
+    required this.markerHeight,
+    required this.markerWidth,
+    required this.markerLabelLeft,
+    required this.markerLineHeight,
+    required this.markerLineWidth,
+    required this.markerX,
+    required this.preferLabelLeft,
+    required this.zoneHeight,
+    required this.zoneTop,
+    required this.maxWidth,
+  });
+
+  final int value;
+  final Color markerColor;
+  final double markerHeight;
+  final double markerWidth;
+  final double markerLabelLeft;
+  final double markerLineHeight;
+  final double markerLineWidth;
+  final double markerX;
+  final bool preferLabelLeft;
+  final double zoneHeight;
+  final double zoneTop;
+  final double maxWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = context.appText;
+    return Stack(
+      children: [
+        Positioned(
+          left: markerLabelLeft,
+          top: 0,
+          child: Container(
+            key: const Key('insight_feed_balance_score_marker'),
+            width: markerWidth,
+            height: markerHeight,
+            decoration: BoxDecoration(
+              color: markerColor.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '$value',
+              maxLines: 1,
+              style: textTheme.labelSmall?.copyWith(
+                color: markerColor,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: (markerX - markerLineWidth / 2)
+              .clamp(0.0, math.max(0.0, maxWidth - markerLineWidth))
+              .toDouble(),
+          top: zoneTop + (zoneHeight / 2) - (markerLineHeight / 2),
+          child: Container(
+            key: const Key('insight_feed_balance_score_marker_line'),
+            width: markerLineWidth,
+            height: markerLineHeight,
+            decoration: BoxDecoration(
+              color: markerColor,
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+        Positioned(
+          left: preferLabelLeft
+              ? markerLabelLeft + markerWidth - 7
+              : markerLabelLeft + 7,
+          top: markerHeight - 1,
+          child: CustomPaint(
+            size: const Size(8, 5),
+            painter: _BalanceMarkerPointerPainter(
+              color: markerColor.withValues(alpha: 0.14),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BalanceScoreEndpoints extends StatelessWidget {
+  const _BalanceScoreEndpoints();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+    final textTheme = context.appText;
+    return Stack(
+      children: [
+        Positioned(
+          left: 0,
+          bottom: 0,
+          child: Text(
+            '0',
+            style: textTheme.labelSmall?.copyWith(
+              color: colors.textTertiary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        Positioned(
+          right: 0,
+          bottom: 0,
+          child: Text(
+            '100',
+            style: textTheme.labelSmall?.copyWith(
+              color: colors.textTertiary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+enum _BalanceZone {
+  low(0, 40),
+  medium(40, 70),
+  high(70, 100);
+
+  const _BalanceZone(this.start, this.end);
+
+  final double start;
+  final double end;
+}
+
+_BalanceZone _balanceZoneFor(int score) {
+  if (score >= 70) {
+    return _BalanceZone.high;
+  }
+  if (score >= 40) {
+    return _BalanceZone.medium;
+  }
+  return _BalanceZone.low;
+}
+
+Color _balanceZoneColor(BuildContext context, _BalanceZone zone) {
+  return switch (zone) {
+    _BalanceZone.low => context.appColors.balanceZoneLow,
+    _BalanceZone.medium => context.appColors.balanceZoneMedium,
+    _BalanceZone.high => context.appColors.balanceZoneHigh,
+  };
+}
+
+class _BalanceFingerprintBar extends StatelessWidget {
+  const _BalanceFingerprintBar({
+    required this.segments,
+    required this.selectedIndex,
+    required this.onSegmentSelected,
+  });
+
+  final List<Map<String, Object?>> segments;
+  final int? selectedIndex;
+  final ValueChanged<int> onSegmentSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final widths = _displayPercentages(
+      segments.map((segment) => _num(segment['percent'])).toList(),
+    );
+    final textStyle = context.appText.labelSmall?.copyWith(
+      color: context.appScheme.onPrimary,
+      fontWeight: FontWeight.w800,
+      shadows: [
+        Shadow(
+          color: context.appColors.shadow.withValues(alpha: 0.6),
+          blurRadius: 3,
+        ),
+      ],
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = math.max(1.0, constraints.maxWidth);
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Row(
+            key: const Key('insight_feed_balance_fingerprint_bar'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var index = 0; index < segments.length; index++)
+                _BalanceFingerprintSegment(
+                  segment: segments[index],
+                  width: width * widths[index],
+                  isSelected: selectedIndex == index,
+                  isDimmed: selectedIndex != null && selectedIndex != index,
+                  textStyle: textStyle,
+                  onTap: () => onSegmentSelected(index),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  List<double> _displayPercentages(List<double> values) {
+    const minVisiblePercent = 0.035;
+    final adjusted = values
+        .map((value) => value > 0 ? math.max(value, minVisiblePercent) : 0.0)
+        .toList(growable: false);
+    final total = adjusted.fold<double>(0, (sum, value) => sum + value);
+    if (total <= 0) {
+      return List.filled(values.length, 1 / values.length, growable: false);
+    }
+    return adjusted.map((value) => value / total).toList(growable: false);
+  }
+}
+
+class _BalanceFingerprintSegment extends StatelessWidget {
+  const _BalanceFingerprintSegment({
+    required this.segment,
+    required this.width,
+    required this.isSelected,
+    required this.isDimmed,
+    required this.textStyle,
+    required this.onTap,
+  });
+
+  final Map<String, Object?> segment;
+  final double width;
+  final bool isSelected;
+  final bool isDimmed;
+  final TextStyle? textStyle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final axisId = _string(segment['axisId']);
+    final baseColor = _balanceSegmentColor(context, axisId);
+    final displayColor = isDimmed
+        ? Color.alphaBlend(
+            context.appColors.field.withValues(alpha: 0.62),
+            baseColor,
+          ).withValues(alpha: 0.46)
+        : baseColor;
+
+    return SizedBox(
+      key: Key('insight_feed_balance_segment_$axisId'),
+      width: width,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            color: displayColor,
+            border: Border.all(
+              color: isSelected
+                  ? context.appScheme.onSurface.withValues(alpha: 0.82)
+                  : context.appColors.transparent,
+              width: isSelected ? 2 : 0,
+              strokeAlign: BorderSide.strokeAlignInside,
+            ),
+          ),
+          child: _buildLabel(),
+        ),
+      ),
+    );
+  }
+
+  Widget? _buildLabel() {
+    if (isDimmed) {
+      return null;
+    }
+
+    final mode = _labelModeForWidth(width);
+    if (mode == _BalanceSegmentLabelMode.hidden) {
+      return null;
+    }
+
+    final baseLabel = _string(segment['label']);
+    final label = switch (mode) {
+      _BalanceSegmentLabelMode.horizontal => _shortBalanceLabel(baseLabel),
+      _BalanceSegmentLabelMode.vertical => _shortBalanceLabel(baseLabel),
+      _BalanceSegmentLabelMode.verticalAbbreviated => _abbreviatedBalanceLabel(
+        baseLabel,
+      ),
+      _BalanceSegmentLabelMode.hidden => '',
+    };
+
+    final child = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(label, maxLines: 1, style: textStyle),
+      ),
+    );
+
+    return Center(
+      child: mode == _BalanceSegmentLabelMode.horizontal
+          ? child
+          : RotatedBox(quarterTurns: 3, child: child),
+    );
+  }
+}
+
+enum _BalanceSegmentLabelMode {
+  hidden,
+  verticalAbbreviated,
+  vertical,
+  horizontal,
+}
+
+_BalanceSegmentLabelMode _labelModeForWidth(double width) {
+  if (width >= 52) {
+    return _BalanceSegmentLabelMode.horizontal;
+  }
+  if (width >= 28) {
+    return _BalanceSegmentLabelMode.vertical;
+  }
+  if (width >= 18) {
+    return _BalanceSegmentLabelMode.verticalAbbreviated;
+  }
+  return _BalanceSegmentLabelMode.hidden;
+}
+
+Color _balanceSegmentColor(BuildContext context, String axisId) {
+  final normalized = axisId.toLowerCase();
+  return switch (normalized) {
+    'chest' => context.appColors.balanceSegmentChest,
+    'back' => context.appColors.balanceSegmentBack,
+    'shoulders' => context.appColors.balanceSegmentShoulders,
+    'arms' => context.appColors.balanceSegmentArms,
+    'core' => context.appColors.balanceSegmentCore,
+    'glutes' => context.appColors.balanceSegmentGlutes,
+    'legs' => context.appColors.balanceSegmentLegs,
+    'other' => context.appColors.textTertiary,
+    _ => context.appScheme.primary,
+  };
+}
+
+String _shortBalanceLabel(String label) {
+  return switch (label) {
+    'Shoulders' => 'Delts',
+    _ => label,
+  };
+}
+
+String _abbreviatedBalanceLabel(String label) {
+  return switch (label) {
+    'Chest' => 'Ch',
+    'Back' => 'Bk',
+    'Shoulders' => 'Delts',
+    'Arms' => 'Arms',
+    'Core' => 'Core',
+    'Glutes' => 'Glut',
+    'Legs' => 'Legs',
+    'Other' => 'Oth',
+    _ => label,
+  };
 }
 
 class _SparklinePainter extends CustomPainter {

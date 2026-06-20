@@ -11,6 +11,7 @@ enum InsightFeedCardType {
   muscleActivationRadar,
   latestWorkoutComparison,
   bodyWeightTrend,
+  trainingBalance,
 }
 
 // policy: allow-public-api visual variants supported by insights feed cards.
@@ -24,6 +25,7 @@ enum InsightFeedVisualType {
   radar,
   bodyWeightLine,
   awardPreview,
+  balanceFingerprint,
 }
 
 // policy: allow-public-api visual size contract for insights feed cards.

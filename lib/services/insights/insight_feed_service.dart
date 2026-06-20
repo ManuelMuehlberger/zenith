@@ -39,8 +39,8 @@ class InsightFeedService {
   static const String defaultRulesAsset =
       'assets/insights/insight_feed_rules.json';
   static const String _feedCacheKey = 'insight_feed_cache';
-  static const int _feedCacheVersion = 4;
-  static const int _feedStackCacheVersion = 3;
+  static const int _feedCacheVersion = 5;
+  static const int _feedStackCacheVersion = 4;
 
   final AssetBundle _assetBundle;
   final Future<List<Workout>> Function()? _workoutsProvider;
@@ -365,6 +365,11 @@ class InsightFeedService {
           now,
         ),
         InsightFeedCardType.bodyWeightTrend => _bodyWeightTrend(rule, now),
+        InsightFeedCardType.trainingBalance => await _trainingBalance(
+          rule,
+          workouts,
+          now,
+        ),
       };
       if (card != null) {
         cards.add(card);
@@ -934,6 +939,182 @@ class InsightFeedService {
     );
   }
 
+  Future<InsightFeedCard?> _trainingBalance(
+    InsightFeedRule rule,
+    List<Workout> workouts,
+    DateTime now,
+  ) async {
+    if (!rule.visual.enabled) {
+      return null;
+    }
+    final lookbackDays = _intParam(rule, 'lookbackDays', 180);
+    final minCompletedWorkouts = _intParam(rule, 'minCompletedWorkouts', 8);
+    if (lookbackDays <= 0 || minCompletedWorkouts <= 0) {
+      return null;
+    }
+
+    final cutoff = now.subtract(Duration(days: lookbackDays));
+    final visibleWorkouts = _hydrateWorkouts(
+      workouts
+          .where((workout) {
+            final date = _workoutDate(workout);
+            return !date.isBefore(cutoff) && !date.isAfter(now);
+          })
+          .toList(growable: false),
+    );
+    if (visibleWorkouts.length < minCompletedWorkouts) {
+      return null;
+    }
+
+    final config = await _activationService.loadConfig();
+    final totals = WorkoutMuscleActivationService.buildWorkoutsAxisActivation(
+      visibleWorkouts,
+      config,
+    );
+    final activeAxes = config.axes
+        .map((axis) {
+          return (axis: axis, value: totals.actualFor(axis.id));
+        })
+        .where((entry) => entry.value > 0)
+        .toList(growable: false);
+    if (activeAxes.length < 3) {
+      return null;
+    }
+
+    final totalActivation = activeAxes.fold<double>(
+      0,
+      (sum, entry) => sum + entry.value,
+    );
+    if (totalActivation <= 0) {
+      return null;
+    }
+
+    final distribution =
+        activeAxes
+            .map(
+              (entry) => (
+                axis: entry.axis,
+                value: entry.value,
+                percent: entry.value / totalActivation,
+              ),
+            )
+            .toList(growable: false)
+          ..sort((a, b) => b.value.compareTo(a.value));
+
+    final dominant = distribution.first;
+    final focus = distribution.reduce(
+      (lowest, entry) => entry.percent < lowest.percent ? entry : lowest,
+    );
+    final balanceScore = _balanceScore(
+      distribution.map((entry) => entry.percent),
+    );
+    final metric = '${balanceScore.round()}%';
+    final segments = _balanceFingerprintSegments(distribution);
+
+    if (segments.length < 3) {
+      return null;
+    }
+
+    return _card(
+      rule: rule,
+      id: rule.id,
+      title: 'Training balance',
+      body: _trainingBalanceBody(
+        score: balanceScore,
+        dominantLabel: dominant.axis.label,
+        focusLabel: focus.axis.label,
+      ),
+      metric: metric,
+      accent: balanceScore >= 72 ? 'success' : 'info',
+      icon: 'chart',
+      generatedAt: now,
+      detailMetricLabel: 'Balance score',
+      comparisonLabel: 'Last $lookbackDays days',
+      visualData: {
+        'segments': segments,
+        'dominantLabel': dominant.axis.label,
+        'focusLabel': focus.axis.label,
+        'balanceScore': balanceScore,
+        'lookbackDays': lookbackDays,
+      },
+    );
+  }
+
+  String _trainingBalanceBody({
+    required double score,
+    required String dominantLabel,
+    required String focusLabel,
+  }) {
+    final band = score < 50
+        ? 'low'
+        : score < 75
+        ? 'medium'
+        : 'high';
+    final candidates = <({String band, int impact, String text})>[
+      (
+        band: 'low',
+        impact: 100,
+        text:
+            'Your long-term work is heavily tilted toward $dominantLabel. Prioritize $focusLabel next.',
+      ),
+      (
+        band: 'low',
+        impact: 80,
+        text:
+            '$dominantLabel has dominated this block. Give $focusLabel the next clear slot.',
+      ),
+      (
+        band: 'low',
+        impact: 70,
+        text:
+            'The biggest balance gain is $focusLabel. $dominantLabel is already well covered.',
+      ),
+      (
+        band: 'medium',
+        impact: 90,
+        text:
+            'Your long-term work leans $dominantLabel. Prioritize $focusLabel next.',
+      ),
+      (
+        band: 'medium',
+        impact: 75,
+        text:
+            '$dominantLabel is leading the mix. Add more $focusLabel to even it out.',
+      ),
+      (
+        band: 'medium',
+        impact: 65,
+        text:
+            '$focusLabel is the quiet spot in this block while $dominantLabel carries more load.',
+      ),
+      (
+        band: 'high',
+        impact: 60,
+        text:
+            'Your long-term split is fairly balanced. Keep $focusLabel in rotation.',
+      ),
+      (
+        band: 'high',
+        impact: 50,
+        text:
+            'Good overall balance. $focusLabel is still the area to protect next.',
+      ),
+      (
+        band: 'high',
+        impact: 40,
+        text:
+            'The mix is steady, with $dominantLabel slightly ahead and $focusLabel worth a nudge.',
+      ),
+    ];
+    return candidates
+        .where((candidate) => candidate.band == band)
+        .reduce(
+          (best, candidate) =>
+              candidate.impact > best.impact ? candidate : best,
+        )
+        .text;
+  }
+
   InsightFeedCard _card({
     required InsightFeedRule rule,
     required String id,
@@ -1064,6 +1245,59 @@ class InsightFeedService {
       'baseline': previousBest,
       'unit': 'volume',
     };
+  }
+
+  double _balanceScore(Iterable<double> percentages) {
+    final values = percentages.toList(growable: false);
+    if (values.length < 2) {
+      return 0;
+    }
+    final ideal = 1 / values.length;
+    final deviation = values.fold<double>(
+      0,
+      (sum, value) => sum + (value - ideal).abs(),
+    );
+    final maxDeviation = 2 * (1 - ideal);
+    if (maxDeviation <= 0) {
+      return 0;
+    }
+    return ((1 - deviation / maxDeviation) * 100).clamp(0, 100).toDouble();
+  }
+
+  List<Map<String, Object?>> _balanceFingerprintSegments(
+    List<({WorkoutMuscleActivationAxis axis, double value, double percent})>
+    distribution,
+  ) {
+    const tinySegmentThreshold = 0.06;
+    final shouldGroupTinySegments = distribution.length > 5;
+    final visible = <Map<String, Object?>>[];
+    var otherValue = 0.0;
+    var otherPercent = 0.0;
+
+    for (final entry in distribution) {
+      if (shouldGroupTinySegments && entry.percent < tinySegmentThreshold) {
+        otherValue += entry.value;
+        otherPercent += entry.percent;
+        continue;
+      }
+      visible.add({
+        'axisId': entry.axis.id,
+        'label': entry.axis.label,
+        'value': entry.value,
+        'percent': entry.percent,
+      });
+    }
+
+    if (otherValue > 0 && otherPercent > 0) {
+      visible.add({
+        'axisId': 'other',
+        'label': 'Other',
+        'value': otherValue,
+        'percent': otherPercent,
+      });
+    }
+
+    return visible;
   }
 
   Set<String> _workoutDayKeys(Iterable<Workout> workouts) {

@@ -6,42 +6,40 @@ void main() {
     test('serializes and restores card payloads', () {
       final card = InsightFeedCard(
         id: 'card-1',
-        type: InsightFeedCardType.trainingVelocity,
+        type: InsightFeedCardType.trainingBalance,
         priority: 90,
-        title: 'Training velocity',
-        body: 'Recent pace is up.',
-        metric: '+28%',
+        title: 'Training balance',
+        body: 'Long-term work leans Push.',
+        metric: '74%',
         accent: 'success',
-        icon: 'bolt',
+        icon: 'chart',
         generatedAt: DateTime.utc(2026, 6, 11, 10),
         sourceWorkoutId: 'workout-1',
-        visualType: InsightFeedVisualType.trainingVelocityLine,
+        visualType: InsightFeedVisualType.balanceFingerprint,
         size: InsightFeedCardSize.featured,
         visualData: const {
-          'points': [
-            {'label': '4/1', 'value': 2.1},
-            {'label': '4/8', 'value': 3.0},
+          'segments': [
+            {'label': 'Chest', 'percent': 0.5},
+            {'label': 'Back', 'percent': 0.25},
+            {'label': 'Legs', 'percent': 0.25},
           ],
-          'average': 3.0,
+          'balanceScore': 74,
         },
-        detailMetricLabel: 'Workout rate',
-        comparisonLabel: 'Previous 90 days average: 2.1 workouts/week',
+        detailMetricLabel: 'Balance score',
+        comparisonLabel: 'Last 180 days',
       );
 
       final restored = InsightFeedCard.fromMap(card.toMap());
 
       expect(restored.id, card.id);
-      expect(restored.type, InsightFeedCardType.trainingVelocity);
-      expect(restored.metric, '+28%');
+      expect(restored.type, InsightFeedCardType.trainingBalance);
+      expect(restored.metric, '74%');
       expect(restored.sourceWorkoutId, 'workout-1');
-      expect(restored.visualType, InsightFeedVisualType.trainingVelocityLine);
+      expect(restored.visualType, InsightFeedVisualType.balanceFingerprint);
       expect(restored.size, InsightFeedCardSize.featured);
-      expect(restored.visualData['points'], isA<List>());
-      expect(restored.detailMetricLabel, 'Workout rate');
-      expect(
-        restored.comparisonLabel,
-        'Previous 90 days average: 2.1 workouts/week',
-      );
+      expect(restored.visualData['segments'], isA<List>());
+      expect(restored.detailMetricLabel, 'Balance score');
+      expect(restored.comparisonLabel, 'Last 180 days');
     });
   });
 
