@@ -179,6 +179,23 @@
       }
     },
     {
+      "id": "training_balance",
+      "stackId": "long_term_trends",
+      "type": "trainingBalance",
+      "enabled": true,
+      "priority": 70,
+      "params": {
+        "lookbackDays": 180,
+        "minCompletedWorkouts": 8
+      },
+      "visual": {
+        "enabled": true,
+        "type": "balanceFingerprint",
+        "size": "wide",
+        "params": {}
+      }
+    },
+    {
       "id": "body_weight_trend",
       "stackId": "long_term_trends",
       "type": "bodyWeightTrend",

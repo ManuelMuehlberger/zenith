@@ -828,6 +828,202 @@ void main() {
     );
   });
 
+  test(
+    'generates training balance from long-term activation history',
+    () async {
+      final now = DateTime(2026, 6, 20, 12);
+      final service = InsightFeedService(
+        assetBundle: _StringAssetBundle({
+          rulesAsset: '''
+{
+  "rules": [
+    {"id": "balance", "stackId": "long_term_trends", "type": "trainingBalance", "enabled": true, "priority": 90, "params": {"lookbackDays": 180, "minCompletedWorkouts": 8}, "visual": {"enabled": true, "type": "balanceFingerprint", "size": "wide", "params": {}}}
+  ]
+}
+''',
+        }),
+        workoutsProvider: () async => [
+          for (var index = 0; index < 5; index++)
+            _workout(
+              id: 'chest-$index',
+              completedAt: now.subtract(Duration(days: 30 - index)),
+              exerciseSlug: 'bench_press',
+              setCount: 4,
+            ),
+          _workout(
+            id: 'back-1',
+            completedAt: now.subtract(const Duration(days: 20)),
+            exerciseSlug: 'row',
+            setCount: 2,
+          ),
+          _workout(
+            id: 'legs-1',
+            completedAt: now.subtract(const Duration(days: 18)),
+            exerciseSlug: 'squat',
+            setCount: 3,
+          ),
+          _workout(
+            id: 'legs-2',
+            completedAt: now.subtract(const Duration(days: 16)),
+            exerciseSlug: 'squat',
+            setCount: 3,
+          ),
+        ],
+        exerciseCatalogProvider: _exerciseCatalog,
+        activationService: _FakeWorkoutMuscleActivationService(),
+        nowProvider: () => now,
+        cacheStore: const InsightsCacheStore(
+          cacheKey: 'feed-test-training-balance',
+        ),
+      );
+
+      final cards = await service.getCards(maxCards: 10);
+      final card = cards.single;
+
+      expect(card.type, InsightFeedCardType.trainingBalance);
+      expect(card.visualType, InsightFeedVisualType.balanceFingerprint);
+      expect(card.title, 'Training balance');
+      expect(card.metric, endsWith('%'));
+      expect(card.visualData['dominantLabel'], 'Chest');
+      expect(card.visualData['focusLabel'], 'Back');
+      expect(card.visualData['balanceScore'], isA<double>());
+
+      final segments = (card.visualData['segments'] as List<dynamic>)
+          .cast<Map<String, Object?>>();
+      expect(
+        segments.map((segment) => segment['label']),
+        containsAll(['Chest', 'Back', 'Legs']),
+      );
+      final totalPercent = segments.fold<double>(
+        0,
+        (sum, segment) => sum + (segment['percent'] as double),
+      );
+      expect(totalPercent, closeTo(1, 0.0001));
+    },
+  );
+
+  test(
+    'training balance hides when workout or axis data is insufficient',
+    () async {
+      final now = DateTime(2026, 6, 20, 12);
+
+      Future<List<InsightFeedCard>> cardsFor({
+        required List<Workout> workouts,
+        required String cacheKey,
+      }) {
+        final service = InsightFeedService(
+          assetBundle: _StringAssetBundle({
+            rulesAsset: '''
+{
+  "rules": [
+    {"id": "balance", "type": "trainingBalance", "enabled": true, "priority": 90, "params": {"lookbackDays": 180, "minCompletedWorkouts": 8}, "visual": {"enabled": true, "type": "balanceFingerprint", "size": "wide", "params": {}}}
+  ]
+}
+''',
+          }),
+          workoutsProvider: () async => workouts,
+          exerciseCatalogProvider: _exerciseCatalog,
+          activationService: _FakeWorkoutMuscleActivationService(),
+          nowProvider: () => now,
+          cacheStore: InsightsCacheStore(cacheKey: cacheKey),
+        );
+        return service.getCards(maxCards: 10);
+      }
+
+      expect(
+        await cardsFor(
+          workouts: [
+            for (var index = 0; index < 7; index++)
+              _workout(
+                id: 'too-few-$index',
+                completedAt: now.subtract(Duration(days: index + 1)),
+              ),
+          ],
+          cacheKey: 'feed-test-training-balance-too-few',
+        ),
+        isEmpty,
+      );
+
+      expect(
+        await cardsFor(
+          workouts: [
+            for (var index = 0; index < 8; index++)
+              _workout(
+                id: 'too-narrow-$index',
+                completedAt: now.subtract(Duration(days: index + 1)),
+                exerciseSlug: index.isEven ? 'bench_press' : 'row',
+              ),
+          ],
+          cacheKey: 'feed-test-training-balance-too-narrow',
+        ),
+        isEmpty,
+      );
+    },
+  );
+
+  test('long-term stack orders training balance before body weight', () async {
+    final now = DateTime(2026, 6, 20, 12);
+    final service = InsightFeedService(
+      assetBundle: _StringAssetBundle({
+        rulesAsset: '''
+{
+  "stacks": [
+    {"id": "long_term_trends", "title": "Long-Term Trends", "enabled": true, "priority": 60, "minCompletedWorkouts": 8, "maxCards": 2}
+  ],
+  "rules": [
+    {"id": "balance", "stackId": "long_term_trends", "type": "trainingBalance", "enabled": true, "priority": 90, "params": {"lookbackDays": 180, "minCompletedWorkouts": 8}, "visual": {"enabled": true, "type": "balanceFingerprint", "size": "wide", "params": {}}},
+    {"id": "weight", "stackId": "long_term_trends", "type": "bodyWeightTrend", "enabled": true, "priority": 70, "params": {"lookbackDays": 90, "minSamples": 2}, "visual": {"enabled": true, "type": "bodyWeightLine", "size": "wide", "params": {}}}
+  ]
+}
+''',
+      }),
+      workoutsProvider: () async => [
+        for (var index = 0; index < 3; index++)
+          _workout(
+            id: 'chest-stack-$index',
+            completedAt: now.subtract(Duration(days: 30 - index)),
+            exerciseSlug: 'bench_press',
+          ),
+        for (var index = 0; index < 3; index++)
+          _workout(
+            id: 'back-stack-$index',
+            completedAt: now.subtract(Duration(days: 20 - index)),
+            exerciseSlug: 'row',
+          ),
+        for (var index = 0; index < 2; index++)
+          _workout(
+            id: 'legs-stack-$index',
+            completedAt: now.subtract(Duration(days: 10 - index)),
+            exerciseSlug: 'squat',
+          ),
+      ],
+      weightHistoryProvider: () => [
+        WeightEntry(
+          timestamp: now.subtract(const Duration(days: 30)),
+          value: 80,
+        ),
+        WeightEntry(
+          timestamp: now.subtract(const Duration(days: 1)),
+          value: 79,
+        ),
+      ],
+      exerciseCatalogProvider: _exerciseCatalog,
+      activationService: _FakeWorkoutMuscleActivationService(),
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(
+        cacheKey: 'feed-test-training-balance-stack',
+      ),
+    );
+
+    final stacks = await service.getCardStacks();
+
+    expect(stacks.single.title, 'Long-Term Trends');
+    expect(stacks.single.cards.map((card) => card.type), [
+      InsightFeedCardType.trainingBalance,
+      InsightFeedCardType.bodyWeightTrend,
+    ]);
+  });
+
   test('generates a comeback card after a long gap', () async {
     final now = DateTime(2026, 6, 20, 12);
     final service = InsightFeedService(
@@ -896,11 +1092,12 @@ Workout _workout({
   int setCount = 3,
   int reps = 10,
   double weight = 50,
+  String exerciseSlug = 'bench_press',
 }) {
   final exercise = WorkoutExercise(
     id: '$id-exercise',
     workoutId: id,
-    exerciseSlug: 'bench_press',
+    exerciseSlug: exerciseSlug,
     sets: List.generate(
       setCount,
       (index) => WorkoutSet(
@@ -922,6 +1119,41 @@ Workout _workout({
     exercises: [exercise],
     achievements: achievements,
   );
+}
+
+Map<String, Exercise> _exerciseCatalog() {
+  return {
+    'bench_press': Exercise(
+      slug: 'bench_press',
+      name: 'Bench Press',
+      primaryMuscleGroup: MuscleGroup.chest,
+      secondaryMuscleGroups: const [],
+      instructions: const [],
+      image: '',
+      animation: '',
+      muscleActivation: const {MuscleGroup.chest: 1},
+    ),
+    'row': Exercise(
+      slug: 'row',
+      name: 'Row',
+      primaryMuscleGroup: MuscleGroup.back,
+      secondaryMuscleGroups: const [],
+      instructions: const [],
+      image: '',
+      animation: '',
+      muscleActivation: const {MuscleGroup.back: 1},
+    ),
+    'squat': Exercise(
+      slug: 'squat',
+      name: 'Squat',
+      primaryMuscleGroup: MuscleGroup.quads,
+      secondaryMuscleGroups: const [],
+      instructions: const [],
+      image: '',
+      animation: '',
+      muscleActivation: const {MuscleGroup.quads: 1},
+    ),
+  };
 }
 
 class _FakeWorkoutMuscleActivationService

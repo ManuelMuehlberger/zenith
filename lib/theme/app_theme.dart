@@ -241,6 +241,16 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.achievementWorkout200,
     required this.achievementStreak3,
     required this.achievementStreak7,
+    required this.balanceZoneLow,
+    required this.balanceZoneMedium,
+    required this.balanceZoneHigh,
+    required this.balanceSegmentChest,
+    required this.balanceSegmentBack,
+    required this.balanceSegmentShoulders,
+    required this.balanceSegmentArms,
+    required this.balanceSegmentCore,
+    required this.balanceSegmentGlutes,
+    required this.balanceSegmentLegs,
     required this.shadow,
     required this.transparent,
   });
@@ -268,6 +278,16 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   final Color achievementWorkout200;
   final Color achievementStreak3;
   final Color achievementStreak7;
+  final Color balanceZoneLow;
+  final Color balanceZoneMedium;
+  final Color balanceZoneHigh;
+  final Color balanceSegmentChest;
+  final Color balanceSegmentBack;
+  final Color balanceSegmentShoulders;
+  final Color balanceSegmentArms;
+  final Color balanceSegmentCore;
+  final Color balanceSegmentGlutes;
+  final Color balanceSegmentLegs;
   final Color shadow;
   final Color transparent;
 
@@ -296,6 +316,16 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     Color? achievementWorkout200,
     Color? achievementStreak3,
     Color? achievementStreak7,
+    Color? balanceZoneLow,
+    Color? balanceZoneMedium,
+    Color? balanceZoneHigh,
+    Color? balanceSegmentChest,
+    Color? balanceSegmentBack,
+    Color? balanceSegmentShoulders,
+    Color? balanceSegmentArms,
+    Color? balanceSegmentCore,
+    Color? balanceSegmentGlutes,
+    Color? balanceSegmentLegs,
     Color? shadow,
     Color? transparent,
   }) {
@@ -325,6 +355,17 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
           achievementWorkout200 ?? this.achievementWorkout200,
       achievementStreak3: achievementStreak3 ?? this.achievementStreak3,
       achievementStreak7: achievementStreak7 ?? this.achievementStreak7,
+      balanceZoneLow: balanceZoneLow ?? this.balanceZoneLow,
+      balanceZoneMedium: balanceZoneMedium ?? this.balanceZoneMedium,
+      balanceZoneHigh: balanceZoneHigh ?? this.balanceZoneHigh,
+      balanceSegmentChest: balanceSegmentChest ?? this.balanceSegmentChest,
+      balanceSegmentBack: balanceSegmentBack ?? this.balanceSegmentBack,
+      balanceSegmentShoulders:
+          balanceSegmentShoulders ?? this.balanceSegmentShoulders,
+      balanceSegmentArms: balanceSegmentArms ?? this.balanceSegmentArms,
+      balanceSegmentCore: balanceSegmentCore ?? this.balanceSegmentCore,
+      balanceSegmentGlutes: balanceSegmentGlutes ?? this.balanceSegmentGlutes,
+      balanceSegmentLegs: balanceSegmentLegs ?? this.balanceSegmentLegs,
       shadow: shadow ?? this.shadow,
       transparent: transparent ?? this.transparent,
     );
@@ -380,6 +421,39 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       achievementStreak7:
           Color.lerp(achievementStreak7, other.achievementStreak7, t) ??
           achievementStreak7,
+      balanceZoneLow:
+          Color.lerp(balanceZoneLow, other.balanceZoneLow, t) ?? balanceZoneLow,
+      balanceZoneMedium:
+          Color.lerp(balanceZoneMedium, other.balanceZoneMedium, t) ??
+          balanceZoneMedium,
+      balanceZoneHigh:
+          Color.lerp(balanceZoneHigh, other.balanceZoneHigh, t) ??
+          balanceZoneHigh,
+      balanceSegmentChest:
+          Color.lerp(balanceSegmentChest, other.balanceSegmentChest, t) ??
+          balanceSegmentChest,
+      balanceSegmentBack:
+          Color.lerp(balanceSegmentBack, other.balanceSegmentBack, t) ??
+          balanceSegmentBack,
+      balanceSegmentShoulders:
+          Color.lerp(
+            balanceSegmentShoulders,
+            other.balanceSegmentShoulders,
+            t,
+          ) ??
+          balanceSegmentShoulders,
+      balanceSegmentArms:
+          Color.lerp(balanceSegmentArms, other.balanceSegmentArms, t) ??
+          balanceSegmentArms,
+      balanceSegmentCore:
+          Color.lerp(balanceSegmentCore, other.balanceSegmentCore, t) ??
+          balanceSegmentCore,
+      balanceSegmentGlutes:
+          Color.lerp(balanceSegmentGlutes, other.balanceSegmentGlutes, t) ??
+          balanceSegmentGlutes,
+      balanceSegmentLegs:
+          Color.lerp(balanceSegmentLegs, other.balanceSegmentLegs, t) ??
+          balanceSegmentLegs,
       shadow: Color.lerp(shadow, other.shadow, t) ?? shadow,
       transparent: Color.lerp(transparent, other.transparent, t) ?? transparent,
     );
@@ -432,6 +506,16 @@ class AppTheme {
     achievementWorkout200: const Color(0xFFE53935),
     achievementStreak3: const Color(0xFF34C759),
     achievementStreak7: const Color(0xFF7E57C2),
+    balanceZoneLow: const Color(0xFFE5484D),
+    balanceZoneMedium: const Color(0xFFE68A00),
+    balanceZoneHigh: const Color(0xFF24A148),
+    balanceSegmentChest: const Color(0xFFE5484D),
+    balanceSegmentBack: const Color(0xFF1D6FD6),
+    balanceSegmentShoulders: const Color(0xFF8B5CF6),
+    balanceSegmentArms: const Color(0xFFD97706),
+    balanceSegmentCore: const Color(0xFF0F9F8F),
+    balanceSegmentGlutes: const Color(0xFFDB2777),
+    balanceSegmentLegs: const Color(0xFF16A34A),
     shadow: AppThemeColors.light.shadow,
     transparent: AppThemeColors.light.transparent,
   );
@@ -460,6 +544,16 @@ class AppTheme {
     achievementWorkout200: const Color(0xFFE53935),
     achievementStreak3: const Color(0xFF34C759),
     achievementStreak7: const Color(0xFF7E57C2),
+    balanceZoneLow: const Color(0xFFFF6B6B),
+    balanceZoneMedium: const Color(0xFFFFB74D),
+    balanceZoneHigh: const Color(0xFF4ADE80),
+    balanceSegmentChest: const Color(0xFFFF6B6B),
+    balanceSegmentBack: const Color(0xFF5AA9FF),
+    balanceSegmentShoulders: const Color(0xFFC084FC),
+    balanceSegmentArms: const Color(0xFFFBBF24),
+    balanceSegmentCore: const Color(0xFF2DD4BF),
+    balanceSegmentGlutes: const Color(0xFFF472B6),
+    balanceSegmentLegs: const Color(0xFF86EFAC),
     shadow: AppThemeColors.dark.shadow,
     transparent: AppThemeColors.dark.transparent,
   );
