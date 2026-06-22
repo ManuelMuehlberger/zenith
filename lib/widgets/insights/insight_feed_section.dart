@@ -2233,30 +2233,17 @@ class _BalanceScoreLine extends StatelessWidget {
 
     return SizedBox(
       key: const Key('insight_feed_balance_score_line'),
-      height: 52,
+      height: 44,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          const markerWidth = 44.0;
+          const markerWidth = 3.0;
           const markerHeight = 22.0;
-          const markerGap = 6.0;
-          const markerLineWidth = 3.0;
-          const markerLineHeight = 26.0;
           const plotLeft = 0.0;
-          const zoneHeight = 8.0;
-          const zoneTop = 26.0;
+          const zoneHeight = 12.0;
+          const zoneTop = 8.0;
           final plotRight = math.max(plotLeft + 1, constraints.maxWidth);
           final plotWidth = plotRight - plotLeft;
           final markerX = plotLeft + plotWidth * (value / 100);
-          final preferLabelLeft = markerX > (plotLeft + plotWidth / 2);
-          final markerLabelLeft = preferLabelLeft
-              ? (markerX - markerWidth - markerGap).clamp(
-                  0.0,
-                  math.max(0.0, constraints.maxWidth - markerWidth),
-                )
-              : (markerX + markerGap).clamp(
-                  0.0,
-                  math.max(0.0, constraints.maxWidth - markerWidth),
-                );
           final markerColor = colors.textPrimary;
 
           return Stack(
@@ -2270,15 +2257,10 @@ class _BalanceScoreLine extends StatelessWidget {
                 activeZone: activeZone,
               ),
               _BalanceScoreMarker(
-                value: value,
                 markerColor: markerColor,
                 markerHeight: markerHeight,
                 markerWidth: markerWidth,
-                markerLabelLeft: markerLabelLeft.toDouble(),
-                markerLineHeight: markerLineHeight,
-                markerLineWidth: markerLineWidth,
                 markerX: markerX,
-                preferLabelLeft: preferLabelLeft,
                 zoneHeight: zoneHeight,
                 zoneTop: zoneTop,
                 maxWidth: constraints.maxWidth,
@@ -2289,27 +2271,6 @@ class _BalanceScoreLine extends StatelessWidget {
         },
       ),
     );
-  }
-}
-
-class _BalanceMarkerPointerPainter extends CustomPainter {
-  _BalanceMarkerPointerPainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final path = Path()
-      ..moveTo(size.width / 2, size.height)
-      ..lineTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..close();
-    canvas.drawPath(path, Paint()..color = color);
-  }
-
-  @override
-  bool shouldRepaint(covariant _BalanceMarkerPointerPainter oldDelegate) {
-    return oldDelegate.color != color;
   }
 }
 
@@ -2360,88 +2321,39 @@ class _BalanceScoreZones extends StatelessWidget {
 
 class _BalanceScoreMarker extends StatelessWidget {
   const _BalanceScoreMarker({
-    required this.value,
     required this.markerColor,
     required this.markerHeight,
     required this.markerWidth,
-    required this.markerLabelLeft,
-    required this.markerLineHeight,
-    required this.markerLineWidth,
     required this.markerX,
-    required this.preferLabelLeft,
     required this.zoneHeight,
     required this.zoneTop,
     required this.maxWidth,
   });
 
-  final int value;
   final Color markerColor;
   final double markerHeight;
   final double markerWidth;
-  final double markerLabelLeft;
-  final double markerLineHeight;
-  final double markerLineWidth;
   final double markerX;
-  final bool preferLabelLeft;
   final double zoneHeight;
   final double zoneTop;
   final double maxWidth;
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = context.appText;
-    return Stack(
-      children: [
-        Positioned(
-          left: markerLabelLeft,
-          top: 0,
-          child: Container(
-            key: const Key('insight_feed_balance_score_marker'),
-            width: markerWidth,
-            height: markerHeight,
-            decoration: BoxDecoration(
-              color: markerColor.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '$value',
-              maxLines: 1,
-              style: textTheme.labelSmall?.copyWith(
-                color: markerColor,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
+    return Positioned(
+      left: (markerX - markerWidth / 2)
+          .clamp(0.0, math.max(0.0, maxWidth - markerWidth))
+          .toDouble(),
+      top: zoneTop + (zoneHeight / 2) - (markerHeight / 2),
+      child: Container(
+        key: const Key('insight_feed_balance_score_marker'),
+        width: markerWidth,
+        height: markerHeight,
+        decoration: BoxDecoration(
+          color: markerColor,
+          borderRadius: BorderRadius.circular(999),
         ),
-        Positioned(
-          left: (markerX - markerLineWidth / 2)
-              .clamp(0.0, math.max(0.0, maxWidth - markerLineWidth))
-              .toDouble(),
-          top: zoneTop + (zoneHeight / 2) - (markerLineHeight / 2),
-          child: Container(
-            key: const Key('insight_feed_balance_score_marker_line'),
-            width: markerLineWidth,
-            height: markerLineHeight,
-            decoration: BoxDecoration(
-              color: markerColor,
-              borderRadius: BorderRadius.circular(999),
-            ),
-          ),
-        ),
-        Positioned(
-          left: preferLabelLeft
-              ? markerLabelLeft + markerWidth - 7
-              : markerLabelLeft + 7,
-          top: markerHeight - 1,
-          child: CustomPaint(
-            size: const Size(8, 5),
-            painter: _BalanceMarkerPointerPainter(
-              color: markerColor.withValues(alpha: 0.14),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
