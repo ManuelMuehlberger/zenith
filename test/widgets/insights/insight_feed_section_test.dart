@@ -667,7 +667,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('68%'), findsWidgets);
-    expect(find.text('68'), findsOneWidget);
+    expect(find.text('68'), findsNothing);
     expect(find.text('Balance'), findsNothing);
     expect(find.text('Dominant'), findsNothing);
     expect(find.text('Focus'), findsNothing);
