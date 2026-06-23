@@ -328,9 +328,9 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
     }
     if (card.visualType == InsightFeedVisualType.calendarStrip) {
       return switch (card.size) {
-        InsightFeedCardSize.compact => 236,
-        InsightFeedCardSize.wide => 286,
-        InsightFeedCardSize.featured => 418,
+        InsightFeedCardSize.compact => 196,
+        InsightFeedCardSize.wide => 236,
+        InsightFeedCardSize.featured => 368,
       };
     }
     return switch (card.size) {
@@ -775,9 +775,9 @@ class _VisualInsightFeedCard extends StatelessWidget {
     }
     if (card.visualType == InsightFeedVisualType.calendarStrip) {
       return switch (card.size) {
-        InsightFeedCardSize.compact => 236,
-        InsightFeedCardSize.wide => 286,
-        InsightFeedCardSize.featured => 418,
+        InsightFeedCardSize.compact => 196,
+        InsightFeedCardSize.wide => 236,
+        InsightFeedCardSize.featured => 368,
       };
     }
     if (_isRadarCard) {
@@ -1312,13 +1312,19 @@ class _CalendarStripVisualState extends State<_CalendarStripVisual> {
     return Column(
       children: [
         Expanded(
-          child: _RhythmTimelinePlot(
-            controller: _scrollController,
-            days: days,
-            labels: labels,
-            todayIndex: todayIndex,
-            hasWorkoutToday: hasWorkoutToday,
-            accent: widget.accent,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: FractionallySizedBox(
+              heightFactor: _rhythmTimelineVerticalCompactFactor,
+              child: _RhythmTimelinePlot(
+                controller: _scrollController,
+                days: days,
+                labels: labels,
+                todayIndex: todayIndex,
+                hasWorkoutToday: hasWorkoutToday,
+                accent: widget.accent,
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 4),
@@ -1377,6 +1383,7 @@ const double _rhythmTimelineHorizontalPadding = 12;
 const double _rhythmTimelineViewportInset = 170;
 const double _rhythmTimelineEdgeTaperWidth = 54;
 const double _rhythmTimelineLabelEdgeLift = 24;
+const double _rhythmTimelineVerticalCompactFactor = 0.9;
 
 class _RhythmTimelinePlot extends StatelessWidget {
   const _RhythmTimelinePlot({
@@ -1424,77 +1431,17 @@ class _RhythmTimelinePlot extends StatelessWidget {
                 child: Column(
                   children: [
                     Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: _rhythmTimelineHorizontalPadding,
-                        ),
-                        child: Row(
-                          children: [
-                            for (
-                              var index = 0;
-                              index < days.length;
-                              index++
-                            ) ...[
-                              SizedBox(
-                                width: _rhythmTimelineTickWidth,
-                                child: _RhythmTimelineTick(
-                                  key: Key('insight_feed_rhythm_tick_$index'),
-                                  isActive: days[index],
-                                  isFuture: index > todayIndex,
-                                  isToday: index == todayIndex,
-                                  color: accent,
-                                  heightFactor: _heightFactorForTick(
-                                    index: index,
-                                    scrollOffset: scrollOffset,
-                                    viewportWidth: viewportConstraints.maxWidth,
-                                  ),
-                                ),
-                              ),
-                              if (index != days.length - 1)
-                                const SizedBox(width: _rhythmTimelineTickGap),
-                            ],
-                          ],
-                        ),
+                      child: _buildTickRow(
+                        scrollOffset: scrollOffset,
+                        viewportWidth: viewportConstraints.maxWidth,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     SizedBox(
-                      height: 12,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: _rhythmTimelineHorizontalPadding,
-                        ),
-                        child: Row(
-                          children: [
-                            for (
-                              var index = 0;
-                              index < days.length;
-                              index++
-                            ) ...[
-                              SizedBox(
-                                width: _rhythmTimelineTickWidth,
-                                child: _RhythmTimelineLabel(
-                                  label: _rhythmTimelineLabelAt(
-                                    labels: labels,
-                                    index: index,
-                                    todayIndex: todayIndex,
-                                  ),
-                                  isToday: index == todayIndex,
-                                  highlightToday: hasWorkoutToday,
-                                  isActive: days[index],
-                                  accent: accent,
-                                  edgeFactor: _heightFactorForTick(
-                                    index: index,
-                                    scrollOffset: scrollOffset,
-                                    viewportWidth: viewportConstraints.maxWidth,
-                                  ),
-                                ),
-                              ),
-                              if (index != days.length - 1)
-                                const SizedBox(width: _rhythmTimelineTickGap),
-                            ],
-                          ],
-                        ),
+                      height: 10,
+                      child: _buildLabelRow(
+                        scrollOffset: scrollOffset,
+                        viewportWidth: viewportConstraints.maxWidth,
                       ),
                     ),
                   ],
@@ -1504,6 +1451,78 @@ class _RhythmTimelinePlot extends StatelessWidget {
           },
         );
       },
+    );
+  }
+
+  Widget _buildTickRow({
+    required double scrollOffset,
+    required double viewportWidth,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: _rhythmTimelineHorizontalPadding,
+      ),
+      child: Row(
+        children: [
+          for (var index = 0; index < days.length; index++) ...[
+            SizedBox(
+              width: _rhythmTimelineTickWidth,
+              child: _RhythmTimelineTick(
+                key: Key('insight_feed_rhythm_tick_$index'),
+                isActive: days[index],
+                isFuture: index > todayIndex,
+                isToday: index == todayIndex,
+                color: accent,
+                heightFactor: _heightFactorForTick(
+                  index: index,
+                  scrollOffset: scrollOffset,
+                  viewportWidth: viewportWidth,
+                ),
+              ),
+            ),
+            if (index != days.length - 1)
+              const SizedBox(width: _rhythmTimelineTickGap),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLabelRow({
+    required double scrollOffset,
+    required double viewportWidth,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: _rhythmTimelineHorizontalPadding,
+      ),
+      child: Row(
+        children: [
+          for (var index = 0; index < days.length; index++) ...[
+            SizedBox(
+              width: _rhythmTimelineTickWidth,
+              child: _RhythmTimelineLabel(
+                label: _rhythmTimelineLabelAt(
+                  labels: labels,
+                  index: index,
+                  todayIndex: todayIndex,
+                ),
+                isToday: index == todayIndex,
+                highlightToday: hasWorkoutToday,
+                isActive: days[index],
+                accent: accent,
+                edgeFactor: _heightFactorForTick(
+                  index: index,
+                  scrollOffset: scrollOffset,
+                  viewportWidth: viewportWidth,
+                ),
+              ),
+            ),
+            if (index != days.length - 1)
+              const SizedBox(width: _rhythmTimelineTickGap),
+          ],
+        ],
+      ),
     );
   }
 
@@ -3361,16 +3380,6 @@ class _VelocityLinePainter extends CustomPainter {
         oldDelegate.labelStyle != labelStyle ||
         oldDelegate.pointFillColor != pointFillColor;
   }
-}
-
-List<double> _evenXPositions(int count, double width) {
-  if (count <= 0) {
-    return const [];
-  }
-  if (count == 1) {
-    return [width / 2];
-  }
-  return List.generate(count, (index) => width * index / (count - 1));
 }
 
 int _maxDynamicLabelCount(double plotWidth) {

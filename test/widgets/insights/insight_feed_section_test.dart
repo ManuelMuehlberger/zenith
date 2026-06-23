@@ -384,6 +384,7 @@ void main() {
     );
     expect(find.byType(Scrollbar), findsNothing);
     expect(find.text('Today'), findsOneWidget);
+    expect(find.text('10'), findsNothing);
     expect(find.text('Workout day'), findsOneWidget);
     expect(find.text('previous 14 days'), findsNothing);
     expect(find.text('last 14 days'), findsNothing);
@@ -521,6 +522,7 @@ void main() {
       todayText.style?.color,
       AppTheme.light.extension<AppThemeTokens>()!.textTertiary,
     );
+    expect(find.text('10'), findsNothing);
   });
 
   testWidgets('today indicator highlights when today has a workout', (
@@ -624,6 +626,7 @@ void main() {
       highlightedTodayText.style?.color,
       AppTheme.light.extension<AppThemeTokens>()!.info,
     );
+    expect(find.text('10'), findsNothing);
     final todayIndicatorDecoration =
         tester
                 .widget<AnimatedContainer>(
