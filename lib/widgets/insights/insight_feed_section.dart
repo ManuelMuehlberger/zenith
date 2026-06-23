@@ -105,9 +105,26 @@ class _InsightFeedStackRail extends StatefulWidget {
   State<_InsightFeedStackRail> createState() => _InsightFeedStackRailState();
 }
 
-class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
+class _InsightFeedStackRailState extends State<_InsightFeedStackRail>
+    with SingleTickerProviderStateMixin {
+  static const double _pageTurnDistanceFraction = 0.14;
+  static const double _pageTurnVelocity = 220;
+  static const Duration _settleDuration = Duration(milliseconds: 210);
+
   var _currentPage = 0;
   var _dragOffset = 0.0;
+  int? _settlingPage;
+  late final AnimationController _settleController;
+  Animation<double>? _settleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _settleController =
+        AnimationController(duration: _settleDuration, vsync: this)
+          ..addListener(_handleSettleTick)
+          ..addStatusListener(_handleSettleStatusChanged);
+  }
 
   @override
   void didUpdateWidget(covariant _InsightFeedStackRail oldWidget) {
@@ -115,6 +132,43 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
     if (_currentPage >= widget.cards.length) {
       _currentPage = math.max(0, widget.cards.length - 1);
     }
+    if (_settlingPage != null && _settlingPage! >= widget.cards.length) {
+      _settleController.stop();
+      _settlingPage = null;
+      _dragOffset = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _settleController.dispose();
+    super.dispose();
+  }
+
+  void _handleSettleTick() {
+    final animation = _settleAnimation;
+    if (animation == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _dragOffset = animation.value;
+    });
+  }
+
+  void _handleSettleStatusChanged(AnimationStatus status) {
+    if (status != AnimationStatus.completed || !mounted) {
+      return;
+    }
+
+    setState(() {
+      final settledPage = _settlingPage;
+      if (settledPage != null) {
+        _currentPage = settledPage;
+      }
+      _settlingPage = null;
+      _dragOffset = 0;
+      _settleAnimation = null;
+    });
   }
 
   @override
@@ -136,6 +190,9 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
                 height: cardHeight,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
+                  onHorizontalDragStart: cards.length > 1
+                      ? (_) => _stopSettleAnimation()
+                      : null,
                   onHorizontalDragUpdate: cards.length > 1
                       ? (details) =>
                             _handleHorizontalDragUpdate(details, constraints)
@@ -147,9 +204,7 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
                         )
                       : null,
                   onHorizontalDragCancel: cards.length > 1
-                      ? () => setState(() {
-                          _dragOffset = 0;
-                        })
+                      ? () => _animateToPageOffset(width: 0)
                       : null,
                   child: ClipRect(
                     child: Stack(
@@ -221,6 +276,9 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
   }
 
   int _targetPage(List<InsightFeedCard> cards) {
+    if (_settlingPage != null) {
+      return _settlingPage!;
+    }
     if (_dragOffset < 0 && _currentPage < cards.length - 1) {
       return _currentPage + 1;
     }
@@ -234,6 +292,7 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
     DragUpdateDetails details,
     BoxConstraints constraints,
   ) {
+    _stopSettleAnimation();
     final width = constraints.maxWidth;
     final proposedOffset = (_dragOffset + details.delta.dx).clamp(
       -width,
@@ -248,21 +307,44 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
   }
 
   void _handleHorizontalDragEnd(DragEndDetails details, double width) {
-    final velocity = details.primaryVelocity ?? 0;
+    final velocity =
+        details.primaryVelocity ?? details.velocity.pixelsPerSecond.dx;
     final shouldAdvance =
-        (_dragOffset < -width * 0.22 || velocity < -450) &&
+        (_dragOffset < -width * _pageTurnDistanceFraction ||
+            velocity < -_pageTurnVelocity) &&
         _currentPage < widget.cards.length - 1;
     final shouldGoBack =
-        (_dragOffset > width * 0.22 || velocity > 450) && _currentPage > 0;
+        (_dragOffset > width * _pageTurnDistanceFraction ||
+            velocity > _pageTurnVelocity) &&
+        _currentPage > 0;
 
-    setState(() {
-      if (shouldAdvance) {
-        _currentPage++;
-      } else if (shouldGoBack) {
-        _currentPage--;
-      }
-      _dragOffset = 0;
-    });
+    if (shouldAdvance) {
+      _animateToPageOffset(width: -width, targetPage: _currentPage + 1);
+    } else if (shouldGoBack) {
+      _animateToPageOffset(width: width, targetPage: _currentPage - 1);
+    } else {
+      _animateToPageOffset(width: 0);
+    }
+  }
+
+  void _animateToPageOffset({required double width, int? targetPage}) {
+    _settleController.stop();
+    _settlingPage = targetPage;
+    _settleAnimation = Tween<double>(begin: _dragOffset, end: width).animate(
+      CurvedAnimation(parent: _settleController, curve: Curves.easeOutCubic),
+    );
+    _settleController
+      ..reset()
+      ..forward();
+  }
+
+  void _stopSettleAnimation() {
+    if (!_settleController.isAnimating) {
+      return;
+    }
+    _settleController.stop();
+    _settlingPage = null;
+    _settleAnimation = null;
   }
 
   double _activeCardHeight(List<InsightFeedCard> cards, double width) {
@@ -287,6 +369,9 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
         card.visualData.isNotEmpty;
     if (card.visualType == InsightFeedVisualType.awardPreview && hasVisual) {
       return 142;
+    }
+    if (card.type == InsightFeedCardType.workoutMotivation && !hasVisual) {
+      return _estimatedMotivationCardHeight(card);
     }
     if (!hasVisual) {
       return 148;
@@ -338,6 +423,21 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
       InsightFeedCardSize.wide => 264,
       InsightFeedCardSize.featured => 396,
     };
+  }
+
+  double _estimatedMotivationCardHeight(InsightFeedCard card) {
+    final titleLines = _estimatedLineCount(
+      card.title,
+      charactersPerLine: 18,
+      maxLines: 2,
+    );
+    final bodyLines = _estimatedLineCount(
+      card.body,
+      charactersPerLine: 30,
+      maxLines: 3,
+    );
+    final estimatedHeight = 84 + (titleLines - 1) * 20 + (bodyLines - 1) * 22;
+    return estimatedHeight.clamp(104, 148).toDouble();
   }
 }
 
@@ -427,7 +527,11 @@ class InsightFeedCardWidget extends StatelessWidget {
     }
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 132),
+      constraints: BoxConstraints(
+        minHeight: card.type == InsightFeedCardType.workoutMotivation
+            ? _estimatedMotivationMinHeight(card)
+            : 132,
+      ),
       padding: const EdgeInsets.all(16),
       decoration: _insightCardDecoration(context),
       child: Row(
@@ -508,9 +612,25 @@ class InsightFeedCardWidget extends StatelessWidget {
       'flame' => CupertinoIcons.flame_fill,
       'radar' => Icons.radar_outlined,
       'return' => CupertinoIcons.arrow_turn_up_left,
+      'spark' => CupertinoIcons.sparkles,
       'weight' => Icons.monitor_weight_outlined,
       _ => CupertinoIcons.sparkles,
     };
+  }
+
+  double _estimatedMotivationMinHeight(InsightFeedCard card) {
+    final titleLines = _estimatedLineCount(
+      card.title,
+      charactersPerLine: 18,
+      maxLines: 2,
+    );
+    final bodyLines = _estimatedLineCount(
+      card.body,
+      charactersPerLine: 30,
+      maxLines: 3,
+    );
+    final estimatedHeight = 88 + (titleLines - 1) * 18 + (bodyLines - 1) * 20;
+    return estimatedHeight.clamp(96, 132).toDouble();
   }
 }
 
@@ -577,7 +697,7 @@ class _AwardInsightFeedCard extends StatelessWidget {
                                   card.title,
                                   style: textTheme.titleSmall?.copyWith(
                                     color: colors.textPrimary,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
@@ -993,6 +1113,7 @@ class _InsightFeedVisualContent extends StatelessWidget {
           data: card.visualData,
           accent: accent,
         ),
+        InsightFeedVisualType.coachNote => const SizedBox.shrink(),
         InsightFeedVisualType.awardPreview => const SizedBox.shrink(),
         InsightFeedVisualType.none => const SizedBox.shrink(),
       },
@@ -1383,6 +1504,7 @@ const double _rhythmTimelineHorizontalPadding = 12;
 const double _rhythmTimelineViewportInset = 170;
 const double _rhythmTimelineEdgeTaperWidth = 54;
 const double _rhythmTimelineLabelEdgeLift = 24;
+const double _rhythmTimelineLabelHeight = 18;
 const double _rhythmTimelineVerticalCompactFactor = 0.9;
 
 class _RhythmTimelinePlot extends StatelessWidget {
@@ -1438,7 +1560,7 @@ class _RhythmTimelinePlot extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     SizedBox(
-                      height: 10,
+                      height: _rhythmTimelineLabelHeight,
                       child: _buildLabelRow(
                         scrollOffset: scrollOffset,
                         viewportWidth: viewportConstraints.maxWidth,
@@ -1569,12 +1691,7 @@ class _RhythmTimelineLabel extends StatelessWidget {
       color: isToday && highlightToday
           ? accent
           : context.appColors.textTertiary,
-      fontWeight: isToday
-          ? FontWeight.w800
-          : isActive
-          ? FontWeight.w800
-          : FontWeight.w700,
-      fontSize: 9,
+      fontWeight: FontWeight.w700,
     );
     final edgeFalloff = Curves.easeInOutCubic.transform(1 - edgeFactor);
     final curvedLabel = Transform.translate(
@@ -1598,7 +1715,7 @@ class _RhythmTimelineLabel extends StatelessWidget {
     if (isToday) {
       return OverflowBox(
         minWidth: 0,
-        maxWidth: 44,
+        maxWidth: 56,
         alignment: Alignment.center,
         child: curvedLabel,
       );
@@ -3457,6 +3574,19 @@ String _signedPercentLabel(String label) {
   return label == '0%' ? label : '+$label';
 }
 
+int _estimatedLineCount(
+  String text, {
+  required int charactersPerLine,
+  required int maxLines,
+}) {
+  if (text.isEmpty) {
+    return 1;
+  }
+  final normalized = text.trim();
+  final estimated = (normalized.length / charactersPerLine).ceil();
+  return estimated.clamp(1, maxLines);
+}
+
 String _shortRadarLabel(String label) {
   return label == 'Shoulders' ? 'Delts' : label;
 }
@@ -3501,99 +3631,46 @@ class _InsightFeedFallbackCard extends StatelessWidget {
 
 // policy: allow-public-api launcher tile that opens the advanced insights route.
 class AdvancedInsightsLauncher extends StatelessWidget {
-  const AdvancedInsightsLauncher({
-    super.key,
-    required this.onPressed,
-    this.glowProgress = 0,
-    this.pullProgress = 0,
-    this.detentArmed = false,
-  });
+  const AdvancedInsightsLauncher({super.key, required this.onPressed});
 
   final VoidCallback onPressed;
-  final double glowProgress;
-  final double pullProgress;
-  final bool detentArmed;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
-    final glowHighlightProgress = ((glowProgress - 0.35) / 0.65).clamp(
-      0.0,
-      1.0,
-    );
-    final clampedPullProgress = pullProgress.clamp(0.0, 1.0);
-    final totalProgress = (glowHighlightProgress + clampedPullProgress * 0.75)
-        .clamp(0.0, 1.0);
-    final buttonFill = Color.lerp(
-      colors.field,
-      scheme.primary.withValues(alpha: detentArmed ? 0.24 : 0.18),
-      totalProgress,
-    )!;
-    final scale = 1.0 + clampedPullProgress * 0.025;
-    final verticalOffset = -6.0 * clampedPullProgress;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-      child: AnimatedSlide(
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOutCubic,
-        offset: Offset(0, verticalOffset / 48),
-        child: AnimatedScale(
-          duration: const Duration(milliseconds: 120),
-          curve: Curves.easeOutCubic,
-          scale: scale,
-          child: Material(
-            color: colors.transparent,
-            borderRadius: AppTheme.workoutCardBorderRadius,
-            child: InkWell(
-              key: const Key('advanced_insights_launcher'),
+      child: Material(
+        color: colors.transparent,
+        borderRadius: AppTheme.workoutCardBorderRadius,
+        child: InkWell(
+          key: const Key('advanced_insights_launcher'),
+          borderRadius: AppTheme.workoutCardBorderRadius,
+          onTap: onPressed,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: colors.field,
               borderRadius: AppTheme.workoutCardBorderRadius,
-              onTap: onPressed,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
-                curve: Curves.easeOutCubic,
-                padding: EdgeInsets.symmetric(
-                  horizontal: 16 + clampedPullProgress * 4,
-                  vertical: 10 + clampedPullProgress * 2,
-                ),
-                decoration: BoxDecoration(
-                  color: buttonFill,
-                  borderRadius: AppTheme.workoutCardBorderRadius,
-                  border: Border.all(
-                    color: scheme.primary.withValues(
-                      alpha: detentArmed ? 0.35 : 0,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Advanced Insights',
+                    style: textTheme.titleSmall?.copyWith(
+                      color: colors.textPrimary,
                     ),
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 120),
-                        style: textTheme.titleSmall!.copyWith(
-                          color: Color.lerp(
-                            colors.textPrimary,
-                            scheme.primary,
-                            totalProgress,
-                          ),
-                        ),
-                        child: const Text('Advanced Insights'),
-                      ),
-                    ),
-                    Icon(
-                      CupertinoIcons.chevron_right,
-                      color: Color.lerp(
-                        colors.textSecondary,
-                        scheme.primary,
-                        totalProgress,
-                      ),
-                      size: 18,
-                    ),
-                  ],
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  color: colors.textSecondary,
+                  size: 18,
                 ),
-              ),
+              ],
             ),
           ),
         ),

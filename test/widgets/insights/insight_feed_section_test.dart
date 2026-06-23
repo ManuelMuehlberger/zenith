@@ -46,7 +46,7 @@ void main() {
           priority: 50,
           title: 'Training rhythm',
           body: 'You trained 3 times in the last 7 days.',
-          metric: '3/7',
+          metric: '',
           accent: 'info',
           icon: 'calendar',
           generatedAt: DateTime(2026, 6, 11),
@@ -63,7 +63,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Training rhythm'), findsOneWidget);
-    expect(find.text('3/7'), findsOneWidget);
     expect(find.text('LAST WORKOUT'), findsOneWidget);
   });
 
@@ -269,6 +268,83 @@ void main() {
     expect(draggedHeight, lessThan(tallCardHeight + 16));
 
     await gesture.up();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('settles to the next stack card after a short page drag', (
+    tester,
+  ) async {
+    final service = _FakeInsightFeedService(
+      stacks: [
+        InsightFeedStack(
+          id: 'last_workout',
+          title: 'Last Workout',
+          priority: 100,
+          cards: [
+            _feedCard(
+              id: 'short',
+              title: 'Short card',
+              type: InsightFeedCardType.comebackCard,
+            ),
+            InsightFeedCard(
+              id: 'tall',
+              type: InsightFeedCardType.muscleActivationRadar,
+              priority: 90,
+              title: 'Tall card',
+              body: 'Latest workout compared with your recent average.',
+              metric: '2',
+              accent: 'primary',
+              icon: 'radar',
+              generatedAt: DateTime(2026, 6, 11),
+              visualType: InsightFeedVisualType.radar,
+              size: InsightFeedCardSize.featured,
+              visualData: const {
+                'points': [
+                  {
+                    'axisId': 'chest',
+                    'label': 'Chest',
+                    'planned': 0.5,
+                    'actual': 1,
+                  },
+                  {
+                    'axisId': 'back',
+                    'label': 'Back',
+                    'planned': 0.2,
+                    'actual': 0.1,
+                  },
+                  {
+                    'axisId': 'legs',
+                    'label': 'Legs',
+                    'planned': 0.4,
+                    'actual': 0.3,
+                  },
+                ],
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final railFinder = find.byKey(const Key('insight_feed_stack_rail'));
+
+    await tester.drag(railFinder, const Offset(-120, 0));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('insight_feed_page_card_short')), findsNothing);
+    expect(
+      find.byKey(const Key('insight_feed_page_card_tall')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('renders visual feed cards', (tester) async {
@@ -280,7 +356,7 @@ void main() {
           priority: 50,
           title: 'Training rhythm',
           body: 'You trained 3 times in the last 14 days.',
-          metric: '3/14',
+          metric: '',
           accent: 'info',
           icon: 'calendar',
           generatedAt: DateTime(2026, 6, 11),
@@ -407,6 +483,49 @@ void main() {
     await tester.pump();
   });
 
+  testWidgets('renders text-only motivation card compactly', (tester) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final service = _FakeInsightFeedService(
+      cards: [
+        InsightFeedCard(
+          id: 'motivation',
+          type: InsightFeedCardType.workoutMotivation,
+          priority: 1000,
+          title: 'Ease back in',
+          body: '9 days away. Start easy.',
+          metric: '',
+          accent: 'primary',
+          icon: 'spark',
+          generatedAt: DateTime(2026, 6, 20),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ease back in'), findsOneWidget);
+    expect(
+      find.byKey(const Key('insight_feed_visual_coachNote')),
+      findsNothing,
+    );
+    expect(find.byKey(const Key('insight_feed_coach_note')), findsNothing);
+    final cardHeight = tester
+        .getSize(find.byKey(const Key('insight_feed_page_card_motivation')))
+        .height;
+    expect(cardHeight, 104);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('today indicator turns neutral when today has no workout', (
     tester,
   ) async {
@@ -418,7 +537,7 @@ void main() {
           priority: 50,
           title: 'Training rhythm',
           body: 'You trained 2 times in the last 14 days.',
-          metric: '2/14',
+          metric: '',
           accent: 'info',
           icon: 'calendar',
           generatedAt: DateTime(2026, 6, 11),
@@ -536,7 +655,7 @@ void main() {
           priority: 50,
           title: 'Training rhythm',
           body: 'You trained 3 times in the last 14 days.',
-          metric: '3/14',
+          metric: '',
           accent: 'info',
           icon: 'calendar',
           generatedAt: DateTime(2026, 6, 11),
@@ -784,20 +903,13 @@ void main() {
     expect(find.byKey(const Key('insight_feed_latest_bar')), findsOneWidget);
   });
 
-  testWidgets('advanced insights launcher exposes home-style pull state', (
+  testWidgets('advanced insights launcher renders as a static button', (
     tester,
   ) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
-        home: Scaffold(
-          body: AdvancedInsightsLauncher(
-            onPressed: () {},
-            glowProgress: 1,
-            pullProgress: 1,
-            detentArmed: true,
-          ),
-        ),
+        home: Scaffold(body: AdvancedInsightsLauncher(onPressed: () {})),
       ),
     );
 
@@ -806,16 +918,16 @@ void main() {
     expect(find.byKey(const Key('advanced_insights_launcher')), findsOneWidget);
     expect(find.text('Advanced Insights'), findsOneWidget);
 
-    final container = tester.widget<AnimatedContainer>(
+    final container = tester.widget<Container>(
       find.descendant(
         of: find.byKey(const Key('advanced_insights_launcher')),
-        matching: find.byType(AnimatedContainer),
+        matching: find.byType(Container),
       ),
     );
     final padding = container.padding as EdgeInsets;
 
-    expect(padding.left, 20);
-    expect(padding.top, 12);
+    expect(padding.left, 16);
+    expect(padding.top, 10);
   });
 
   testWidgets('labels body weight trend line and baseline', (tester) async {
@@ -1473,6 +1585,51 @@ void main() {
 
     expect(iconTopLeft.dx - cardTop.dx, closeTo(16, 0.01));
     expect(iconTopLeft.dy - cardTop.dy, closeTo(16, 0.01));
+  });
+
+  testWidgets('achievement card title uses the standard insight title weight', (
+    tester,
+  ) async {
+    final achievement = WorkoutAchievement(
+      workoutId: 'workout-1',
+      ruleId: 'long_session',
+      type: WorkoutAchievementType.longSession,
+      title: 'Long Session',
+      reason: 'You trained longer than usual.',
+      earnedAt: DateTime(2026, 6, 11),
+      metrics: const {'durationMinutes': 90},
+    );
+    final service = _FakeInsightFeedService(
+      cards: [
+        InsightFeedCard(
+          id: 'card-1',
+          type: InsightFeedCardType.recentAchievementShoutout,
+          priority: 100,
+          title: 'Long Session',
+          body: 'You trained longer than usual.',
+          metric: '',
+          accent: 'primary',
+          icon: 'award',
+          generatedAt: DateTime(2026, 6, 11),
+          visualType: InsightFeedVisualType.awardPreview,
+          size: InsightFeedCardSize.wide,
+          visualData: {
+            'achievements': [achievement.toMap()],
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final title = tester.widget<Text>(find.text('Long Session').first);
+    expect(title.style?.fontWeight, FontWeight.w700);
   });
 }
 
