@@ -1688,8 +1688,8 @@ class _RhythmTimelineLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = context.appText.labelSmall?.copyWith(
-      color: isToday && highlightToday
-          ? accent
+      color: isToday
+          ? context.appScheme.onSurface
           : context.appColors.textTertiary,
       fontWeight: FontWeight.w700,
     );
@@ -1789,8 +1789,8 @@ class _RhythmTimelineTick extends StatelessWidget {
                   ? (isActive ? color : context.appScheme.onSurface)
                   : isActive
                   ? color.withValues(alpha: 0.92)
-                  : context.appColors.field.withValues(
-                      alpha: isFuture ? 0.38 : 0.72,
+                  : context.appColors.textTertiary.withValues(
+                      alpha: isFuture ? 0.22 : 0.34,
                     ),
               borderRadius: BorderRadius.circular(999),
             ),
@@ -2515,9 +2515,7 @@ class _BalanceFingerprintVisualState extends State<_BalanceFingerprintVisual> {
 
   @override
   Widget build(BuildContext context) {
-    final segments = _listOfMaps(
-      widget.data['segments'],
-    ).where((segment) => _num(segment['percent']) > 0).toList(growable: false);
+    final segments = _balanceSegments(widget.data['segments']);
     if (segments.length < 3) {
       return const SizedBox.shrink();
     }
@@ -2531,7 +2529,7 @@ class _BalanceFingerprintVisualState extends State<_BalanceFingerprintVisual> {
     final selected = _selectedIndex == null ? null : segments[_selectedIndex!];
     final selectedColor = selected == null
         ? colors.textTertiary
-        : _balanceSegmentColor(context, _string(selected['axisId']));
+        : _balanceSegmentColor(context, selected.axisId);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2550,46 +2548,41 @@ class _BalanceFingerprintVisualState extends State<_BalanceFingerprintVisual> {
           ),
         ),
         const SizedBox(height: 10),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 160),
-          child: Row(
-            key: ValueKey(
-              selected == null ? 'none' : _string(selected['axisId']),
+        Row(
+          key: ValueKey(selected == null ? 'none' : selected.axisId),
+          children: [
+            Container(
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(
+                color: selectedColor,
+                shape: BoxShape.circle,
+              ),
             ),
-            children: [
-              Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(
-                  color: selectedColor,
-                  shape: BoxShape.circle,
+            const SizedBox(width: 7),
+            Expanded(
+              child: Text(
+                _selectedSegmentText(selected),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.labelSmall?.copyWith(
+                  color: colors.textTertiary,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Text(
-                  _selectedSegmentText(selected),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelSmall?.copyWith(
-                    color: colors.textTertiary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  String _selectedSegmentText(Map<String, Object?>? segment) {
+  String _selectedSegmentText(_BalanceSegmentData? segment) {
     if (segment == null) {
       return 'Tap a segment to inspect its long-term share';
     }
-    final label = _string(segment['label']);
-    final percent = (_num(segment['percent']) * 100).round();
+    final label = segment.label;
+    final percent = (segment.percent * 100).round();
     return '$label accounts for $percent% of long-term work';
   }
 }
@@ -2804,7 +2797,7 @@ class _BalanceFingerprintBar extends StatelessWidget {
     required this.onSegmentSelected,
   });
 
-  final List<Map<String, Object?>> segments;
+  final List<_BalanceSegmentData> segments;
   final int? selectedIndex;
   final ValueChanged<int> onSegmentSelected;
   static const BorderRadius _barBorderRadius = BorderRadius.all(
@@ -2814,46 +2807,64 @@ class _BalanceFingerprintBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final widths = _displayPercentages(
-      segments.map((segment) => _num(segment['percent'])).toList(),
+      segments.map((segment) => segment.percent),
     );
     final textStyle = context.appText.labelSmall?.copyWith(
       color: context.appScheme.onPrimary,
       fontWeight: FontWeight.w800,
-      shadows: [
-        Shadow(
-          color: context.appColors.shadow.withValues(alpha: 0.6),
-          blurRadius: 3,
-        ),
-      ],
+    );
+    final colors = segments
+        .map((segment) => _balanceSegmentColor(context, segment.axisId))
+        .toList(growable: false);
+    final dimColor = context.appColors.field.withValues(alpha: 0.62);
+    final selectedBorderColor = context.appScheme.onSurface.withValues(
+      alpha: 0.82,
     );
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = math.max(1.0, constraints.maxWidth);
-        return ClipRRect(
-          borderRadius: _barBorderRadius,
-          child: Row(
-            key: const Key('insight_feed_balance_fingerprint_bar'),
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var index = 0; index < segments.length; index++)
-                _BalanceFingerprintSegment(
-                  segment: segments[index],
-                  width: width * widths[index],
-                  borderRadius: _segmentBorderRadius(index, segments.length),
-                  isSelected: selectedIndex == index,
-                  isDimmed: selectedIndex != null && selectedIndex != index,
+        return Stack(
+          key: const Key('insight_feed_balance_fingerprint_bar'),
+          fit: StackFit.expand,
+          children: [
+            RepaintBoundary(
+              child: CustomPaint(
+                painter: _BalanceFingerprintPainter(
+                  segments: segments,
+                  widths: widths,
+                  colors: colors,
+                  selectedIndex: selectedIndex,
                   textStyle: textStyle,
-                  onTap: () => onSegmentSelected(index),
+                  dimColor: dimColor,
+                  selectedBorderColor: selectedBorderColor,
+                  borderRadius: _barBorderRadius,
                 ),
-            ],
-          ),
+              ),
+            ),
+            for (final target in _tapTargets(widths, width))
+              Positioned(
+                left: target.left,
+                width: target.width,
+                top: 0,
+                bottom: 0,
+                child: GestureDetector(
+                  key: Key(
+                    'insight_feed_balance_segment_'
+                    '${segments[target.index].axisId}',
+                  ),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onSegmentSelected(target.index),
+                ),
+              ),
+          ],
         );
       },
     );
   }
 
-  List<double> _displayPercentages(List<double> values) {
+  List<double> _displayPercentages(Iterable<double> sourceValues) {
+    final values = sourceValues.toList(growable: false);
     const minVisiblePercent = 0.035;
     final adjusted = values
         .map((value) => value > 0 ? math.max(value, minVisiblePercent) : 0.0)
@@ -2865,110 +2876,223 @@ class _BalanceFingerprintBar extends StatelessWidget {
     return adjusted.map((value) => value / total).toList(growable: false);
   }
 
-  BorderRadius _segmentBorderRadius(int index, int segmentCount) {
-    if (segmentCount <= 1) {
-      return _barBorderRadius;
+  List<_BalanceTapTarget> _tapTargets(List<double> widths, double barWidth) {
+    var left = 0.0;
+    final targets = <_BalanceTapTarget>[];
+    for (var index = 0; index < widths.length; index++) {
+      final width = barWidth * widths[index];
+      targets.add(_BalanceTapTarget(index: index, left: left, width: width));
+      left += width;
     }
-    if (index == 0) {
-      return const BorderRadius.horizontal(left: Radius.circular(14));
-    }
-    if (index == segmentCount - 1) {
-      return const BorderRadius.horizontal(right: Radius.circular(14));
-    }
-    return BorderRadius.zero;
+    return targets;
   }
 }
 
-class _BalanceFingerprintSegment extends StatelessWidget {
-  const _BalanceFingerprintSegment({
-    required this.segment,
+class _BalanceTapTarget {
+  const _BalanceTapTarget({
+    required this.index,
+    required this.left,
     required this.width,
-    required this.borderRadius,
-    required this.isSelected,
-    required this.isDimmed,
-    required this.textStyle,
-    required this.onTap,
   });
 
-  final Map<String, Object?> segment;
+  final int index;
+  final double left;
   final double width;
-  final BorderRadius borderRadius;
-  final bool isSelected;
-  final bool isDimmed;
+}
+
+class _BalanceFingerprintPainter extends CustomPainter {
+  const _BalanceFingerprintPainter({
+    required this.segments,
+    required this.widths,
+    required this.colors,
+    required this.selectedIndex,
+    required this.textStyle,
+    required this.dimColor,
+    required this.selectedBorderColor,
+    required this.borderRadius,
+  });
+
+  final List<_BalanceSegmentData> segments;
+  final List<double> widths;
+  final List<Color> colors;
+  final int? selectedIndex;
   final TextStyle? textStyle;
-  final VoidCallback onTap;
+  final Color dimColor;
+  final Color selectedBorderColor;
+  final BorderRadius borderRadius;
 
   @override
-  Widget build(BuildContext context) {
-    final axisId = _string(segment['axisId']);
-    final baseColor = _balanceSegmentColor(context, axisId);
-    final displayColor = isDimmed
-        ? Color.alphaBlend(
-            context.appColors.field.withValues(alpha: 0.62),
-            baseColor,
-          ).withValues(alpha: 0.46)
-        : baseColor;
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty || segments.isEmpty) {
+      return;
+    }
 
-    return SizedBox(
-      key: Key('insight_feed_balance_segment_$axisId'),
-      width: width,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: displayColor,
-            borderRadius: borderRadius,
-            border: Border.all(
-              color: isSelected
-                  ? context.appScheme.onSurface.withValues(alpha: 0.82)
-                  : context.appColors.transparent,
-              width: isSelected ? 2 : 0,
-              strokeAlign: BorderSide.strokeAlignInside,
-            ),
-          ),
-          child: _buildLabel(),
-        ),
-      ),
+    final clip = RRect.fromRectAndCorners(
+      Offset.zero & size,
+      topLeft: borderRadius.topLeft,
+      topRight: borderRadius.topRight,
+      bottomLeft: borderRadius.bottomLeft,
+      bottomRight: borderRadius.bottomRight,
     );
+    canvas.save();
+    canvas.clipRRect(clip);
+
+    var left = 0.0;
+    for (var index = 0; index < segments.length; index++) {
+      final right = index == segments.length - 1
+          ? size.width
+          : left + size.width * widths[index];
+      final rect = Rect.fromLTRB(left, 0, right, size.height);
+      final isDimmed = selectedIndex != null && selectedIndex != index;
+      final color = isDimmed
+          ? Color.alphaBlend(dimColor, colors[index]).withValues(alpha: 0.46)
+          : colors[index];
+
+      canvas.drawRect(rect, Paint()..color = color);
+      if (!isDimmed) {
+        _paintLabel(canvas, rect, segments[index].label);
+      }
+      left = right;
+    }
+
+    canvas.restore();
+
+    final selected = selectedIndex;
+    if (selected != null && selected >= 0 && selected < widths.length) {
+      _paintSelectedBorder(canvas, size, selected);
+    }
   }
 
-  Widget? _buildLabel() {
-    if (isDimmed) {
-      return null;
+  void _paintLabel(Canvas canvas, Rect rect, String label) {
+    final mode = _labelModeForWidth(rect.width);
+    if (mode == _BalanceSegmentLabelMode.hidden || textStyle == null) {
+      return;
     }
 
-    final mode = _labelModeForWidth(width);
-    if (mode == _BalanceSegmentLabelMode.hidden) {
-      return null;
-    }
-
-    final baseLabel = _string(segment['label']);
-    final label = switch (mode) {
-      _BalanceSegmentLabelMode.horizontal => _shortBalanceLabel(baseLabel),
-      _BalanceSegmentLabelMode.vertical => _shortBalanceLabel(baseLabel),
+    final displayLabel = switch (mode) {
+      _BalanceSegmentLabelMode.horizontal => _shortBalanceLabel(label),
+      _BalanceSegmentLabelMode.vertical => _shortBalanceLabel(label),
       _BalanceSegmentLabelMode.verticalAbbreviated => _abbreviatedBalanceLabel(
-        baseLabel,
+        label,
       ),
       _BalanceSegmentLabelMode.hidden => '',
     };
-
-    final child = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(label, maxLines: 1, style: textStyle),
-      ),
+    final painter = TextPainter(
+      text: TextSpan(text: displayLabel, style: textStyle),
+      maxLines: 1,
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
     );
 
-    return Center(
-      child: mode == _BalanceSegmentLabelMode.horizontal
-          ? child
-          : RotatedBox(quarterTurns: 3, child: child),
+    if (mode == _BalanceSegmentLabelMode.horizontal) {
+      painter.layout(maxWidth: math.max(0, rect.width - 8));
+      final offset = Offset(
+        rect.left + (rect.width - painter.width) / 2,
+        rect.top + (rect.height - painter.height) / 2,
+      );
+      painter.paint(canvas, offset);
+      return;
+    }
+
+    painter.layout(maxWidth: math.max(0, rect.height - 8));
+    canvas.save();
+    canvas.translate(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    canvas.rotate(-math.pi / 2);
+    painter.paint(canvas, Offset(-painter.width / 2, -painter.height / 2));
+    canvas.restore();
+  }
+
+  void _paintSelectedBorder(Canvas canvas, Size size, int selected) {
+    var left = 0.0;
+    for (var index = 0; index < selected; index++) {
+      left += size.width * widths[index];
+    }
+    final right = selected == widths.length - 1
+        ? size.width
+        : left + size.width * widths[selected];
+    final rect = Rect.fromLTRB(left + 1, 1, right - 1, size.height - 1);
+    if (rect.width <= 0 || rect.height <= 0) {
+      return;
+    }
+    const radius = Radius.circular(13);
+    final selectedBorderRadius = BorderRadius.only(
+      topLeft: selected == 0 ? radius : Radius.zero,
+      bottomLeft: selected == 0 ? radius : Radius.zero,
+      topRight: selected == widths.length - 1 ? radius : Radius.zero,
+      bottomRight: selected == widths.length - 1 ? radius : Radius.zero,
+    );
+    canvas.drawRRect(
+      selectedBorderRadius.toRRect(rect),
+      Paint()
+        ..color = selectedBorderColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
     );
   }
+
+  @override
+  bool shouldRepaint(covariant _BalanceFingerprintPainter oldDelegate) {
+    return !_sameList(oldDelegate.segments, segments) ||
+        !_sameList(oldDelegate.widths, widths) ||
+        !_sameList(oldDelegate.colors, colors) ||
+        oldDelegate.selectedIndex != selectedIndex ||
+        oldDelegate.textStyle != textStyle ||
+        oldDelegate.dimColor != dimColor ||
+        oldDelegate.selectedBorderColor != selectedBorderColor ||
+        oldDelegate.borderRadius != borderRadius;
+  }
+}
+
+class _BalanceSegmentData {
+  const _BalanceSegmentData({
+    required this.axisId,
+    required this.label,
+    required this.percent,
+  });
+
+  final String axisId;
+  final String label;
+  final double percent;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is _BalanceSegmentData &&
+            other.axisId == axisId &&
+            other.label == label &&
+            other.percent == percent;
+  }
+
+  @override
+  int get hashCode => Object.hash(axisId, label, percent);
+}
+
+List<_BalanceSegmentData> _balanceSegments(Object? rawSegments) {
+  return _listOfMaps(rawSegments)
+      .map(
+        (segment) => _BalanceSegmentData(
+          axisId: _string(segment['axisId']),
+          label: _string(segment['label']),
+          percent: _num(segment['percent']),
+        ),
+      )
+      .where((segment) => segment.percent > 0)
+      .toList(growable: false);
+}
+
+bool _sameList<T>(List<T> a, List<T> b) {
+  if (identical(a, b)) {
+    return true;
+  }
+  if (a.length != b.length) {
+    return false;
+  }
+  for (var index = 0; index < a.length; index++) {
+    if (a[index] != b[index]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 enum _BalanceSegmentLabelMode {

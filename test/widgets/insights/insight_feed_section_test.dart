@@ -637,9 +637,22 @@ void main() {
       AppTheme.light.colorScheme.onSurface,
     );
     final todayText = tester.widget<Text>(find.text('Today'));
+    expect(todayText.style?.color, AppTheme.light.colorScheme.onSurface);
+    final inactivePastIndicatorDecoration =
+        tester
+                .widget<AnimatedContainer>(
+                  find.descendant(
+                    of: find.byKey(const Key('insight_feed_rhythm_tick_26')),
+                    matching: find.byType(AnimatedContainer),
+                  ),
+                )
+                .decoration!
+            as BoxDecoration;
     expect(
-      todayText.style?.color,
-      AppTheme.light.extension<AppThemeTokens>()!.textTertiary,
+      inactivePastIndicatorDecoration.color,
+      AppTheme.light.extension<AppThemeTokens>()!.textTertiary.withValues(
+        alpha: 0.34,
+      ),
     );
     expect(find.text('10'), findsNothing);
   });
@@ -743,7 +756,7 @@ void main() {
     final highlightedTodayText = tester.widget<Text>(find.text('Today'));
     expect(
       highlightedTodayText.style?.color,
-      AppTheme.light.extension<AppThemeTokens>()!.info,
+      AppTheme.light.colorScheme.onSurface,
     );
     expect(find.text('10'), findsNothing);
     final todayIndicatorDecoration =
@@ -1074,7 +1087,6 @@ void main() {
     expect(find.text('Balance'), findsNothing);
     expect(find.text('Dominant'), findsNothing);
     expect(find.text('Focus'), findsNothing);
-    expect(find.text('Chest'), findsWidgets);
     expect(
       find.text('Tap a segment to inspect its long-term share'),
       findsOneWidget,
@@ -1090,21 +1102,12 @@ void main() {
       find.text('Chest accounts for 55% of long-term work'),
       findsOneWidget,
     );
-    final selectedLeadingDecoration =
-        tester
-                .widget<AnimatedContainer>(
-                  find.descendant(
-                    of: find.byKey(
-                      const Key('insight_feed_balance_segment_chest'),
-                    ),
-                    matching: find.byType(AnimatedContainer),
-                  ),
-                )
-                .decoration!
-            as BoxDecoration;
     expect(
-      selectedLeadingDecoration.borderRadius,
-      const BorderRadius.horizontal(left: Radius.circular(14)),
+      find.descendant(
+        of: find.byKey(const Key('insight_feed_balance_segment_chest')),
+        matching: find.byType(AnimatedContainer),
+      ),
+      findsNothing,
     );
 
     await tester.tap(
@@ -1116,21 +1119,12 @@ void main() {
       find.text('Back accounts for 15% of long-term work'),
       findsOneWidget,
     );
-    final selectedTrailingDecoration =
-        tester
-                .widget<AnimatedContainer>(
-                  find.descendant(
-                    of: find.byKey(
-                      const Key('insight_feed_balance_segment_back'),
-                    ),
-                    matching: find.byType(AnimatedContainer),
-                  ),
-                )
-                .decoration!
-            as BoxDecoration;
     expect(
-      selectedTrailingDecoration.borderRadius,
-      const BorderRadius.horizontal(right: Radius.circular(14)),
+      find.descendant(
+        of: find.byKey(const Key('insight_feed_balance_segment_back')),
+        matching: find.byType(AnimatedContainer),
+      ),
+      findsNothing,
     );
 
     await tester.tap(
