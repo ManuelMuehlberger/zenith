@@ -67,6 +67,30 @@
       }
     },
     {
+      "id": "workout_motivation",
+      "stackId": "last_workout",
+      "type": "workoutMotivation",
+      "enabled": true,
+      "priority": 1000,
+      "params": {
+        "minIdleDays": 7,
+        "title": "Ease back in",
+        "detailMetricLabel": "Days since last workout",
+        "restartLightBody": "A light session is enough to get moving again.",
+        "restartBody": "{idleDays} days away. Start easy.",
+        "comebackHighLoadBody": "After {idleDays} days away, make the next one deliberately easy.",
+        "comebackBody": "{idleDays} days away. A short session is enough.",
+        "resetHighLoadBody": "After {idleDays} days away, restart smaller and build back in.",
+        "resetBody": "After {idleDays} days away, keep it light and easy."
+      },
+      "visual": {
+        "enabled": false,
+        "type": "none",
+        "size": "wide",
+        "params": {}
+      }
+    },
+    {
       "id": "high_intensity_shoutout",
       "stackId": "last_workout",
       "type": "highIntensityShoutout",

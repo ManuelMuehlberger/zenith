@@ -99,6 +99,8 @@ void main() {
       expect(cards.first.title, 'High Volume');
       expect(cards.first.metric, isEmpty);
       expect(cards.first.visualData['achievements'], hasLength(1));
+      expect(cards[1].metric, isEmpty);
+      expect(cards[1].detailMetricLabel, isNull);
     },
   );
 
@@ -635,6 +637,7 @@ void main() {
     expect(latestVelocityPoint['value'], 3.0);
     expect(velocity.visualData['average'], closeTo(8 / 90 * 7, 0.0001));
     expect(consistency.visualType, InsightFeedVisualType.calendarStrip);
+    expect(consistency.metric, isEmpty);
     expect(consistency.visualData['recentDays'], isA<List>());
   });
 
@@ -1096,6 +1099,178 @@ void main() {
 
     expect(cards.single.type, InsightFeedCardType.comebackCard);
     expect(cards.single.metric, '11d');
+  });
+
+  test('suppresses workout motivation before the idle threshold', () async {
+    final now = DateTime(2026, 6, 20, 12);
+    final service = InsightFeedService(
+      assetBundle: _StringAssetBundle({
+        rulesAsset: '''
+{
+  "rules": [
+    {"id": "motivation", "type": "workoutMotivation", "enabled": true, "priority": 1000, "params": {"minIdleDays": 7}, "visual": {"enabled": false, "type": "none", "size": "wide", "params": {}}}
+  ]
+}
+''',
+      }),
+      workoutsProvider: () async => [
+        _workout(
+          id: 'latest',
+          completedAt: now.subtract(const Duration(days: 6)),
+        ),
+      ],
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(
+        cacheKey: 'feed-test-motivation-suppressed',
+      ),
+    );
+
+    expect(await service.getCards(), isEmpty);
+  });
+
+  test('generates workout motivation in the last workout stack', () async {
+    final now = DateTime(2026, 6, 20, 12);
+    final service = InsightFeedService(
+      assetBundle: _StringAssetBundle({
+        rulesAsset: '''
+{
+  "stacks": [
+    {"id": "last_workout", "title": "Last Workout", "enabled": true, "priority": 100, "minCompletedWorkouts": 1, "maxCards": 3}
+  ],
+  "rules": [
+    {"id": "motivation", "stackId": "last_workout", "type": "workoutMotivation", "enabled": true, "priority": 1000, "params": {"minIdleDays": 7, "title": "Ease back in"}, "visual": {"enabled": false, "type": "none", "size": "wide", "params": {}}}
+  ]
+}
+''',
+      }),
+      workoutsProvider: () async => [
+        _workout(
+          id: 'latest',
+          completedAt: now.subtract(const Duration(days: 9)),
+          setCount: 5,
+        ),
+      ],
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(
+        cacheKey: 'feed-test-motivation-stack',
+      ),
+    );
+
+    final stacks = await service.getCardStacks();
+    final card = stacks.single.cards.single;
+
+    expect(stacks.single.title, 'Last Workout');
+    expect(card.type, InsightFeedCardType.workoutMotivation);
+    expect(card.metric, isEmpty);
+    expect(card.visualType, InsightFeedVisualType.none);
+    expect(card.visualData, isEmpty);
+    expect(card.title, 'Ease back in');
+    expect(card.priority, 1000);
+  });
+
+  test('workout motivation copy changes by idle band and load', () async {
+    Future<InsightFeedCard> cardFor({
+      required DateTime now,
+      required int idleDays,
+      required int setCount,
+      required String cacheKey,
+    }) async {
+      final service = InsightFeedService(
+        assetBundle: _StringAssetBundle({
+          rulesAsset: '''
+{
+  "rules": [
+    {"id": "motivation", "type": "workoutMotivation", "enabled": true, "priority": 1000, "params": {"minIdleDays": 7, "title": "Ease back in", "restartLightBody": "JSON light {workoutName} {idleDays}", "comebackHighLoadBody": "JSON comeback {workoutName} {idleDays}", "resetBody": "JSON reset {workoutName} {idleDays}"}, "visual": {"enabled": false, "type": "none", "size": "wide", "params": {}}}
+  ]
+}
+''',
+        }),
+        workoutsProvider: () async => [
+          _workout(
+            id: 'latest',
+            completedAt: now.subtract(Duration(days: idleDays)),
+            setCount: setCount,
+          ),
+        ],
+        nowProvider: () => now,
+        cacheStore: InsightsCacheStore(cacheKey: cacheKey),
+      );
+      return (await service.getCards()).single;
+    }
+
+    final now = DateTime(2026, 6, 20, 12);
+    final gentle = await cardFor(
+      now: now,
+      idleDays: 9,
+      setCount: 5,
+      cacheKey: 'feed-test-motivation-gentle',
+    );
+    final comeback = await cardFor(
+      now: now,
+      idleDays: 16,
+      setCount: 16,
+      cacheKey: 'feed-test-motivation-comeback',
+    );
+    final reset = await cardFor(
+      now: now,
+      idleDays: 31,
+      setCount: 8,
+      cacheKey: 'feed-test-motivation-reset',
+    );
+
+    expect(gentle.title, 'Ease back in');
+    expect(gentle.body, 'JSON light Workout latest 9');
+    expect(comeback.title, 'Ease back in');
+    expect(comeback.body, 'JSON comeback Workout latest 16');
+    expect(reset.title, 'Ease back in');
+    expect(reset.body, 'JSON reset Workout latest 31');
+  });
+
+  test('stack max cards can cap workout motivation', () async {
+    final now = DateTime(2026, 6, 20, 12);
+    final service = InsightFeedService(
+      assetBundle: _StringAssetBundle({
+        rulesAsset: '''
+{
+  "stacks": [
+    {"id": "last_workout", "title": "Last Workout", "enabled": true, "priority": 100, "minCompletedWorkouts": 1, "maxCards": 1}
+  ],
+  "rules": [
+    {"id": "achievement", "stackId": "last_workout", "type": "recentAchievementShoutout", "enabled": true, "priority": 100, "params": {"maxAgeDays": 14}, "visual": {"enabled": true, "type": "awardPreview", "size": "wide", "params": {}}},
+    {"id": "motivation", "stackId": "last_workout", "type": "workoutMotivation", "enabled": true, "priority": 1000, "params": {"minIdleDays": 7}, "visual": {"enabled": false, "type": "none", "size": "wide", "params": {}}}
+  ]
+}
+''',
+      }),
+      workoutsProvider: () async => [
+        _workout(
+          id: 'latest',
+          completedAt: now.subtract(const Duration(days: 9)),
+          achievements: [
+            WorkoutAchievement(
+              workoutId: 'latest',
+              ruleId: 'test',
+              type: WorkoutAchievementType.highVolume,
+              title: 'Milestone',
+              reason: 'Test achievement.',
+              earnedAt: now.subtract(const Duration(days: 9)),
+            ),
+          ],
+        ),
+      ],
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(
+        cacheKey: 'feed-test-motivation-max-cards',
+      ),
+    );
+
+    final stacks = await service.getCardStacks();
+
+    expect(stacks.single.cards, hasLength(1));
+    expect(
+      stacks.single.cards.single.type,
+      InsightFeedCardType.workoutMotivation,
+    );
   });
 
   test('invalidateCache forces regeneration on the same day', () async {

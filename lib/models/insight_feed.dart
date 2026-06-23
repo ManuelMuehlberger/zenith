@@ -12,6 +12,7 @@ enum InsightFeedCardType {
   latestWorkoutComparison,
   bodyWeightTrend,
   trainingBalance,
+  workoutMotivation,
 }
 
 // policy: allow-public-api visual variants supported by insights feed cards.
@@ -26,6 +27,7 @@ enum InsightFeedVisualType {
   bodyWeightLine,
   awardPreview,
   balanceFingerprint,
+  coachNote,
 }
 
 // policy: allow-public-api visual size contract for insights feed cards.
@@ -176,7 +178,7 @@ class InsightFeedCard {
       priority: _readInt(map, 'priority'),
       title: _readString(map, 'title'),
       body: _readString(map, 'body'),
-      metric: _readString(map, 'metric'),
+      metric: _readOptionalString(map, 'metric', ''),
       accent: _readString(map, 'accent'),
       icon: _readString(map, 'icon'),
       generatedAt: DateTime.parse(_readString(map, 'generatedAt')),

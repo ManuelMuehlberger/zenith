@@ -39,8 +39,8 @@ class InsightFeedService {
   static const String defaultRulesAsset =
       'assets/insights/insight_feed_rules.json';
   static const String _feedCacheKey = 'insight_feed_cache';
-  static const int _feedCacheVersion = 5;
-  static const int _feedStackCacheVersion = 4;
+  static const int _feedCacheVersion = 10;
+  static const int _feedStackCacheVersion = 9;
 
   final AssetBundle _assetBundle;
   final Future<List<Workout>> Function()? _workoutsProvider;
@@ -370,6 +370,11 @@ class InsightFeedService {
           workouts,
           now,
         ),
+        InsightFeedCardType.workoutMotivation => _workoutMotivation(
+          rule,
+          workouts,
+          now,
+        ),
       };
       if (card != null) {
         cards.add(card);
@@ -611,11 +616,10 @@ class InsightFeedService {
         baselineActiveDays: baselineDaysSet.length,
         recentDays: recentDays,
       ),
-      metric: '$recentCount/$recentDays',
+      metric: '',
       accent: 'info',
       icon: 'calendar',
       generatedAt: now,
-      detailMetricLabel: 'Active days',
       visualData: {
         'recentDays': recentDates
             .map((date) {
@@ -751,6 +755,123 @@ class InsightFeedService {
       generatedAt: now,
       sourceWorkoutId: latest.id,
     );
+  }
+
+  InsightFeedCard? _workoutMotivation(
+    InsightFeedRule rule,
+    List<Workout> workouts,
+    DateTime now,
+  ) {
+    final minIdleDays = _intParam(rule, 'minIdleDays', 7);
+    if (minIdleDays <= 0) {
+      return null;
+    }
+
+    final latest = workouts.last;
+    final idleDays = _wholeDaysBetween(_workoutDate(latest), now);
+    if (idleDays < minIdleDays) {
+      return null;
+    }
+
+    final durationMinutes = _durationMinutes(latest);
+    final completedSets = latest.completedSets;
+    final highLoad = completedSets >= 14 || durationMinutes >= 75;
+    final lightLoad = completedSets <= 6 || durationMinutes <= 30;
+    final workoutName = _latestWorkoutLabel(latest);
+
+    return _card(
+      rule: rule,
+      id: '${rule.id}_${latest.id}_$idleDays',
+      title: _stringParam(rule, 'title', 'Ease back in'),
+      body: _motivationBody(
+        rule: rule,
+        idleDays: idleDays,
+        workoutName: workoutName,
+        highLoad: highLoad,
+        lightLoad: lightLoad,
+      ),
+      metric: '',
+      accent: idleDays >= 28 ? 'warning' : 'primary',
+      icon: 'spark',
+      generatedAt: now,
+      sourceWorkoutId: latest.id,
+      detailMetricLabel: _stringParam(
+        rule,
+        'detailMetricLabel',
+        'Days since last workout',
+      ),
+    );
+  }
+
+  int _wholeDaysBetween(DateTime from, DateTime to) {
+    final fromLocal = from.toLocal();
+    final toLocal = to.toLocal();
+    final fromDay = DateTime(fromLocal.year, fromLocal.month, fromLocal.day);
+    final toDay = DateTime(toLocal.year, toLocal.month, toLocal.day);
+    return toDay.difference(fromDay).inDays;
+  }
+
+  String _motivationBody({
+    required InsightFeedRule rule,
+    required int idleDays,
+    required String workoutName,
+    required bool highLoad,
+    required bool lightLoad,
+  }) {
+    final templateKey = idleDays >= 28
+        ? highLoad
+              ? 'resetHighLoadBody'
+              : 'resetBody'
+        : idleDays >= 14
+        ? highLoad
+              ? 'comebackHighLoadBody'
+              : 'comebackBody'
+        : lightLoad
+        ? 'restartLightBody'
+        : 'restartBody';
+    final fallback = _motivationBodyFallback(
+      idleDays: idleDays,
+      workoutName: workoutName,
+      highLoad: highLoad,
+      lightLoad: lightLoad,
+    );
+    return _formatMotivationTemplate(
+      _stringParam(rule, templateKey, fallback),
+      idleDays: idleDays,
+      workoutName: workoutName,
+    );
+  }
+
+  String _motivationBodyFallback({
+    required int idleDays,
+    required String workoutName,
+    required bool highLoad,
+    required bool lightLoad,
+  }) {
+    if (idleDays >= 28) {
+      return highLoad
+          ? 'It has been $idleDays days since $workoutName. Restart smaller than that session and rebuild the rhythm.'
+          : 'After $idleDays days away, keep the next workout light and easy to start.';
+    }
+    if (idleDays >= 14) {
+      return highLoad
+          ? '$workoutName was a solid effort. After $idleDays days away, make the next session deliberately easy.'
+          : '$idleDays days since $workoutName. A short comeback session is enough to restart the loop.';
+    }
+    if (lightLoad) {
+      return '$workoutName is still close. Repeat it lightly or add one small block to get moving again.';
+    }
+    return '$idleDays days since $workoutName. Keep the next workout simple and get the streak moving again.';
+  }
+
+  String _formatMotivationTemplate(
+    String template, {
+    required int idleDays,
+    required String workoutName,
+  }) {
+    return template
+        .replaceAll('{idleDays}', idleDays.toString())
+        .replaceAll('{workoutName}', workoutName);
   }
 
   InsightFeedCard? _personalBestMomentum(
@@ -1558,6 +1679,11 @@ class InsightFeedService {
   double _numParam(InsightFeedRule rule, String key, num fallback) {
     final value = rule.params[key];
     return value is num ? value.toDouble() : fallback.toDouble();
+  }
+
+  String _stringParam(InsightFeedRule rule, String key, String fallback) {
+    final value = rule.params[key];
+    return value is String && value.isNotEmpty ? value : fallback;
   }
 
   int _intVisualParam(InsightFeedRule rule, String key, int fallback) {
