@@ -105,9 +105,26 @@ class _InsightFeedStackRail extends StatefulWidget {
   State<_InsightFeedStackRail> createState() => _InsightFeedStackRailState();
 }
 
-class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
+class _InsightFeedStackRailState extends State<_InsightFeedStackRail>
+    with SingleTickerProviderStateMixin {
+  static const double _pageTurnDistanceFraction = 0.14;
+  static const double _pageTurnVelocity = 220;
+  static const Duration _settleDuration = Duration(milliseconds: 210);
+
   var _currentPage = 0;
   var _dragOffset = 0.0;
+  int? _settlingPage;
+  late final AnimationController _settleController;
+  Animation<double>? _settleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _settleController =
+        AnimationController(duration: _settleDuration, vsync: this)
+          ..addListener(_handleSettleTick)
+          ..addStatusListener(_handleSettleStatusChanged);
+  }
 
   @override
   void didUpdateWidget(covariant _InsightFeedStackRail oldWidget) {
@@ -115,6 +132,43 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
     if (_currentPage >= widget.cards.length) {
       _currentPage = math.max(0, widget.cards.length - 1);
     }
+    if (_settlingPage != null && _settlingPage! >= widget.cards.length) {
+      _settleController.stop();
+      _settlingPage = null;
+      _dragOffset = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _settleController.dispose();
+    super.dispose();
+  }
+
+  void _handleSettleTick() {
+    final animation = _settleAnimation;
+    if (animation == null || !mounted) {
+      return;
+    }
+    setState(() {
+      _dragOffset = animation.value;
+    });
+  }
+
+  void _handleSettleStatusChanged(AnimationStatus status) {
+    if (status != AnimationStatus.completed || !mounted) {
+      return;
+    }
+
+    setState(() {
+      final settledPage = _settlingPage;
+      if (settledPage != null) {
+        _currentPage = settledPage;
+      }
+      _settlingPage = null;
+      _dragOffset = 0;
+      _settleAnimation = null;
+    });
   }
 
   @override
@@ -136,6 +190,9 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
                 height: cardHeight,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
+                  onHorizontalDragStart: cards.length > 1
+                      ? (_) => _stopSettleAnimation()
+                      : null,
                   onHorizontalDragUpdate: cards.length > 1
                       ? (details) =>
                             _handleHorizontalDragUpdate(details, constraints)
@@ -147,9 +204,7 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
                         )
                       : null,
                   onHorizontalDragCancel: cards.length > 1
-                      ? () => setState(() {
-                          _dragOffset = 0;
-                        })
+                      ? () => _animateToPageOffset(width: 0)
                       : null,
                   child: ClipRect(
                     child: Stack(
@@ -221,6 +276,9 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
   }
 
   int _targetPage(List<InsightFeedCard> cards) {
+    if (_settlingPage != null) {
+      return _settlingPage!;
+    }
     if (_dragOffset < 0 && _currentPage < cards.length - 1) {
       return _currentPage + 1;
     }
@@ -234,6 +292,7 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
     DragUpdateDetails details,
     BoxConstraints constraints,
   ) {
+    _stopSettleAnimation();
     final width = constraints.maxWidth;
     final proposedOffset = (_dragOffset + details.delta.dx).clamp(
       -width,
@@ -248,21 +307,44 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
   }
 
   void _handleHorizontalDragEnd(DragEndDetails details, double width) {
-    final velocity = details.primaryVelocity ?? 0;
+    final velocity =
+        details.primaryVelocity ?? details.velocity.pixelsPerSecond.dx;
     final shouldAdvance =
-        (_dragOffset < -width * 0.22 || velocity < -450) &&
+        (_dragOffset < -width * _pageTurnDistanceFraction ||
+            velocity < -_pageTurnVelocity) &&
         _currentPage < widget.cards.length - 1;
     final shouldGoBack =
-        (_dragOffset > width * 0.22 || velocity > 450) && _currentPage > 0;
+        (_dragOffset > width * _pageTurnDistanceFraction ||
+            velocity > _pageTurnVelocity) &&
+        _currentPage > 0;
 
-    setState(() {
-      if (shouldAdvance) {
-        _currentPage++;
-      } else if (shouldGoBack) {
-        _currentPage--;
-      }
-      _dragOffset = 0;
-    });
+    if (shouldAdvance) {
+      _animateToPageOffset(width: -width, targetPage: _currentPage + 1);
+    } else if (shouldGoBack) {
+      _animateToPageOffset(width: width, targetPage: _currentPage - 1);
+    } else {
+      _animateToPageOffset(width: 0);
+    }
+  }
+
+  void _animateToPageOffset({required double width, int? targetPage}) {
+    _settleController.stop();
+    _settlingPage = targetPage;
+    _settleAnimation = Tween<double>(begin: _dragOffset, end: width).animate(
+      CurvedAnimation(parent: _settleController, curve: Curves.easeOutCubic),
+    );
+    _settleController
+      ..reset()
+      ..forward();
+  }
+
+  void _stopSettleAnimation() {
+    if (!_settleController.isAnimating) {
+      return;
+    }
+    _settleController.stop();
+    _settlingPage = null;
+    _settleAnimation = null;
   }
 
   double _activeCardHeight(List<InsightFeedCard> cards, double width) {
@@ -287,6 +369,9 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
         card.visualData.isNotEmpty;
     if (card.visualType == InsightFeedVisualType.awardPreview && hasVisual) {
       return 142;
+    }
+    if (card.type == InsightFeedCardType.workoutMotivation && !hasVisual) {
+      return _estimatedMotivationCardHeight(card);
     }
     if (!hasVisual) {
       return 148;
@@ -338,6 +423,21 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
       InsightFeedCardSize.wide => 264,
       InsightFeedCardSize.featured => 396,
     };
+  }
+
+  double _estimatedMotivationCardHeight(InsightFeedCard card) {
+    final titleLines = _estimatedLineCount(
+      card.title,
+      charactersPerLine: 18,
+      maxLines: 2,
+    );
+    final bodyLines = _estimatedLineCount(
+      card.body,
+      charactersPerLine: 30,
+      maxLines: 3,
+    );
+    final estimatedHeight = 84 + (titleLines - 1) * 20 + (bodyLines - 1) * 22;
+    return estimatedHeight.clamp(104, 148).toDouble();
   }
 }
 
@@ -427,7 +527,11 @@ class InsightFeedCardWidget extends StatelessWidget {
     }
 
     return Container(
-      constraints: const BoxConstraints(minHeight: 132),
+      constraints: BoxConstraints(
+        minHeight: card.type == InsightFeedCardType.workoutMotivation
+            ? _estimatedMotivationMinHeight(card)
+            : 132,
+      ),
       padding: const EdgeInsets.all(16),
       decoration: _insightCardDecoration(context),
       child: Row(
@@ -508,9 +612,25 @@ class InsightFeedCardWidget extends StatelessWidget {
       'flame' => CupertinoIcons.flame_fill,
       'radar' => Icons.radar_outlined,
       'return' => CupertinoIcons.arrow_turn_up_left,
+      'spark' => CupertinoIcons.sparkles,
       'weight' => Icons.monitor_weight_outlined,
       _ => CupertinoIcons.sparkles,
     };
+  }
+
+  double _estimatedMotivationMinHeight(InsightFeedCard card) {
+    final titleLines = _estimatedLineCount(
+      card.title,
+      charactersPerLine: 18,
+      maxLines: 2,
+    );
+    final bodyLines = _estimatedLineCount(
+      card.body,
+      charactersPerLine: 30,
+      maxLines: 3,
+    );
+    final estimatedHeight = 88 + (titleLines - 1) * 18 + (bodyLines - 1) * 20;
+    return estimatedHeight.clamp(96, 132).toDouble();
   }
 }
 
@@ -577,7 +697,7 @@ class _AwardInsightFeedCard extends StatelessWidget {
                                   card.title,
                                   style: textTheme.titleSmall?.copyWith(
                                     color: colors.textPrimary,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                                 const SizedBox(height: 6),
@@ -993,6 +1113,7 @@ class _InsightFeedVisualContent extends StatelessWidget {
           data: card.visualData,
           accent: accent,
         ),
+        InsightFeedVisualType.coachNote => const SizedBox.shrink(),
         InsightFeedVisualType.awardPreview => const SizedBox.shrink(),
         InsightFeedVisualType.none => const SizedBox.shrink(),
       },
@@ -1383,6 +1504,7 @@ const double _rhythmTimelineHorizontalPadding = 12;
 const double _rhythmTimelineViewportInset = 170;
 const double _rhythmTimelineEdgeTaperWidth = 54;
 const double _rhythmTimelineLabelEdgeLift = 24;
+const double _rhythmTimelineLabelHeight = 18;
 const double _rhythmTimelineVerticalCompactFactor = 0.9;
 
 class _RhythmTimelinePlot extends StatelessWidget {
@@ -1438,7 +1560,7 @@ class _RhythmTimelinePlot extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     SizedBox(
-                      height: 10,
+                      height: _rhythmTimelineLabelHeight,
                       child: _buildLabelRow(
                         scrollOffset: scrollOffset,
                         viewportWidth: viewportConstraints.maxWidth,
@@ -1566,15 +1688,10 @@ class _RhythmTimelineLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final style = context.appText.labelSmall?.copyWith(
-      color: isToday && highlightToday
-          ? accent
+      color: isToday
+          ? context.appScheme.onSurface
           : context.appColors.textTertiary,
-      fontWeight: isToday
-          ? FontWeight.w800
-          : isActive
-          ? FontWeight.w800
-          : FontWeight.w700,
-      fontSize: 9,
+      fontWeight: FontWeight.w700,
     );
     final edgeFalloff = Curves.easeInOutCubic.transform(1 - edgeFactor);
     final curvedLabel = Transform.translate(
@@ -1598,7 +1715,7 @@ class _RhythmTimelineLabel extends StatelessWidget {
     if (isToday) {
       return OverflowBox(
         minWidth: 0,
-        maxWidth: 44,
+        maxWidth: 56,
         alignment: Alignment.center,
         child: curvedLabel,
       );
@@ -1672,8 +1789,8 @@ class _RhythmTimelineTick extends StatelessWidget {
                   ? (isActive ? color : context.appScheme.onSurface)
                   : isActive
                   ? color.withValues(alpha: 0.92)
-                  : context.appColors.field.withValues(
-                      alpha: isFuture ? 0.38 : 0.72,
+                  : context.appColors.textTertiary.withValues(
+                      alpha: isFuture ? 0.22 : 0.34,
                     ),
               borderRadius: BorderRadius.circular(999),
             ),
@@ -2398,9 +2515,7 @@ class _BalanceFingerprintVisualState extends State<_BalanceFingerprintVisual> {
 
   @override
   Widget build(BuildContext context) {
-    final segments = _listOfMaps(
-      widget.data['segments'],
-    ).where((segment) => _num(segment['percent']) > 0).toList(growable: false);
+    final segments = _balanceSegments(widget.data['segments']);
     if (segments.length < 3) {
       return const SizedBox.shrink();
     }
@@ -2414,7 +2529,7 @@ class _BalanceFingerprintVisualState extends State<_BalanceFingerprintVisual> {
     final selected = _selectedIndex == null ? null : segments[_selectedIndex!];
     final selectedColor = selected == null
         ? colors.textTertiary
-        : _balanceSegmentColor(context, _string(selected['axisId']));
+        : _balanceSegmentColor(context, selected.axisId);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2433,46 +2548,41 @@ class _BalanceFingerprintVisualState extends State<_BalanceFingerprintVisual> {
           ),
         ),
         const SizedBox(height: 10),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 160),
-          child: Row(
-            key: ValueKey(
-              selected == null ? 'none' : _string(selected['axisId']),
+        Row(
+          key: ValueKey(selected == null ? 'none' : selected.axisId),
+          children: [
+            Container(
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(
+                color: selectedColor,
+                shape: BoxShape.circle,
+              ),
             ),
-            children: [
-              Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(
-                  color: selectedColor,
-                  shape: BoxShape.circle,
+            const SizedBox(width: 7),
+            Expanded(
+              child: Text(
+                _selectedSegmentText(selected),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.labelSmall?.copyWith(
+                  color: colors.textTertiary,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Text(
-                  _selectedSegmentText(selected),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.labelSmall?.copyWith(
-                    color: colors.textTertiary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  String _selectedSegmentText(Map<String, Object?>? segment) {
+  String _selectedSegmentText(_BalanceSegmentData? segment) {
     if (segment == null) {
       return 'Tap a segment to inspect its long-term share';
     }
-    final label = _string(segment['label']);
-    final percent = (_num(segment['percent']) * 100).round();
+    final label = segment.label;
+    final percent = (segment.percent * 100).round();
     return '$label accounts for $percent% of long-term work';
   }
 }
@@ -2687,7 +2797,7 @@ class _BalanceFingerprintBar extends StatelessWidget {
     required this.onSegmentSelected,
   });
 
-  final List<Map<String, Object?>> segments;
+  final List<_BalanceSegmentData> segments;
   final int? selectedIndex;
   final ValueChanged<int> onSegmentSelected;
   static const BorderRadius _barBorderRadius = BorderRadius.all(
@@ -2697,46 +2807,64 @@ class _BalanceFingerprintBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final widths = _displayPercentages(
-      segments.map((segment) => _num(segment['percent'])).toList(),
+      segments.map((segment) => segment.percent),
     );
     final textStyle = context.appText.labelSmall?.copyWith(
       color: context.appScheme.onPrimary,
       fontWeight: FontWeight.w800,
-      shadows: [
-        Shadow(
-          color: context.appColors.shadow.withValues(alpha: 0.6),
-          blurRadius: 3,
-        ),
-      ],
+    );
+    final colors = segments
+        .map((segment) => _balanceSegmentColor(context, segment.axisId))
+        .toList(growable: false);
+    final dimColor = context.appColors.field.withValues(alpha: 0.62);
+    final selectedBorderColor = context.appScheme.onSurface.withValues(
+      alpha: 0.82,
     );
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = math.max(1.0, constraints.maxWidth);
-        return ClipRRect(
-          borderRadius: _barBorderRadius,
-          child: Row(
-            key: const Key('insight_feed_balance_fingerprint_bar'),
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (var index = 0; index < segments.length; index++)
-                _BalanceFingerprintSegment(
-                  segment: segments[index],
-                  width: width * widths[index],
-                  borderRadius: _segmentBorderRadius(index, segments.length),
-                  isSelected: selectedIndex == index,
-                  isDimmed: selectedIndex != null && selectedIndex != index,
+        return Stack(
+          key: const Key('insight_feed_balance_fingerprint_bar'),
+          fit: StackFit.expand,
+          children: [
+            RepaintBoundary(
+              child: CustomPaint(
+                painter: _BalanceFingerprintPainter(
+                  segments: segments,
+                  widths: widths,
+                  colors: colors,
+                  selectedIndex: selectedIndex,
                   textStyle: textStyle,
-                  onTap: () => onSegmentSelected(index),
+                  dimColor: dimColor,
+                  selectedBorderColor: selectedBorderColor,
+                  borderRadius: _barBorderRadius,
                 ),
-            ],
-          ),
+              ),
+            ),
+            for (final target in _tapTargets(widths, width))
+              Positioned(
+                left: target.left,
+                width: target.width,
+                top: 0,
+                bottom: 0,
+                child: GestureDetector(
+                  key: Key(
+                    'insight_feed_balance_segment_'
+                    '${segments[target.index].axisId}',
+                  ),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onSegmentSelected(target.index),
+                ),
+              ),
+          ],
         );
       },
     );
   }
 
-  List<double> _displayPercentages(List<double> values) {
+  List<double> _displayPercentages(Iterable<double> sourceValues) {
+    final values = sourceValues.toList(growable: false);
     const minVisiblePercent = 0.035;
     final adjusted = values
         .map((value) => value > 0 ? math.max(value, minVisiblePercent) : 0.0)
@@ -2748,110 +2876,223 @@ class _BalanceFingerprintBar extends StatelessWidget {
     return adjusted.map((value) => value / total).toList(growable: false);
   }
 
-  BorderRadius _segmentBorderRadius(int index, int segmentCount) {
-    if (segmentCount <= 1) {
-      return _barBorderRadius;
+  List<_BalanceTapTarget> _tapTargets(List<double> widths, double barWidth) {
+    var left = 0.0;
+    final targets = <_BalanceTapTarget>[];
+    for (var index = 0; index < widths.length; index++) {
+      final width = barWidth * widths[index];
+      targets.add(_BalanceTapTarget(index: index, left: left, width: width));
+      left += width;
     }
-    if (index == 0) {
-      return const BorderRadius.horizontal(left: Radius.circular(14));
-    }
-    if (index == segmentCount - 1) {
-      return const BorderRadius.horizontal(right: Radius.circular(14));
-    }
-    return BorderRadius.zero;
+    return targets;
   }
 }
 
-class _BalanceFingerprintSegment extends StatelessWidget {
-  const _BalanceFingerprintSegment({
-    required this.segment,
+class _BalanceTapTarget {
+  const _BalanceTapTarget({
+    required this.index,
+    required this.left,
     required this.width,
-    required this.borderRadius,
-    required this.isSelected,
-    required this.isDimmed,
-    required this.textStyle,
-    required this.onTap,
   });
 
-  final Map<String, Object?> segment;
+  final int index;
+  final double left;
   final double width;
-  final BorderRadius borderRadius;
-  final bool isSelected;
-  final bool isDimmed;
+}
+
+class _BalanceFingerprintPainter extends CustomPainter {
+  const _BalanceFingerprintPainter({
+    required this.segments,
+    required this.widths,
+    required this.colors,
+    required this.selectedIndex,
+    required this.textStyle,
+    required this.dimColor,
+    required this.selectedBorderColor,
+    required this.borderRadius,
+  });
+
+  final List<_BalanceSegmentData> segments;
+  final List<double> widths;
+  final List<Color> colors;
+  final int? selectedIndex;
   final TextStyle? textStyle;
-  final VoidCallback onTap;
+  final Color dimColor;
+  final Color selectedBorderColor;
+  final BorderRadius borderRadius;
 
   @override
-  Widget build(BuildContext context) {
-    final axisId = _string(segment['axisId']);
-    final baseColor = _balanceSegmentColor(context, axisId);
-    final displayColor = isDimmed
-        ? Color.alphaBlend(
-            context.appColors.field.withValues(alpha: 0.62),
-            baseColor,
-          ).withValues(alpha: 0.46)
-        : baseColor;
+  void paint(Canvas canvas, Size size) {
+    if (size.isEmpty || segments.isEmpty) {
+      return;
+    }
 
-    return SizedBox(
-      key: Key('insight_feed_balance_segment_$axisId'),
-      width: width,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          decoration: BoxDecoration(
-            color: displayColor,
-            borderRadius: borderRadius,
-            border: Border.all(
-              color: isSelected
-                  ? context.appScheme.onSurface.withValues(alpha: 0.82)
-                  : context.appColors.transparent,
-              width: isSelected ? 2 : 0,
-              strokeAlign: BorderSide.strokeAlignInside,
-            ),
-          ),
-          child: _buildLabel(),
-        ),
-      ),
+    final clip = RRect.fromRectAndCorners(
+      Offset.zero & size,
+      topLeft: borderRadius.topLeft,
+      topRight: borderRadius.topRight,
+      bottomLeft: borderRadius.bottomLeft,
+      bottomRight: borderRadius.bottomRight,
     );
+    canvas.save();
+    canvas.clipRRect(clip);
+
+    var left = 0.0;
+    for (var index = 0; index < segments.length; index++) {
+      final right = index == segments.length - 1
+          ? size.width
+          : left + size.width * widths[index];
+      final rect = Rect.fromLTRB(left, 0, right, size.height);
+      final isDimmed = selectedIndex != null && selectedIndex != index;
+      final color = isDimmed
+          ? Color.alphaBlend(dimColor, colors[index]).withValues(alpha: 0.46)
+          : colors[index];
+
+      canvas.drawRect(rect, Paint()..color = color);
+      if (!isDimmed) {
+        _paintLabel(canvas, rect, segments[index].label);
+      }
+      left = right;
+    }
+
+    canvas.restore();
+
+    final selected = selectedIndex;
+    if (selected != null && selected >= 0 && selected < widths.length) {
+      _paintSelectedBorder(canvas, size, selected);
+    }
   }
 
-  Widget? _buildLabel() {
-    if (isDimmed) {
-      return null;
+  void _paintLabel(Canvas canvas, Rect rect, String label) {
+    final mode = _labelModeForWidth(rect.width);
+    if (mode == _BalanceSegmentLabelMode.hidden || textStyle == null) {
+      return;
     }
 
-    final mode = _labelModeForWidth(width);
-    if (mode == _BalanceSegmentLabelMode.hidden) {
-      return null;
-    }
-
-    final baseLabel = _string(segment['label']);
-    final label = switch (mode) {
-      _BalanceSegmentLabelMode.horizontal => _shortBalanceLabel(baseLabel),
-      _BalanceSegmentLabelMode.vertical => _shortBalanceLabel(baseLabel),
+    final displayLabel = switch (mode) {
+      _BalanceSegmentLabelMode.horizontal => _shortBalanceLabel(label),
+      _BalanceSegmentLabelMode.vertical => _shortBalanceLabel(label),
       _BalanceSegmentLabelMode.verticalAbbreviated => _abbreviatedBalanceLabel(
-        baseLabel,
+        label,
       ),
       _BalanceSegmentLabelMode.hidden => '',
     };
-
-    final child = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Text(label, maxLines: 1, style: textStyle),
-      ),
+    final painter = TextPainter(
+      text: TextSpan(text: displayLabel, style: textStyle),
+      maxLines: 1,
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
     );
 
-    return Center(
-      child: mode == _BalanceSegmentLabelMode.horizontal
-          ? child
-          : RotatedBox(quarterTurns: 3, child: child),
+    if (mode == _BalanceSegmentLabelMode.horizontal) {
+      painter.layout(maxWidth: math.max(0, rect.width - 8));
+      final offset = Offset(
+        rect.left + (rect.width - painter.width) / 2,
+        rect.top + (rect.height - painter.height) / 2,
+      );
+      painter.paint(canvas, offset);
+      return;
+    }
+
+    painter.layout(maxWidth: math.max(0, rect.height - 8));
+    canvas.save();
+    canvas.translate(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    canvas.rotate(-math.pi / 2);
+    painter.paint(canvas, Offset(-painter.width / 2, -painter.height / 2));
+    canvas.restore();
+  }
+
+  void _paintSelectedBorder(Canvas canvas, Size size, int selected) {
+    var left = 0.0;
+    for (var index = 0; index < selected; index++) {
+      left += size.width * widths[index];
+    }
+    final right = selected == widths.length - 1
+        ? size.width
+        : left + size.width * widths[selected];
+    final rect = Rect.fromLTRB(left + 1, 1, right - 1, size.height - 1);
+    if (rect.width <= 0 || rect.height <= 0) {
+      return;
+    }
+    const radius = Radius.circular(13);
+    final selectedBorderRadius = BorderRadius.only(
+      topLeft: selected == 0 ? radius : Radius.zero,
+      bottomLeft: selected == 0 ? radius : Radius.zero,
+      topRight: selected == widths.length - 1 ? radius : Radius.zero,
+      bottomRight: selected == widths.length - 1 ? radius : Radius.zero,
+    );
+    canvas.drawRRect(
+      selectedBorderRadius.toRRect(rect),
+      Paint()
+        ..color = selectedBorderColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
     );
   }
+
+  @override
+  bool shouldRepaint(covariant _BalanceFingerprintPainter oldDelegate) {
+    return !_sameList(oldDelegate.segments, segments) ||
+        !_sameList(oldDelegate.widths, widths) ||
+        !_sameList(oldDelegate.colors, colors) ||
+        oldDelegate.selectedIndex != selectedIndex ||
+        oldDelegate.textStyle != textStyle ||
+        oldDelegate.dimColor != dimColor ||
+        oldDelegate.selectedBorderColor != selectedBorderColor ||
+        oldDelegate.borderRadius != borderRadius;
+  }
+}
+
+class _BalanceSegmentData {
+  const _BalanceSegmentData({
+    required this.axisId,
+    required this.label,
+    required this.percent,
+  });
+
+  final String axisId;
+  final String label;
+  final double percent;
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        other is _BalanceSegmentData &&
+            other.axisId == axisId &&
+            other.label == label &&
+            other.percent == percent;
+  }
+
+  @override
+  int get hashCode => Object.hash(axisId, label, percent);
+}
+
+List<_BalanceSegmentData> _balanceSegments(Object? rawSegments) {
+  return _listOfMaps(rawSegments)
+      .map(
+        (segment) => _BalanceSegmentData(
+          axisId: _string(segment['axisId']),
+          label: _string(segment['label']),
+          percent: _num(segment['percent']),
+        ),
+      )
+      .where((segment) => segment.percent > 0)
+      .toList(growable: false);
+}
+
+bool _sameList<T>(List<T> a, List<T> b) {
+  if (identical(a, b)) {
+    return true;
+  }
+  if (a.length != b.length) {
+    return false;
+  }
+  for (var index = 0; index < a.length; index++) {
+    if (a[index] != b[index]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 enum _BalanceSegmentLabelMode {
@@ -3457,6 +3698,19 @@ String _signedPercentLabel(String label) {
   return label == '0%' ? label : '+$label';
 }
 
+int _estimatedLineCount(
+  String text, {
+  required int charactersPerLine,
+  required int maxLines,
+}) {
+  if (text.isEmpty) {
+    return 1;
+  }
+  final normalized = text.trim();
+  final estimated = (normalized.length / charactersPerLine).ceil();
+  return estimated.clamp(1, maxLines);
+}
+
 String _shortRadarLabel(String label) {
   return label == 'Shoulders' ? 'Delts' : label;
 }
@@ -3501,99 +3755,46 @@ class _InsightFeedFallbackCard extends StatelessWidget {
 
 // policy: allow-public-api launcher tile that opens the advanced insights route.
 class AdvancedInsightsLauncher extends StatelessWidget {
-  const AdvancedInsightsLauncher({
-    super.key,
-    required this.onPressed,
-    this.glowProgress = 0,
-    this.pullProgress = 0,
-    this.detentArmed = false,
-  });
+  const AdvancedInsightsLauncher({super.key, required this.onPressed});
 
   final VoidCallback onPressed;
-  final double glowProgress;
-  final double pullProgress;
-  final bool detentArmed;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
-    final glowHighlightProgress = ((glowProgress - 0.35) / 0.65).clamp(
-      0.0,
-      1.0,
-    );
-    final clampedPullProgress = pullProgress.clamp(0.0, 1.0);
-    final totalProgress = (glowHighlightProgress + clampedPullProgress * 0.75)
-        .clamp(0.0, 1.0);
-    final buttonFill = Color.lerp(
-      colors.field,
-      scheme.primary.withValues(alpha: detentArmed ? 0.24 : 0.18),
-      totalProgress,
-    )!;
-    final scale = 1.0 + clampedPullProgress * 0.025;
-    final verticalOffset = -6.0 * clampedPullProgress;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-      child: AnimatedSlide(
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOutCubic,
-        offset: Offset(0, verticalOffset / 48),
-        child: AnimatedScale(
-          duration: const Duration(milliseconds: 120),
-          curve: Curves.easeOutCubic,
-          scale: scale,
-          child: Material(
-            color: colors.transparent,
-            borderRadius: AppTheme.workoutCardBorderRadius,
-            child: InkWell(
-              key: const Key('advanced_insights_launcher'),
+      child: Material(
+        color: colors.transparent,
+        borderRadius: AppTheme.workoutCardBorderRadius,
+        child: InkWell(
+          key: const Key('advanced_insights_launcher'),
+          borderRadius: AppTheme.workoutCardBorderRadius,
+          onTap: onPressed,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: colors.field,
               borderRadius: AppTheme.workoutCardBorderRadius,
-              onTap: onPressed,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
-                curve: Curves.easeOutCubic,
-                padding: EdgeInsets.symmetric(
-                  horizontal: 16 + clampedPullProgress * 4,
-                  vertical: 10 + clampedPullProgress * 2,
-                ),
-                decoration: BoxDecoration(
-                  color: buttonFill,
-                  borderRadius: AppTheme.workoutCardBorderRadius,
-                  border: Border.all(
-                    color: scheme.primary.withValues(
-                      alpha: detentArmed ? 0.35 : 0,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Advanced Insights',
+                    style: textTheme.titleSmall?.copyWith(
+                      color: colors.textPrimary,
                     ),
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 120),
-                        style: textTheme.titleSmall!.copyWith(
-                          color: Color.lerp(
-                            colors.textPrimary,
-                            scheme.primary,
-                            totalProgress,
-                          ),
-                        ),
-                        child: const Text('Advanced Insights'),
-                      ),
-                    ),
-                    Icon(
-                      CupertinoIcons.chevron_right,
-                      color: Color.lerp(
-                        colors.textSecondary,
-                        scheme.primary,
-                        totalProgress,
-                      ),
-                      size: 18,
-                    ),
-                  ],
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  color: colors.textSecondary,
+                  size: 18,
                 ),
-              ),
+              ],
             ),
           ),
         ),

@@ -65,6 +65,25 @@ void main() {
     expect(find.text('Advanced Insights'), findsOneWidget);
   });
 
+  testWidgets('main insights renders the advanced launcher tile key', (
+    tester,
+  ) async {
+    InsightsService.instance.setWorkoutsProvider(
+      () async => [
+        _workout('one', DateTime(2026, 6, 10)),
+        _workout('two', DateTime(2026, 6, 11)),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(theme: AppTheme.light, home: const InsightsScreen()),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(find.byKey(const Key('advanced_insights_launcher')), findsOneWidget);
+  });
+
   testWidgets(
     'advanced launcher opens advanced insights with existing filters',
     (tester) async {

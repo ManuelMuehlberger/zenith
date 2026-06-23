@@ -411,12 +411,7 @@ class _InsightsScreenState extends State<InsightsScreen>
         child: InsightsFeedSection(refreshToken: _feedRefreshToken),
       ),
       SliverToBoxAdapter(
-        child: AdvancedInsightsLauncher(
-          onPressed: _showAdvancedInsights,
-          pullProgress: _advancedInsightsPullProgress,
-          detentArmed: _advancedInsightsDetentArmed,
-          glowProgress: _advancedInsightsGlowProgress,
-        ),
+        child: AdvancedInsightsLauncher(onPressed: _showAdvancedInsights),
       ),
       const SliverToBoxAdapter(child: MainDockSpacer(extraSpace: 20)),
     ];
