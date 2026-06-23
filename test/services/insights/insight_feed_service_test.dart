@@ -134,6 +134,48 @@ void main() {
     expect(loadCount, 2);
   });
 
+  test('training rhythm copy reflects recent cadence changes', () async {
+    final now = DateTime(2026, 6, 11, 12);
+    const rules = '''
+{
+  "rules": [
+    {"id": "consistency", "type": "consistencyPulse", "enabled": true, "priority": 50, "params": {"recentDays": 7, "minimumWorkouts": 1}}
+  ]
+}
+''';
+
+    final risingService = InsightFeedService(
+      assetBundle: _StringAssetBundle({rulesAsset: rules}),
+      workoutsProvider: () async => [
+        _workout(id: 'r1', completedAt: now.subtract(const Duration(days: 1))),
+        _workout(id: 'r2', completedAt: now.subtract(const Duration(days: 3))),
+      ],
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(cacheKey: 'feed-test-rhythm-rise'),
+    );
+    final risingCard = (await risingService.getCards()).single;
+    expect(
+      risingCard.body,
+      'Your rhythm is picking up: 2 workouts across 2 active days recently.',
+    );
+
+    final dippedService = InsightFeedService(
+      assetBundle: _StringAssetBundle({rulesAsset: rules}),
+      workoutsProvider: () async => [
+        _workout(id: 'd1', completedAt: now.subtract(const Duration(days: 1))),
+        _workout(id: 'd2', completedAt: now.subtract(const Duration(days: 8))),
+        _workout(id: 'd3', completedAt: now.subtract(const Duration(days: 10))),
+      ],
+      nowProvider: () => now,
+      cacheStore: const InsightsCacheStore(cacheKey: 'feed-test-rhythm-dip'),
+    );
+    final dippedCard = (await dippedService.getCards()).single;
+    expect(
+      dippedCard.body,
+      'This stretch was a little lighter, with 1 workout in the last 7 days.',
+    );
+  });
+
   test('returns no cards when configured thresholds are unmet', () async {
     final now = DateTime(2026, 6, 11, 12);
     final service = InsightFeedService(

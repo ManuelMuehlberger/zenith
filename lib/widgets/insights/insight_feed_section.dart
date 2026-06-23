@@ -20,8 +20,6 @@ const double _dynamicXLabelMinGap = 52.0;
 const double _dynamicXLabelWidth = 56.0;
 const String _baselineSeriesId = 'baseline';
 const String _latestSeriesId = 'latest';
-const String _previousSeriesId = 'previous';
-const String _recentSeriesId = 'recent';
 const String _primarySeriesId = 'primary';
 const String _referenceSeriesId = 'reference';
 const String _averageSeriesId = 'average';
@@ -330,9 +328,9 @@ class _InsightFeedStackRailState extends State<_InsightFeedStackRail> {
     }
     if (card.visualType == InsightFeedVisualType.calendarStrip) {
       return switch (card.size) {
-        InsightFeedCardSize.compact => 236,
-        InsightFeedCardSize.wide => 286,
-        InsightFeedCardSize.featured => 418,
+        InsightFeedCardSize.compact => 196,
+        InsightFeedCardSize.wide => 236,
+        InsightFeedCardSize.featured => 368,
       };
     }
     return switch (card.size) {
@@ -777,9 +775,9 @@ class _VisualInsightFeedCard extends StatelessWidget {
     }
     if (card.visualType == InsightFeedVisualType.calendarStrip) {
       return switch (card.size) {
-        InsightFeedCardSize.compact => 236,
-        InsightFeedCardSize.wide => 286,
-        InsightFeedCardSize.featured => 418,
+        InsightFeedCardSize.compact => 196,
+        InsightFeedCardSize.wide => 236,
+        InsightFeedCardSize.featured => 368,
       };
     }
     if (_isRadarCard) {
@@ -1269,13 +1267,32 @@ class _CalendarStripVisual extends StatefulWidget {
 }
 
 class _CalendarStripVisualState extends State<_CalendarStripVisual> {
-  late final ChartSeriesVisibilityController _visibilityController =
-      ChartSeriesVisibilityController(series: _legendSeries);
+  final ScrollController _scrollController = ScrollController();
+  bool _didSetInitialScroll = false;
+
+  @override
+  void didUpdateWidget(covariant _CalendarStripVisual oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.data != widget.data) {
+      _didSetInitialScroll = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final recent = _boolList(widget.data['recentDays']);
     final baseline = _boolList(widget.data['baselineDays']);
+    final future = List<bool>.filled(3, false, growable: false);
+    final baselineLabels = _dayLabels(
+      widget.data['baselineLabels'],
+      fallbackCount: baseline.length,
+    );
     final recentLabels = _dayLabels(
       widget.data['recentLabels'],
       fallbackCount: recent.length,
@@ -1284,145 +1301,385 @@ class _CalendarStripVisualState extends State<_CalendarStripVisual> {
       return const SizedBox.shrink();
     }
 
-    final legendSeries = _legendSeriesFor(
-      baselineLength: baseline.length,
-      recentLength: recent.length,
-    );
+    final days = [...baseline, ...recent, ...future];
+    final labels = [...baselineLabels, ...recentLabels];
+    final todayIndex = baseline.length + recent.length - 1;
+    final hasWorkoutToday = todayIndex >= 0 && todayIndex < days.length
+        ? days[todayIndex]
+        : false;
+    _scheduleInitialTimelineScroll(todayIndex);
 
-    return AnimatedBuilder(
-      animation: _visibilityController,
-      builder: (context, child) {
-        final showPrevious = _visibilityController.isVisible(_previousSeriesId);
-        final showRecent = _visibilityController.isVisible(_recentSeriesId);
-
-        return Column(
-          children: [
-            if (showPrevious)
-              Expanded(
-                child: _DayStripPlot(
-                  days: baseline,
-                  color: context.appColors.textTertiary,
-                ),
-              ),
-            if (showPrevious && showRecent) const SizedBox(height: 10),
-            if (showRecent)
-              Expanded(
-                child: _DayStripPlot(days: recent, color: widget.accent),
-              ),
-            const SizedBox(height: 6),
-            _DynamicRhythmLabelRow(days: recent, labels: recentLabels),
-            const SizedBox(height: 8),
-            TappableChartLegend(
-              series: legendSeries,
-              controller: _visibilityController,
-              isInteractive: false,
-              keyPrefix: 'insight_feed_calendar_legend',
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  List<ChartLegendSeries> get _legendSeries => [
-    ChartLegendSeries(
-      id: _previousSeriesId,
-      label: 'previous days',
-      color: context.appColors.textTertiary,
-    ),
-    ChartLegendSeries(
-      id: _recentSeriesId,
-      label: 'last days',
-      color: widget.accent,
-    ),
-  ];
-
-  List<ChartLegendSeries> _legendSeriesFor({
-    required int baselineLength,
-    required int recentLength,
-  }) {
-    return [
-      ChartLegendSeries(
-        id: _previousSeriesId,
-        label: 'previous $baselineLength days',
-        color: context.appColors.textTertiary,
-      ),
-      ChartLegendSeries(
-        id: _recentSeriesId,
-        label: 'last $recentLength days',
-        color: widget.accent,
-      ),
-    ];
-  }
-}
-
-class _DayStripPlot extends StatelessWidget {
-  const _DayStripPlot({required this.days, required this.color});
-
-  final List<bool> days;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return _DayStrip(days: days, color: color);
-  }
-}
-
-class _DayStrip extends StatelessWidget {
-  const _DayStrip({required this.days, required this.color});
-
-  final List<bool> days;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        for (var index = 0; index < days.length; index++) ...[
-          Expanded(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              decoration: BoxDecoration(
-                color: days[index]
-                    ? color.withValues(alpha: 0.78)
-                    : context.appColors.field.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(5),
+        Expanded(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: FractionallySizedBox(
+              heightFactor: _rhythmTimelineVerticalCompactFactor,
+              child: _RhythmTimelinePlot(
+                controller: _scrollController,
+                days: days,
+                labels: labels,
+                todayIndex: todayIndex,
+                hasWorkoutToday: hasWorkoutToday,
+                accent: widget.accent,
               ),
             ),
           ),
-          if (index != days.length - 1) const SizedBox(width: 4),
-        ],
+        ),
+        const SizedBox(height: 4),
+        Row(
+          key: const Key('insight_feed_rhythm_workout_legend'),
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(
+                color: widget.accent,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              'Workout day',
+              style: context.appText.labelSmall?.copyWith(
+                color: context.appColors.textTertiary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
+
+  void _scheduleInitialTimelineScroll(int todayIndex) {
+    if (_didSetInitialScroll) {
+      return;
+    }
+    _didSetInitialScroll = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) {
+        return;
+      }
+      final target = math.max(
+        0.0,
+        todayIndex * _rhythmTimelineStep - _rhythmTimelineViewportInset,
+      );
+      _scrollController.jumpTo(
+        target.clamp(0.0, _scrollController.position.maxScrollExtent),
+      );
+    });
+  }
 }
 
-class _DynamicRhythmLabelRow extends StatelessWidget {
-  const _DynamicRhythmLabelRow({required this.days, required this.labels});
+const double _rhythmTimelineTickWidth = 18;
+const double _rhythmTimelineIndicatorWidth = 10;
+const double _rhythmTimelineTickGap = 0.5;
+const double _rhythmTimelineStep =
+    _rhythmTimelineTickWidth + _rhythmTimelineTickGap;
+const double _rhythmTimelineHorizontalPadding = 12;
+const double _rhythmTimelineViewportInset = 170;
+const double _rhythmTimelineEdgeTaperWidth = 54;
+const double _rhythmTimelineLabelEdgeLift = 24;
+const double _rhythmTimelineVerticalCompactFactor = 0.9;
 
+class _RhythmTimelinePlot extends StatelessWidget {
+  const _RhythmTimelinePlot({
+    required this.controller,
+    required this.days,
+    required this.labels,
+    required this.todayIndex,
+    required this.hasWorkoutToday,
+    required this.accent,
+  });
+
+  final ScrollController controller;
   final List<bool> days;
   final List<String> labels;
+  final int todayIndex;
+  final bool hasWorkoutToday;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
-    if (days.isEmpty || labels.isEmpty) {
+    if (days.isEmpty) {
       return const SizedBox.shrink();
     }
+    final totalWidth =
+        _rhythmTimelineHorizontalPadding * 2 +
+        days.length * _rhythmTimelineTickWidth +
+        math.max(0, days.length - 1) * _rhythmTimelineTickGap;
+
     return LayoutBuilder(
-      builder: (context, constraints) {
-        final positions = _evenXPositions(days.length, constraints.maxWidth);
-        final maxLabelCount = _maxDynamicLabelCount(constraints.maxWidth);
-        final selected = selectDynamicChartLabels(
-          candidates: buildChangePointLabelCandidates(
-            states: days,
-            labels: labels,
-            positions: positions,
-          ),
-          minPixelGap: _dynamicXLabelMinGap,
-          maxLabelCount: maxLabelCount,
+      builder: (context, viewportConstraints) {
+        return AnimatedBuilder(
+          animation: controller,
+          builder: (context, child) {
+            final scrollOffset = controller.hasClients
+                ? controller.offset
+                : 0.0;
+            return SingleChildScrollView(
+              key: const Key('insight_feed_rhythm_timeline_scroll'),
+              controller: controller,
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: SizedBox(
+                key: const Key('insight_feed_rhythm_timeline_plot'),
+                width: totalWidth,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: _buildTickRow(
+                        scrollOffset: scrollOffset,
+                        viewportWidth: viewportConstraints.maxWidth,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    SizedBox(
+                      height: 10,
+                      child: _buildLabelRow(
+                        scrollOffset: scrollOffset,
+                        viewportWidth: viewportConstraints.maxWidth,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
-        return _DynamicXAxisLabelRow(labels: selected);
       },
+    );
+  }
+
+  Widget _buildTickRow({
+    required double scrollOffset,
+    required double viewportWidth,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: _rhythmTimelineHorizontalPadding,
+      ),
+      child: Row(
+        children: [
+          for (var index = 0; index < days.length; index++) ...[
+            SizedBox(
+              width: _rhythmTimelineTickWidth,
+              child: _RhythmTimelineTick(
+                key: Key('insight_feed_rhythm_tick_$index'),
+                isActive: days[index],
+                isFuture: index > todayIndex,
+                isToday: index == todayIndex,
+                color: accent,
+                heightFactor: _heightFactorForTick(
+                  index: index,
+                  scrollOffset: scrollOffset,
+                  viewportWidth: viewportWidth,
+                ),
+              ),
+            ),
+            if (index != days.length - 1)
+              const SizedBox(width: _rhythmTimelineTickGap),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLabelRow({
+    required double scrollOffset,
+    required double viewportWidth,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: _rhythmTimelineHorizontalPadding,
+      ),
+      child: Row(
+        children: [
+          for (var index = 0; index < days.length; index++) ...[
+            SizedBox(
+              width: _rhythmTimelineTickWidth,
+              child: _RhythmTimelineLabel(
+                label: _rhythmTimelineLabelAt(
+                  labels: labels,
+                  index: index,
+                  todayIndex: todayIndex,
+                ),
+                isToday: index == todayIndex,
+                highlightToday: hasWorkoutToday,
+                isActive: days[index],
+                accent: accent,
+                edgeFactor: _heightFactorForTick(
+                  index: index,
+                  scrollOffset: scrollOffset,
+                  viewportWidth: viewportWidth,
+                ),
+              ),
+            ),
+            if (index != days.length - 1)
+              const SizedBox(width: _rhythmTimelineTickGap),
+          ],
+        ],
+      ),
+    );
+  }
+
+  double _heightFactorForTick({
+    required int index,
+    required double scrollOffset,
+    required double viewportWidth,
+  }) {
+    final centerX =
+        _rhythmTimelineHorizontalPadding +
+        index * _rhythmTimelineStep +
+        _rhythmTimelineTickWidth / 2;
+    final viewportX = centerX - scrollOffset;
+    final distanceToEdge = math.min(viewportX, viewportWidth - viewportX);
+    final edgeProgress = (distanceToEdge / _rhythmTimelineEdgeTaperWidth).clamp(
+      0.0,
+      1.0,
+    );
+    final eased = Curves.easeOutCubic.transform(edgeProgress);
+    return 0.38 + eased * 0.62;
+  }
+}
+
+class _RhythmTimelineLabel extends StatelessWidget {
+  const _RhythmTimelineLabel({
+    required this.label,
+    required this.isToday,
+    required this.highlightToday,
+    required this.isActive,
+    required this.accent,
+    required this.edgeFactor,
+  });
+
+  final String label;
+  final bool isToday;
+  final bool highlightToday;
+  final bool isActive;
+  final Color accent;
+  final double edgeFactor;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = context.appText.labelSmall?.copyWith(
+      color: isToday && highlightToday
+          ? accent
+          : context.appColors.textTertiary,
+      fontWeight: isToday
+          ? FontWeight.w800
+          : isActive
+          ? FontWeight.w800
+          : FontWeight.w700,
+      fontSize: 9,
+    );
+    final edgeFalloff = Curves.easeInOutCubic.transform(1 - edgeFactor);
+    final curvedLabel = Transform.translate(
+      offset: Offset(0, -edgeFalloff * _rhythmTimelineLabelEdgeLift),
+      child: Transform.scale(
+        scale: 0.56 + edgeFactor * 0.44,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 120),
+          curve: Curves.easeOutCubic,
+          opacity: 0.18 + edgeFactor * 0.82,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.visible,
+            style: style,
+          ),
+        ),
+      ),
+    );
+    if (isToday) {
+      return OverflowBox(
+        minWidth: 0,
+        maxWidth: 44,
+        alignment: Alignment.center,
+        child: curvedLabel,
+      );
+    }
+    return curvedLabel;
+  }
+}
+
+String _rhythmTimelineLabelAt({
+  required List<String> labels,
+  required int index,
+  required int todayIndex,
+}) {
+  if (index >= labels.length || index > todayIndex) {
+    return '';
+  }
+  final label = labels[index];
+  final previousLabel = index == 0 ? '' : labels[index - 1];
+  final month = _monthPart(label);
+  final previousMonth = _monthPart(previousLabel);
+  if (month.isNotEmpty && month != previousMonth) {
+    return month;
+  }
+  if (index == todayIndex) {
+    return 'Today';
+  }
+  if (index == labels.length - 1 || index % 7 == 0) {
+    return _dayPart(label);
+  }
+  return '';
+}
+
+String _monthPart(String label) {
+  final parts = label.trim().split(RegExp(r'\s+'));
+  return parts.length > 1 ? parts.sublist(1).join(' ') : '';
+}
+
+String _dayPart(String label) {
+  final parts = label.trim().split(RegExp(r'\s+'));
+  return parts.isEmpty ? '' : parts.first;
+}
+
+class _RhythmTimelineTick extends StatelessWidget {
+  const _RhythmTimelineTick({
+    super.key,
+    required this.isActive,
+    required this.isFuture,
+    required this.isToday,
+    required this.color,
+    required this.heightFactor,
+  });
+
+  final bool isActive;
+  final bool isFuture;
+  final bool isToday;
+  final Color color;
+  final double heightFactor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: FractionallySizedBox(
+        heightFactor: heightFactor,
+        child: SizedBox(
+          width: _rhythmTimelineIndicatorWidth,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            curve: Curves.easeOutCubic,
+            decoration: BoxDecoration(
+              color: isToday
+                  ? (isActive ? color : context.appScheme.onSurface)
+                  : isActive
+                  ? color.withValues(alpha: 0.92)
+                  : context.appColors.field.withValues(
+                      alpha: isFuture ? 0.38 : 0.72,
+                    ),
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -2433,6 +2690,9 @@ class _BalanceFingerprintBar extends StatelessWidget {
   final List<Map<String, Object?>> segments;
   final int? selectedIndex;
   final ValueChanged<int> onSegmentSelected;
+  static const BorderRadius _barBorderRadius = BorderRadius.all(
+    Radius.circular(14),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -2454,7 +2714,7 @@ class _BalanceFingerprintBar extends StatelessWidget {
       builder: (context, constraints) {
         final width = math.max(1.0, constraints.maxWidth);
         return ClipRRect(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: _barBorderRadius,
           child: Row(
             key: const Key('insight_feed_balance_fingerprint_bar'),
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2463,6 +2723,7 @@ class _BalanceFingerprintBar extends StatelessWidget {
                 _BalanceFingerprintSegment(
                   segment: segments[index],
                   width: width * widths[index],
+                  borderRadius: _segmentBorderRadius(index, segments.length),
                   isSelected: selectedIndex == index,
                   isDimmed: selectedIndex != null && selectedIndex != index,
                   textStyle: textStyle,
@@ -2486,12 +2747,26 @@ class _BalanceFingerprintBar extends StatelessWidget {
     }
     return adjusted.map((value) => value / total).toList(growable: false);
   }
+
+  BorderRadius _segmentBorderRadius(int index, int segmentCount) {
+    if (segmentCount <= 1) {
+      return _barBorderRadius;
+    }
+    if (index == 0) {
+      return const BorderRadius.horizontal(left: Radius.circular(14));
+    }
+    if (index == segmentCount - 1) {
+      return const BorderRadius.horizontal(right: Radius.circular(14));
+    }
+    return BorderRadius.zero;
+  }
 }
 
 class _BalanceFingerprintSegment extends StatelessWidget {
   const _BalanceFingerprintSegment({
     required this.segment,
     required this.width,
+    required this.borderRadius,
     required this.isSelected,
     required this.isDimmed,
     required this.textStyle,
@@ -2500,6 +2775,7 @@ class _BalanceFingerprintSegment extends StatelessWidget {
 
   final Map<String, Object?> segment;
   final double width;
+  final BorderRadius borderRadius;
   final bool isSelected;
   final bool isDimmed;
   final TextStyle? textStyle;
@@ -2527,6 +2803,7 @@ class _BalanceFingerprintSegment extends StatelessWidget {
           curve: Curves.easeOutCubic,
           decoration: BoxDecoration(
             color: displayColor,
+            borderRadius: borderRadius,
             border: Border.all(
               color: isSelected
                   ? context.appScheme.onSurface.withValues(alpha: 0.82)
@@ -3103,16 +3380,6 @@ class _VelocityLinePainter extends CustomPainter {
         oldDelegate.labelStyle != labelStyle ||
         oldDelegate.pointFillColor != pointFillColor;
   }
-}
-
-List<double> _evenXPositions(int count, double width) {
-  if (count <= 0) {
-    return const [];
-  }
-  if (count == 1) {
-    return [width / 2];
-  }
-  return List.generate(count, (index) => width * index / (count - 1));
 }
 
 int _maxDynamicLabelCount(double plotWidth) {

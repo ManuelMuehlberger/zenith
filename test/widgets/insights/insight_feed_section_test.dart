@@ -279,8 +279,7 @@ void main() {
           type: InsightFeedCardType.consistencyPulse,
           priority: 50,
           title: 'Training rhythm',
-          body:
-              'You trained 3 times in the last 14 days compared with your previous pattern.',
+          body: 'You trained 3 times in the last 14 days.',
           metric: '3/14',
           accent: 'info',
           icon: 'calendar',
@@ -288,8 +287,30 @@ void main() {
           visualType: InsightFeedVisualType.calendarStrip,
           size: InsightFeedCardSize.wide,
           visualData: const {
-            'recentDays': [true, false, true, false, false, true, false],
+            'recentDays': [
+              true,
+              false,
+              true,
+              false,
+              false,
+              true,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+            ],
             'recentLabels': [
+              '28 May',
+              '29 May',
+              '30 May',
+              '31 May',
+              '1 Jun',
+              '2 Jun',
+              '3 Jun',
               '4 Jun',
               '5 Jun',
               '6 Jun',
@@ -298,16 +319,39 @@ void main() {
               '9 Jun',
               '10 Jun',
             ],
-            'baselineDays': [false, true, false, false, false, false, true],
-            'baselineLabels': [
-              '28 May',
-              '29 May',
-              '30 May',
-              '31 May',
-              '1 Jun',
-              '2 Jun',
-              '3 Jun',
+            'baselineDays': [
+              false,
+              true,
+              false,
+              false,
+              false,
+              false,
+              true,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
             ],
+            'baselineLabels': [
+              '14 May',
+              '15 May',
+              '16 May',
+              '17 May',
+              '18 May',
+              '19 May',
+              '20 May',
+              '21 May',
+              '22 May',
+              '23 May',
+              '24 May',
+              '25 May',
+              '26 May',
+              '27 May',
+            ],
+            'futureLabels': ['11 Jun', '12 Jun', '13 Jun'],
           },
         ),
       ],
@@ -326,30 +370,277 @@ void main() {
       find.byKey(const Key('insight_feed_visual_calendarStrip')),
       findsOneWidget,
     );
-    expect(find.text('previous 7 days'), findsOneWidget);
-    expect(find.text('last 7 days'), findsOneWidget);
-    expect(find.text('4 Jun'), findsOneWidget);
-    expect(find.text('5 Jun'), findsOneWidget);
-    expect(find.text('6 Jun'), findsOneWidget);
-    expect(find.text('7 Jun'), findsOneWidget);
-    expect(find.text('8 Jun'), findsNothing);
-    expect(find.text('9 Jun'), findsOneWidget);
-    expect(find.text('10 Jun'), findsOneWidget);
+    expect(
+      find.byKey(const Key('insight_feed_rhythm_timeline_plot')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('insight_feed_rhythm_timeline_scroll')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('insight_feed_rhythm_workout_legend')),
+      findsOneWidget,
+    );
+    expect(find.byType(Scrollbar), findsNothing);
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.text('10'), findsNothing);
+    expect(find.text('Workout day'), findsOneWidget);
+    expect(find.text('previous 14 days'), findsNothing);
+    expect(find.text('last 14 days'), findsNothing);
     expect(find.textContaining('Previous 14 days:'), findsNothing);
 
-    final dayStripsBefore = find.byType(AnimatedContainer);
-    expect(dayStripsBefore, findsNWidgets(14));
+    for (var index = 0; index < 31; index++) {
+      expect(
+        find.byKey(Key('insight_feed_rhythm_tick_$index')),
+        findsOneWidget,
+      );
+    }
+    expect(find.text('May'), findsOneWidget);
+    expect(find.text('Jun'), findsOneWidget);
+    expect(find.text('12 Jun'), findsNothing);
 
-    await tester.tap(
-      find.byKey(const Key('insight_feed_calendar_legend_previous')),
+    await tester.drag(
+      find.byKey(const Key('insight_feed_rhythm_timeline_scroll')),
+      const Offset(120, 0),
     );
     await tester.pump();
-    await tester.tap(
-      find.byKey(const Key('insight_feed_calendar_legend_recent')),
-    );
-    await tester.pump();
+  });
 
-    expect(find.byType(AnimatedContainer), findsNWidgets(14));
+  testWidgets('today indicator turns neutral when today has no workout', (
+    tester,
+  ) async {
+    final service = _FakeInsightFeedService(
+      cards: [
+        InsightFeedCard(
+          id: 'card-2',
+          type: InsightFeedCardType.consistencyPulse,
+          priority: 50,
+          title: 'Training rhythm',
+          body: 'You trained 2 times in the last 14 days.',
+          metric: '2/14',
+          accent: 'info',
+          icon: 'calendar',
+          generatedAt: DateTime(2026, 6, 11),
+          visualType: InsightFeedVisualType.calendarStrip,
+          size: InsightFeedCardSize.wide,
+          visualData: const {
+            'recentDays': [
+              true,
+              false,
+              true,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+            ],
+            'recentLabels': [
+              '28 May',
+              '29 May',
+              '30 May',
+              '31 May',
+              '1 Jun',
+              '2 Jun',
+              '3 Jun',
+              '4 Jun',
+              '5 Jun',
+              '6 Jun',
+              '7 Jun',
+              '8 Jun',
+              '9 Jun',
+              '10 Jun',
+            ],
+            'baselineDays': [
+              false,
+              true,
+              false,
+              false,
+              false,
+              false,
+              true,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+            ],
+            'baselineLabels': [
+              '14 May',
+              '15 May',
+              '16 May',
+              '17 May',
+              '18 May',
+              '19 May',
+              '20 May',
+              '21 May',
+              '22 May',
+              '23 May',
+              '24 May',
+              '25 May',
+              '26 May',
+              '27 May',
+            ],
+            'futureLabels': ['11 Jun', '12 Jun', '13 Jun'],
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final todayIndicatorDecoration =
+        tester
+                .widget<AnimatedContainer>(
+                  find.descendant(
+                    of: find.byKey(const Key('insight_feed_rhythm_tick_27')),
+                    matching: find.byType(AnimatedContainer),
+                  ),
+                )
+                .decoration!
+            as BoxDecoration;
+    expect(
+      todayIndicatorDecoration.color,
+      AppTheme.light.colorScheme.onSurface,
+    );
+    final todayText = tester.widget<Text>(find.text('Today'));
+    expect(
+      todayText.style?.color,
+      AppTheme.light.extension<AppThemeTokens>()!.textTertiary,
+    );
+    expect(find.text('10'), findsNothing);
+  });
+
+  testWidgets('today indicator highlights when today has a workout', (
+    tester,
+  ) async {
+    final service = _FakeInsightFeedService(
+      cards: [
+        InsightFeedCard(
+          id: 'card-3',
+          type: InsightFeedCardType.consistencyPulse,
+          priority: 50,
+          title: 'Training rhythm',
+          body: 'You trained 3 times in the last 14 days.',
+          metric: '3/14',
+          accent: 'info',
+          icon: 'calendar',
+          generatedAt: DateTime(2026, 6, 11),
+          visualType: InsightFeedVisualType.calendarStrip,
+          size: InsightFeedCardSize.wide,
+          visualData: const {
+            'recentDays': [
+              true,
+              false,
+              true,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              true,
+            ],
+            'recentLabels': [
+              '28 May',
+              '29 May',
+              '30 May',
+              '31 May',
+              '1 Jun',
+              '2 Jun',
+              '3 Jun',
+              '4 Jun',
+              '5 Jun',
+              '6 Jun',
+              '7 Jun',
+              '8 Jun',
+              '9 Jun',
+              '10 Jun',
+            ],
+            'baselineDays': [
+              false,
+              true,
+              false,
+              false,
+              false,
+              false,
+              true,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+            ],
+            'baselineLabels': [
+              '14 May',
+              '15 May',
+              '16 May',
+              '17 May',
+              '18 May',
+              '19 May',
+              '20 May',
+              '21 May',
+              '22 May',
+              '23 May',
+              '24 May',
+              '25 May',
+              '26 May',
+              '27 May',
+            ],
+            'futureLabels': ['11 Jun', '12 Jun', '13 Jun'],
+          },
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(body: InsightsFeedSection(service: service)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final highlightedTodayText = tester.widget<Text>(find.text('Today'));
+    expect(
+      highlightedTodayText.style?.color,
+      AppTheme.light.extension<AppThemeTokens>()!.info,
+    );
+    expect(find.text('10'), findsNothing);
+    final todayIndicatorDecoration =
+        tester
+                .widget<AnimatedContainer>(
+                  find.descendant(
+                    of: find.byKey(const Key('insight_feed_rhythm_tick_27')),
+                    matching: find.byType(AnimatedContainer),
+                  ),
+                )
+                .decoration!
+            as BoxDecoration;
+    expect(
+      todayIndicatorDecoration.color,
+      AppTheme.light.extension<AppThemeTokens>()!.info,
+    );
   });
 
   testWidgets('renders baseline bar legend below the graph with delta labels', (
@@ -687,6 +978,22 @@ void main() {
       find.text('Chest accounts for 55% of long-term work'),
       findsOneWidget,
     );
+    final selectedLeadingDecoration =
+        tester
+                .widget<AnimatedContainer>(
+                  find.descendant(
+                    of: find.byKey(
+                      const Key('insight_feed_balance_segment_chest'),
+                    ),
+                    matching: find.byType(AnimatedContainer),
+                  ),
+                )
+                .decoration!
+            as BoxDecoration;
+    expect(
+      selectedLeadingDecoration.borderRadius,
+      const BorderRadius.horizontal(left: Radius.circular(14)),
+    );
 
     await tester.tap(
       find.byKey(const Key('insight_feed_balance_segment_back')),
@@ -696,6 +1003,22 @@ void main() {
     expect(
       find.text('Back accounts for 15% of long-term work'),
       findsOneWidget,
+    );
+    final selectedTrailingDecoration =
+        tester
+                .widget<AnimatedContainer>(
+                  find.descendant(
+                    of: find.byKey(
+                      const Key('insight_feed_balance_segment_back'),
+                    ),
+                    matching: find.byType(AnimatedContainer),
+                  ),
+                )
+                .decoration!
+            as BoxDecoration;
+    expect(
+      selectedTrailingDecoration.borderRadius,
+      const BorderRadius.horizontal(right: Radius.circular(14)),
     );
 
     await tester.tap(
