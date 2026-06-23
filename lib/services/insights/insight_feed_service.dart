@@ -593,12 +593,24 @@ class InsightFeedService {
         cutoff.day,
       ).subtract(Duration(days: recentDays - index));
     });
+    final futureDates = List.generate(3, (index) {
+      return DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).add(Duration(days: index + 1));
+    });
 
     return _card(
       rule: rule,
       id: rule.id,
       title: 'Training rhythm',
-      body: 'You trained $recentCount times in the last $recentDays days.',
+      body: _trainingRhythmBody(
+        recentCount: recentCount,
+        recentActiveDays: recentDaysSet.length,
+        baselineActiveDays: baselineDaysSet.length,
+        recentDays: recentDays,
+      ),
       metric: '$recentCount/$recentDays',
       accent: 'info',
       icon: 'calendar',
@@ -619,10 +631,91 @@ class InsightFeedService {
         'baselineLabels': baselineDates
             .map(_dayTickLabel)
             .toList(growable: false),
+        'futureLabels': futureDates.map(_dayTickLabel).toList(growable: false),
         'recentCount': recentCount,
         'baselineCount': baselineDaysSet.length,
       },
     );
+  }
+
+  String _trainingRhythmBody({
+    required int recentCount,
+    required int recentActiveDays,
+    required int baselineActiveDays,
+    required int recentDays,
+  }) {
+    final activeRate = recentActiveDays / recentDays;
+    final band = recentActiveDays > baselineActiveDays
+        ? 'rising'
+        : recentActiveDays < baselineActiveDays
+        ? 'dipped'
+        : activeRate >= 0.4
+        ? 'steady'
+        : 'building';
+    final workoutLabel = _pluralize(recentCount, 'workout');
+    final activeDayLabel = _pluralize(recentActiveDays, 'active day');
+    final windowLabel = _pluralize(recentDays, 'day');
+    final candidates = <({String band, int impact, String text})>[
+      (
+        band: 'rising',
+        impact: 100,
+        text:
+            'Your rhythm is picking up: $workoutLabel across $activeDayLabel recently.',
+      ),
+      (
+        band: 'rising',
+        impact: 80,
+        text:
+            'You found more training days than the prior window. $workoutLabel in the last $windowLabel.',
+      ),
+      (
+        band: 'steady',
+        impact: 90,
+        text:
+            'A steady rhythm: $workoutLabel across $activeDayLabel in this window.',
+      ),
+      (
+        band: 'steady',
+        impact: 70,
+        text:
+            'Your training cadence is holding nicely. $activeDayLabel logged in the last $windowLabel.',
+      ),
+      (
+        band: 'dipped',
+        impact: 85,
+        text:
+            'This stretch was a little lighter, with $workoutLabel in the last $windowLabel.',
+      ),
+      (
+        band: 'dipped',
+        impact: 65,
+        text:
+            'A lighter stretch: $activeDayLabel recently. There is room to ease back into the next slot.',
+      ),
+      (
+        band: 'building',
+        impact: 75,
+        text:
+            'You logged $workoutLabel in the last $windowLabel. Keep the next slot in view.',
+      ),
+      (
+        band: 'building',
+        impact: 55,
+        text:
+            'A few recent sessions are on the board. You can build from $activeDayLabel.',
+      ),
+    ];
+    return candidates
+        .where((candidate) => candidate.band == band)
+        .reduce(
+          (best, candidate) =>
+              candidate.impact > best.impact ? candidate : best,
+        )
+        .text;
+  }
+
+  String _pluralize(int count, String noun) {
+    return '$count $noun${count == 1 ? '' : 's'}';
   }
 
   InsightFeedCard? _comebackCard(
