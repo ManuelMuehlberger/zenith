@@ -12,6 +12,7 @@ import '../models/workout_template.dart';
 import '../services/workout_session_service.dart';
 import '../services/workout_template_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/navigation_helper.dart';
 import '../widgets/floating_feedback_toast.dart';
 import '../widgets/folder_breadcrumbs_card.dart';
 import '../widgets/main_dock_spacer.dart';
@@ -381,6 +382,7 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
             onTemplateDeletePressed: _showDeleteTemplateDialog,
             onTemplateReordered: _reorderTemplates,
             onAddWorkoutPressed: _createWorkout,
+            onStartFreeWorkoutPressed: _startFreeWorkout,
             onDragStarted: _onDragStarted,
             onDragEnded: _onDragEnded,
           ),
@@ -479,6 +481,26 @@ class _WorkoutBuilderScreenState extends State<WorkoutBuilderScreen> {
       await _loadCounts();
       await _loadTemplates();
       setState(() {});
+    }
+  }
+
+  Future<void> _startFreeWorkout() async {
+    try {
+      await WorkoutSessionService.instance.startFreeWorkout();
+      unawaited(HapticFeedback.mediumImpact());
+
+      if (!mounted) return;
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      NavigationHelper.goToTab(1);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to start free workout: $e'),
+          backgroundColor: context.appScheme.error,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 

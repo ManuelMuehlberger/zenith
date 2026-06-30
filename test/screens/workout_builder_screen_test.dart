@@ -24,6 +24,16 @@ void main() {
       expect(settings.arguments, 'folder-2');
     });
 
+    test(
+      'routeSettingsForFolder uses the root route name for null folders',
+      () {
+        final settings = WorkoutBuilderScreen.routeSettingsForFolder(null);
+
+        expect(settings.name, 'workout-builder/root');
+        expect(settings.arguments, isNull);
+      },
+    );
+
     testWidgets(
       'popToFolderInStack returns false when the folder route is absent',
       (tester) async {

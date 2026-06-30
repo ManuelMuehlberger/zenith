@@ -387,6 +387,17 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     _logger.fine(
       'Showing finish workout dialog for session ${_currentSession.id}',
     );
+    if (_currentSession.exercises.isEmpty || _currentSession.totalSets == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Add at least one exercise before finishing.'),
+          backgroundColor: context.appScheme.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+      return;
+    }
     showCupertinoDialog<void>(
       context: context,
       builder: (BuildContext dialogContext) => CupertinoAlertDialog(
