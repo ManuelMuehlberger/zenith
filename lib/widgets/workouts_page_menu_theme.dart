@@ -6,9 +6,7 @@ import '../theme/app_theme.dart';
 PullDownButtonTheme buildWorkoutsPageMenuTheme(BuildContext context) {
   final colors = context.appColors;
   final textTheme = context.appText;
-  final backgroundColor = Theme.of(
-    context,
-  ).colorScheme.surface.withValues(alpha: 0.98);
+  final backgroundColor = Theme.of(context).colorScheme.surface;
 
   return PullDownButtonTheme(
     routeTheme: PullDownMenuRouteTheme(

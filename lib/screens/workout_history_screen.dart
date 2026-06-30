@@ -168,11 +168,7 @@ class _WorkoutHistoryScreenState extends State<WorkoutHistoryScreen> {
           return Stack(
             fit: StackFit.expand,
             children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: headerSurface.withValues(alpha: 0.98),
-                ),
-              ),
+              DecoratedBox(decoration: BoxDecoration(color: headerSurface)),
               FlexibleSpaceBar(
                 centerTitle: true,
                 title: Text(

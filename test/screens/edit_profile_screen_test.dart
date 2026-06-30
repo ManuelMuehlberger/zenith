@@ -38,6 +38,7 @@ void main() {
       expect(find.text('Personal Information'), findsOneWidget);
       expect(find.text('Gender'), findsOneWidget);
       expect(find.text('Female'), findsOneWidget);
+      expect(find.byType(BackdropFilter), findsNothing);
     });
   });
 }

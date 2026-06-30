@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
@@ -134,24 +133,18 @@ class _CreateWorkoutScreenState extends State<CreateWorkoutScreen> {
                 top: 0,
                 left: 0,
                 right: 0,
-                child: ClipRRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(
-                      sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                      sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-                    ),
-                    child: Container(
-                      height: headerHeight,
-                      color: context.appColors.overlayMedium,
-                      child: SafeArea(
-                        bottom: false,
-                        child: CreateWorkoutHeader(
-                          isEditing: widget.workoutTemplate != null,
-                          exerciseCount: _exercises.length,
-                          isLoading: _isLoading,
-                          onClose: () => Navigator.of(context).pop(),
-                          onSave: _saveWorkout,
-                        ),
+                child: ColoredBox(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  child: SizedBox(
+                    height: headerHeight,
+                    child: SafeArea(
+                      bottom: false,
+                      child: CreateWorkoutHeader(
+                        isEditing: widget.workoutTemplate != null,
+                        exerciseCount: _exercises.length,
+                        isLoading: _isLoading,
+                        onClose: () => Navigator.of(context).pop(),
+                        onSave: _saveWorkout,
                       ),
                     ),
                   ),

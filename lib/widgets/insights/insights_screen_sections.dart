@@ -102,11 +102,7 @@ class InsightsAppBar extends StatelessWidget {
           return Stack(
             fit: StackFit.expand,
             children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: headerSurface.withValues(alpha: 0.98),
-                ),
-              ),
+              DecoratedBox(decoration: BoxDecoration(color: headerSurface)),
               FlexibleSpaceBar(
                 centerTitle: true,
                 title: smallTitle,
@@ -179,7 +175,7 @@ class InsightsFilterHeaderDelegate extends SliverPersistentHeaderDelegate {
         selectedBodyWeight != null;
 
     return Container(
-      decoration: BoxDecoration(color: headerSurface.withValues(alpha: 0.98)),
+      decoration: BoxDecoration(color: headerSurface),
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         children: [
