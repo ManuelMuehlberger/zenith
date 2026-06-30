@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -30,10 +28,9 @@ class _TimelineScreenState extends State<TimelineScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.appColors;
     final double topPadding = MediaQuery.of(context).padding.top;
     final double headerHeight = topPadding + kToolbarHeight;
-    const double glassBlurSigma = 10.0;
+    final headerSurface = Theme.of(context).scaffoldBackgroundColor;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -44,17 +41,11 @@ class _TimelineScreenState extends State<TimelineScreen> {
             top: 0,
             left: 0,
             right: 0,
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(
-                  sigmaX: glassBlurSigma,
-                  sigmaY: glassBlurSigma,
-                ),
-                child: Container(
-                  height: headerHeight,
-                  color: colors.overlayMedium,
-                  child: SafeArea(bottom: false, child: _buildHeaderContent()),
-                ),
+            child: ColoredBox(
+              color: headerSurface,
+              child: SizedBox(
+                height: headerHeight,
+                child: SafeArea(bottom: false, child: _buildHeaderContent()),
               ),
             ),
           ),

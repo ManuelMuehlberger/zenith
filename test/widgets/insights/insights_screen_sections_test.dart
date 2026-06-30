@@ -120,5 +120,28 @@ void main() {
         findsOneWidget,
       );
     });
+
+    testWidgets('app bar renders without a backdrop blur', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                InsightsAppBar(
+                  showCalendar: false,
+                  onShowCalendar: () {},
+                  onHideCalendar: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Insights'), findsOneWidget);
+      expect(find.byType(BackdropFilter), findsNothing);
+    });
   });
 }

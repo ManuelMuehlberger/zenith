@@ -1,6 +1,5 @@
 import 'dart:async';
-
-import 'dart:ui';
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
@@ -67,7 +66,7 @@ class ActiveWorkoutScaffoldBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
     final headerHeight = topPadding + ActiveWorkoutAppBar.getContentHeight();
-    final appColors = context.appColors;
+    final headerSurface = Theme.of(context).scaffoldBackgroundColor;
 
     return Stack(
       children: [
@@ -94,21 +93,18 @@ class ActiveWorkoutScaffoldBody extends StatelessWidget {
           top: 0,
           left: 0,
           right: 0,
-          child: ClipRRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                height: headerHeight,
-                color: appColors.overlayMedium,
-                child: SafeArea(
-                  bottom: false,
-                  child: ActiveWorkoutHeader(
-                    session: session,
-                    weightUnit: weightUnit,
-                    isReorderMode: ReorderService.instance.isReorderMode,
-                    onToggleReorderMode: onToggleReorderMode,
-                    onFinishWorkout: onFinishWorkout,
-                  ),
+          child: ColoredBox(
+            color: headerSurface,
+            child: SizedBox(
+              height: headerHeight,
+              child: SafeArea(
+                bottom: false,
+                child: ActiveWorkoutHeader(
+                  session: session,
+                  weightUnit: weightUnit,
+                  isReorderMode: ReorderService.instance.isReorderMode,
+                  onToggleReorderMode: onToggleReorderMode,
+                  onFinishWorkout: onFinishWorkout,
                 ),
               ),
             ),

@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -193,17 +191,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             top: 0,
             left: 0,
             right: 0,
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(
-                  sigmaX: AppConstants.GLASS_BLUR_SIGMA,
-                  sigmaY: AppConstants.GLASS_BLUR_SIGMA,
-                ),
-                child: Container(
-                  height: headerHeight,
-                  color: context.appColors.overlayMedium,
-                  child: SafeArea(bottom: false, child: _buildHeaderContent()),
-                ),
+            child: ColoredBox(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: SizedBox(
+                height: headerHeight,
+                child: SafeArea(bottom: false, child: _buildHeaderContent()),
               ),
             ),
           ),

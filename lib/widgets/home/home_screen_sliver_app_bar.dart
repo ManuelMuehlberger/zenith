@@ -31,11 +31,7 @@ class HomeScreenSliverAppBar extends StatelessWidget {
           return Stack(
             fit: StackFit.expand,
             children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: headerSurface.withValues(alpha: 0.98),
-                ),
-              ),
+              DecoratedBox(decoration: BoxDecoration(color: headerSurface)),
               FlexibleSpaceBar(
                 centerTitle: true,
                 title: Row(
