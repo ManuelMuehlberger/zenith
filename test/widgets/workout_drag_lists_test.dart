@@ -161,6 +161,97 @@ void main() {
     },
   );
 
+  testWidgets(
+    'ReorderableWorkoutTemplateList shows and invokes distinct header actions',
+    (tester) async {
+      var startFreeCalls = 0;
+      var addWorkoutCalls = 0;
+
+      await tester.pumpWidget(
+        buildTestApp(
+          ReorderableWorkoutTemplateList(
+            templates: buildTemplates(1),
+            folderId: null,
+            onTemplateTap: (_) {},
+            onTemplateDeletePressed: (_) {},
+            onTemplateReordered: (_, _) {},
+            onStartFreeWorkoutPressed: () => startFreeCalls++,
+            onAddWorkoutPressed: () => addWorkoutCalls++,
+            onDragStarted: (_) {},
+            onDragEnded: () {},
+          ),
+        ),
+      );
+
+      expect(
+        find.byKey(const Key('start_free_workout_button')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('add_workout_button')), findsOneWidget);
+      expect(find.text('Start free'), findsOneWidget);
+      expect(find.text('Add workout'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.byKey(const Key('add_workout_button'))).dx,
+        lessThan(
+          tester
+              .getTopLeft(find.byKey(const Key('start_free_workout_button')))
+              .dx,
+        ),
+      );
+      expect(
+        find.byKey(const Key('header_action_scroll_indicator')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('header_action_edge_fade')), findsOneWidget);
+      expect(
+        find.byKey(const Key('header_action_left_edge_fade')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<AnimatedOpacity>(
+              find.byKey(const Key('header_action_left_edge_fade')),
+            )
+            .opacity,
+        0,
+      );
+
+      final railRect = tester.getRect(find.byType(SingleChildScrollView));
+      final addWorkoutRect = tester.getRect(
+        find.byKey(const Key('add_workout_button')),
+      );
+      final startFreeRect = tester.getRect(
+        find.byKey(const Key('start_free_workout_button')),
+      );
+      expect(
+        (addWorkoutRect.center.dx - railRect.center.dx).abs(),
+        lessThan(16),
+      );
+      expect(startFreeRect.left, lessThan(railRect.right));
+      expect(startFreeRect.right - railRect.right, greaterThan(90));
+
+      await tester.tap(find.byKey(const Key('add_workout_button')));
+      await tester.pump();
+      await tester.ensureVisible(
+        find.byKey(const Key('start_free_workout_button')),
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(
+        tester
+            .widget<AnimatedOpacity>(
+              find.byKey(const Key('header_action_left_edge_fade')),
+            )
+            .opacity,
+        1,
+      );
+      await tester.tap(find.byKey(const Key('start_free_workout_button')));
+      await tester.pump();
+
+      expect(startFreeCalls, 1);
+      expect(addWorkoutCalls, 1);
+    },
+  );
+
   testWidgets('ReorderableWorkoutTemplateList reorders to end on drop', (
     tester,
   ) async {

@@ -162,6 +162,21 @@ class FakeWorkoutSetDao extends WorkoutSetDao {
   }
 
   @override
+  Future<int> deleteWorkoutSetsByWorkoutExerciseId(
+    String workoutExerciseId,
+  ) async {
+    final matchingIds = _byId.values
+        .where((set) => set.workoutExerciseId == workoutExerciseId)
+        .map((set) => set.id)
+        .toList();
+    for (final id in matchingIds) {
+      _byId.remove(id);
+    }
+    deleteCalls += matchingIds.length;
+    return matchingIds.length;
+  }
+
+  @override
   Future<List<WorkoutSet>> getWorkoutSetsByWorkoutExerciseIds(
     List<String> workoutExerciseIds,
   ) async {
@@ -564,6 +579,39 @@ void main() {
     });
 
     group('startWorkout cloning behavior', () {
+      test('startFreeWorkout creates an empty in-progress session', () async {
+        final session = await service.startFreeWorkout();
+
+        expect(session.name, 'Free Workout');
+        expect(session.status, WorkoutStatus.inProgress);
+        expect(session.templateId, isNull);
+        expect(session.startedAt, isNotNull);
+        expect(session.exercises, isEmpty);
+        expect(service.currentSession?.id, session.id);
+        expect(service.hasActiveSession, isTrue);
+        expect(workoutDao.insertCalls, 1);
+        expect(notificationService.startCalls, 0);
+      });
+
+      test(
+        'startFreeWorkout clears and replaces an existing active session',
+        () async {
+          final templateSession = await service.startWorkout(buildTemplate());
+          expect(service.currentSession?.id, templateSession.id);
+          workoutDao.resetCounts();
+          notificationService.resetCounts();
+
+          final freeSession = await service.startFreeWorkout();
+
+          expect(service.currentSession?.id, freeSession.id);
+          expect(service.currentSession?.templateId, isNull);
+          expect(freeSession.id, isNot(templateSession.id));
+          expect(workoutDao.insertCalls, 1);
+          expect(notificationService.stopCalls, 1);
+          expect(notificationService.startCalls, 0);
+        },
+      );
+
       test(
         'clones template exercises and sets with new IDs and correct foreign keys',
         () async {
@@ -696,6 +744,71 @@ void main() {
     });
 
     group('resume and reset flows', () {
+      test(
+        'free workout exercises added through updateSession persist and hydrate',
+        () async {
+          final session = await service.startFreeWorkout();
+          final workoutExercise = WorkoutExercise(
+            id: 'free-exercise-1',
+            workoutId: session.id,
+            exerciseSlug: 'bench-press',
+            exerciseDetail: buildExerciseDetail(
+              'bench-press',
+              'Bench Press',
+              MuscleGroup.chest,
+            ),
+            sets: [
+              WorkoutSet(
+                id: 'free-set-1',
+                workoutExerciseId: 'free-exercise-1',
+                setIndex: 0,
+                actualReps: 10,
+                actualWeight: 40,
+                isCompleted: true,
+              ),
+            ],
+          );
+
+          await service.updateSession(
+            session.copyWith(exercises: [workoutExercise]),
+          );
+          await service.clearActiveSession(deleteFromDb: false);
+          notificationService.resetCounts();
+
+          await service.loadActiveSession();
+
+          final loadedSession = service.currentSession;
+          expect(loadedSession, isNotNull);
+          expect(loadedSession!.templateId, isNull);
+          expect(loadedSession.name, 'Free Workout');
+          expect(loadedSession.exercises, hasLength(1));
+          expect(loadedSession.exercises.first.orderIndex, 0);
+          expect(loadedSession.exercises.first.sets, hasLength(1));
+          expect(loadedSession.exercises.first.sets.first.actualReps, 10);
+          expect(loadedSession.exercises.first.sets.first.isCompleted, isTrue);
+          expect(
+            loadedSession.exercises.first.exerciseDetail?.name,
+            'Bench Press',
+          );
+          expect(notificationService.restartCalls, 1);
+        },
+      );
+
+      test(
+        'loadActiveSession does not restart notifications for empty free workout',
+        () async {
+          final session = await service.startFreeWorkout();
+          await service.clearActiveSession(deleteFromDb: false);
+          notificationService.resetCounts();
+
+          await service.loadActiveSession();
+
+          expect(service.currentSession?.id, session.id);
+          expect(service.currentSession?.exercises, isEmpty);
+          expect(notificationService.restartCalls, 0);
+        },
+      );
+
       test(
         'loadActiveSession hydrates persisted exercises and restarts notifications',
         () async {
@@ -1037,6 +1150,42 @@ void main() {
           contains('Push Day'),
         );
       });
+
+      test(
+        'completeWorkout supports free workouts without template linkage',
+        () async {
+          final session = await service.startFreeWorkout();
+          final workoutExercise = WorkoutExercise(
+            id: 'free-complete-exercise',
+            workoutId: session.id,
+            exerciseSlug: 'row',
+            sets: [
+              WorkoutSet(
+                id: 'free-complete-set',
+                workoutExerciseId: 'free-complete-exercise',
+                setIndex: 0,
+                actualReps: 8,
+                actualWeight: 35,
+                isCompleted: true,
+              ),
+            ],
+          );
+          await service.updateSession(
+            session.copyWith(
+              startedAt: DateTime(2026, 1, 1, 12),
+              exercises: [workoutExercise],
+            ),
+          );
+
+          final completed = await service.completeWorkout(
+            durationOverride: const Duration(minutes: 30),
+          );
+
+          expect(completed.name, 'Free Workout');
+          expect(completed.templateId, isNull);
+          expect(completed.status, WorkoutStatus.completed);
+        },
+      );
     });
 
     test(

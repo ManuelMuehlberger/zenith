@@ -202,12 +202,16 @@ class WorkoutSessionService extends ChangeNotifier {
         if (hydratedSession.status == WorkoutStatus.completed) {
           _logger.warning('Loaded session is already completed, clearing it');
           await clearActiveSession();
-        } else {
+        } else if (hydratedSession.exercises.isNotEmpty) {
           _logger.info('Restarting notification service for active session');
           await _notificationService.restartServiceIfNeeded(
             hydratedSession,
             _currentExerciseIndex,
             _currentSetIndex,
+          );
+        } else {
+          _logger.info(
+            'Active session has no exercises; skipping notification restart',
           );
         }
       } else {
@@ -302,12 +306,108 @@ class WorkoutSessionService extends ChangeNotifier {
     return session;
   }
 
+  Future<Workout> startFreeWorkout() async {
+    _logger.info('Starting new free workout session');
+    await clearActiveSession();
+
+    final session = Workout(
+      name: 'Free Workout',
+      status: WorkoutStatus.inProgress,
+      templateId: null,
+      startedAt: DateTime.now(),
+      exercises: const [],
+    );
+    _currentSession = session;
+
+    await _workoutDao.insert(session);
+    _logger.fine('Saved new free session to database with id: ${session.id}');
+
+    _currentExerciseIndex = 0;
+    _currentSetIndex = 0;
+
+    notifyListeners();
+    return session;
+  }
+
   Future<void> updateSession(Workout session) async {
     _logger.fine('Updating session: ${session.id}');
-    _currentSession = session;
-    await _workoutDao.updateWorkout(session);
-    await _updateNotificationIfNeeded(session);
+    final persistedSession = await _persistSessionChildren(session);
+    _currentSession = persistedSession;
+    await _workoutDao.updateWorkout(persistedSession);
+    await _updateNotificationIfNeeded(persistedSession);
     notifyListeners();
+  }
+
+  Future<Workout> _persistSessionChildren(Workout session) async {
+    final persistedExercises = await _workoutExerciseDao
+        .getWorkoutExercisesByWorkoutId(session.id);
+    final persistedById = {
+      for (final exercise in persistedExercises) exercise.id: exercise,
+    };
+    final currentExerciseIds = session.exercises.map((e) => e.id).toSet();
+
+    for (final persistedExercise in persistedExercises) {
+      if (!currentExerciseIds.contains(persistedExercise.id)) {
+        await _workoutSetDao.deleteWorkoutSetsByWorkoutExerciseId(
+          persistedExercise.id,
+        );
+        await _workoutExerciseDao.deleteWorkoutExercise(persistedExercise.id);
+      }
+    }
+
+    final normalizedExercises = <WorkoutExercise>[];
+    for (
+      var exerciseIndex = 0;
+      exerciseIndex < session.exercises.length;
+      exerciseIndex++
+    ) {
+      final exercise = session.exercises[exerciseIndex];
+      final normalizedSets = <WorkoutSet>[];
+
+      for (var setIndex = 0; setIndex < exercise.sets.length; setIndex++) {
+        normalizedSets.add(
+          exercise.sets[setIndex].copyWith(
+            workoutExerciseId: exercise.id,
+            setIndex: setIndex,
+          ),
+        );
+      }
+
+      final normalizedExercise = exercise.copyWith(
+        workoutTemplateId: null,
+        workoutId: session.id,
+        orderIndex: exerciseIndex,
+        sets: normalizedSets,
+      );
+      normalizedExercises.add(normalizedExercise);
+
+      if (persistedById.containsKey(normalizedExercise.id)) {
+        await _workoutExerciseDao.updateWorkoutExercise(normalizedExercise);
+      } else {
+        await _workoutExerciseDao.insert(normalizedExercise);
+      }
+
+      final persistedSets = await _workoutSetDao
+          .getWorkoutSetsByWorkoutExerciseId(normalizedExercise.id);
+      final persistedSetIds = persistedSets.map((set) => set.id).toSet();
+      final currentSetIds = normalizedSets.map((set) => set.id).toSet();
+
+      for (final persistedSet in persistedSets) {
+        if (!currentSetIds.contains(persistedSet.id)) {
+          await _workoutSetDao.deleteWorkoutSet(persistedSet.id);
+        }
+      }
+
+      for (final set in normalizedSets) {
+        if (persistedSetIds.contains(set.id)) {
+          await _workoutSetDao.updateWorkoutSet(set);
+        } else {
+          await _workoutSetDao.insert(set);
+        }
+      }
+    }
+
+    return session.copyWith(exercises: normalizedExercises);
   }
 
   Future<void> selectExercise(int index) async {
