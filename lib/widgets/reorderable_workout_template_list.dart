@@ -18,6 +18,7 @@ class ReorderableWorkoutTemplateList extends StatefulWidget {
   final Function(WorkoutTemplate) onTemplateDeletePressed;
   final Function(int, int) onTemplateReordered;
   final VoidCallback? onAddWorkoutPressed;
+  final VoidCallback? onStartFreeWorkoutPressed;
   final ValueChanged<WorkoutBuilderDragPayload>? onDragStarted;
   final VoidCallback? onDragEnded;
 
@@ -29,6 +30,7 @@ class ReorderableWorkoutTemplateList extends StatefulWidget {
     required this.onTemplateDeletePressed,
     required this.onTemplateReordered,
     this.onAddWorkoutPressed,
+    this.onStartFreeWorkoutPressed,
     this.onDragStarted,
     this.onDragEnded,
   });
@@ -44,13 +46,39 @@ class _ReorderableWorkoutTemplateListState
   static const double _dropIndexHysteresis = 16;
   static const double _autoScrollTriggerExtent = 96;
   static const double _autoScrollStep = 18;
+  static const double _headerActionButtonWidth = 176;
+  static const double _headerActionSpacing = 2;
+  static const double _headerActionPeekWidth = 64;
+  static const double _headerActionLeadingInset = 36;
+  static const double _headerActionEdgeFadeWidth = 72;
+  static const double _headerActionLeftEdgeFadeWidth = 120;
+  static const double _headerActionEdgeFadeMidOpacity = 0.46;
+  static const double _headerActionEdgeFadeEndOpacity = 0.8;
 
   int? _dropIndex;
   int? _draggedIndex;
   Offset? _lastDragGlobalPosition;
   Rect? _draggedOriginRectAtStart;
   double? _dragStartScrollPixels;
+  late final ScrollController _headerActionScrollController;
+  int _headerActionPage = 0;
+  bool _showHeaderActionLeftFade = false;
   final Map<String, GlobalKey> _itemKeys = <String, GlobalKey>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _headerActionScrollController = ScrollController()
+      ..addListener(_handleHeaderActionScroll);
+  }
+
+  @override
+  void dispose() {
+    _headerActionScrollController
+      ..removeListener(_handleHeaderActionScroll)
+      ..dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,25 +90,10 @@ class _ReorderableWorkoutTemplateListState
       children: [
         LayoutBuilder(
           builder: (context, constraints) {
-            final addWorkoutButton = widget.onAddWorkoutPressed == null
-                ? null
-                : TextButton.icon(
-                    onPressed: widget.onAddWorkoutPressed,
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                    icon: const Icon(Icons.playlist_add_rounded, size: 18),
-                    label: const Text('Add workout'),
-                  );
+            final actionRail = _buildHeaderActionRail();
+            final actionRailWidth = constraints.maxWidth < 360
+                ? _headerActionButtonWidth + _headerActionPeekWidth - 10
+                : _headerActionButtonWidth + _headerActionPeekWidth;
 
             return Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -121,17 +134,9 @@ class _ReorderableWorkoutTemplateListState
                     ],
                   ),
                 ),
-                if (addWorkoutButton != null) ...[
+                if (actionRail != null) ...[
                   const SizedBox(width: 12),
-                  Flexible(
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: addWorkoutButton,
-                      ),
-                    ),
-                  ),
+                  SizedBox(width: actionRailWidth, child: actionRail),
                 ],
               ],
             );
@@ -151,6 +156,135 @@ class _ReorderableWorkoutTemplateListState
         ],
       ],
     );
+  }
+
+  Widget? _buildHeaderActionRail() {
+    final actions = <_HeaderActionSpec>[];
+
+    if (widget.onAddWorkoutPressed != null) {
+      actions.add(
+        _HeaderActionSpec(
+          key: const Key('add_workout_button'),
+          label: 'Add workout',
+          icon: Icons.playlist_add_rounded,
+          onPressed: widget.onAddWorkoutPressed!,
+        ),
+      );
+    }
+
+    if (widget.onStartFreeWorkoutPressed != null) {
+      actions.add(
+        _HeaderActionSpec(
+          key: const Key('start_free_workout_button'),
+          label: 'Start free',
+          icon: Icons.play_arrow_rounded,
+          onPressed: widget.onStartFreeWorkoutPressed!,
+        ),
+      );
+    }
+
+    if (actions.isEmpty) {
+      return null;
+    }
+
+    return SizedBox(
+      height: actions.length > 1 ? 54 : 42,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          SingleChildScrollView(
+            controller: _headerActionScrollController,
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: [
+                if (actions.length > 1)
+                  const SizedBox(width: _headerActionLeadingInset),
+                ...List.generate(actions.length * 2 - 1, (index) {
+                  if (index.isOdd) {
+                    return const SizedBox(width: _headerActionSpacing);
+                  }
+                  return _HeaderActionButton(spec: actions[index ~/ 2]);
+                }),
+              ],
+            ),
+          ),
+          if (actions.length > 1)
+            Positioned(
+              top: 0,
+              left: 0,
+              bottom: 12,
+              width: _headerActionLeftEdgeFadeWidth,
+              child: AnimatedOpacity(
+                key: const Key('header_action_left_edge_fade'),
+                duration: const Duration(milliseconds: 160),
+                curve: Curves.easeOut,
+                opacity: _showHeaderActionLeftFade ? 1 : 0,
+                child: const _HeaderActionEdgeFade(fadeFromLeftEdge: true),
+              ),
+            ),
+          if (actions.length > 1)
+            const Positioned(
+              key: Key('header_action_edge_fade'),
+              top: 0,
+              right: 0,
+              bottom: 12,
+              width: _headerActionEdgeFadeWidth,
+              child: _HeaderActionEdgeFade(),
+            ),
+          if (actions.length > 1)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _HeaderActionDots(
+                key: const Key('header_action_scroll_indicator'),
+                currentPage: _headerActionPage,
+                pageCount: actions.length,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _handleHeaderActionScroll() {
+    if (!_headerActionScrollController.hasClients) {
+      return;
+    }
+
+    final maxScrollExtent =
+        _headerActionScrollController.position.maxScrollExtent;
+    final nextPage = maxScrollExtent <= 0
+        ? 0
+        : _headerActionScrollController.offset >= maxScrollExtent / 2
+        ? 1
+        : 0;
+    final showLeftFade = _headerActionScrollController.offset > 1;
+
+    if ((nextPage == _headerActionPage &&
+            showLeftFade == _showHeaderActionLeftFade) ||
+        !mounted) {
+      return;
+    }
+
+    setState(() {
+      _headerActionPage = nextPage;
+      _showHeaderActionLeftFade = showLeftFade;
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant ReorderableWorkoutTemplateList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final actionCount =
+        (widget.onAddWorkoutPressed != null ? 1 : 0) +
+        (widget.onStartFreeWorkoutPressed != null ? 1 : 0);
+    if (actionCount <= 1 &&
+        (_headerActionPage != 0 || _showHeaderActionLeftFade)) {
+      _headerActionPage = 0;
+      _showHeaderActionLeftFade = false;
+    }
   }
 
   Widget _buildReorderableItem(int index) {
@@ -579,5 +713,133 @@ class _ReorderableWorkoutTemplateListState
 
     final scrollDelta = currentScrollPixels - dragStartScrollPixels;
     return originRect.shift(Offset(0, -scrollDelta));
+  }
+}
+
+class _HeaderActionSpec {
+  final Key key;
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _HeaderActionSpec({
+    required this.key,
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+}
+
+class _HeaderActionButton extends StatelessWidget {
+  final _HeaderActionSpec spec;
+
+  const _HeaderActionButton({required this.spec});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: _ReorderableWorkoutTemplateListState._headerActionButtonWidth,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          key: spec.key,
+          onPressed: spec.onPressed,
+          icon: Icon(spec.icon, size: 18),
+          label: Text(spec.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          style: TextButton.styleFrom(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            minimumSize: const Size(
+              _ReorderableWorkoutTemplateListState._headerActionButtonWidth,
+              0,
+            ),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderActionDots extends StatelessWidget {
+  final int currentPage;
+  final int pageCount;
+
+  const _HeaderActionDots({
+    super.key,
+    required this.currentPage,
+    required this.pageCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.appColors;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(pageCount, (index) {
+        final isActive = index == currentPage;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          width: isActive ? 16 : 6,
+          height: 6,
+          margin: EdgeInsets.only(left: index == 0 ? 0 : 5),
+          decoration: BoxDecoration(
+            color: isActive
+                ? colors.textSecondary.withValues(alpha: 0.72)
+                : colors.textTertiary.withValues(alpha: 0.32),
+            borderRadius: BorderRadius.circular(999),
+            border: isActive
+                ? null
+                : Border.all(
+                    color: colors.textTertiary.withValues(alpha: 0.18),
+                  ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _HeaderActionEdgeFade extends StatelessWidget {
+  const _HeaderActionEdgeFade({this.fadeFromLeftEdge = false});
+
+  final bool fadeFromLeftEdge;
+
+  @override
+  Widget build(BuildContext context) {
+    final fadeColor = Theme.of(context).scaffoldBackgroundColor;
+
+    return IgnorePointer(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: fadeFromLeftEdge
+                ? Alignment.centerRight
+                : Alignment.centerLeft,
+            end: fadeFromLeftEdge
+                ? Alignment.centerLeft
+                : Alignment.centerRight,
+            stops: const [0, AppTheme.mainDockEdgeFadeMidStop, 1],
+            colors: [
+              fadeColor.withValues(alpha: 0),
+              fadeColor.withValues(
+                alpha: _ReorderableWorkoutTemplateListState
+                    ._headerActionEdgeFadeMidOpacity,
+              ),
+              fadeColor.withValues(
+                alpha: _ReorderableWorkoutTemplateListState
+                    ._headerActionEdgeFadeEndOpacity,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
