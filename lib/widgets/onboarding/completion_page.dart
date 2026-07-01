@@ -20,7 +20,6 @@ class CompletionPage extends StatelessWidget {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
-    final theme = Theme.of(context);
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -57,8 +56,7 @@ class CompletionPage extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.dividerColor),
+              borderRadius: AppTheme.workoutCardBorderRadius,
             ),
             child: Column(
               children: [

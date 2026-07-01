@@ -86,20 +86,18 @@ class WelcomePage extends StatelessWidget {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
-    final theme = Theme.of(context);
 
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.dividerColor),
+        borderRadius: AppTheme.workoutCardBorderRadius,
       ),
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: AppTheme.workoutCardBorderRadius,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(

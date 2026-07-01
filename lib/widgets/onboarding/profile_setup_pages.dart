@@ -30,7 +30,6 @@ class _NamePageState extends State<NamePage> {
   Widget build(BuildContext context) {
     final textTheme = context.appText;
     final colors = context.appColors;
-    final theme = Theme.of(context);
 
     return OnboardingStepLayout(
       current: 1,
@@ -52,8 +51,7 @@ class _NamePageState extends State<NamePage> {
         ),
         decoration: BoxDecoration(
           color: colors.field,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.dividerColor),
+          borderRadius: AppTheme.workoutCardBorderRadius,
         ),
         padding: const EdgeInsets.all(16),
         controller: widget.nameController,
@@ -83,7 +81,6 @@ class AgePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = context.appText;
-    final theme = Theme.of(context);
 
     return OnboardingStepLayout(
       current: 2,
@@ -97,8 +94,7 @@ class AgePage extends StatelessWidget {
         height: 200,
         decoration: BoxDecoration(
           color: context.appScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.dividerColor),
+          borderRadius: AppTheme.workoutCardBorderRadius,
         ),
         child: AppCupertinoPicker(
           itemExtent: 50,
@@ -239,8 +235,6 @@ class WeightPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return OnboardingStepLayout(
       current: 5,
       total: 5,
@@ -254,8 +248,7 @@ class WeightPage extends StatelessWidget {
         height: 200,
         decoration: BoxDecoration(
           color: context.appScheme.surface,
-          borderRadius: BorderRadius.circular(AppConstants.SHEET_RADIUS),
-          border: Border.all(color: theme.dividerColor),
+          borderRadius: AppTheme.workoutCardBorderRadius,
         ),
         child: WeightPickerWheel(
           weight: weight,
@@ -287,27 +280,23 @@ class UnitOption extends StatelessWidget {
     final colorScheme = context.appScheme;
     final textTheme = context.appText;
     final colors = context.appColors;
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final selectedAccent = isDark ? colors.info : colorScheme.primary;
+    final selectedFill = selectedAccent.withValues(alpha: isDark ? 0.14 : 0.08);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: isSelected
-            ? colorScheme.primary.withValues(alpha: 0.08)
-            : colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isSelected ? colorScheme.primary : theme.dividerColor,
-          width: isSelected ? 2 : 1,
-        ),
+        color: isSelected ? selectedFill : colorScheme.surface,
+        borderRadius: AppTheme.workoutCardBorderRadius,
       ),
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: AppTheme.workoutCardBorderRadius,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
@@ -320,7 +309,7 @@ class UnitOption extends StatelessWidget {
                         title,
                         style: textTheme.titleMedium?.copyWith(
                           color: isSelected
-                              ? colorScheme.primary
+                              ? selectedAccent
                               : colorScheme.onSurface,
                         ),
                       ),
@@ -339,7 +328,7 @@ class UnitOption extends StatelessWidget {
                 if (isSelected)
                   Icon(
                     CupertinoIcons.check_mark_circled_solid,
-                    color: colorScheme.primary,
+                    color: selectedAccent,
                     size: 22,
                   ),
               ],
