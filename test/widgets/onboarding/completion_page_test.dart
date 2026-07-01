@@ -30,6 +30,23 @@ void main() {
       );
       expect(find.text('Privacy First'), findsOneWidget);
       expect(find.text('Start Logging Workouts'), findsOneWidget);
+
+      final infoCard = tester.widget<Container>(
+        find
+            .ancestor(
+              of: find.text('Privacy First'),
+              matching: find.byWidgetPredicate(
+                (widget) =>
+                    widget is Container &&
+                    widget.decoration is BoxDecoration &&
+                    (widget.decoration! as BoxDecoration).borderRadius ==
+                        AppTheme.workoutCardBorderRadius,
+              ),
+            )
+            .first,
+      );
+      final decoration = infoCard.decoration! as BoxDecoration;
+      expect(decoration.border, isNull);
     });
 
     testWidgets('invokes completion callback and shows loading state', (

@@ -25,6 +25,20 @@ void main() {
       );
       expect(find.text('Restore a backup'), findsOneWidget);
       expect(find.text('Set up this device'), findsOneWidget);
+
+      final option = tester.widget<Container>(
+        find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Container &&
+                  widget.decoration is BoxDecoration &&
+                  (widget.decoration! as BoxDecoration).borderRadius ==
+                      AppTheme.workoutCardBorderRadius,
+            )
+            .first,
+      );
+      final decoration = option.decoration! as BoxDecoration;
+      expect(decoration.border, isNull);
     });
 
     testWidgets('invokes callbacks when entry options are tapped', (
