@@ -16,6 +16,7 @@ import '../services/workout_muscle_activation_service.dart';
 import '../services/workout_session_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/navigation_helper.dart';
+import '../widgets/app_bottom_sheet.dart';
 import '../widgets/weight_picker_wheel.dart';
 import '../widgets/workout_muscle_activation_radar_card.dart';
 
@@ -572,68 +573,64 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
         (widget.session.completedAt != null
             ? widget.session.completedAt!.difference(start)
             : DateTime.now().difference(start));
-    showCupertinoModalPopup(
+    showAppBottomSheet<void>(
       context: context,
       builder: (ctx) {
         Duration temp = initial;
-        return Container(
+        return AppBottomSheet(
           height: 320,
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            border: Border.all(
-              color: Theme.of(context).dividerColor,
-              width: 0.5,
-            ),
-          ),
+          padding: EdgeInsets.zero,
           child: Column(
             children: [
-              // Header with Cancel / Done
-              Container(
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: 0.5,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Column(
                   children: [
-                    CupertinoButton(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      onPressed: () {
-                        _logger.fine('Duration picker canceled');
-                        Navigator.of(ctx).pop();
-                      },
-                      child: const Text('Cancel'),
-                    ),
-                    CupertinoButton(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      onPressed: () {
-                        setState(() {
-                          _editedDuration = _stripSeconds(temp);
-                        });
-                        _logger.fine(
-                          'Duration set to: ${_editedDuration != null ? _formatDurationNoSeconds(_editedDuration!) : 'null'}',
-                        );
-                        Navigator.of(ctx).pop();
-                      },
-                      child: Text('Done', style: context.appText.labelLarge),
+                    const AppBottomSheetHandle(),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      height: 44,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Text('Duration', style: context.appText.titleMedium),
+                          Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () {
+                                setState(() {
+                                  _editedDuration = _stripSeconds(temp);
+                                });
+                                _logger.fine(
+                                  'Duration set to: ${_editedDuration != null ? _formatDurationNoSeconds(_editedDuration!) : 'null'}',
+                                );
+                                Navigator.of(ctx).pop();
+                              },
+                              child: Text(
+                                'Done',
+                                style: context.appText.labelLarge,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
               Expanded(
-                child: CupertinoTimerPicker(
-                  mode: CupertinoTimerPickerMode.hm,
-                  initialTimerDuration: _stripSeconds(initial),
-                  onTimerDurationChanged: (d) {
-                    temp = d;
-                  },
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: DurationPickerWheel(
+                    pickerKey: const Key('workout_duration_picker'),
+                    duration: _stripSeconds(initial),
+                    selectionOverlayRadius:
+                        PickerSelectionStyle.emphasizedRadius,
+                    onDurationChanged: (duration) {
+                      temp = duration;
+                    },
+                  ),
                 ),
               ),
             ],
