@@ -10,6 +10,7 @@ import 'package:zenith/models/workout_set.dart';
 import 'package:zenith/screens/workout_completion_screen.dart';
 import 'package:zenith/services/user_service.dart';
 import 'package:zenith/services/workout_muscle_activation_service.dart';
+import 'package:zenith/widgets/app_bottom_sheet.dart';
 import 'package:zenith/widgets/weight_picker_wheel.dart';
 
 class _FakeWorkoutMuscleActivationService
@@ -176,7 +177,23 @@ void main() {
         find.byKey(const Key('post_workout_weight_picker')),
         findsOneWidget,
       );
+      expect(find.byType(AppBottomSheet), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AppBottomSheet),
+          matching: find.text('Weight'),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Done'), findsOneWidget);
+      expect(find.text('Cancel'), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(AppBottomSheet),
+          matching: find.byType(Divider),
+        ),
+        findsNothing,
+      );
 
       final picker = tester.widget<WeightPickerWheel>(
         find.byType(WeightPickerWheel),

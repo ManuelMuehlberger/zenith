@@ -645,65 +645,62 @@ class _WorkoutCompletionScreenState extends State<WorkoutCompletionScreen> {
     final spec = WeightPickerWheelSpec.forUnits(units);
     final initial = spec.clamp(_defaultWeightValue());
 
-    showCupertinoModalPopup(
+    showAppBottomSheet<void>(
       context: context,
       builder: (ctx) {
         double temp = initial;
-        return Container(
+        return AppBottomSheet(
           height: 320,
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            border: Border.all(
-              color: Theme.of(context).dividerColor,
-              width: 0.5,
-            ),
-          ),
+          padding: EdgeInsets.zero,
           child: Column(
             children: [
-              Container(
-                height: 44,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: 0.5,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Column(
                   children: [
-                    CupertinoButton(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      onPressed: () {
-                        Navigator.of(ctx).pop();
-                      },
-                      child: const Text('Cancel'),
-                    ),
-                    CupertinoButton(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      onPressed: () {
-                        setState(() {
-                          _selectedWeight = spec.clamp(temp);
-                        });
-                        Navigator.of(ctx).pop();
-                      },
-                      child: Text('Done', style: context.appText.labelLarge),
+                    const AppBottomSheetHandle(),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      height: 44,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Text('Weight', style: context.appText.titleMedium),
+                          Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () {
+                                setState(() {
+                                  _selectedWeight = spec.clamp(temp);
+                                });
+                                Navigator.of(ctx).pop();
+                              },
+                              child: Text(
+                                'Done',
+                                style: context.appText.labelLarge,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
               Expanded(
-                child: WeightPickerWheel(
-                  pickerKey: const Key('post_workout_weight_picker'),
-                  weight: initial,
-                  units: units,
-                  selectionOverlayRadius: PickerSelectionStyle.emphasizedRadius,
-                  onWeightChanged: (value) {
-                    temp = value;
-                  },
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: WeightPickerWheel(
+                    pickerKey: const Key('post_workout_weight_picker'),
+                    weight: initial,
+                    units: units,
+                    selectionOverlayRadius:
+                        PickerSelectionStyle.emphasizedRadius,
+                    onWeightChanged: (value) {
+                      temp = value;
+                    },
+                  ),
                 ),
               ),
             ],
