@@ -14,6 +14,29 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import '../../theme/app_theme.dart';
 import 'award_stack.dart';
 
+const double _modalHomeTheta = 0;
+const double _modalHomePhi = 90;
+const double _modalIntroThetaOffset = -24;
+const double _modalYawLimit = 150;
+const String _modalUprightOrientation = '0deg 90deg 0deg';
+
+String _homeOrbitFor(Award award) =>
+    '${award.cameraTheta}deg ${award.cameraPhi}deg ${award.cameraRadius}%';
+
+String _modalHomeOrbitFor(Award award) =>
+    '${_modalHomeTheta}deg ${_modalHomePhi}deg ${award.cameraRadius}%';
+
+String _modalIntroOrbitFor(Award award) =>
+    '${_modalHomeTheta + _modalIntroThetaOffset}deg '
+    '${_modalHomePhi}deg '
+    '${award.cameraRadius}%';
+
+String _modalMinOrbitBoundsFor(Award award) =>
+    '-${_modalYawLimit}deg ${_modalHomePhi}deg ${award.cameraRadius}%';
+
+String _modalMaxOrbitBoundsFor(Award award) =>
+    '${_modalYawLimit}deg ${_modalHomePhi}deg ${award.cameraRadius}%';
+
 // policy: allow-public-api primary widget for 3D/2D award display.
 class AchievementModelView extends StatefulWidget {
   final Award award;
@@ -33,11 +56,31 @@ class AchievementModelView extends StatefulWidget {
 
   @override
   State<AchievementModelView> createState() => _AchievementModelViewState();
+
+  @visibleForTesting
+  static Map<String, String?> debugModelViewerAttributes({
+    required Award award,
+    required bool interactive,
+    required bool startRotating,
+  }) {
+    final useModalMode = interactive && !startRotating;
+    return {
+      'cameraOrbit': useModalMode
+          ? _modalIntroOrbitFor(award)
+          : _homeOrbitFor(award),
+      'orientation': useModalMode ? _modalUprightOrientation : null,
+      'disableZoom': useModalMode ? 'true' : null,
+      'disablePan': useModalMode ? 'true' : null,
+      'minCameraOrbit': useModalMode ? _modalMinOrbitBoundsFor(award) : null,
+      'maxCameraOrbit': useModalMode ? _modalMaxOrbitBoundsFor(award) : null,
+      'backLockYawLimit': useModalMode ? '$_modalYawLimit' : null,
+    };
+  }
 }
 
 class _AchievementModelViewState extends State<AchievementModelView> {
-  static const Duration _recenterDelay = Duration(milliseconds: 900);
-  static const Duration _recenterDuration = Duration(milliseconds: 9000);
+  static const Duration _modalBackReleaseDuration = Duration(milliseconds: 520);
+  static const Duration _modalIntroDuration = Duration(milliseconds: 850);
   static const Duration _loadingFallbackDelay = Duration(seconds: 10);
 
   late Flutter3DController _controller;
@@ -143,11 +186,16 @@ class _AchievementModelViewState extends State<AchievementModelView> {
       assetPath: _resolvedModelSrc!,
       viewerId: _modalViewerId,
       alt: widget.award.title,
-      cameraOrbit: _homeOrbit,
+      cameraOrbit: _effectiveInitialOrbit,
       cameraControls: widget.interactive,
       autoRotate: widget.startRotating,
       rotationSpeed: widget.award.rotationSpeed,
-      relatedJs: _usesModalViewer ? _modalRecenterScript : null,
+      disableZoom: _usesModalViewer,
+      disablePan: _usesModalViewer,
+      orientation: _usesModalViewer ? _modalUprightOrientation : null,
+      minCameraOrbit: _usesModalViewer ? _modalMinOrbitBounds : null,
+      maxCameraOrbit: _usesModalViewer ? _modalMaxOrbitBounds : null,
+      relatedJs: _usesModalViewer ? _modalInteractionScript : null,
     );
 
     return FutureBuilder<String>(
@@ -232,11 +280,8 @@ class _AchievementModelViewState extends State<AchievementModelView> {
     );
   }
 
-  // The package viewer uses camera orbit controls. In the achievement modal
-  // this leaves downward/free roll rotation limited. Keep the package's native
-  // gestures for stability. The recenter drift runs inside the web viewer so it
-  // can ease from the actual camera position instead of an estimated Flutter
-  // pointer offset.
+  // Keep the package's native orbit gestures for stability. The injected
+  // script adds the modal-only intro motion and rear yaw lockout.
   Widget _modalViewer() {
     return model_viewer.ModelViewer(
       src: _resolvedModelSrc!,
@@ -244,13 +289,18 @@ class _AchievementModelViewState extends State<AchievementModelView> {
       id: _modalViewerId,
       progressBarColor: context.appColors.transparent,
       cameraControls: true,
+      disableZoom: true,
+      disablePan: true,
       disableTap: true,
       interactionPrompt: model_viewer.InteractionPrompt.none,
-      cameraOrbit: _homeOrbit,
+      cameraOrbit: _modalIntroOrbit,
+      minCameraOrbit: _modalMinOrbitBounds,
+      maxCameraOrbit: _modalMaxOrbitBounds,
+      orientation: _modalUprightOrientation,
       interpolationDecay: 250,
       activeGestureInterceptor: true,
       debugLogging: false,
-      relatedJs: _modalRecenterScript,
+      relatedJs: _modalInteractionScript,
       onProgress: (progress) {
         if (progress >= 1) {
           _markModelLoaded();
@@ -294,31 +344,45 @@ class _AchievementModelViewState extends State<AchievementModelView> {
     );
   }
 
-  String get _homeOrbit =>
-      '${widget.award.cameraTheta}deg '
-      '${widget.award.cameraPhi}deg '
-      '${widget.award.cameraRadius}%';
+  String get _homeOrbit => _homeOrbitFor(widget.award);
 
-  String get _modalRecenterScript {
-    final homeTheta = widget.award.cameraTheta;
-    final homePhi = widget.award.cameraPhi;
-    final delayMs = _recenterDelay.inMilliseconds;
-    final durationMs = _recenterDuration.inMilliseconds;
+  String get _effectiveInitialOrbit =>
+      _usesModalViewer ? _modalIntroOrbit : _homeOrbit;
+
+  String get _modalHomeOrbit => _modalHomeOrbitFor(widget.award);
+
+  String get _modalIntroOrbit => _modalIntroOrbitFor(widget.award);
+
+  String get _modalMinOrbitBounds => _modalMinOrbitBoundsFor(widget.award);
+
+  String get _modalMaxOrbitBounds => _modalMaxOrbitBoundsFor(widget.award);
+
+  String get _modalInteractionScript {
+    const homeTheta = _modalHomeTheta;
+    const homePhi = _modalHomePhi;
+    const yawLimit = _modalYawLimit;
+    final releaseDurationMs = _modalBackReleaseDuration.inMilliseconds;
+    final introDurationMs = _modalIntroDuration.inMilliseconds;
 
     return '''
 (() => {
   const modelViewer = document.getElementById("$_modalViewerId");
   if (!modelViewer) return;
 
-  const homeOrbit = "$_homeOrbit";
+  const homeOrbit = "$_modalHomeOrbit";
   const homeTheta = $homeTheta * Math.PI / 180;
   const homePhi = $homePhi * Math.PI / 180;
-  const idleDelay = $delayMs;
-  const duration = $durationMs;
-  let idleTimer = null;
+  const yawLimit = $yawLimit * Math.PI / 180;
+  const lockEpsilon = 0.5 * Math.PI / 180;
+  const releaseDuration = $releaseDurationMs;
+  const introDuration = $introDurationMs;
   let animationFrame = null;
   let listenersAttached = false;
   let loadNotified = false;
+  let introPlayed = false;
+  let isInteracting = false;
+  let hitBackLock = false;
+  let applyingGuard = false;
 
   const notifyFlutterLoaded = () => {
     if (loadNotified) return;
@@ -336,14 +400,7 @@ class _AchievementModelViewState extends State<AchievementModelView> {
     callLoadChannel();
   };
 
-  if (modelViewer.loaded) {
-    notifyFlutterLoaded();
-  } else {
-    modelViewer.addEventListener("load", notifyFlutterLoaded, { once: true });
-  }
-
-  const stopDrift = () => {
-    clearTimeout(idleTimer);
+  const stopAnimation = () => {
     if (animationFrame !== null) {
       cancelAnimationFrame(animationFrame);
       animationFrame = null;
@@ -352,6 +409,12 @@ class _AchievementModelViewState extends State<AchievementModelView> {
 
   const clampPhi = (phi) => Math.min(Math.PI - 0.001, Math.max(0.001, phi));
   const smootherstep = (t) => t * t * t * (t * (t * 6 - 15) + 10);
+  const normalizeTheta = (theta) => {
+    let normalized = theta - homeTheta;
+    while (normalized > Math.PI) normalized -= Math.PI * 2;
+    while (normalized < -Math.PI) normalized += Math.PI * 2;
+    return normalized;
+  };
   const shortestAngleDelta = (from, to) => {
     let delta = to - from;
     while (delta > Math.PI) delta -= Math.PI * 2;
@@ -359,7 +422,7 @@ class _AchievementModelViewState extends State<AchievementModelView> {
     return delta;
   };
 
-  const driftHome = () => {
+  const animateHome = (animationDuration) => {
     if (typeof modelViewer.getCameraOrbit !== "function") return;
 
     let start;
@@ -369,7 +432,7 @@ class _AchievementModelViewState extends State<AchievementModelView> {
       return;
     }
 
-    const startTheta = start.theta;
+    const startTheta = homeTheta + normalizeTheta(start.theta);
     const startPhi = start.phi;
     const startRadius = start.radius;
     const thetaDelta = shortestAngleDelta(startTheta, homeTheta);
@@ -377,7 +440,7 @@ class _AchievementModelViewState extends State<AchievementModelView> {
     const startTime = performance.now();
 
     const tick = (now) => {
-      const progress = Math.min(1, (now - startTime) / duration);
+      const progress = Math.min(1, (now - startTime) / animationDuration);
       const eased = smootherstep(progress);
       const theta = startTheta + thetaDelta * eased;
       const phi = clampPhi(startPhi + phiDelta * eased);
@@ -394,19 +457,74 @@ class _AchievementModelViewState extends State<AchievementModelView> {
     animationFrame = requestAnimationFrame(tick);
   };
 
-  const scheduleDrift = () => {
-    stopDrift();
-    idleTimer = setTimeout(driftHome, idleDelay);
+  const playIntro = () => {
+    if (introPlayed) return;
+    introPlayed = true;
+    stopAnimation();
+    animateHome(introDuration);
+  };
+
+  const handleLoad = () => {
+    playIntro();
+    notifyFlutterLoaded();
+  };
+
+  if (modelViewer.loaded) {
+    handleLoad();
+  } else {
+    modelViewer.addEventListener("load", handleLoad, { once: true });
+  }
+
+  const applyBackLock = () => {
+    if (applyingGuard || typeof modelViewer.getCameraOrbit !== "function") {
+      return;
+    }
+
+    let orbit;
+    try {
+      orbit = modelViewer.getCameraOrbit();
+    } catch (_) {
+      return;
+    }
+
+    const theta = normalizeTheta(orbit.theta);
+    if (Math.abs(theta) < yawLimit - lockEpsilon) return;
+
+    hitBackLock = true;
+    if (Math.abs(theta) <= yawLimit) return;
+
+    const lockedTheta = homeTheta + Math.sign(theta) * yawLimit;
+    applyingGuard = true;
+    modelViewer.cameraOrbit = `\${lockedTheta}rad \${homePhi}rad \${orbit.radius}m`;
+    requestAnimationFrame(() => {
+      applyingGuard = false;
+    });
+  };
+
+  const finishInteraction = () => {
+    isInteracting = false;
+    if (!hitBackLock) return;
+
+    hitBackLock = false;
+    stopAnimation();
+    animateHome(releaseDuration);
   };
 
   const attachListeners = () => {
     if (listenersAttached) return;
     listenersAttached = true;
-    modelViewer.addEventListener("pointerdown", stopDrift);
-    modelViewer.addEventListener("pointerup", scheduleDrift);
-    modelViewer.addEventListener("pointercancel", scheduleDrift);
-    modelViewer.addEventListener("touchend", scheduleDrift);
-    modelViewer.addEventListener("mouseup", scheduleDrift);
+    modelViewer.addEventListener("pointerdown", () => {
+      isInteracting = true;
+      hitBackLock = false;
+      stopAnimation();
+    });
+    modelViewer.addEventListener("camera-change", () => {
+      if (isInteracting) applyBackLock();
+    });
+    modelViewer.addEventListener("pointerup", finishInteraction);
+    modelViewer.addEventListener("pointercancel", finishInteraction);
+    modelViewer.addEventListener("touchend", finishInteraction);
+    modelViewer.addEventListener("mouseup", finishInteraction);
   };
 
   if (customElements && customElements.whenDefined) {
@@ -461,11 +579,27 @@ class _AchievementEmbeddedModelHtml {
     required bool cameraControls,
     required bool autoRotate,
     required int rotationSpeed,
+    required bool disableZoom,
+    required bool disablePan,
+    String? orientation,
+    String? minCameraOrbit,
+    String? maxCameraOrbit,
     String? relatedJs,
   }) async {
     final script = await _loadModelViewerScript();
     final modelDataUri = await _loadModelDataUri(assetPath);
     final controls = cameraControls ? ' camera-controls' : '';
+    final zoom = disableZoom ? ' disable-zoom' : '';
+    final pan = disablePan ? ' disable-pan' : '';
+    final orientationAttribute = orientation == null
+        ? ''
+        : ' orientation="${htmlEscape.convert(orientation)}"';
+    final minOrbit = minCameraOrbit == null
+        ? ''
+        : ' min-camera-orbit="${htmlEscape.convert(minCameraOrbit)}"';
+    final maxOrbit = maxCameraOrbit == null
+        ? ''
+        : ' max-camera-orbit="${htmlEscape.convert(maxCameraOrbit)}"';
     final rotation = autoRotate
         ? ' auto-rotate auto-rotate-delay="500" '
               'rotation-per-second="${rotationSpeed}deg"'
@@ -505,9 +639,12 @@ $script
     src="${htmlEscape.convert(modelDataUri)}"
     alt="${htmlEscape.convert(alt)}"
     camera-orbit="${htmlEscape.convert(cameraOrbit)}"
+    $minOrbit
+    $maxOrbit
+    $orientationAttribute
     interpolation-decay="250"
     interaction-prompt="none"
-    disable-tap$controls$rotation>
+    disable-tap$controls$zoom$pan$rotation>
   </model-viewer>
   <script>
     (() => {
